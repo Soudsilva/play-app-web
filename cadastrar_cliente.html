@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastrar Cliente</title>
+<style>
+    /* Mantenho seu estilo original */
+    body{ margin:0; font-family:Arial; background:#0f2a66; display:flex; justify-content:center; color:white; }
+    .app{ width:100%; max-width:420px; padding:20px; }
+    input, textarea{ width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; font-size:16px; }
+    .botao{ background:#4467a8; padding:12px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+    <h2 style="text-align:center; user-select:none;">Novo Cliente</h2>
+
+    <input id="nome" placeholder="Nome do cliente">
+    <input id="cidade" placeholder="Cidade">
+    
+    <input id="comissao" placeholder="Comissão" maxlength="3"
+        oninput="somenteNumero(this)"
+        onblur="adicionarPorcentagem(this)"  
+        onfocus="removerPorcentagem(this)">
+
+    <input id="rota" placeholder="Rota (ex: R.03)">
+    <input id="endereco" placeholder="Endereço">
+    <input id="equip" placeholder="Equipamentos (ex: Máquina P4, Foguete 1)">
+    <textarea id="obs" placeholder="Observações"></textarea>
+
+    <div style="border:1px solid #d7dce3; border-radius:10px; padding:10px; margin-bottom:10px;">
+        <div style="margin-bottom:8px; text-align:center; user-select:none;">Dias aberto</div>
+        <div style="display:flex; gap:12px; font-size:14px; flex-wrap:wrap; justify-content:center;">
+            <label><input type="checkbox" class="dias" value="Seg."> Seg.</label>
+            <label><input type="checkbox" class="dias" value="Ter."> Ter.</label>
+            <label><input type="checkbox" class="dias" value="Qua."> Qua.</label>
+            <label><input type="checkbox" class="dias" value="Qui."> Qui.</label>
+            <label><input type="checkbox" class="dias" value="Sex."> Sex.</label>
+        </div>
+    </div>
+
+    <div class="botao" id="btnSalvar">Salvar Cliente</div>
+    <div class="botao" id="btnVoltar">Voltar</div>
+</div>
+
+<script type="module">
+    // Importamos as funções do seu novo database.js
+    import { dbSalvarCliente, dbListarClientes } from './database.js';
+
+    // Configura o botão Salvar
+    document.getElementById('btnSalvar').addEventListener('click', async () => {
+        const btn = document.getElementById('btnSalvar');
+        btn.innerText = "Salvando...";
+        btn.style.opacity = "0.5";
+
+        try {
+            // Puxa a lista da nuvem para ver o próximo número disponível
+            let clientes = await dbListarClientes();
+            let numeros = clientes.map(c => parseInt(c.numero)).sort((a,b)=>a-b);
+            let numeroLivre = 1;
+            for(let n of numeros){
+                if(n === numeroLivre) numeroLivre++;
+                else break;
+            }
+
+            // Pega dias selecionados
+            let diasSelecionados = [];
+            document.querySelectorAll(".dias:checked").forEach(dia => diasSelecionados.push(dia.value));
+
+            // Cria o objeto
+            const cliente = {
+                numero: numeroLivre,
+                nome: document.getElementById("nome").value,
+                cidade: document.getElementById("cidade").value,
+                comissao: document.getElementById("comissao").value,
+                rota: document.getElementById("rota").value,
+                endereco: document.getElementById("endereco").value,
+                aberto: diasSelecionados.join(" "),
+                equip: document.getElementById("equip").value,
+                obs: document.getElementById("obs").value
+            };
+
+            // SALVA NA NUVEM
+            await dbSalvarCliente(cliente);
+            
+            // Volta para a lista
+            window.location.href = "clientes.html";
+        } catch (error) {
+            alert("Erro ao salvar: " + error.message);
+            btn.innerText = "Salvar Cliente";
+            btn.style.opacity = "1";
+        }
+    });
+
+    // Configura o botão Voltar
+    document.getElementById('btnVoltar').addEventListener('click', () => {
+        window.location.href = "clientes.html";
+    });
+</script>
+
+<script>
+    /* Funções de máscara (permanecem normais) */
+    function somenteNumero(campo){
+        let valor = campo.value.replace(/\D/g,'');
+        campo.value = valor.substring(0,2);
+    }
+    function adicionarPorcentagem(campo){
+        if(campo.value !== "") campo.value += "%";
+    }
+    function removerPorcentagem(campo){
+        campo.value = campo.value.replace("%","");
+    }
+</script>
+
+</body>
+</html>
