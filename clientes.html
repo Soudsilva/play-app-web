@@ -33,7 +33,8 @@
         user-select: text !important;
     }
 
-
+/* para deixar copiar algulma parte, Mude de:   <span> Rua Tal  Para: <span class="copiar"> Rua Tal                  
+*/
 
 
 </style>
@@ -104,13 +105,25 @@
     document.getElementById('btnVoltar').onclick = () => window.location.href="index.html";
     document.getElementById('btnNovo').onclick = () => window.location.href="cadastrar_cliente.html";
 
-    // Pesquisa básica (filtra a lista atual na tela)
+    
+    // Pesquisa que ignora acentos e espaços sobrando nas pontas
     document.getElementById('campoPesquisa').oninput = (e) => {
-        const termo = e.target.value.toLowerCase();
+        // O .trim() remove os espaços vazios do início e do fim
+        const termo = e.target.value
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim(); 
+
         const cards = document.querySelectorAll('.cliente');
+
         cards.forEach(card => {
-            const texto = card.innerText.toLowerCase();
-            card.style.display = texto.includes(termo) ? "block" : "none";
+            const textoCard = card.innerText
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase();
+
+            card.style.display = textoCard.includes(termo) ? "block" : "none";
         });
     };
 </script>
