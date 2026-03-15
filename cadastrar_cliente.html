@@ -10,6 +10,24 @@
     .app{ width:100%; max-width:420px; padding:20px; }
     input, textarea{ width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; font-size:16px; }
     .botao{ background:#4467a8; padding:12px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-top:10px; }
+
+
+/* BLOQUEIO GLOBAL DE CÓPIA */
+    * {
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* EXCEÇÃO: Onde você quiser que o motorista consiga copiar */
+    .copiar {
+        -webkit-user-select: text !important;
+        -ms-user-select: text !important;
+        user-select: text !important;
+    }
+
+
 </style>
 </head>
 <body>
@@ -30,20 +48,36 @@
     <input id="equip" placeholder="Equipamentos (ex: Máquina P4, Foguete 1)">
     <textarea id="obs" placeholder="Observações"></textarea>
 
-    <div style="border:1px solid #d7dce3; border-radius:10px; padding:10px; margin-bottom:10px;">
-        <div style="margin-bottom:8px; text-align:center; user-select:none;">Dias aberto</div>
-        <div style="display:flex; gap:12px; font-size:14px; flex-wrap:wrap; justify-content:center;">
-            <label><input type="checkbox" class="dias" value="Seg."> Seg.</label>
-            <label><input type="checkbox" class="dias" value="Ter."> Ter.</label>
-            <label><input type="checkbox" class="dias" value="Qua."> Qua.</label>
-            <label><input type="checkbox" class="dias" value="Qui."> Qui.</label>
-            <label><input type="checkbox" class="dias" value="Sex."> Sex.</label>
+
+    
+ <div style="border:1px solid #d7dce3; border-radius:10px; padding:10px; margin-bottom:10px;">
+        <div style="margin-bottom:8px; text-align:center; user-select:none; font-weight:bold;">Dias aberto</div>
+        <div style="display:flex; gap:8px; font-size:13px; flex-wrap:wrap; justify-content:center;">
+            <label style="display:flex; align-items:center; cursor:pointer; line-height:1;">
+                Seg.<input type="checkbox" name="dias" value="Seg" class="dias" style="margin:0;">
+            </label>
+            <label style="display:flex; align-items:center; cursor:pointer; line-height:1;">
+                Ter.<input type="checkbox" name="dias" value="Ter" class="dias" style="margin:0;">
+            </label>
+            <label style="display:flex; align-items:center; cursor:pointer; line-height:1;">
+                Qua.<input type="checkbox" name="dias" value="Qua" class="dias" style="margin:0;">
+            </label>
+            <label style="display:flex; align-items:center; cursor:pointer; line-height:1;">
+                Qui.<input type="checkbox" name="dias" value="Qui" class="dias" style="margin:0;">
+            </label>
+            <label style="display:flex; align-items:center; cursor:pointer; line-height:1;">
+                Sex.<input type="checkbox" name="dias" value="Sex" class="dias" style="margin:0;">
+            </label>
         </div>
     </div>
 
-    <div class="botao" id="btnSalvar">Salvar Cliente</div>
-    <div class="botao" id="btnVoltar">Voltar</div>
-</div>
+    <div id="btnSalvar" class="botao">Salvar Cliente</div>
+    <div id="btnVoltar" class="botao" margin-top:5px;">Voltar</div>
+
+</div> ```
+
+
+
 
 <script type="module">
     // Importamos as funções do seu novo database.js

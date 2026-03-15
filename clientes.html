@@ -9,13 +9,33 @@
     .app{ width:100%; max-width:420px; padding:15px; box-sizing:border-box; }
     .topo{ display:flex; align-items:center; margin-bottom:20px; gap:20px; }
     .titulo{ font-size:28px; font-weight:bold; }
-    .voltar{ cursor:pointer; font-size:18px; }
+    .voltar{ cursor:pointer; font-size:18px; document.addEventListener('contextmenu', event => event.preventDefault());}
     .cliente{ background:rgba(255,255,255,0.1); padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid rgba(255,255,255,0.2); }
     .nome{ font-size:18px; font-weight:bold; margin-bottom:8px; }
     .info{ font-size:14px; color:#cfd6e3; margin-bottom:4px; }
     .botao-excluir{ color:#ff4d4d; font-size:13px; margin-top:10px; cursor:pointer; text-align:right; font-weight:bold; }
     .botao-add{ background:#4467a8; padding:15px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-bottom:20px; }
     #campoPesquisa{ width:100%; padding:12px; border-radius:10px; border:none; font-size:16px; margin-bottom:20px; box-sizing:border-box; }
+
+
+/* BLOQUEIO GLOBAL DE CÓPIA */
+    * {
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* EXCEÇÃO: Onde você quiser que o motorista consiga copiar */
+    .copiar {
+        -webkit-user-select: text !important;
+        -ms-user-select: text !important;
+        user-select: text !important;
+    }
+
+
+
+
 </style>
 </head>
 <body>
@@ -26,7 +46,7 @@
         <div class="titulo">Clientes</div>
     </div>
 
-    <div class="botao-add" id="btnNovo"> + Cadastrar Cliente</div>
+    <div class="botao-add" id="btnNovo"> Cadastrar Cliente</div>
     <input type="text" id="campoPesquisa" placeholder="Buscar cliente...">
 
     <div id="listaClientes">
