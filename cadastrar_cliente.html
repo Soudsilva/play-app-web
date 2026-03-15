@@ -35,19 +35,23 @@
 <div class="app">
     <h2 style="text-align:center; user-select:none;">Novo Cliente</h2>
 
+
+    <input id="Ponto aberto por:" placeholder="Ponto Aberto por:">
     <input id="nome" placeholder="Nome do cliente">
-    <input id="cidade" placeholder="Cidade">
     
-    <input id="comissao" placeholder="Comissão" maxlength="3"
+    <input id="comissao" placeholder="Comissão" maxlength="3"    
         oninput="somenteNumero(this)"
         onblur="adicionarPorcentagem(this)"  
         onfocus="removerPorcentagem(this)">
 
-    <input id="rota" placeholder="Rota (ex: R.03)">
+    <input id="cidade" placeholder="Cidade">
+    
+    
+    
     <input id="endereco" placeholder="Endereço">
     <input id="equip" placeholder="Equipamentos (ex: Máquina P4, Foguete 1)">
     <textarea id="obs" placeholder="Observações"></textarea>
-
+    <input id="rota" placeholder="Rota (ex: R.03)">
 
     
  <div style="border:1px solid #d7dce3; border-radius:10px; padding:10px; margin-bottom:10px;">
@@ -70,9 +74,14 @@
             </label>
         </div>
     </div>
+      
+    
+      <div id="btnSalvar" class="botao">Salvar Cliente</div>
+    <div id="btnVoltar" class="botao" style="margin-top:5px;">Voltar</div>
+  
 
-    <div id="btnSalvar" class="botao">Salvar Cliente</div>
-    <div id="btnVoltar" class="botao" margin-top:5px;">Voltar</div>
+
+
 
 </div> ```
 
