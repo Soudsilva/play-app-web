@@ -70,37 +70,52 @@
             listaHTML.innerHTML = "<p style='text-align:center'>Nenhum cliente cadastrado.</p>";
             return;
         }
+// Ordenar por número
+clientes.sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
 
-        // Ordenar por número
-        clientes.sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
+clientes.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'cliente';
+    
+    card.innerHTML = `
+        <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 4px 8px; margin: 0 0 6px -5px; font-weight: bold; font-size: 20px;">
+            <span style="color: #ff9800;">N. </span> <span style="color: #ffeb3b;">${c.numero} ${c.nome}</span>
+        </div>
 
-      clientes.forEach(c => {
-            const card = document.createElement('div');
-            card.className = 'cliente';
-            card.innerHTML = `
-              <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 4px 8px; margin-bottom: 10px; margin-left: -5px; font-weight: bold; font-size: 18px;">
-                   <span style="color: #ff9800;">N.</span> <span style="color: #ffeb3b;">${c.numero} ${c.nome}</span>
-              </div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin: 0; padding: 0;">
+            
+            <div style="margin: 0; padding: 0;">
+                <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
+                    <b style="color: #ff9800;">Cidade: </b> <span class="copiar">${c.cidade || ""}</span>
+                </div>
+
+               
+            </div><img src="assets/img/engrenagen.png" 
+                 style="width: 32px; height: 32px; opacity: 0.7; cursor: pointer; margin-right: 5px; margin-top: 2px;" 
+                 onclick="abrirConfiguracoes('${c.firebaseUrl}')">
+        </div>
+           
+
+              <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
+        <b style="color: #ff9800;">Rota: </b> <span class="copiar">${c.rota || ""}</span>
+        <span style="margin-left: 10px;"><b style="color: #ff9800;">Perc.: </b> ${c.comissao || "0%"}</span>
+    </div>
                 
-     <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 4px 8px; margin-bottom: 6px; margin-left: -5px;">
-    <b style="color: #ff9800;">Cidade:</b> <span class="copiar">${c.cidade || ""}</span>
-</div>    
-              <div class="info">
-                   <b style="color: #ff9800;">Rota:</b> <span class="copiar">${c.rota || ""}</span>
-                   <span style="margin-left: 15px;">
-                   <b style="color: #ff9800;">Comissão:</b> ${c.comissao || "0%"}
-                   </span>
+                <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
+                  <b style="color: #ff9800;">Aberto: </b> ${c.aberto || ""}
                </div>
                 
-                <div class="info"><b style="color: #ff9800;">Aberto:</b> ${c.aberto || ""}</div>
+               <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
+                  <b style="color: #ff9800;">Equip: </b> ${c.equip || "Nenhum"}
+              </div>
                 
-                <div class="info"><b style="color: #ff9800;">Equipamentos:</b> ${c.equip || "Nenhum"}</div>
+                <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px; font-style: italic; font-size: 12px;">
+                   <b style="color: #ff9800;">Obs: </b> ${c.obs || "-"}</div>
+
+                <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
+                    <b style="color: #ff9800;">Endereço: </b> <span class="copiar">${c.endereco || ""}</span> </div>
                 
-                <div class="info" style="margin-top:8px; font-style:italic; font-size:12px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:5px;">
-                    <b style="color: #ff9800;">Obs:</b> ${c.obs || "-"}
-                </div>
-                <div class="info"><b style="color: #ff9800;">Endereço:</b> <span class="copiar">${c.endereco || ""}</span></div>
-                <div class="botao-excluir" data-id="${c.firebaseUrl}">Excluir da Nuvem</div>
+                    <div class="botao-excluir" data-id="${c.firebaseUrl}">Excluir da Nuvem</div>
                 
             `;
             listaHTML.appendChild(card);
