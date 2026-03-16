@@ -7,9 +7,12 @@
 <style>
     body{ margin:0; font-family:Arial; background:#0f2a66; display:flex; justify-content:center; color:white; }
     .app{ width:100%; max-width:420px; padding:15px; box-sizing:border-box; }
-    .topo{ display:flex; align-items:center; margin-bottom:20px; gap:20px; }
+    .topo{display: flex; justify-content: center; /* Centraliza o título  nome Clientes*/
+        width: 100%;  /* Garante que ocupe a largura toda */
+        margin-bottom: 20px; 
+    }
     .titulo{ font-size:28px; font-weight:bold; }
-    .voltar{ cursor:pointer; font-size:18px; document.addEventListener('contextmenu', event => event.preventDefault());}
+    
     .cliente{ background:rgba(255,255,255,0.1); padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid rgba(255,255,255,0.2); }
     .nome{ font-size:18px; font-weight:bold; margin-bottom:8px; }
     .info{ font-size:14px; color:#cfd6e3; margin-bottom:4px; }
@@ -43,7 +46,7 @@
 
 <div class="app">
     <div class="topo">
-        <div class="voltar" id="btnVoltar">⬅ Voltar</div>
+
         <div class="titulo">Clientes</div>
     </div>
 
@@ -71,19 +74,37 @@
         // Ordenar por número
         clientes.sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
 
-        clientes.forEach(c => {
+      clientes.forEach(c => {
             const card = document.createElement('div');
             card.className = 'cliente';
             card.innerHTML = `
-                <div class="nome">N. ${c.numero} ${c.nome}</div>
-                <div class="info"><b>Cidade:</b> ${c.cidade || ""}</div>
-                <div class="info"><b>Rota:</b> ${c.rota || ""}</div>
-                <div class="info"><b>Aberto:</b> ${c.aberto || ""}</div>
+              <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 4px 8px; margin-bottom: 10px; margin-left: -5px; font-weight: bold; font-size: 18px;">
+                   <span style="color: #ff9800;">N.</span> <span style="color: #ffeb3b;">${c.numero} ${c.nome}</span>
+              </div>
+                
+     <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 4px 8px; margin-bottom: 6px; margin-left: -5px;">
+    <b style="color: #ff9800;">Cidade:</b> <span class="copiar">${c.cidade || ""}</span>
+</div>    
+              <div class="info">
+                   <b style="color: #ff9800;">Rota:</b> <span class="copiar">${c.rota || ""}</span>
+                   <span style="margin-left: 15px;">
+                   <b style="color: #ff9800;">Comissão:</b> ${c.comissao || "0%"}
+                   </span>
+               </div>
+                
+                <div class="info"><b style="color: #ff9800;">Aberto:</b> ${c.aberto || ""}</div>
+                
+                <div class="info"><b style="color: #ff9800;">Equipamentos:</b> ${c.equip || "Nenhum"}</div>
+                
+                <div class="info" style="margin-top:8px; font-style:italic; font-size:12px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:5px;">
+                    <b style="color: #ff9800;">Obs:</b> ${c.obs || "-"}
+                </div>
+                <div class="info"><b style="color: #ff9800;">Endereço:</b> <span class="copiar">${c.endereco || ""}</span></div>
                 <div class="botao-excluir" data-id="${c.firebaseUrl}">Excluir da Nuvem</div>
+                
             `;
             listaHTML.appendChild(card);
         });
-
         // Configurar botões de excluir
         document.querySelectorAll('.botao-excluir').forEach(btn => {
             btn.onclick = async (e) => {
@@ -102,7 +123,7 @@
     });
 
     // Navegação
-    document.getElementById('btnVoltar').onclick = () => window.location.href="index.html";
+   
     document.getElementById('btnNovo').onclick = () => window.location.href="cadastrar_cliente.html";
 
     

@@ -49,7 +49,23 @@
     
     
     <input id="endereco" placeholder="Endereço">
-    <input id="equip" placeholder="Equipamentos (ex: Máquina P4, Foguete 1)">
+    
+    
+    
+    
+    
+    
+   <div id="container-equipamentos">
+    <div style="margin-bottom:8px; font-weight:bold; font-size:14px;">Equipamentos Instalados</div>
+    <input class="equip-input" placeholder="Equipamento 1" style="margin-bottom:5px;">
+    <input class="equip-input" placeholder="Equipamento 2" style="margin-bottom:5px;">
+   </div>
+    
+    
+    
+
+    
+    
     <textarea id="obs" placeholder="Observações"></textarea>
     <input id="rota" placeholder="Rota (ex: R.03)">
 
@@ -89,17 +105,37 @@
 
 
 <script type="module">
+    
     // Importamos as funções do seu novo database.js
     import { dbSalvarCliente, dbListarClientes } from './database.js';
 
-    // Configura o botão Salvar
+
+// Função para adicionar novo campo se o último for preenchido
+document.getElementById('container-equipamentos').addEventListener('input', (e) => {
+    const inputs = document.querySelectorAll('.equip-input');
+    const ultimoInput = inputs[inputs.length - 1];
+
+    // Se o último campo não estiver vazio, cria mais um
+    if (ultimoInput.value.trim() !== "") {
+        const novoInput = document.createElement('input');
+        novoInput.className = 'equip-input';
+        novoInput.placeholder = `Equipamento ${inputs.length + 1}`;
+        novoInput.style.marginBottom = "5px";
+        
+        document.getElementById('container-equipamentos').appendChild(novoInput);
+    }
+});
+    
+
+
+  // Configura o botão Salvar
     document.getElementById('btnSalvar').addEventListener('click', async () => {
         const btn = document.getElementById('btnSalvar');
         btn.innerText = "Salvando...";
         btn.style.opacity = "0.5";
 
         try {
-            // Puxa a lista da nuvem para ver o próximo número disponível
+            // 1. Puxa a lista da nuvem para ver o próximo número disponível
             let clientes = await dbListarClientes();
             let numeros = clientes.map(c => parseInt(c.numero)).sort((a,b)=>a-b);
             let numeroLivre = 1;
@@ -108,11 +144,21 @@
                 else break;
             }
 
-            // Pega dias selecionados
-            let diasSelecionados = [];
-            document.querySelectorAll(".dias:checked").forEach(dia => diasSelecionados.push(dia.value));
+            // 2. Coleta os equipamentos dinâmicos
+            let listaEquip = [];
+            document.querySelectorAll('.equip-input').forEach(input => {
+                if(input.value.trim() !== "") {
+                    listaEquip.push(input.value.trim());
+                }
+            });
 
-            // Cria o objeto
+            // 3. Pega os dias selecionados
+            let diasSelecionados = [];
+            document.querySelectorAll(".dias:checked").forEach(dia => {
+                diasSelecionados.push(dia.value);
+            });
+
+            // 4. Cria o objeto final para salvar
             const cliente = {
                 numero: numeroLivre,
                 nome: document.getElementById("nome").value,
@@ -120,16 +166,15 @@
                 comissao: document.getElementById("comissao").value,
                 rota: document.getElementById("rota").value,
                 endereco: document.getElementById("endereco").value,
-                aberto: diasSelecionados.join(" "),
-                equip: document.getElementById("equip").value,
+                aberto: diasSelecionados.join(", "),
+                equip: listaEquip.join(", "), 
                 obs: document.getElementById("obs").value
             };
 
-            // SALVA NA NUVEM
+            // 5. SALVA NA NUVEM e volta para a lista
             await dbSalvarCliente(cliente);
-            
-            // Volta para a lista
             window.location.href = "clientes.html";
+
         } catch (error) {
             alert("Erro ao salvar: " + error.message);
             btn.innerText = "Salvar Cliente";
