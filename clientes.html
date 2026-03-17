@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lista de Clientes</title>
 <style>
-    body{ margin:0; font-family:Arial; background:#0f2a66; display:flex; justify-content:center; color:white; }
+    body{ margin:0; font-family:Arial; background:#042d86; display:flex; justify-content:center; color:white; }
     .app{ width:100%; max-width:420px; padding:15px; box-sizing:border-box; }
     .topo{display: flex; justify-content: center; /* Centraliza o título  nome Clientes*/
         width: 100%;  /* Garante que ocupe a largura toda */
@@ -78,52 +78,60 @@ clientes.forEach(c => {
 card.className = 'cliente';
 
 card.innerHTML = `
-    <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 4px 8px; margin: 0 0 6px -5px; font-weight: bold; font-size: 20px;">
-        <span style="color: #ff9800;">N. </span> <span style="color: #ffeb3b;">${c.numero} ${c.nome}</span>
-    </div>
+    <div style="width: calc(100% + 20px); height: 4px; background-color: #4caf50; margin: -10px -10px 15px -10px; border-radius: 4px 4px 0 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
 
-    <div style="display: flex; align-items: flex-start; width: 100%; margin: 0; padding: 0;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin: 0; padding: 0;">
         
-        <div style="flex-grow: 1; overflow: hidden; margin-right: 10px;">
-            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
+        <div style="flex-grow: 1; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; margin-right: 15px;">
+            
+            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 4px 8px; margin: 0 0 10px 0; font-weight: bold; font-size: 20px;">
+                <span style="color: #ff9800;">N. </span> <span style="color: #ffeb3b;">${c.numero}  -  ${c.nome}</span>
+            </div>
+
+            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px 0;">
                 <b style="color: #ff9800;">Cidade: </b> <span class="copiar">${c.cidade || ""}</span>
             </div>
 
-            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
+            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px 0;">
                 <b style="color: #ff9800;">Rota: </b> <span class="copiar">${c.rota || ""}</span>
                 <span style="margin-left: 10px;"><b style="color: #ff9800;">Perc.: </b> ${c.comissao || "0%"}</span>
             </div>
-            
-            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
-                <b style="color: #ff9800;">Aberto: </b> ${c.aberto || ""}
-            </div>
 
-            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
+            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px 0;">
                 <b style="color: #ff9800;">Equip: </b> ${c.equip || "Nenhum"}
+            </div>
+            
+            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px 0;">
+                <b style="color: #ff9800;">Aberto: </b> ${c.aberto || ""}
             </div>
         </div>
 
-        <div style="margin-left: auto; display: flex; flex-direction: column; align-items: center; gap: 30px; 
-                    padding: 10px 4px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); 
-                    border-radius: 8px; margin-right: -10px; min-width: 38px; flex-shrink: 0;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; margin-right: -12px; flex-shrink: 0; margin-top: 5px;">
             
-            <img src="assets/img/engrenagen.png" 
-                 style="width: 28px; height: 28px; opacity: 0.8; cursor: pointer;" 
-                 onclick="abrirConfiguracoes('${c.firebaseUrl}')">
+            <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;" onclick="abrirConfiguracoes('${c.firebaseUrl}')">
+                <img src="assets/img/engrenagen.png" style="width: 40px; height: 40px; opacity: 0.9;">
+                <span style="font-size: 9px; color: #ffeb3b; font-weight: bold; margin-top: 2px;">Manutenção</span>
+            </div>
             
-            <img src="assets/img/Localizacao.png" 
-                 style="width: 28px; height: 28px; opacity: 0.8; cursor: pointer;" 
-                 onclick="abrirMapa('${c.endereco || ""}')">
+            <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;" onclick="abrirMapa('${c.endereco || ""}')">
+                <img src="assets/img/Localizacao.png" style="width: 40px; height: 40px; opacity: 0.9;">
+                <span style="font-size: 9px; color: #ffeb3b; font-weight: bold; margin-top: 2px;">Localização</span>
+            </div>
         </div>
     </div>
 
-    <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 6px 0 4px -5px; font-style: italic; font-size: 12px;">
+    <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 10px 0 4px 0; font-style: italic; font-size: 12px;">
         <b style="color: #ff9800;">Obs: </b> ${c.obs || "-"}
     </div>
 
-    <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
+    <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px 0;">
         <b style="color: #ff9800;">Endereço: </b> <span class="copiar">${c.endereco || ""}</span> 
     </div>
+
+<div onclick="excluirCliente('${c.firebaseUrl}')" style="color: red; font-weight: bold; cursor: pointer; font-size: 14px; padding: 5px 0 0 5px; width: fit-content;">
+    Excluir Cliente
+    </div>
+
 `;
             listaHTML.appendChild(card);
         });
@@ -169,6 +177,36 @@ card.innerHTML = `
             card.style.display = textoCard.includes(termo) ? "block" : "none";
         });
     };
+
+
+
+
+
+
+
+// Função para o botão X funcionar
+window.excluirCliente = async function(url) {
+    // Extrai o ID da URL do Firebase (pega o texto após a última barra e antes do .json)
+    const id = url.split('/').pop().replace('.json', '');
+    
+    if (confirm("Deseja realmente excluir este cliente de teste?")) {
+        try {
+            await dbExcluirCliente(id);
+            alert("Cliente removido com sucesso!");
+            // Não precisa de location.reload() porque sua função dbEscutarClientes atualiza a tela sozinha!
+        } catch (error) {
+            console.error("Erro ao excluir:", error);
+            alert("Erro ao excluir o cliente.");
+        }
+    }
+};
+
+
+
+
+
+
+
 </script>
 </body>
 </html>

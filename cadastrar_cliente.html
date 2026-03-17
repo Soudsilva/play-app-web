@@ -5,14 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cadastrar Cliente</title>
 <style>
-    /* Mantenho seu estilo original */
     body{ margin:0; font-family:Arial; background:#0f2a66; display:flex; justify-content:center; color:white; }
-    .app{ width:100%; max-width:420px; padding:20px; }
-    input, textarea{ width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; font-size:16px; }
+    .app{ width:100%; max-width:420px; padding:20px; box-sizing: border-box; }
+    input, textarea{ width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; font-size:16px; box-sizing: border-box; }
     .botao{ background:#4467a8; padding:12px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-top:10px; }
 
-
-/* BLOQUEIO GLOBAL DE CÓPIA */
+    /* BLOQUEIO GLOBAL DE CÓPIA */
     * {
         -webkit-user-select: none;
         -ms-user-select: none;
@@ -20,186 +18,184 @@
         -webkit-tap-highlight-color: transparent;
     }
 
-    /* EXCEÇÃO: Onde você quiser que o motorista consiga copiar */
     .copiar {
         -webkit-user-select: text !important;
         -ms-user-select: text !important;
         user-select: text !important;
     }
 
-
+    .equip-group { display: flex; gap: 8px; margin-bottom: 8px; }
 </style>
 </head>
 <body>
 
 <div class="app">
-    <h2 style="text-align:center; user-select:none;">Novo Cliente</h2>
+    <h2 style="text-align:center;">Novo Cliente</h2>
 
-
-    <input id="Ponto aberto por:" placeholder="Ponto Aberto por:">
+    <input id="ponto_aberto" placeholder="Ponto Aberto por:">
     <input id="nome" placeholder="Nome do cliente">
     
-    <input id="comissao" placeholder="Comissão" maxlength="3"    
+    <input id="comissao" placeholder="Comissão" maxlength="3"  
+     inputmode="numeric"  
         oninput="somenteNumero(this)"
         onblur="adicionarPorcentagem(this)"  
         onfocus="removerPorcentagem(this)">
 
     <input id="cidade" placeholder="Cidade">
-    
-    
-    
     <input id="endereco" placeholder="Endereço">
     
-    
-    
-    
-    
-    
-   <div id="container-equipamentos">
-    <div style="margin-bottom:8px; font-weight:bold; font-size:14px;">Equipamentos Instalados</div>
-    <input class="equip-input" placeholder="Equipamento 1" style="margin-bottom:5px;">
-    <input class="equip-input" placeholder="Equipamento 2" style="margin-bottom:5px;">
-   </div>
-    
-    
-    
-
-    
+    <div id="container-equipamentos">
+        
+        <div class="equip-group">
+            <input class="equip-input" placeholder="Equipamento 1" style="flex: 3; margin-bottom:0;">
+            <input class="qtd-input" placeholder="Qtd" type="number" style="flex: 1; margin-bottom:0;">
+        </div>
+        <div class="equip-group">
+            <input class="equip-input" placeholder="Equipamento 2" style="flex: 3; margin-bottom:0;">
+            <input class="qtd-input" placeholder="Qtd" type="number" style="flex: 1; margin-bottom:0;">
+        </div>
+    </div>
     
     <textarea id="obs" placeholder="Observações"></textarea>
-    <input id="rota" placeholder="Rota (ex: R.03)">
+    
+    
+    
+    <input id="rota" placeholder="Rota (ex: 03)" 
+    inputmode="numeric" 
+    oninput="somenteNumeroRota(this)" 
+    onblur="adicionarRota(this)" 
+    onfocus="removerRota(this)">
 
     
- <div style="border:1px solid #d7dce3; border-radius:10px; padding:10px; margin-bottom:10px;">
-        <div style="margin-bottom:8px; text-align:center; user-select:none; font-weight:bold;">Dias aberto</div>
+    <div style="border:1px solid rgba(255,255,255,0.3); border-radius:10px; padding:10px; margin-bottom:10px;">
+        <div style="margin-bottom:8px; text-align:center; font-weight:bold;">Dias aberto</div>
         <div style="display:flex; gap:8px; font-size:13px; flex-wrap:wrap; justify-content:space-between;">
-            <label style="display:flex; align-items:center;gap:3px; cursor:pointer; line-height:1;">
-                Seg.<input type="checkbox" name="dias" value="Seg" class="dias" style="margin:0;">
+            <label style="display:flex; align-items:center;gap:3px; cursor:pointer;">
+                Seg.<input type="checkbox" name="dias" value="Seg" class="dias">
             </label>
-            <label style="display:flex; align-items:center;gap:3px; cursor:pointer; line-height:1;">
-                Ter.<input type="checkbox" name="dias" value="Ter" class="dias" style="margin:0;">
+            <label style="display:flex; align-items:center;gap:3px; cursor:pointer;">
+                Ter.<input type="checkbox" name="dias" value="Ter" class="dias">
             </label>
-            <label style="display:flex; align-items:center;gap:3px; cursor:pointer; line-height:1;">
-                Qua.<input type="checkbox" name="dias" value="Qua" class="dias" style="margin:0;">
+            <label style="display:flex; align-items:center;gap:3px; cursor:pointer;">
+                Qua.<input type="checkbox" name="dias" value="Qua" class="dias">
             </label>
-            <label style="display:flex; align-items:center;gap:3px; cursor:pointer; line-height:1;">
-                Qui.<input type="checkbox" name="dias" value="Qui" class="dias" style="margin:0;">
+            <label style="display:flex; align-items:center;gap:3px; cursor:pointer;">
+                Qui.<input type="checkbox" name="dias" value="Qui" class="dias">
             </label>
-            <label style="display:flex; align-items:center;gap:3px; cursor:pointer; line-height:1;">
-                Sex.<input type="checkbox" name="dias" value="Sex" class="dias" style="margin:0;">
+            <label style="display:flex; align-items:center;gap:3px; cursor:pointer;">
+                Sex.<input type="checkbox" name="dias" value="Sex" class="dias">
             </label>
         </div>
     </div>
       
-    
-      <div id="btnSalvar" class="botao">Salvar Cliente</div>
-    <div id="btnVoltar" class="botao" style="margin-top:5px;">Voltar</div>
-  
-
-
-
-
-</div> ```
-
-
-
+    <div id="btnSalvar" class="botao">Salvar Cliente</div>
+    <div id="btnVoltar" class="botao" style="margin-top:5px; background: rgba(255,255,255,0.1);">Voltar</div>
+</div>
 
 <script type="module">
-    
-    // Importamos as funções do seu novo database.js
     import { dbSalvarCliente, dbListarClientes } from './database.js';
 
+    // Adiciona novos campos automaticamente
+    document.getElementById('container-equipamentos').addEventListener('input', (e) => {
+        const grupos = document.querySelectorAll('.equip-group');
+        const ultimoInput = grupos[grupos.length - 1].querySelector('.equip-input');
 
-// Função para adicionar novo campo se o último for preenchido
-document.getElementById('container-equipamentos').addEventListener('input', (e) => {
-    const inputs = document.querySelectorAll('.equip-input');
-    const ultimoInput = inputs[inputs.length - 1];
+        if (ultimoInput.value.trim() !== "") {
+            const novoGrupo = document.createElement('div');
+            novoGrupo.className = 'equip-group';
+            novoGrupo.innerHTML = `
+                <input class="equip-input" placeholder="Equipamento ${grupos.length + 1}" style="flex: 3; margin-bottom:0;">
+                <input class="qtd-input" placeholder="Qtd" type="number" style="flex: 1; margin-bottom:0;">
+            `;
+            document.getElementById('container-equipamentos').appendChild(novoGrupo);
+        }
+    });
 
-    // Se o último campo não estiver vazio, cria mais um
-    if (ultimoInput.value.trim() !== "") {
-        const novoInput = document.createElement('input');
-        novoInput.className = 'equip-input';
-        novoInput.placeholder = `Equipamento ${inputs.length + 1}`;
-        novoInput.style.marginBottom = "5px";
-        
-        document.getElementById('container-equipamentos').appendChild(novoInput);
-    }
-});
-    
-
-
-  // Configura o botão Salvar
-    document.getElementById('btnSalvar').addEventListener('click', async () => {
+    // Botão Salvar
+    document.getElementById('btnSalvar').onclick = async () => {
         const btn = document.getElementById('btnSalvar');
         btn.innerText = "Salvando...";
-        btn.style.opacity = "0.5";
+        btn.style.pointerEvents = "none";
 
         try {
-            // 1. Puxa a lista da nuvem para ver o próximo número disponível
-            let clientes = await dbListarClientes();
+            const clientes = await dbListarClientes();
             let numeros = clientes.map(c => parseInt(c.numero)).sort((a,b)=>a-b);
             let numeroLivre = 1;
             for(let n of numeros){
                 if(n === numeroLivre) numeroLivre++;
-                else break;
+                else if (n > numeroLivre) break;
             }
 
-            // 2. Coleta os equipamentos dinâmicos
-            let listaEquip = [];
-            document.querySelectorAll('.equip-input').forEach(input => {
-                if(input.value.trim() !== "") {
-                    listaEquip.push(input.value.trim());
+            // Coleta Equipamentos + Qtd
+            let listaEquipFinal = [];
+            document.querySelectorAll('.equip-group').forEach(grupo => {
+                const nome = grupo.querySelector('.equip-input').value.trim();
+                const qtd = grupo.querySelector('.qtd-input').value.trim() || "1";
+                if(nome !== "") {
+                    listaEquipFinal.push(`${nome} (${qtd})`);
                 }
             });
 
-            // 3. Pega os dias selecionados
-            let diasSelecionados = [];
-            document.querySelectorAll(".dias:checked").forEach(dia => {
-                diasSelecionados.push(dia.value);
-            });
+            const dias = Array.from(document.querySelectorAll(".dias:checked")).map(d => d.value);
 
-            // 4. Cria o objeto final para salvar
             const cliente = {
                 numero: numeroLivre,
+                ponto_aberto: document.getElementById("ponto_aberto").value,
                 nome: document.getElementById("nome").value,
                 cidade: document.getElementById("cidade").value,
                 comissao: document.getElementById("comissao").value,
                 rota: document.getElementById("rota").value,
                 endereco: document.getElementById("endereco").value,
-                aberto: diasSelecionados.join(", "),
-                equip: listaEquip.join(", "), 
+                aberto: dias.join(", "),
+                equip: listaEquipFinal.join(", "), 
                 obs: document.getElementById("obs").value
             };
 
-            // 5. SALVA NA NUVEM e volta para a lista
             await dbSalvarCliente(cliente);
             window.location.href = "clientes.html";
 
         } catch (error) {
             alert("Erro ao salvar: " + error.message);
             btn.innerText = "Salvar Cliente";
-            btn.style.opacity = "1";
+            btn.style.pointerEvents = "auto";
         }
-    });
+    };
 
-    // Configura o botão Voltar
-    document.getElementById('btnVoltar').addEventListener('click', () => {
-        window.location.href = "clientes.html";
-    });
+    document.getElementById('btnVoltar').onclick = () => window.location.href = "clientes.html";
 </script>
 
 <script>
-    /* Funções de máscara (permanecem normais) */
     function somenteNumero(campo){
-        let valor = campo.value.replace(/\D/g,'');
-        campo.value = valor.substring(0,2);
+        campo.value = campo.value.replace(/\D/g,'').substring(0,2);
     }
     function adicionarPorcentagem(campo){
-        if(campo.value !== "") campo.value += "%";
+        if(campo.value !== "" && !campo.value.includes("%")) campo.value += "%";
     }
     function removerPorcentagem(campo){
         campo.value = campo.value.replace("%","");
     }
+
+
+// Garante que só entrem números enquanto digita
+function somenteNumeroRota(campo){
+    campo.value = campo.value.replace(/\D/g,'');
+}
+
+// Quando sai do campo, coloca o "R." na frente
+function adicionarRota(campo){
+    if(campo.value !== "" && !campo.value.startsWith("R.")) {
+        // Formata para ter sempre dois dígitos (ex: 3 vira 03)
+        let valor = campo.value.padStart(2, '0');
+        campo.value = "R." + valor;
+    }
+}
+
+// Quando clica para editar, limpa o "R." para o teclado numérico funcionar
+function removerRota(campo){
+    campo.value = campo.value.replace("R.", "");
+}
+
+
 </script>
 
 </body>
