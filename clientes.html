@@ -75,49 +75,56 @@ clientes.sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
 
 clientes.forEach(c => {
     const card = document.createElement('div');
-    card.className = 'cliente';
-    
-    card.innerHTML = `
-        <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 4px 8px; margin: 0 0 6px -5px; font-weight: bold; font-size: 20px;">
-            <span style="color: #ff9800;">N. </span> <span style="color: #ffeb3b;">${c.numero} ${c.nome}</span>
-        </div>
+card.className = 'cliente';
 
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin: 0; padding: 0;">
-            
-            <div style="margin: 0; padding: 0;">
-                <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
-                    <b style="color: #ff9800;">Cidade: </b> <span class="copiar">${c.cidade || ""}</span>
-                </div>
-
-               
-            </div><img src="assets/img/engrenagen.png" 
-                 style="width: 32px; height: 32px; opacity: 0.7; cursor: pointer; margin-right: 5px; margin-top: 2px;" 
-                 onclick="abrirConfiguracoes('${c.firebaseUrl}')">
-        </div>
-           
-
-              <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
-        <b style="color: #ff9800;">Rota: </b> <span class="copiar">${c.rota || ""}</span>
-        <span style="margin-left: 10px;"><b style="color: #ff9800;">Perc.: </b> ${c.comissao || "0%"}</span>
+card.innerHTML = `
+    <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 4px 8px; margin: 0 0 6px -5px; font-weight: bold; font-size: 20px;">
+        <span style="color: #ff9800;">N. </span> <span style="color: #ffeb3b;">${c.numero} ${c.nome}</span>
     </div>
-                
-                <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
-                  <b style="color: #ff9800;">Aberto: </b> ${c.aberto || ""}
-               </div>
-                
-               <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
-                  <b style="color: #ff9800;">Equip: </b> ${c.equip || "Nenhum"}
-              </div>
-                
-                <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px; font-style: italic; font-size: 12px;">
-                   <b style="color: #ff9800;">Obs: </b> ${c.obs || "-"}</div>
 
-                <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
-                    <b style="color: #ff9800;">Endereço: </b> <span class="copiar">${c.endereco || ""}</span> </div>
-                
-                    <div class="botao-excluir" data-id="${c.firebaseUrl}">Excluir da Nuvem</div>
-                
-            `;
+    <div style="display: flex; align-items: flex-start; width: 100%; margin: 0; padding: 0;">
+        
+        <div style="flex-grow: 1; overflow: hidden; margin-right: 10px;">
+            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
+                <b style="color: #ff9800;">Cidade: </b> <span class="copiar">${c.cidade || ""}</span>
+            </div>
+
+            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
+                <b style="color: #ff9800;">Rota: </b> <span class="copiar">${c.rota || ""}</span>
+                <span style="margin-left: 10px;"><b style="color: #ff9800;">Perc.: </b> ${c.comissao || "0%"}</span>
+            </div>
+            
+            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
+                <b style="color: #ff9800;">Aberto: </b> ${c.aberto || ""}
+            </div>
+
+            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
+                <b style="color: #ff9800;">Equip: </b> ${c.equip || "Nenhum"}
+            </div>
+        </div>
+
+        <div style="margin-left: auto; display: flex; flex-direction: column; align-items: center; gap: 30px; 
+                    padding: 10px 4px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); 
+                    border-radius: 8px; margin-right: -10px; min-width: 38px; flex-shrink: 0;">
+            
+            <img src="assets/img/engrenagen.png" 
+                 style="width: 28px; height: 28px; opacity: 0.8; cursor: pointer;" 
+                 onclick="abrirConfiguracoes('${c.firebaseUrl}')">
+            
+            <img src="assets/img/Localizacao.png" 
+                 style="width: 28px; height: 28px; opacity: 0.8; cursor: pointer;" 
+                 onclick="abrirMapa('${c.endereco || ""}')">
+        </div>
+    </div>
+
+    <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 6px 0 4px -5px; font-style: italic; font-size: 12px;">
+        <b style="color: #ff9800;">Obs: </b> ${c.obs || "-"}
+    </div>
+
+    <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px -5px;">
+        <b style="color: #ff9800;">Endereço: </b> <span class="copiar">${c.endereco || ""}</span> 
+    </div>
+`;
             listaHTML.appendChild(card);
         });
         // Configurar botões de excluir
