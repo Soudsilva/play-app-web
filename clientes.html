@@ -5,40 +5,57 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lista de Clientes</title>
 <style>
-    body{ margin:0; font-family:Arial; background:#042d86; display:flex; justify-content:center; color:white; }
-    .app{ width:100%; max-width:420px; padding:15px; box-sizing:border-box; }
-    .topo{display: flex; justify-content: center; /* Centraliza o título  nome Clientes*/
-        width: 100%;  /* Garante que ocupe a largura toda */
-        margin-bottom: 20px; 
-    }
-    .titulo{ font-size:28px; font-weight:bold; }
+    /* -------------------------------------------------------------------------
+       [ESTILO GERAL]
+       ------------------------------------------------------------------------- */
+    body { margin:0; font-family:Arial; background:#042d86; display:flex; justify-content:center; color:white; }
+    .app { width:100%; max-width:420px; padding:15px; box-sizing:border-box; }
     
-    .cliente{ background:rgba(255,255,255,0.1); padding:15px; border-radius:12px; margin-bottom:15px; border:1px solid rgba(255,255,255,0.2); }
-    .nome{ font-size:18px; font-weight:bold; margin-bottom:8px; }
-    .info{ font-size:14px; color:#cfd6e3; margin-bottom:4px; }
-    .botao-excluir{ color:#ff4d4d; font-size:13px; margin-top:10px; cursor:pointer; text-align:right; font-weight:bold; }
-    .botao-add{ background:#4467a8; padding:15px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-bottom:20px; }
-    #campoPesquisa{ width:100%; padding:12px; border-radius:10px; border:none; font-size:16px; margin-bottom:20px; box-sizing:border-box; }
-
-
-/* BLOQUEIO GLOBAL DE CÓPIA */
-    * {
-        -webkit-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
+    /* Cabeçalho Fixo no Topo do Container */
+    .topo { 
+        display: flex; 
+        justify-content: center; 
+        align-items: center;
+        width: 100%; 
+        margin-bottom: 20px; 
+        position: relative; /* Âncora para a casinha */
+        padding: 10px 0;
     }
+    .titulo { font-size:28px; font-weight:bold; }
 
-    /* EXCEÇÃO: Onde você quiser que o motorista consiga copiar */
-    .copiar {
-        -webkit-user-select: text !important;
-        -ms-user-select: text !important;
-        user-select: text !important;
+    /* [BOTÃO HOME - A CASINHA] */
+    .btn-home {
+        position: absolute; 
+        right: 0;           
+        top: 50%;           
+        transform: translateY(-50%); 
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.2);
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: 0.2s;
     }
+    .btn-home:active { background: rgba(255, 255, 255, 0.4); transform: translateY(-50%) scale(0.9); }
+    .btn-home img { width: 22px; height: 22px; filter: brightness(0) invert(1); }
 
-/* para deixar copiar algulma parte, Mude de:   <span> Rua Tal  Para: <span class="copiar"> Rua Tal                  
-*/
+    /* Cards e Elementos */
+    .cliente { 
+        background:rgba(255,255,255,0.1); padding:15px; border-radius:12px; 
+        margin-bottom:15px; border:1px solid rgba(255,255,255,0.2); position: relative; 
+    }
+    .botao-add { background:#4467a8; padding:15px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-bottom:20px; }
+    #campoPesquisa { width:100%; padding:12px; border-radius:10px; border:none; font-size:16px; margin-bottom:20px; box-sizing:border-box; }
 
+    /* Bloqueios e Seleção */
+    * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+    .copiar { -webkit-user-select: text !important; user-select: text !important; }
+    .btn-copiar-img { width: 18px; height: 18px; cursor: pointer; vertical-align: middle; margin-left: 8px; opacity: 0.8; }
+    .btn-copiar-img:active { transform: scale(0.9); }
 
 </style>
 </head>
@@ -46,8 +63,10 @@
 
 <div class="app">
     <div class="topo">
-
         <div class="titulo">Clientes</div>
+        <div class="btn-home" onclick="window.location.href='index.html'">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
+        </div>
     </div>
 
     <div class="botao-add" id="btnNovo"> Cadastrar Cliente</div>
@@ -61,7 +80,6 @@
 <script type="module">
     import { dbEscutarClientes, dbExcluirCliente } from './database.js';
 
-    // Esta função desenha os cards na tela
     function renderizarLista(clientes) {
         const listaHTML = document.getElementById("listaClientes");
         listaHTML.innerHTML = "";
@@ -70,143 +88,107 @@
             listaHTML.innerHTML = "<p style='text-align:center'>Nenhum cliente cadastrado.</p>";
             return;
         }
-// Ordenar por número
-clientes.sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
 
-clientes.forEach(c => {
-    const card = document.createElement('div');
-card.className = 'cliente';
+        clientes.sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
 
-card.innerHTML = `
-    <div style="width: calc(100% + 20px); height: 4px; background-color: #4caf50; margin: -10px -10px 15px -10px; border-radius: 4px 4px 0 0; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
-
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin: 0; padding: 0;">
-        
-        <div style="flex-grow: 1; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; margin-right: 15px;">
-            
-            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 4px 8px; margin: 0 0 10px 0; font-weight: bold; font-size: 20px;">
-                <span style="color: #ff9800;">N. </span> <span style="color: #ffeb3b;">${c.numero}  -  ${c.nome}</span>
-            </div>
-
-            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px 0;">
-                <b style="color: #ff9800;">Cidade: </b> <span class="copiar">${c.cidade || ""}</span>
-            </div>
-
-            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px 0;">
-                <b style="color: #ff9800;">Rota: </b> <span class="copiar">${c.rota || ""}</span>
-                <span style="margin-left: 10px;"><b style="color: #ff9800;">Perc.: </b> ${c.comissao || "0%"}</span>
-            </div>
-
-            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px 0;">
-                <b style="color: #ff9800;">Equip: </b> ${c.equip || "Nenhum"}
-            </div>
-            
-            <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px 0;">
-                <b style="color: #ff9800;">Aberto: </b> ${c.aberto || ""}
-            </div>
-        </div>
-
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; margin-right: -12px; flex-shrink: 0; margin-top: 5px;">
-            
-            <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;" onclick="abrirConfiguracoes('${c.firebaseUrl}')">
-                <img src="assets/img/engrenagen.png" style="width: 40px; height: 40px; opacity: 0.9;">
-                <span style="font-size: 9px; color: #ffeb3b; font-weight: bold; margin-top: 2px;">Manutenção</span>
-            </div>
-            
-            <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;" onclick="abrirMapa('${c.endereco || ""}')">
-                <img src="assets/img/Localizacao.png" style="width: 40px; height: 40px; opacity: 0.9;">
-                <span style="font-size: 9px; color: #ffeb3b; font-weight: bold; margin-top: 2px;">Localização</span>
-            </div>
-        </div>
-    </div>
-
-    <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 10px 0 4px 0; font-style: italic; font-size: 12px;">
-        <b style="color: #ff9800;">Obs: </b> ${c.obs || "-"}
-    </div>
-
-    <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px 0;">
-        <b style="color: #ff9800;">Endereço: </b> <span class="copiar">${c.endereco || ""}</span> 
-    </div>
-
-<div onclick="excluirCliente('${c.firebaseUrl}')" style="color: red; font-weight: bold; cursor: pointer; font-size: 14px; padding: 5px 0 0 5px; width: fit-content;">
-    Excluir Cliente
-    </div>
-
-`;
+        clientes.forEach(c => {
+            const card = document.createElement('div');
+            card.className = 'cliente';
+            card.innerHTML = `
+                <div style="width: calc(100% + 20px); height: 4px; background-color: #4caf50; margin: -10px -10px 15px -10px; border-radius: 4px 4px 0 0;"></div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                    <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: flex-start; margin-right: 15px;">
+                        <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 4px 8px; margin-bottom: 10px; font-weight: bold; font-size: 20px;">
+                            <span style="color: #ff9800;">N. </span> <span style="color: #ffeb3b;">${c.numero} - ${c.nome}</span>
+                        </div>
+                        <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin-bottom: 4px;">
+                            <b style="color: #ff9800;">Cidade: </b> <span class="copiar">${c.cidade || ""}</span>
+                        </div>
+                        <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin-bottom: 4px;">
+                            <b style="color: #ff9800;">Rota: </b> <span class="copiar">${c.rota || ""}</span>
+                            <span style="margin-left: 10px;"><b style="color: #ff9800;">Perc.: </b> ${c.comissao || "0%"}</span>
+                        </div>
+                        <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin-bottom: 4px;">
+                            <b style="color: #ff9800;">Equip: </b> ${c.equip || "Nenhum"}
+                        </div>
+                         <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin-bottom: 4px;">
+                            <b style="color: #ff9800;">Aberto: </b> ${c.aberto || "Não informado"}
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; flex-shrink: 0; margin-top: 5px;">
+                        <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;" onclick="abrirConfiguracoes('${c.firebaseUrl}')">
+                            <img src="assets/img/engrenagen.png" style="width: 40px; height: 40px;">
+                            <span style="font-size: 9px; color: #ffeb3b; font-weight: bold;">Manutenção</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;" onclick="abrirMapa('${c.endereco || ""}')">
+                            <img src="assets/img/Localizacao.png" style="width: 40px; height: 40px;">
+                            <span style="font-size: 9px; color: #ffeb3b; font-weight: bold;">Localização</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 10px 0 4px 0; font-style: italic; font-size: 12px;">
+                    <b style="color: #ff9800;">Obs: </b> ${c.obs || "-"}
+                </div>
+                <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px 0;">
+                    <b style="color: #ff9800;">Endereço: </b> 
+                    <span>${c.endereco || ""}</span> 
+                    <img src="https://cdn-icons-png.flaticon.com/512/1621/1621635.png" class="btn-copiar-img" onclick="copiarTexto('${c.endereco || ""}')">
+                </div>
+                <div style="display: flex; gap: 15px; padding: 10px 0 5px 5px; align-items: center;">
+                    <div onclick="editarCliente('${c.firebaseUrl}')" style="color: #ffeb3b; font-weight: bold; cursor: pointer; font-size: 14px;">✎ Editar</div>
+                    <span style="color: rgba(255,255,255,0.2);">|</span>
+                    <div onclick="excluirCliente('${c.firebaseUrl}')" style="color: #ff4d4d; font-weight: bold; cursor: pointer; font-size: 14px;">X Excluir</div>
+                </div>
+            `;
             listaHTML.appendChild(card);
-        });
-        // Configurar botões de excluir
-        document.querySelectorAll('.botao-excluir').forEach(btn => {
-            btn.onclick = async (e) => {
-                const id = e.target.getAttribute('data-id');
-                if(confirm("Excluir este cliente de todos os dispositivos?")) {
-                    await dbExcluirCliente(id);
-                    // Não precisa chamar nada aqui, a escuta atualiza sozinha!
-                }
-            };
         });
     }
 
-    // ATIVANDO A ESCUTA EM TEMPO REAL
-    dbEscutarClientes((clientes) => {
-        renderizarLista(clientes);
-    });
+    dbEscutarClientes((clientes) => { renderizarLista(clientes); });
 
-    // Navegação
-   
     document.getElementById('btnNovo').onclick = () => window.location.href="cadastrar_cliente.html";
 
-    
-    // Pesquisa que ignora acentos e espaços sobrando nas pontas
     document.getElementById('campoPesquisa').oninput = (e) => {
-        // O .trim() remove os espaços vazios do início e do fim
-        const termo = e.target.value
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase()
-            .trim(); 
-
+        const termo = e.target.value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); 
         const cards = document.querySelectorAll('.cliente');
-
         cards.forEach(card => {
-            const textoCard = card.innerText
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
-                .toLowerCase();
-
+            const textoCard = card.innerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
             card.style.display = textoCard.includes(termo) ? "block" : "none";
         });
     };
 
-
-
-
-
-
-
-// Função para o botão X funcionar
-window.excluirCliente = async function(url) {
-    // Extrai o ID da URL do Firebase (pega o texto após a última barra e antes do .json)
-    const id = url.split('/').pop().replace('.json', '');
-    
-    if (confirm("Deseja realmente excluir este cliente de teste?")) {
-        try {
-            await dbExcluirCliente(id);
-            alert("Cliente removido com sucesso!");
-            // Não precisa de location.reload() porque sua função dbEscutarClientes atualiza a tela sozinha!
-        } catch (error) {
-            console.error("Erro ao excluir:", error);
-            alert("Erro ao excluir o cliente.");
+    window.copiarTexto = function(texto) {
+        if (!texto) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(texto).catch(() => usarPlanoB(texto));
+        } else {
+            usarPlanoB(texto);
         }
-    }
-};
+        function usarPlanoB(txt) {
+            const area = document.createElement("textarea");
+            area.value = txt; document.body.appendChild(area);
+            area.select(); document.execCommand('copy');
+            document.body.removeChild(area);
+        }
+    };
 
+    window.excluirCliente = async function(url) {
+        const id = url.split('/').pop().replace('.json', '');
+        if (confirm("Deseja realmente excluir este cliente?")) {
+            try { await dbExcluirCliente(id); } catch (e) { alert("Erro ao excluir."); }
+        }
+    };
 
+    window.editarCliente = function(url) {
+        const id = url.split('/').pop().replace('.json', '');
+        window.location.href = `cadastrar_cliente.html?edit=${id}`;
+    };
 
-
-
-
-
+    window.abrirMapa = function(endereco) {
+        if (!endereco) { alert("Sem endereço."); return; }
+        const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`;
+        window.open(url, '_blank');
+    };
 </script>
 </body>
 </html>
