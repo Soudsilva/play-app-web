@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Colaboradores</title>
+    <style>
+        body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; }
+        .app { width:100%; max-width:420px; padding:15px; box-sizing:border-box; }
+        .topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .titulo { font-size: 24px; font-weight:bold; }
+        .btn-home { background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 50%; cursor: pointer; display: flex; }
+        .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
+        .secao-lista { margin-bottom: 30px; max-height: 350px; overflow-y: auto; padding-right: 5px; }
+        .subtitulo { font-size: 18px; color: #ffeb3b; margin-bottom: 15px; font-weight: bold; text-align: center; }
+        .card-colab { background: white; color: #333; border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2); border: 1px solid #ddd; }
+        .info-colab { font-size: 14px; line-height: 1.4; flex-grow: 1; }
+        .info-colab b { color: #042d86; font-size: 17px; display: block; margin-bottom: 2px; }
+        .info-colab div { color: #555; font-weight: 500; }
+        .acoes-card { display: flex; flex-direction: column; gap: 8px; margin-left: 10px; }
+        .btn-editar-card { background: #e3f2fd; color: #1976d2; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid #1976d2; text-align: center; }
+        .btn-excluir-card { background: #ffebee; color: #c62828; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; border: 1px solid #c62828; text-align: center; }
+        .divisor { border-top: 1px solid rgba(255,255,255,0.3); margin: 30px 0; position: relative; text-align: center; }
+        .divisor span { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #042d86; padding: 0 15px; font-size: 12px; color: #ffeb3b; font-weight: bold; }
+        .form-container { display: flex; flex-direction: column; gap: 12px; padding-bottom: 50px; }
+        .label-focada { font-size: 13px; color: #ffeb3b; font-weight: bold; margin-bottom: 4px; display: block; margin-left: 5px; }
+        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.4); background: rgba(255,255,255,0.1); color: white; box-sizing:border-box; font-size: 15px; }
+        .btn-salvar { background:#4caf50; padding:16px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-top: 15px; border: none; color: white; width: 100%; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div class="topo">
+        <div class="titulo">Colaboradores</div>
+        <div class="btn-home" onclick="window.location.href='index.html'">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png">
+        </div>
+    </div>
+
+    <div class="secao-lista">
+        <div class="subtitulo">Lista de Acesso</div>
+        <div id="containerColaboradores"></div>
+    </div>
+
+    <div class="divisor"><span>CONFIGURAR ACESSO</span></div>
+
+    <form class="form-container" id="formColaborador">
+        <input type="hidden" id="idEdicao" value="">
+
+        <div>
+            <label class="label-focada">Nome do Colaborador</label>
+            <input type="text" id="nomeColaborador" placeholder="Nome Completo" required>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 2;">
+                <label class="label-focada">Cargo</label>
+                <input type="text" id="cargoColaborador" placeholder="Ex: Técnico">
+            </div>
+            <div style="flex: 1;">
+                <label class="label-focada">Comissão %</label>
+                <input type="text" id="comissaoColaborador" placeholder="0%">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1.5;">
+                <label class="label-focada">Senha Global</label>
+                <input type="text" id="senhaColaborador" placeholder="Senha">
+            </div>
+            <div style="flex: 2;">
+                <label class="label-focada">Perfil</label>
+                <select id="nivelAcesso">
+                    <option value="gestao">Gestão</option>
+                    <option value="atendimento">Atendimento</option>
+                    <option value="estoque">Estoque</option>
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <label class="label-focada">Nível</label>
+                <select id="nivelNumero">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label class="label-focada">Valor Mínimo</label>
+                <input type="text" id="valorMinimo" placeholder="R$ 0,00">
+            </div>
+            <div style="flex: 1;">
+                <label class="label-focada">Valor Máximo</label>
+                <input type="text" id="valorMaximo" placeholder="R$ 0,00">
+            </div>
+        </div>
+
+        <button type="submit" class="btn-salvar" id="btnSalvar">+ Salvar Dados</button>
+    </form>
+</div>
+
+<script>
+    function carregarListaLocal() {
+        const container = document.getElementById('containerColaboradores');
+        const storage = localStorage.getItem('meus_colaboradores');
+        const lista = storage ? JSON.parse(storage) : [];
+        
+        console.log("Carregando lista:", lista); // Para ver no F12 se os dados existem
+
+        container.innerHTML = "";
+
+        if (lista.length === 0) {
+            container.innerHTML = "<p style='text-align:center; opacity:0.5; font-size:12px;'>Nenhum colaborador cadastrado.</p>";
+            return;
+        }
+
+        lista.forEach((c, index) => {
+            const card = document.createElement('div');
+            card.className = 'card-colab';
+            // Fallback para caso o nível esteja antigo ou vazio
+            const nivelExibir = c.nivel_completo ? c.nivel_completo.toUpperCase().replace('_', ' ') : 'NÃO DEFINIDO';
+            
+            card.innerHTML = `
+                <div class="info-colab">
+                    <b>${c.nome}</b>
+                    <div>${c.cargo || 'Sem Cargo'} | Nível: ${nivelExibir}</div>
+                    <div style="font-size:12px; color:#777;">Comissão: ${c.comissao || 0}%</div>
+                </div>
+                <div class="acoes-card">
+                    <div class="btn-editar-card" onclick="prepararEdicaoLocal(${index})">Editar</div>
+                    <div class="btn-excluir-card" onclick="excluirLocal(${index})">Excluir</div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    window.excluirLocal = function(index) {
+        if(confirm("Deseja realmente excluir este colaborador?")) {
+            let lista = JSON.parse(localStorage.getItem('meus_colaboradores') || "[]");
+            lista.splice(index, 1);
+            localStorage.setItem('meus_colaboradores', JSON.stringify(lista));
+            carregarListaLocal();
+        }
+    }
+
+    window.prepararEdicaoLocal = function(index) {
+        const lista = JSON.parse(localStorage.getItem('meus_colaboradores') || "[]");
+        const c = lista[index];
+
+        document.getElementById('idEdicao').value = index;
+        document.getElementById('nomeColaborador').value = c.nome;
+        document.getElementById('cargoColaborador').value = c.cargo || "";
+        document.getElementById('comissaoColaborador').value = c.comissao || "";
+        document.getElementById('senhaColaborador').value = c.senha || "";
+        document.getElementById('valorMinimo').value = c.valorMinimo || "";
+        document.getElementById('valorMaximo').value = c.valorMaximo || "";
+        
+        if (c.nivel_completo) {
+            const partes = c.nivel_completo.split('_');
+            document.getElementById('nivelAcesso').value = partes[0];
+            document.getElementById('nivelNumero').value = partes[1] || "1";
+        }
+
+        document.getElementById('btnSalvar').innerText = "Atualizar Cadastro";
+        document.getElementById('btnSalvar').style.background = "#ff9800";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    document.getElementById('formColaborador').onsubmit = function(e) {
+        e.preventDefault();
+        
+        let lista = JSON.parse(localStorage.getItem('meus_colaboradores') || "[]");
+        const perfil = document.getElementById('nivelAcesso').value;
+        const numero = document.getElementById('nivelNumero').value;
+        const nivelFinal = perfil + "_" + numero;
+
+        const novoColab = {
+            nome: document.getElementById('nomeColaborador').value,
+            cargo: document.getElementById('cargoColaborador').value,
+            comissao: document.getElementById('comissaoColaborador').value,
+            senha: document.getElementById('senhaColaborador').value,
+            valorMinimo: document.getElementById('valorMinimo').value,
+            valorMaximo: document.getElementById('valorMaximo').value,
+            nivel_completo: nivelFinal
+        };
+
+        const idEdicao = document.getElementById('idEdicao').value;
+        
+        if (idEdicao !== "") {
+            lista[idEdicao] = novoColab;
+        } else {
+            lista.push(novoColab);
+        }
+
+        localStorage.setItem('meus_colaboradores', JSON.stringify(lista));
+        
+        // Limpar Form
+        document.getElementById('formColaborador').reset();
+        document.getElementById('idEdicao').value = "";
+        document.getElementById('btnSalvar').innerText = "+ Salvar Dados";
+        document.getElementById('btnSalvar').style.background = "#4caf50";
+
+        carregarListaLocal();
+        alert("Dados salvos!");
+    };
+
+    // Executa ao carregar a página
+    window.onload = carregarListaLocal;
+</script>
+</body>
+</html>
