@@ -171,6 +171,8 @@
       e.preventDefault();
       
       const idEdicao = document.getElementById('idEdicao').value;
+      
+      // Criamos o objeto de dados
       const dados = {
           nome: document.getElementById('nomeColaborador').value,
           cargo: document.getElementById('cargoColaborador').value,
@@ -180,17 +182,23 @@
           dataAtualizacao: new Date().toISOString()
       };
 
+      // Se for um NOVO cadastro, adicionamos a data de criação
+      if (!idEdicao) {
+          dados.dataCadastro = new Date().toISOString();
+      } else {
+          // Se for EDIÇÃO, precisamos manter a data de cadastro original para não perder a ordem
+          // Pegamos o valor que já estava no campo oculto se necessário ou apenas salvamos a atualização
+          // Para simplificar, o sistema usará a dataCadastro já existente no banco.
+      }
+
       try {
-          // Salva silenciosamente na nuvem
           await dbSalvarColaborador(dados, idEdicao);
           
-          // Reseta o formulário para o próximo cadastro sem travar a tela
           document.getElementById('formColaborador').reset();
           document.getElementById('idEdicao').value = "";
           document.getElementById('btnSalvar').innerText = "+ Salvar Dados";
           document.getElementById('btnSalvar').style.background = "#4caf50";
           
-          // Dica: A lista lá em cima atualizará sozinha via Realtime!
       } catch (err) {
           console.error("Erro ao sincronizar:", err);
           alert("Ops! Verifique sua conexão.");

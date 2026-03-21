@@ -96,7 +96,12 @@ export function dbEscutarColaboradores(callback) {
             const lista = Object.keys(data).map(key => ({ 
                 ...data[key], 
                 firebaseUrl: key 
-            }));
+            })).sort((a, b) => {
+                // Ordena: Mais recente (Data maior) primeiro
+                const dataA = a.dataCadastro ? new Date(a.dataCadastro) : new Date(0);
+                const dataB = b.dataCadastro ? new Date(b.dataCadastro) : new Date(0);
+                return dataB - dataA; 
+            });
             callback(lista);
         } else {
             callback([]);
