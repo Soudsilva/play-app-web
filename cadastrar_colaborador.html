@@ -172,7 +172,7 @@
       
       const idEdicao = document.getElementById('idEdicao').value;
       
-      // Criamos o objeto de dados
+      // Criamos o objeto base com os dados do formulário
       const dados = {
           nome: document.getElementById('nomeColaborador').value,
           cargo: document.getElementById('cargoColaborador').value,
@@ -182,18 +182,26 @@
           dataAtualizacao: new Date().toISOString()
       };
 
-      // Se for um NOVO cadastro, adicionamos a data de criação
-      if (!idEdicao) {
-          dados.dataCadastro = new Date().toISOString();
-      } else {
-          // Se for EDIÇÃO, precisamos manter a data de cadastro original para não perder a ordem
-          // Pegamos o valor que já estava no campo oculto se necessário ou apenas salvamos a atualização
-          // Para simplificar, o sistema usará a dataCadastro já existente no banco.
-      }
-
       try {
-          await dbSalvarColaborador(dados, idEdicao);
+          if (!idEdicao) {
+              // SE FOR NOVO: Criamos a data de cadastro agora
+              dados.dataCadastro = new Date().toISOString();
+              await dbSalvarColaborador(dados, null);
+          } else {
+              // SE FOR EDIÇÃO: 
+              // 1. Buscamos os dados atuais do colaborador no banco para não perder a data original
+              const listaAtual = await new Promise((resolve) => dbEscutarColaboradores(resolve));
+              const colabOriginal = listaAtual.find(c => c.firebaseUrl === idEdicao);
+              
+              // 2. Mantemos a data de cadastro que já existia
+              if (colabOriginal && colabOriginal.dataCadastro) {
+                  dados.dataCadastro = colabOriginal.dataCadastro;
+              }
+              
+              await dbSalvarColaborador(dados, idEdicao);
+          }
           
+          // Limpa o formulário e volta o botão ao normal
           document.getElementById('formColaborador').reset();
           document.getElementById('idEdicao').value = "";
           document.getElementById('btnSalvar').innerText = "+ Salvar Dados";
