@@ -1,73 +1,55 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Colaboradores</title>
     
     <style>
-        /* Base do App (Como a Screen do Power Apps) */
+        /* Estilos Visuais do App */
         body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; }
         .app { width:100%; max-width:420px; padding:15px; box-sizing:border-box; min-height: 100vh; }
         
-        /* Cabeçalho Ajustado e Centralizado */
-        .topo { 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            margin-bottom: 20px; 
-            position: relative; /* Mantém o botão dentro do cabeçalho */
-            width: 100%;
-            min-height: 45px;
-        }
+        /* Cabeçalho */
+        .topo { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; position: relative; width: 100%; min-height: 45px; }
+        .titulo { font-size: 24px; font-weight: bold; text-align: center; }
+        .btn-home { background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 50%; cursor: pointer; display: flex; position: absolute; right: 0; }
+        .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
 
-        .titulo { 
-            font-size: 24px; 
-            font-weight: bold; 
-            text-align: center;
-        }
-
-        .btn-home { 
-            background: rgba(255, 255, 255, 0.1); 
-            padding: 8px; 
-            border-radius: 50%; 
-            cursor: pointer; 
-            display: flex; 
-            position: absolute; /* O botão flutua na direita */
-            right: 0; 
-        }
-
-        .btn-home img { 
-            width: 20px; 
-            height: 20px; 
-            filter: brightness(0) invert(1); 
-        }
-        /* Galeria de Itens (Lista) */
-        .secao-lista { margin-bottom: 25px; max-height: 300px; overflow-y: auto; padding-right: 5px; border-radius: 8px; }
+        /* Lista de Colaboradores */
+        .secao-lista { margin-bottom: 25px; max-height: 350px; overflow-y: auto; padding-right: 5px; border-radius: 8px; }
         .subtitulo { font-size: 16px; color: #ffeb3b; margin-bottom: 12px; font-weight: bold; text-align: center; text-transform: uppercase; }
         
-        /* O Template do Item (Card) */
-        .card-colab { background: white; color: #333; border-radius: 12px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        /* Card Branco */
+        .card-colab { 
+            background: white; color: #333; border-radius: 12px; padding: 12px; margin-bottom: 12px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            cursor: default !important; 
+        }
+        
+        /* Alça de Arraste ☰ */
+        .handle { user-select: none; -webkit-user-select: none; transition: 0.2s; cursor: grab; padding-right: 15px; color: #ccc; font-size: 20px; }
+        .handle:hover { color: #042d86 !important; }
+
+        /* Textos do Card */
         .info-colab b { color: #042d86; font-size: 16px; display: block; }
         .info-colab div { color: #666; font-size: 13px; font-weight: 500; }
         
-        /* Botões de Ação no Card */
+        /* Botões */
         .acoes-card { display: flex; flex-direction: column; gap: 5px; }
         .btn-editar-card { background: #e3f2fd; color: #1976d2; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; text-align: center; border: 1px solid #1976d2; }
         .btn-excluir-card { background: #ffebee; color: #c62828; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; text-align: center; border: 1px solid #c62828; }
 
-        /* Divisor Visual */
+        /* Divisores e Formulário */
         .divisor { border-top: 1px solid rgba(255,255,255,0.3); margin: 25px 0; position: relative; text-align: center; }
         .divisor span { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #042d86; padding: 0 10px; font-size: 11px; color: #ffeb3b; }
-
-        /* Formulário (EditForm) */
         .form-container { display: flex; flex-direction: column; gap: 10px; padding-bottom: 40px; }
         .label-focada { font-size: 12px; color: #ffeb3b; font-weight: bold; margin-bottom: 4px; display: block; }
         input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255,255,255,0.05); color: white; box-sizing:border-box; font-size: 14px; outline: none; }
         input::placeholder { color: rgba(255,255,255,0.4); }
         select option { background: #042d86; color: white; }
-
-        /* Botão Salvar (Submit Button) */
         .btn-salvar { background:#4caf50; padding:14px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-top: 10px; border: none; color: white; width: 100%; font-size: 15px; transition: 0.3s; }
     </style>
 </head>
@@ -89,91 +71,59 @@
     <div class="divisor"><span>CONFIGURAR NOVO ACESSO</span></div>
 
     <form class="form-container" id="formColaborador">
-        <input type="hidden" id="idEdicao" value=""> <div>
+        <input type="hidden" id="idEdicao" value=""> 
+        <div>
             <label class="label-focada">Nome do Colaborador</label>
             <input type="text" id="nomeColaborador" placeholder="Nome Completo" required>
         </div>
 
         <div style="display: flex; gap: 10px;">
-            <div style="flex: 2;">
-                <label class="label-focada">Cargo</label>
-                <input type="text" id="cargoColaborador" placeholder="Ex: Técnico">
-            </div>
-           
-           
-            <div style="flex: 1;">
-    <label class="label-focada">Comissão %</label>
-    <input type="text" 
-           id="comissaoColaborador" 
-           placeholder="0%" 
-           inputmode="numeric" 
-           maxlength="3" 
-           oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,2)"
-           onfocus="this.value = this.value.replace('%', '')"
-           onblur="if(this.value && !this.value.includes('%') && this.value !== '') this.value += '%'">
-    </div>
-        
-    </div>
+            <div style="flex: 2;"><label class="label-focada">Cargo</label><input type="text" id="cargoColaborador" placeholder="Ex: Técnico"></div>
+            <div style="flex: 1;"><label class="label-focada">Comissão %</label><input type="text" id="comissaoColaborador" placeholder="0%" inputmode="numeric"></div>
+        </div>
 
         <div style="display: flex; gap: 10px;">
-            <div style="flex: 1.5;">
-                <label class="label-focada">Senha Global</label>
-                <input type="text" 
-                       id="senhaColaborador" 
-                       placeholder="0000" 
-                       inputmode="numeric" 
-                       maxlength="4" 
-                       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,4)">
-            </div>
-            
-            
-            <div style="flex: 2;">
-                <label class="label-focada">Perfil</label>
+            <div style="flex: 1.5;"><label class="label-focada">Senha Global</label><input type="text" id="senhaColaborador" placeholder="0000" inputmode="numeric" maxlength="4"></div>
+            <div style="flex: 2;"><label class="label-focada">Perfil</label>
                 <select id="nivelAcesso">
                     <option value="gestao">Gestão</option>
                     <option value="atendimento">Atendimento</option>
                     <option value="estoque">Estoque</option>
                 </select>
             </div>
-            <div style="flex: 1;">
-                <label class="label-focada">Nível</label>
+            <div style="flex: 1;"><label class="label-focada">Nível</label>
                 <select id="nivelNumero">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
+                    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
                 </select>
             </div>
         </div>
-
         <button type="submit" class="btn-salvar" id="btnSalvar">+ Salvar Dados</button>
     </form>
 </div>
 
-
-
 <script type="module">
-  // 1. Importa as funções do seu arquivo central (Padrão Realtime Database)
-  import { dbEscutarColaboradores, dbSalvarColaborador, dbExcluirColaborador } from './database.js';
+  import { dbEscutarColaboradores, dbSalvarColaborador, dbExcluirColaborador, dbAtualizarOrdemColaborador } from './database.js';
 
-  // 2. FUNÇÃO PARA CARREGAR A GALERIA (Sincroniza em tempo real)
+  // CARREGAR LISTA
   function carregarGaleria() {
       const container = document.getElementById('containerColaboradores');
-      
       dbEscutarColaboradores((lista) => {
-          container.innerHTML = ""; // Limpa a galeria antes de atualizar
-          
+          container.innerHTML = ""; 
           if (lista.length === 0) {
               container.innerHTML = "<p style='text-align:center; opacity:0.5; font-size:12px;'>Nenhum colaborador cadastrado.</p>";
               return;
           }
 
+          // A lista já vem ordenada do banco. Se o novo tem ordem -Timestamp, ele vem primeiro.
           lista.forEach((c) => {
               const card = document.createElement('div');
               card.className = 'card-colab';
+              card.setAttribute('data-id', c.firebaseUrl); 
               const nivelExibir = c.nivel_completo ? c.nivel_completo.toUpperCase().replace('_', ' ') : 'N/D';
               
               card.innerHTML = `
-                  <div class="info-colab">
+                  <div class="handle">☰</div>
+                  <div class="info-colab" style="flex:1;">
                       <b>${c.nome}</b>
                       <div>${c.cargo || 'Geral'} | ${nivelExibir}</div>
                       <div style="font-size:11px; color:#999;">Comissão: ${c.comissao || 0}%</div>
@@ -184,38 +134,52 @@
                   </div>`;
               container.appendChild(card);
 
-              // Pendura as funções nos botões (usando o ID gerado pelo Firebase)
-              document.getElementById(`edit-${c.firebaseUrl}`).onclick = () => prepararEdicao(c);
-              document.getElementById(`del-${c.firebaseUrl}`).onclick = () => {
-                  if(confirm("Deseja excluir este colaborador?")) {
-                      dbExcluirColaborador(c.firebaseUrl);
-                  }
+              document.getElementById(`edit-${c.firebaseUrl}`).onclick = (e) => { e.stopPropagation(); prepararEdicao(c); };
+              document.getElementById(`del-${c.firebaseUrl}`).onclick = (e) => {
+                  e.stopPropagation();
+                  if(confirm("Deseja excluir este colaborador?")) dbExcluirColaborador(c.firebaseUrl);
               };
           });
       });
   }
 
-  // 3. PREPARAR EDIÇÃO (Preenche o formulário lá embaixo)
+  // ARRASTE: REORDENAÇÃO COMPLETA
+  const listaCards = document.getElementById('containerColaboradores');
+  Sortable.create(listaCards, {
+      animation: 150,
+      handle: '.handle', 
+      onEnd: async function () {
+          const cardsDaTela = Array.from(listaCards.querySelectorAll('.card-colab'));
+          
+          // Reatribuímos a ordem baseada na posição visual (0, 1, 2...)
+          const promessas = cardsDaTela.map((card, index) => {
+              const idFirebase = card.getAttribute('data-id');
+              if (idFirebase) {
+                  return dbAtualizarOrdemColaborador(idFirebase, index);
+              }
+          });
+
+          await Promise.all(promessas);
+          console.log("Posições visuais salvas no banco!");
+      }
+  });
+
+  // PREPARAR EDIÇÃO
   function prepararEdicao(c) {
       document.getElementById('idEdicao').value = c.firebaseUrl;
       document.getElementById('nomeColaborador').value = c.nome;
       document.getElementById('cargoColaborador').value = c.cargo || "";
       document.getElementById('comissaoColaborador').value = c.comissao || "";
       document.getElementById('senhaColaborador').value = c.senha || "";
-      
-      // Ajusta o botão para modo edição
       document.getElementById('btnSalvar').innerText = "Atualizar na Nuvem";
       document.getElementById('btnSalvar').style.background = "#ff9800";
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   }
 
-  // 4. FUNÇÃO SALVAR (O botão "+ Salvar Dados")
+  // SALVAR DADOS
   document.getElementById('formColaborador').onsubmit = async function(e) {
       e.preventDefault();
-      
       const idEdicao = document.getElementById('idEdicao').value;
-      
-      // Criamos o objeto base com os dados do formulário
       const dados = {
           nome: document.getElementById('nomeColaborador').value,
           cargo: document.getElementById('cargoColaborador').value,
@@ -227,36 +191,22 @@
 
       try {
           if (!idEdicao) {
-              // SE FOR NOVO: Criamos a data de cadastro agora
               dados.dataCadastro = new Date().toISOString();
+              // A nova lógica de ordem -Date.now() no database.js jogará este novo para o topo
               await dbSalvarColaborador(dados, null);
           } else {
-              // SE FOR EDIÇÃO: 
-              // 1. Buscamos os dados atuais do colaborador no banco para não perder a data original
-              const listaAtual = await new Promise((resolve) => dbEscutarColaboradores(resolve));
-              const colabOriginal = listaAtual.find(c => c.firebaseUrl === idEdicao);
-              
-              // 2. Mantemos a data de cadastro que já existia
-              if (colabOriginal && colabOriginal.dataCadastro) {
-                  dados.dataCadastro = colabOriginal.dataCadastro;
-              }
-              
               await dbSalvarColaborador(dados, idEdicao);
           }
           
-          // Limpa o formulário e volta o botão ao normal
           document.getElementById('formColaborador').reset();
           document.getElementById('idEdicao').value = "";
           document.getElementById('btnSalvar').innerText = "+ Salvar Dados";
           document.getElementById('btnSalvar').style.background = "#4caf50";
-          
       } catch (err) {
-          console.error("Erro ao sincronizar:", err);
-          alert("Ops! Verifique sua conexão.");
+          console.error("Erro:", err);
       }
   };
 
-  // Inicia a galeria assim que abrir a página
   carregarGaleria();
 </script>
 </body>

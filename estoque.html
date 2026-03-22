@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Estoque</title>
+    <style>
+        /* O mesmo estilo visual do seu app */
+        body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; }
+        .app { width:100%; max-width:420px; padding:15px; box-sizing:border-box; min-height: 100vh; }
+        
+        .topo { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; position: relative; width: 100%; min-height: 45px; }
+        .titulo { font-size: 24px; font-weight: bold; text-align: center; }
+        .btn-home { background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 50%; cursor: pointer; display: flex; position: absolute; right: 0; }
+        .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
+
+        .secao-lista { margin-bottom: 25px; max-height: 400px; overflow-y: auto; padding-right: 5px; border-radius: 8px; }
+        .subtitulo { font-size: 16px; color: #ffeb3b; margin-bottom: 12px; font-weight: bold; text-align: center; text-transform: uppercase; }
+        
+        /* Estilo dos Cards de Estoque */
+        .card-estoque { background: white; color: #333; border-radius: 12px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .info-estoque b { color: #042d86; font-size: 16px; display: block; }
+        .info-estoque div { color: #666; font-size: 13px; font-weight: 500; }
+        
+        /* Badge (Etiqueta) da categoria */
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; color: white; margin-top: 5px;}
+        .bg-maquina { background: #9c27b0; }
+        .bg-insumo { background: #4caf50; }
+        .bg-peca { background: #ff9800; }
+
+        .qtd-destaque { font-size: 20px; font-weight: bold; color: #042d86; text-align: center; background: #f0f0f0; padding: 8px 15px; border-radius: 8px; }
+
+        .divisor { border-top: 1px solid rgba(255,255,255,0.3); margin: 25px 0; position: relative; text-align: center; }
+        .divisor span { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #042d86; padding: 0 10px; font-size: 11px; color: #ffeb3b; }
+        .form-container { display: flex; flex-direction: column; gap: 10px; padding-bottom: 40px; }
+        .label-focada { font-size: 12px; color: #ffeb3b; font-weight: bold; margin-bottom: 4px; display: block; }
+        input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255,255,255,0.05); color: white; box-sizing:border-box; font-size: 14px; outline: none; }
+        input::placeholder { color: rgba(255,255,255,0.4); }
+        select option { background: #042d86; color: white; }
+        .btn-salvar { background:#4caf50; padding:14px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-top: 10px; border: none; color: white; width: 100%; font-size: 15px; transition: 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div class="topo">
+        <div class="titulo">Controle de Estoque</div>
+        <div class="btn-home" onclick="window.location.href='index.html'">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
+        </div>
+    </div>
+
+    <div class="secao-lista">
+        <div class="subtitulo">Itens Registrados</div>
+        <div id="containerEstoque">
+            <p style='text-align:center; opacity:0.5; font-size:12px;'>Carregando itens...</p>
+        </div>
+    </div>
+
+    <div class="divisor"><span>CADASTRAR NOVO ITEM</span></div>
+
+    <form class="form-container" id="formEstoque">
+        <input type="hidden" id="idItem" value=""> 
+        
+        <div>
+            <label class="label-focada">Nome do Item</label>
+            <input type="text" id="nomeItem" placeholder="Ex: Pelúcia 20cm, Motor, Grua..." required>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 2;">
+                <label class="label-focada">Categoria</label>
+                <select id="categoriaItem">
+                    <option value="insumo">Insumo (Pelúcia, Bolinha)</option>
+                    <option value="peca">Peça/Material (Motor, Fita, Placa)</option>
+                    <option value="maquina">Máquina (Grua, Vending)</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label class="label-focada">Qtd. Atual</label>
+                <input type="number" id="qtdItem" placeholder="0" required>
+            </div>
+            <div style="flex: 1;">
+                <label class="label-focada">Estoque Mínimo</label>
+                <input type="number" id="minimoItem" placeholder="Avisar com...">
+            </div>
+        </div>
+
+        <button type="submit" class="btn-salvar" id="btnSalvarEstoque">+ Adicionar ao Estoque</button>
+    </form>
+</div>
+
+<script type="module">
+    import { dbEscutarEstoque, dbSalvarItemEstoque } from './database.js';
+
+    // 1. CARREGAR A LISTA DE ESTOQUE
+    function carregarEstoque() {
+        const container = document.getElementById('containerEstoque');
+        
+        dbEscutarEstoque((lista) => {
+            container.innerHTML = ""; 
+            if (lista.length === 0) {
+                container.innerHTML = "<p style='text-align:center; opacity:0.5; font-size:12px;'>Estoque vazio.</p>";
+                return;
+            }
+
+            lista.forEach((item) => {
+                const card = document.createElement('div');
+                card.className = 'card-estoque';
+                
+                // Define a cor da etiqueta baseada na categoria
+                let classeCor = "bg-insumo";
+                let nomeCategoria = "Insumo";
+                if(item.categoria === "maquina") { classeCor = "bg-maquina"; nomeCategoria = "Máquina"; }
+                if(item.categoria === "peca") { classeCor = "bg-peca"; nomeCategoria = "Peça/Material"; }
+
+                card.innerHTML = `
+                    <div class="info-estoque" style="flex:1;">
+                        <b>${item.nome}</b>
+                        <span class="badge ${classeCor}">${nomeCategoria}</span>
+                        <div style="font-size:11px; margin-top:5px; color:#999;">Mínimo ideal: ${item.minimo || 0}</div>
+                    </div>
+                    <div class="qtd-destaque">
+                        ${item.quantidade}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        });
+    }
+
+    // 2. SALVAR NOVO ITEM
+    document.getElementById('formEstoque').onsubmit = async function(e) {
+        e.preventDefault();
+        
+        const dados = {
+            nome: document.getElementById('nomeItem').value,
+            categoria: document.getElementById('categoriaItem').value,
+            quantidade: parseInt(document.getElementById('qtdItem').value),
+            minimo: parseInt(document.getElementById('minimoItem').value) || 0,
+            dataAtualizacao: new Date().toISOString()
+        };
+
+        try {
+            await dbSalvarItemEstoque(dados);
+            document.getElementById('formEstoque').reset();
+            alert("Item adicionado com sucesso!");
+        } catch (err) {
+            console.error("Erro:", err);
+            alert("Erro ao salvar no banco.");
+        }
+    };
+
+    carregarEstoque();
+</script>
+</body>
+</html>
