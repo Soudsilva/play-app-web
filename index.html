@@ -1,226 +1,152 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play Diversões</title>
 
-<title>Play Diversões</title>
+    <style>
+        /* =========================================
+        CONFIGURAÇÃO GLOBAL DO APP
+        ========================================= */
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0f2a66;
+            display: flex;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-<style>
+        .app {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
 
-/* =========================================
-CONFIGURAÇÃO GLOBAL DO APP
-Foco: desempenho e simplicidade
-========================================= */
+        .logo img {
+            width: 100%;
+            max-width: 220px;
+            position: relative;
+            left: -1px;
+        }
 
-body{
-margin:0;
-font-family:Arial, Helvetica, sans-serif;
-background:#0f2a66;
-display:flex;
-justify-content:center;
+        .ola {
+            font-size: 30px;
+            margin: 20px 0 30px 0;
+            color: #cfd6e3;
+            user-select: none;
+            -webkit-user-select: none;
+        }
 
-/* remove o flash azul ao tocar no celular */
--webkit-tap-highlight-color: transparent;
-}
+        /* =========================================
+        MENU E BOTÕES (CENTRALIZADOS)
+        ========================================= */
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
-.app{
-width:100%;
-max-width:420px;
-padding:20px;
-box-sizing:border-box;
-text-align:center;
-}
+        .botao {
+            position: relative; /* Base para o ícone absoluto */
+            background: #4467a8;
+            border: 4px solid #d7dce3;
+            border-radius: 45px;
+            padding: 10px;     /*altura do botão*/
+            min-height: 35px; /* Garante altura mínima */
+            cursor: pointer;
+            transition: 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Centraliza o conteúdo principal (texto) */
+            user-select: none;
+            -webkit-user-select: none;
+        }
 
-/* =========================================
-LOGO
-========================================= */
+        /* O Ícone fica "preso" na esquerda sem empurrar o texto */
+        .icone {
+            position: absolute;
+            left: 20px; /* Distância da borda esquerda */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 25px;
+        }
 
-.logo img{
+        /* O texto ocupa o centro real do botão */
+        .botao span:last-child {
+            color: white;
+            font-size: 25px;
+            font-weight: bold;
+            text-align: center;
+            width: 100%;
+        }
 
-width:100%;
-max-width:220px;
+        .botao:hover { background: #3c5f9f; }
+        .botao:active { transform: translateY(2px); background: #355792; transition: 0.05s; }
 
-/* permite mover a imagem manualmente */
-position:relative;
-
-/* move a logo para esquerda */
-left:-1px;
-
-}
-
-/* =========================================
-SAUDAÇÃO
-========================================= */
-
-.ola{
-font-size:30px;
-margin:20px 0 30px 0;
-color:#cfd6e3;
-
-/* impede selecionar/copiar o texto */
-user-select:none;
--webkit-user-select:none;
--moz-user-select:none;
-}
-
-/* =========================================
-MENU PRINCIPAL
-========================================= */
-
-.menu{
-display:flex;
-flex-direction:column;
-gap:20px;
-}
-
-/* =========================================
-BOTÕES tela inical
-========================================= */
-
-.botao{
-
-position:relative;
-
-background:#4467a8;
-
-border:4px solid #d7dce3;
-
-border-radius:45px;
-
-padding:15px;  /* altura dos botões*/
-
-font-size:25px; /* tamanho do texto dos botões */
-
-font-weight:bold;
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
-cursor:pointer;
-
-transition:0.15s;
-
-color:white;
-
-/* impede selecionar texto (copiar) no botão */
-user-select:none;
--webkit-user-select:none;
--moz-user-select:none;
-
-}
-
-/* texto centralizado */
-
-.botao span:last-child{
-
-width:100%;
-
-text-align:center;
-
-}
-
-.botao:hover{
-background:#3c5f9f;
-}
-
-/* =========================================
-EFEITO DE CLIQUE NO BOTÃO
-========================================= */
-
-.botao:active{
-
-/* botão "afunda" um pouco quando pressionado */
-transform:translateY(2px);
-
-/* escurece levemente o botão */
-background:#355792;
-
-/* animação rápida de pressão */
-transition:0.05s;
-
-}
-
-</style>
-
+    </style>
 </head>
 
 <body>
 
 <div class="app">
 
-<!-- =========================================
-TELA INICIAL - INICIO
-========================================= -->
+    <div class="logo">
+        <img src="assets/img/logo.png">
+    </div>
 
-<div class="logo">
-<img src="assets/img/logo.png">
-</div>
+    <div class="ola">
+        Olá, Anderson
+    </div>
 
-<div class="ola">
-Olá, Anderson
-</div>
+    <div class="menu">
 
-<div class="menu">
+        <div class="botao" onclick="abrirTela('atendimento')">
+            <span class="icone">🤝</span>
+            <span>Atendimento</span>
+        </div>
 
-<div class="botao" onclick="abrirTela('atendimento')">
-<span class="icone">🤝</span>
-<span>Atendimento</span>
-</div>
+        <div class="botao" onclick="window.location.href='clientes.html'">
+            <span class="icone">🔍</span>
+            <span>Lista de Clientes</span>
+        </div>
 
-<div class="botao" onclick="window.location.href='clientes.html'">
-<span class="icone">🔍</span>
-<span>Lista de Clientes</span>
-</div>
+        <div class="botao" onclick="abrirTela('manutencao')">
+            <span class="icone">🔧</span>
+            <span>Manutenção</span>
+        </div>
 
-<div class="botao" onclick="abrirTela('manutencao')">
-<span class="icone">🔧</span>
-<span>Manutenção</span>
-</div>
+        <div class="botao" onclick="abrirTela('gestao')">
+            <span class="icone">📦</span>
+            <span>Gestão</span>
+        </div>
 
-<div class="botao" onclick="abrirTela('gestao')">
-<span class="icone">📦</span>
-<span>Gestão</span>
-</div>
+        <div class="botao" onclick="abrirTela('rotas')">
+            <span class="icone">🚀</span>
+            <span>Seleção de rotas</span>
+        </div>
 
-<div class="botao" onclick="abrirTela('rotas')">
-<span class="icone">🚀</span>
-<span>Seleção de rotas</span>
-</div>
+        <div class="botao" onclick="window.location.href='cadastrar_colaborador.html'">
+            <span class="icone">
+                <img src="assets/img/boneco-cadastrar.png" 
+                     alt="Cadastrar" 
+                     style="width: 35px; height: 35px; vertical-align: middle;">
+            </span>
+            <span>Cad. Colaborador</span>
+        </div>
 
-<div class="botao" onclick="window.location.href='cadastrar_colaborador.html'">
-    <span class="icone">🚀</span>
-    <span style="font-size: 22px;">Cadastrar Colaborador</span>
-</div>
-
-</div>
-
-<!-- =========================================
-TELA INICIAL - FIM
-========================================= -->
+    </div>
 
 </div>
 
 <script>
-
-/* =========================================
-FUNÇÃO DE NAVEGAÇÃO
-========================================= */
-
-function abrirTela(tela){
-
-// alerta removido para não mostrar confirmação
-
-/*
-Aqui depois vamos programar a navegação real
-entre as telas do aplicativo
-*/
-
-}
-
+    function abrirTela(tela){
+        console.log("Abrindo tela: " + tela);
+    }
 </script>
 
 </body>

@@ -10,12 +10,38 @@
         body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; }
         .app { width:100%; max-width:420px; padding:15px; box-sizing:border-box; min-height: 100vh; }
         
-        /* Cabeçalho */
-        .topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .titulo { font-size: 24px; font-weight:bold; }
-        .btn-home { background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 50%; cursor: pointer; display: flex; }
-        .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
+        /* Cabeçalho Ajustado e Centralizado */
+        .topo { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-bottom: 20px; 
+            position: relative; /* Mantém o botão dentro do cabeçalho */
+            width: 100%;
+            min-height: 45px;
+        }
 
+        .titulo { 
+            font-size: 24px; 
+            font-weight: bold; 
+            text-align: center;
+        }
+
+        .btn-home { 
+            background: rgba(255, 255, 255, 0.1); 
+            padding: 8px; 
+            border-radius: 50%; 
+            cursor: pointer; 
+            display: flex; 
+            position: absolute; /* O botão flutua na direita */
+            right: 0; 
+        }
+
+        .btn-home img { 
+            width: 20px; 
+            height: 20px; 
+            filter: brightness(0) invert(1); 
+        }
         /* Galeria de Itens (Lista) */
         .secao-lista { margin-bottom: 25px; max-height: 300px; overflow-y: auto; padding-right: 5px; border-radius: 8px; }
         .subtitulo { font-size: 16px; color: #ffeb3b; margin-bottom: 12px; font-weight: bold; text-align: center; text-transform: uppercase; }
@@ -73,17 +99,34 @@
                 <label class="label-focada">Cargo</label>
                 <input type="text" id="cargoColaborador" placeholder="Ex: Técnico">
             </div>
+           
+           
             <div style="flex: 1;">
-                <label class="label-focada">Comissão %</label>
-                <input type="text" id="comissaoColaborador" placeholder="0%">
-            </div>
-        </div>
+    <label class="label-focada">Comissão %</label>
+    <input type="text" 
+           id="comissaoColaborador" 
+           placeholder="0%" 
+           inputmode="numeric" 
+           maxlength="3" 
+           oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,2)"
+           onfocus="this.value = this.value.replace('%', '')"
+           onblur="if(this.value && !this.value.includes('%') && this.value !== '') this.value += '%'">
+    </div>
+        
+    </div>
 
         <div style="display: flex; gap: 10px;">
             <div style="flex: 1.5;">
                 <label class="label-focada">Senha Global</label>
-                <input type="text" id="senhaColaborador" placeholder="Senha">
+                <input type="text" 
+                       id="senhaColaborador" 
+                       placeholder="0000" 
+                       inputmode="numeric" 
+                       maxlength="4" 
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,4)">
             </div>
+            
+            
             <div style="flex: 2;">
                 <label class="label-focada">Perfil</label>
                 <select id="nivelAcesso">
