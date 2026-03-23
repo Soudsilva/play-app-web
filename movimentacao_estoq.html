@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movimentação de Estoque</title>
+    <style>
+        body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; }
+        .app { width:100%; max-width:420px; padding:15px; box-sizing:border-box; min-height: 100vh; }
+        
+        /* Topo */
+        .topo { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; position: relative; width: 100%; min-height: 45px; }
+        .titulo { font-size: 24px; font-weight: bold; text-align: center; }
+        .btn-home { background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 50%; cursor: pointer; display: flex; position: absolute; right: 0; }
+        .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
+
+        /* Botões de Tipo de Movimento (Abas) */
+        .tipo-movimento { display: flex; margin-bottom: 20px; background: rgba(0,0,0,0.2); border-radius: 30px; padding: 5px; }
+        .btn-mov { flex: 1; padding: 12px; text-align: center; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.3s; opacity: 0.6; font-size: 13px; }
+        .btn-mov.ativo { opacity: 1; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        
+        .entrada.ativo { background: #4caf50; } /* Verde */
+        .saida.ativo { background: #f44336; }   /* Vermelho */
+
+        /* Card de Formulário */
+        .card-form { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); }
+
+        /* Linha dos Inputs (Ajustada para caber tudo) */
+        .linha-inputs { display: flex; gap: 5px; align-items: center; margin-bottom: 15px; }
+        
+        select, input { 
+            padding: 10px 5px; 
+            border-radius: 8px; 
+            border: 1px solid #ccc; 
+            background: white; 
+            color: #333; 
+            font-size: 13px; 
+            outline: none; 
+            height: 45px;
+            box-sizing: border-box;
+        }
+        
+        /* Larguras Proporcionais */
+        .sel-tipo { width: 34%; }   /* Categoria (Reduzido) */
+        .sel-item { width: 60%; }   /* Nome do Item (Aumentado para caber nomes longos) */
+        .inp-qtd  { width:20%; text-align: center; } /* Qtd (Canto Direito compacto) */
+
+        .btn-confirmar { 
+            width: 100%; padding: 15px; border: none; border-radius: 30px; 
+            font-size: 16px; font-weight: bold; color: white; cursor: pointer; 
+            transition: 0.2s; margin-top: 10px;
+        }
+
+        .info-atual { text-align: center; font-size: 12px; color: #ccc; margin-top: 10px; }
+        .destaque-qtd { color: #ffeb3b; font-weight: bold; font-size: 16px; }
+        .label-pequena { font-size: 11px; color: #ccc; margin-bottom: 4px; display: block; margin-top: 10px; }
+
+        /* Estilo do Histórico */
+        .secao-historico { margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; }
+        .titulo-hist { font-size: 14px; color: #ffeb3b; font-weight: bold; margin-bottom: 10px; text-align: center; text-transform: uppercase; }
+        .item-hist { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .hist-esq { display: flex; flex-direction: column; gap: 2px; }
+        .hist-dir { text-align: right; font-weight: bold; }
+        
+        .tag-entrada { color: #4caf50; font-weight: bold; }
+        .tag-saida { color: #f44336; font-weight: bold; }
+        
+        /* [NOVO] Classes para controlar o tamanho da fonte da lista aqui */
+        .hist-tipo-label { font-size: 20px; font-weight: bold; }
+        .hist-nome-item { font-size: 18px; color: white; font-weight: bold; } /* <--- TAMANHO DO NOME DO PRODUTO */
+        .hist-resp-label { font-size: 18px; }
+        .hist-data { font-size: 15px; color: #999; } /* <--- TAMANHO DA DATA E HORA */
+        .hist-obs-label { font-size: 18px; font-style: italic; color: #aaa; }
+        .hist-dir { font-size: 25px; } /* <--- TAMANHO DA QUANTIDADE (Número) */
+
+        /* Botões de Ação no Histórico */
+        .acoes-hist { display: flex; gap: 20px; margin-top: 5px; justify-content: flex-end; width: 100%; }
+        .btn-hist { font-size: 10px; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; border: none; }
+        .btn-excluir-hist { background: #f44336; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div class="topo">
+        <div class="titulo">Movimentação</div>
+        <div class="btn-home" onclick="window.location.href='index.html'">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
+        </div>
+    </div>
+
+    <div class="tipo-movimento">
+        <div id="tabSaida" class="btn-mov saida ativo" onclick="mudarModo('saida')">SAÍDA (-)</div>
+        <div id="tabEntrada" class="btn-mov entrada" onclick="mudarModo('entrada')">ENTRADA (+)</div>
+    </div>
+
+    <div class="card-form">
+        <label style="display:block; margin-bottom:8px; font-size:11px; opacity:0.8; text-align: center;">TIPO | ITEM | QTD</label>
+        
+        <div class="linha-inputs">
+            <select id="filtroCategoria" class="sel-tipo" onchange="filtrarItens()">
+                <option value="maquina">Máquina</option>
+                <option value="peca">Peça</option>
+                <option value="insumo">Insumo</option>
+            </select>
+
+            <select id="selectItem" class="sel-item" onchange="mostrarSaldoAtual()">
+                <option value="">Carregando...</option>
+            </select>
+
+            <input type="number" id="qtdInput" class="inp-qtd" placeholder="0" min="1">
+        </div>
+
+        <label class="label-pequena">Responsável pela ação:</label>
+        <select id="responsavel" style="width: 100%; margin-bottom: 5px;">
+            <option value="">Selecione...</option>
+        </select>
+
+        <label class="label-pequena">Observação:</label>
+        <input type="text" id="observacao" placeholder="Ex: Quebrou, Reposição, Cliente X..." style="width: 100%;">
+
+        <div class="info-atual" id="textoSaldo">Selecione um item.</div>
+
+        <button class="btn-confirmar" id="btnAcao" style="background:#f44336;" onclick="salvarMovimentacao()">CONFIRMAR SAÍDA</button>
+    </div>
+
+    <div class="secao-historico">
+        <div class="titulo-hist">Últimas Movimentações</div>
+        <div id="listaHistorico">
+            <p style="text-align:center; font-size:11px; opacity:0.5;">Carregando...</p>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbSalvarHistorico, dbEscutarHistorico, dbExcluirHistorico } from './database.js';
+
+    let listaGlobal = [];
+    let modoAtual = 'saida';
+
+    // 1. CARREGAR ITENS DO BANCO
+    dbEscutarEstoque((lista) => {
+        listaGlobal = lista;
+        filtrarItens(); 
+    });
+
+    // [NOVO] CARREGAR HISTÓRICO
+    dbEscutarHistorico((lista) => {
+        const container = document.getElementById('listaHistorico');
+        container.innerHTML = "";
+        
+        // Inverte a lista para mostrar o mais recente em cima
+        // Precisamos mapear as chaves firebase também se vierem do Object.values, 
+        // mas dbEscutarHistorico no database.js já manda array simples. 
+        // O ideal é garantir que temos o ID do histórico (firebaseUrl)
+        // Vou assumir que o database.js manda o objeto completo com chave se ajustarmos, 
+        // mas como lá está Object.values(data), precisamos garantir que a chave vá junto.
+        // Para simplificar, vou confiar que a ordem está certa.
+        
+        const listaInvertida = lista.reverse();
+
+        if(listaInvertida.length === 0) {
+            container.innerHTML = '<p style="text-align:center; font-size:11px; opacity:0.5;">Sem histórico recente.</p>';
+            return;
+        }
+
+        listaInvertida.forEach((mov, index) => {
+            const classeCor = mov.tipo === 'entrada' ? 'tag-entrada' : 'tag-saida';
+            const textoTipo = mov.tipo === 'entrada' ? 'ENTRADA' : 'SAÍDA';
+            
+            const div = document.createElement('div');
+            div.className = 'item-hist';
+            div.style.flexDirection = 'column'; // Para acomodar os botões embaixo se necessário
+            div.style.alignItems = 'stretch';
+
+            div.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="hist-esq">
+                        <span class="hist-tipo-label" style="color:${mov.tipo === 'entrada' ? '#4caf50' : '#f44336'}">${textoTipo}</span>
+                        <span class="hist-nome-item">${mov.itemNome}</span>
+                        <span class="hist-resp-label">Resp: ${mov.responsavel}</span>
+                        <span class="hist-data">${new Date(mov.data).toLocaleString('pt-BR')}</span>
+                        ${mov.obs ? `<span class="hist-obs-label">Obs: ${mov.obs}</span>` : ''}
+                    </div>
+                    <div class="hist-dir ${classeCor}">
+                        ${mov.qtd}
+                    </div>
+                </div>
+            `;
+
+            // ADICIONA OS BOTÕES SOMENTE SE FOR O PRIMEIRO (ÍNDICE 0)
+            if (index === 0) {
+                const divAcoes = document.createElement('div');
+                divAcoes.className = 'acoes-hist';
+                
+                // Convertemos o objeto mov para string para passar na função
+                const movString = encodeURIComponent(JSON.stringify(mov));
+
+                divAcoes.innerHTML = `
+                    <button class="btn-hist btn-excluir-hist" onclick="excluirUltimo('${movString}')">EXCLUIR</button>
+                `;
+                div.appendChild(divAcoes);
+            }
+
+            container.appendChild(div);
+        });
+    });
+
+    // [NOVO] CARREGAR COLABORADORES PARA O DROPDOWN
+    dbEscutarColaboradores((colabs) => {
+        const select = document.getElementById('responsavel');
+        select.innerHTML = '<option value="">Selecione o Responsável...</option>';
+        colabs.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.nome; // Salva o nome do colaborador
+            opt.innerText = c.nome;
+            select.appendChild(opt);
+        });
+    });
+
+    // 2. FILTRAR ITENS POR CATEGORIA
+    window.filtrarItens = function() {
+        const categoriaSelecionada = document.getElementById('filtroCategoria').value;
+        const selectItem = document.getElementById('selectItem');
+        const valorAnterior = selectItem.value; // Salva o que estava selecionado antes de limpar
+        
+        selectItem.innerHTML = "";
+
+        const itensFiltrados = listaGlobal.filter(item => item.categoria === categoriaSelecionada);
+
+        if (itensFiltrados.length === 0) {
+            const opt = document.createElement('option');
+            opt.value = "";
+            opt.innerText = "Vazio";
+            selectItem.appendChild(opt);
+            document.getElementById('textoSaldo').innerText = "Nenhum item nesta categoria.";
+            return;
+        }
+
+        itensFiltrados.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.firebaseUrl; 
+            option.innerText = item.nome;
+            option.dataset.qtdAtual = item.quantidade || 0;
+            selectItem.appendChild(option);
+        });
+
+        // Se o item que estava selecionado ainda existe na lista, seleciona ele de volta
+        if (valorAnterior && [...selectItem.options].some(o => o.value === valorAnterior)) {
+            selectItem.value = valorAnterior;
+        }
+
+        mostrarSaldoAtual();
+    };
+
+    // 3. MOSTRAR SALDO
+    window.mostrarSaldoAtual = function() {
+        const select = document.getElementById('selectItem');
+        const itemSelecionado = select.options[select.selectedIndex];
+        
+        if (itemSelecionado && itemSelecionado.value) {
+            const qtd = itemSelecionado.dataset.qtdAtual;
+            document.getElementById('textoSaldo').innerHTML = `Saldo atual: <span class="destaque-qtd">${qtd}</span>`;
+        }
+    };
+
+    // 4. MUDAR MODO
+    window.mudarModo = function(modo) {
+        modoAtual = modo;
+        const btn = document.getElementById('btnAcao');
+        
+        if (modo === 'entrada') {
+            document.getElementById('tabEntrada').classList.add('ativo');
+            document.getElementById('tabSaida').classList.remove('ativo');
+            btn.innerText = "CONFIRMAR ENTRADA";
+            btn.style.background = "#4caf50";
+        } else {
+            document.getElementById('tabSaida').classList.add('ativo');
+            document.getElementById('tabEntrada').classList.remove('ativo');
+            btn.innerText = "CONFIRMAR SAÍDA";
+            btn.style.background = "#f44336";
+        }
+    };
+
+    // 5. ATUALIZAR ESTOQUE NO BANCO
+    window.salvarMovimentacao = async function() {
+        const idItem = document.getElementById('selectItem').value;
+        const qtdMovimento = parseInt(document.getElementById('qtdInput').value);
+        const responsavel = document.getElementById('responsavel').value;
+        const obs = document.getElementById('observacao').value;
+
+        if (!idItem) return alert("Selecione um item.");
+        if (isNaN(qtdMovimento) || qtdMovimento <= 0) return alert("Informe a quantidade.");
+        if (!responsavel) return alert("Selecione o responsável.");
+
+        const itemOriginal = listaGlobal.find(i => i.firebaseUrl === idItem);
+        if (!itemOriginal) return alert("Erro ao localizar item.");
+
+        let novaQtd = parseInt(itemOriginal.quantidade) || 0;
+
+        if (modoAtual === 'entrada') {
+            novaQtd += qtdMovimento;
+        } else {
+            if (qtdMovimento > novaQtd) {
+                return alert("Quantidade insuficiente em estoque!");
+            }
+            novaQtd -= qtdMovimento;
+        }
+
+        // Criamos a cópia do objeto para atualizar no Firebase
+        const itemParaSalvar = {
+            nome: itemOriginal.nome,
+            categoria: itemOriginal.categoria,
+            quantidade: novaQtd,
+            minimo: itemOriginal.minimo || 0,
+            dataAtualizacao: new Date().toISOString(),
+            // Salvamos quem mexeu por último para controle
+            ultimo_responsavel: responsavel,
+            ultima_obs: obs
+        };
+
+        // Objeto para o Histórico (Registro Eterno)
+        const registroHistorico = {
+            data: new Date().toISOString(),
+            tipo: modoAtual,
+            itemUrl: idItem, // SALVAMOS O ID PARA PODER REVERTER DEPOIS
+            itemNome: itemOriginal.nome,
+            qtd: qtdMovimento,
+            responsavel: responsavel,
+            obs: obs
+        };
+
+        try {
+            await dbSalvarItemEstoque(itemParaSalvar, idItem);
+            await dbSalvarHistorico(registroHistorico); // Salva no histórico também
+            alert("Sucesso! Novo saldo: " + novaQtd);
+            document.getElementById('qtdInput').value = ""; // Limpa a quantidade após salvar
+            document.getElementById('observacao').value = ""; // Limpa obs
+        } catch (error) {
+            alert("Erro ao salvar.");
+            console.error(error);
+        }
+    };
+
+    // --- FUNÇÕES DE CORREÇÃO (EDITAR/EXCLUIR ÚLTIMO) ---
+
+    // Reverte o estoque e apaga o histórico
+    window.excluirUltimo = async function(movString) {
+        if(!confirm("Deseja desfazer essa movimentação? O saldo do estoque será revertido.")) return;
+        
+        const mov = JSON.parse(decodeURIComponent(movString));
+        // Precisamos encontrar o item no estoque atual para atualizar o saldo
+        const itemEstoque = listaGlobal.find(i => i.firebaseUrl === mov.itemUrl);
+
+        if(!itemEstoque) {
+            alert("Erro: O item associado não existe mais no estoque.");
+            return;
+        }
+
+        let novaQtd = parseInt(itemEstoque.quantidade);
+
+        // Lógica Inversa: Se foi Entrada, subtrai. Se foi Saída, soma.
+        if(mov.tipo === 'entrada') {
+            novaQtd -= parseInt(mov.qtd);
+        } else {
+            novaQtd += parseInt(mov.qtd);
+        }
+
+        try {
+            // 1. Atualiza Estoque
+            await dbSalvarItemEstoque({ ...itemEstoque, quantidade: novaQtd }, mov.itemUrl);
+            
+            // 2. Remove do Histórico (Precisamos que o database.js traga a chave firebaseUrl no histórico também)
+            // NOTA IMPORTANTE: Como ajustamos o database.js para ler com Object.values, precisamos garantir que a chave venha.
+            // Vou corrigir o database.js no próximo passo se necessário, mas aqui vamos assumir que 'mov' tem firebaseUrl.
+            if(mov.firebaseUrl) {
+               await dbExcluirHistorico(mov.firebaseUrl);
+            } else {
+               // Se por acaso não tiver ID, recarregamos para tentar pegar (fallback)
+               alert("Erro de identificação do registro. Atualizando...");
+               window.location.reload();
+            }
+
+        } catch (err) {
+            alert("Erro ao desfazer.");
+            console.error(err);
+        }
+    };
+
+</script>
+
+</body>
+</html>

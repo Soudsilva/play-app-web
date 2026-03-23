@@ -15,7 +15,9 @@ import {
     push, 
     remove, 
     onValue,
-    update // ADICIONADO: Necessário para atualizar apenas a ordem
+    update,
+    query,
+    limitToLast
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 // --- 2. CONFIGURAÇÃO (AS CHAVES DO COFRE) ---
@@ -76,6 +78,58 @@ export async function dbSalvarCliente(cliente, idExistente = null) {
         console.error("ERRO AO SALVAR CLIENTE:", error);
         throw error;
     }
+}
+
+// [BLOCO: EMERGÊNCIA - LIMPAR TUDO]
+export async function dbLimparHistoricoCompleto() {
+    try {
+        const histRef = ref(db, 'historico_estoque');
+        await remove(histRef);
+    } catch (error) {
+        console.error("Erro ao limpar histórico completo:", error);
+        throw error;
+    }
+}
+
+// [BLOCO: HISTÓRICO - EXCLUIR]
+export async function dbExcluirHistorico(id) {
+    try {
+        const histRef = ref(db, `historico_estoque/${id}`);
+        await remove(histRef);
+    } catch (error) {
+        console.error("Erro ao excluir histórico:", error);
+        throw error;
+    }
+}
+
+// [BLOCO: HISTÓRICO DE MOVIMENTAÇÃO]
+// Grava um registro eterno de cada entrada ou saída
+export async function dbSalvarHistorico(movimento) {
+    try {
+        const histRef = ref(db, 'historico_estoque');
+        await push(histRef, movimento);
+    } catch (error) {
+        console.error("Erro ao salvar histórico:", error);
+    }
+}
+
+// Escuta apenas os últimos 20 movimentos para exibir na tela
+export function dbEscutarHistorico(callback) {
+    const histRef = ref(db, 'historico_estoque');
+    const ultimosQuery = query(histRef, limitToLast(20));
+
+    onValue(ultimosQuery, (snapshot) => {
+        const data = snapshot.val();
+        const lista = [];
+        if (data) {
+            // Mapeia adicionando o ID (firebaseUrl)
+            Object.keys(data).forEach(key => {
+                lista.push({ ...data[key], firebaseUrl: key });
+            });
+        }
+        // O Firebase devolve na ordem cronológica (antigo -> novo), vamos inverter na tela depois
+        callback(lista);
+    });
 }
 
 // FUNÇÃO: EXCLUIR CLIENTE
@@ -185,10 +239,17 @@ export async function dbExcluirColaborador(id) {
 }
 
 // [BLOCO: ESTOQUE - SALVAR ITEM]
-export async function dbSalvarItemEstoque(item) {
+export async function dbSalvarItemEstoque(item, id = null) {
     try {
-        const estoqueRef = ref(db, 'estoque');
-        await push(estoqueRef, item);
+        if (id) {
+            // Se tem ID, atualiza o item existente
+            const itemRef = ref(db, `estoque/${id}`);
+            await update(itemRef, item);
+        } else {
+            // Se não tem ID, cria um novo
+            const estoqueRef = ref(db, 'estoque');
+            await push(estoqueRef, item);
+        }
     } catch (error) {
         console.error("Erro ao salvar no estoque:", error);
         throw error;
@@ -207,7 +268,22 @@ export function dbEscutarEstoque(callback) {
             }
         }
         // Ordena por ordem alfabética
-        lista.sort((a, b) => a.nome.localeCompare(b.nome));
+        lista.sort((a, b) => {
+            const nomeA = (a.nome || "").toUpperCase();
+            const nomeB = (b.nome || "").toUpperCase();
+            return nomeA.localeCompare(nomeB);
+        });
         callback(lista);
     });
+}
+
+// [BLOCO: ESTOQUE - EXCLUIR ITEM]
+export async function dbExcluirItemEstoque(id) {
+    try {
+        const itemRef = ref(db, `estoque/${id}`);
+        await remove(itemRef);
+    } catch (error) {
+        console.error("Erro ao excluir do estoque:", error);
+        throw error;
+    }
 }

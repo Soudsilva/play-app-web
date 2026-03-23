@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Estoque</title>
     <style>
-        /* O mesmo estilo visual do seu app */
         body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; }
         .app { width:100%; max-width:420px; padding:15px; box-sizing:border-box; min-height: 100vh; }
         
@@ -17,27 +16,38 @@
         .secao-lista { margin-bottom: 25px; max-height: 400px; overflow-y: auto; padding-right: 5px; border-radius: 8px; }
         .subtitulo { font-size: 16px; color: #ffeb3b; margin-bottom: 12px; font-weight: bold; text-align: center; text-transform: uppercase; }
         
-        /* Estilo dos Cards de Estoque */
         .card-estoque { background: white; color: #333; border-radius: 12px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
         .info-estoque b { color: #042d86; font-size: 16px; display: block; }
         .info-estoque div { color: #666; font-size: 13px; font-weight: 500; }
         
-        /* Badge (Etiqueta) da categoria */
         .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; color: white; margin-top: 5px;}
         .bg-maquina { background: #9c27b0; }
         .bg-insumo { background: #4caf50; }
         .bg-peca { background: #ff9800; }
 
-        .qtd-destaque { font-size: 20px; font-weight: bold; color: #042d86; text-align: center; background: #f0f0f0; padding: 8px 15px; border-radius: 8px; }
+        .qtd-destaque { font-size: 20px; font-weight: bold; color: #042d86; text-align: center; background: #f0f0f0; padding: 8px 15px; border-radius: 8px; min-width: 40px; }
+
+        .acoes-card { display: flex; flex-direction: column; gap: 5px; margin-left: 12px; }
+        .btn-editar-card { background: #e3f2fd; color: #1976d2; padding: 6px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; text-align: center; border: 1px solid #1976d2; }
+        .btn-excluir-card { background: #ffebee; color: #c62828; padding: 6px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; text-align: center; border: 1px solid #c62828; }
 
         .divisor { border-top: 1px solid rgba(255,255,255,0.3); margin: 25px 0; position: relative; text-align: center; }
         .divisor span { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #042d86; padding: 0 10px; font-size: 11px; color: #ffeb3b; }
         .form-container { display: flex; flex-direction: column; gap: 10px; padding-bottom: 40px; }
         .label-focada { font-size: 12px; color: #ffeb3b; font-weight: bold; margin-bottom: 4px; display: block; }
-        input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255,255,255,0.05); color: white; box-sizing:border-box; font-size: 14px; outline: none; }
+        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255,255,255,0.05); color: white; box-sizing:border-box; font-size: 14px; outline: none; }
         input::placeholder { color: rgba(255,255,255,0.4); }
         select option { background: #042d86; color: white; }
         .btn-salvar { background:#4caf50; padding:14px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-top: 10px; border: none; color: white; width: 100%; font-size: 15px; transition: 0.3s; }
+
+        /* Personalização do Campo de Busca (Branco e Centralizado) */
+        #campoPesquisa {
+            background: #fff; color: #333; width: 75%; display: block; margin: 0 auto 15px auto;
+            padding: 8px; /* <--- MUDE AQUI (Quanto menor o número, mais fino o campo) */
+        }
+        #campoPesquisa::placeholder {
+            color: #888; /* Cor cinza para o texto de ajuda ficar visível no fundo branco */
+        }
     </style>
 </head>
 <body>
@@ -52,12 +62,13 @@
 
     <div class="secao-lista">
         <div class="subtitulo">Itens Registrados</div>
+        <input type="text" id="campoPesquisa" placeholder="🔍 Buscar item...">
         <div id="containerEstoque">
             <p style='text-align:center; opacity:0.5; font-size:12px;'>Carregando itens...</p>
         </div>
     </div>
 
-    <div class="divisor"><span>CADASTRAR NOVO ITEM</span></div>
+    <div class="divisor"><span>CADASTRAR / EDITAR ITEM</span></div>
 
     <form class="form-container" id="formEstoque">
         <input type="hidden" id="idItem" value=""> 
@@ -67,15 +78,13 @@
             <input type="text" id="nomeItem" placeholder="Ex: Pelúcia 20cm, Motor, Grua..." required>
         </div>
 
-        <div style="display: flex; gap: 10px;">
-            <div style="flex: 2;">
-                <label class="label-focada">Categoria</label>
-                <select id="categoriaItem">
-                    <option value="insumo">Insumo (Pelúcia, Bolinha)</option>
-                    <option value="peca">Peça/Material (Motor, Fita, Placa)</option>
-                    <option value="maquina">Máquina (Grua, Vending)</option>
-                </select>
-            </div>
+        <div>
+            <label class="label-focada">Categoria</label>
+            <select id="categoriaItem">
+                <option value="insumo">Insumo</option>
+                <option value="peca">Peças</option>
+                <option value="maquina">Máquinas</option>
+            </select>
         </div>
 
         <div style="display: flex; gap: 10px;">
@@ -90,11 +99,23 @@
         </div>
 
         <button type="submit" class="btn-salvar" id="btnSalvarEstoque">+ Adicionar ao Estoque</button>
+        <button type="button" id="btnCancelarEdicao" style="display:none; background:transparent; color:white; border:none; font-size:12px; cursor:pointer; margin-top:5px;" onclick="cancelarEdicao()">Cancelar Edição</button>
     </form>
 </div>
 
 <script type="module">
-    import { dbEscutarEstoque, dbSalvarItemEstoque } from './database.js';
+    import { dbEscutarEstoque, dbSalvarItemEstoque, dbExcluirItemEstoque } from './database.js';
+
+    // [NOVO] LÓGICA DE PESQUISA (Filtra os cards na tela)
+    document.getElementById('campoPesquisa').addEventListener('input', function(e) {
+        const termo = e.target.value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const cards = document.querySelectorAll('.card-estoque');
+        
+        cards.forEach(card => {
+            const nome = card.querySelector('.info-estoque b').innerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            card.style.display = nome.includes(termo) ? 'flex' : 'none';
+        });
+    });
 
     // 1. CARREGAR A LISTA DE ESTOQUE
     function carregarEstoque() {
@@ -111,11 +132,10 @@
                 const card = document.createElement('div');
                 card.className = 'card-estoque';
                 
-                // Define a cor da etiqueta baseada na categoria
                 let classeCor = "bg-insumo";
                 let nomeCategoria = "Insumo";
                 if(item.categoria === "maquina") { classeCor = "bg-maquina"; nomeCategoria = "Máquina"; }
-                if(item.categoria === "peca") { classeCor = "bg-peca"; nomeCategoria = "Peça/Material"; }
+                if(item.categoria === "peca") { classeCor = "bg-peca"; nomeCategoria = "Peça"; }
 
                 card.innerHTML = `
                     <div class="info-estoque" style="flex:1;">
@@ -123,19 +143,27 @@
                         <span class="badge ${classeCor}">${nomeCategoria}</span>
                         <div style="font-size:11px; margin-top:5px; color:#999;">Mínimo ideal: ${item.minimo || 0}</div>
                     </div>
-                    <div class="qtd-destaque">
-                        ${item.quantidade}
+                    <div class="qtd-destaque">${item.quantidade}</div>
+                    <div class="acoes-card">
+                        <div class="btn-editar-card" onclick="prepararEdicao('${item.firebaseUrl}', '${item.nome}', '${item.categoria}', ${item.quantidade}, ${item.minimo})">EDITAR</div>
+                        <div class="btn-excluir-card" onclick="excluirItem('${item.firebaseUrl}')">EXCLUIR</div>
                     </div>
                 `;
                 container.appendChild(card);
             });
+
+            // Se já tiver algo escrito na busca (ex: numa atualização automática), reaplica o filtro
+            if(document.getElementById('campoPesquisa').value) {
+                document.getElementById('campoPesquisa').dispatchEvent(new Event('input'));
+            }
         });
     }
 
-    // 2. SALVAR NOVO ITEM
+    // 2. SALVAR OU ATUALIZAR ITEM
     document.getElementById('formEstoque').onsubmit = async function(e) {
         e.preventDefault();
         
+        const id = document.getElementById('idItem').value;
         const dados = {
             nome: document.getElementById('nomeItem').value,
             categoria: document.getElementById('categoriaItem').value,
@@ -145,12 +173,41 @@
         };
 
         try {
-            await dbSalvarItemEstoque(dados);
-            document.getElementById('formEstoque').reset();
-            alert("Item adicionado com sucesso!");
+            // Se tiver ID, a função dbSalvarItemEstoque vai precisar lidar com ele no database.js
+            await dbSalvarItemEstoque(dados, id);
+            cancelarEdicao();
         } catch (err) {
-            console.error("Erro:", err);
-            alert("Erro ao salvar no banco.");
+            alert("Erro ao salvar.");
+        }
+    };
+
+    // FUNÇÕES GLOBAIS (Acessíveis pelos botões do card)
+    window.prepararEdicao = function(id, nome, categoria, qtd, minimo) {
+        document.getElementById('idItem').value = id;
+        document.getElementById('nomeItem').value = nome;
+        document.getElementById('categoriaItem').value = categoria;
+        document.getElementById('qtdItem').value = qtd;
+        document.getElementById('minimoItem').value = minimo;
+        
+        const btn = document.getElementById('btnSalvarEstoque');
+        btn.innerText = "Atualizar Item";
+        btn.style.background = "#ff9800";
+        document.getElementById('btnCancelarEdicao').style.display = "block";
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    };
+
+    window.cancelarEdicao = function() {
+        document.getElementById('formEstoque').reset();
+        document.getElementById('idItem').value = "";
+        const btn = document.getElementById('btnSalvarEstoque');
+        btn.innerText = "+ Adicionar ao Estoque";
+        btn.style.background = "#4caf50";
+        document.getElementById('btnCancelarEdicao').style.display = "none";
+    };
+
+    window.excluirItem = async function(id) {
+        if(confirm("Deseja realmente excluir este item?")) {
+            await dbExcluirItemEstoque(id);
         }
     };
 
