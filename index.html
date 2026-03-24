@@ -45,7 +45,7 @@
         MENU E BOTÕES (CENTRALIZADOS)
         ========================================= */
         .menu {
-            display: flex;
+            display: none;
             flex-direction: column;
             gap: 20px;
         }
@@ -123,7 +123,7 @@
             <span>Atendimento</span>
         </div>
 
-        <div class="botao" onclick="window.location.href='clientes.html'">
+        <div class="botao" id="btnClientes" onclick="window.location.href='clientes.html'">
             <span class="icone">🔍</span>
             <span>Lista de Clientes</span>
         </div>
@@ -138,12 +138,12 @@
             <span>Gestão</span>
         </div>
 
-        <div class="botao" onclick="abrirTela('rotas')">
+        <div class="botao" id="btnRotas" onclick="abrirTela('rotas')">
             <span class="icone">🚀</span>
             <span>Seleção de rotas</span>
         </div>
 
-        <div class="botao" onclick="window.location.href='cadastrar_colaborador.html'">
+        <div class="botao" id="btnCadColaborador" onclick="window.location.href='cadastrar_colaborador.html'">
             <span class="icone">
                 <img src="assets/img/boneco-cadastrar.png" 
                      alt="Cadastrar" 
@@ -184,13 +184,23 @@
     // Verifica permissões baseado no nome selecionado
     function verificarPermissoes(nomeUsuario) {
         const usuario = listaColaboradores.find(c => c.nome === nomeUsuario);
+        
         const btnAtendimento = document.getElementById('btnAtendimento');
+        const btnClientes = document.getElementById('btnClientes');
+        const btnRotas = document.getElementById('btnRotas');
+        const btnCadColaborador = document.getElementById('btnCadColaborador');
 
-        // Se o perfil contiver "estoque", ESCONDE o botão de atendimento
+        // Se o perfil contiver "estoque", ESCONDE os botões restritos
         if (usuario && usuario.nivel_completo && usuario.nivel_completo.includes('estoque')) {
             btnAtendimento.style.display = 'none';
+            btnClientes.style.display = 'none';
+            btnRotas.style.display = 'none';
+            btnCadColaborador.style.display = 'none';
         } else {
             btnAtendimento.style.display = 'flex';
+            btnClientes.style.display = 'flex';
+            btnRotas.style.display = 'flex';
+            btnCadColaborador.style.display = 'flex';
         }
     }
 
@@ -217,6 +227,9 @@
             select.value = selecionadoAnterior;
             verificarPermissoes(selecionadoAnterior);
         }
+
+        // Exibe o menu somente após as permissões serem aplicadas, evitando o "piscar"
+        document.querySelector('.menu').style.display = 'flex';
     });
 
     // Salva a escolha no navegador para não perder ao recarregar
