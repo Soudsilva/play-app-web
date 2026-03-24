@@ -99,13 +99,26 @@
         <img src="assets/img/logo.png">
     </div>
 
-    <div class="ola">
-        Olá, Anderson
+    <div class="ola" style="display: flex; justify-content: center; align-items: center; gap: 10px;">
+        Olá, 
+        <select id="selectUsuario" style="
+            background: transparent; 
+            border: none; 
+            border-bottom: 1px solid rgba(255,255,255,0.3); 
+            color: #ffeb3b; 
+            font-size: 24px; 
+            font-weight: bold; 
+            outline: none; 
+            cursor: pointer; 
+            max-width: 220px;
+        ">
+            <option value="" style="background: #0f2a66; color: white;">Carregando...</option>
+        </select>
     </div>
 
     <div class="menu">
 
-        <div class="botao" onclick="abrirTela('atendimento')">
+        <div class="botao" id="btnAtendimento" onclick="abrirTela('atendimento')">
             <span class="icone">🤝</span>
             <span>Atendimento</span>
         </div>
@@ -158,10 +171,60 @@
 
 </div>
 
-<script>
-    function abrirTela(tela){
+<script type="module">
+    import { dbEscutarColaboradores } from './database.js';
+
+    let listaColaboradores = [];
+
+    // Torna a função global para funcionar com os 'onclick' do HTML
+    window.abrirTela = function(tela){
         console.log("Abrindo tela: " + tela);
     }
+
+    // Verifica permissões baseado no nome selecionado
+    function verificarPermissoes(nomeUsuario) {
+        const usuario = listaColaboradores.find(c => c.nome === nomeUsuario);
+        const btnAtendimento = document.getElementById('btnAtendimento');
+
+        // Se o perfil contiver "estoque", ESCONDE o botão de atendimento
+        if (usuario && usuario.nivel_completo && usuario.nivel_completo.includes('estoque')) {
+            btnAtendimento.style.display = 'none';
+        } else {
+            btnAtendimento.style.display = 'flex';
+        }
+    }
+
+    // Lógica do Dropdown de Usuários
+    const select = document.getElementById('selectUsuario');
+
+    dbEscutarColaboradores((lista) => {
+        listaColaboradores = lista; // Guarda a lista completa para consultar depois
+        const selecionadoAnterior = localStorage.getItem('usuarioLogado') || "";
+        
+        select.innerHTML = '<option value="" style="background: #0f2a66; color: #ccc;">Selecione...</option>';
+        
+        lista.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c.nome; 
+            option.innerText = c.nome;
+            option.style.background = "#0f2a66"; // Fundo azul escuro para as opções
+            option.style.color = "white";
+            select.appendChild(option);
+        });
+
+        // Restaura a seleção anterior se existir
+        if (selecionadoAnterior) {
+            select.value = selecionadoAnterior;
+            verificarPermissoes(selecionadoAnterior);
+        }
+    });
+
+    // Salva a escolha no navegador para não perder ao recarregar
+    select.addEventListener('change', (e) => {
+        const nome = e.target.value;
+        localStorage.setItem('usuarioLogado', nome);
+        verificarPermissoes(nome);
+    });
 </script>
 
 </body>

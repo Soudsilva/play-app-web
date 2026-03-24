@@ -210,7 +210,11 @@
     dbEscutarColaboradores((colabs) => {
         const select = document.getElementById('responsavel');
         select.innerHTML = '<option value="">Selecione o Responsável...</option>';
-        colabs.forEach(c => {
+        
+        // Filtra apenas colaboradores que tenham "atendimento" no perfil
+        const listaFiltrada = colabs.filter(c => c.nivel_completo && c.nivel_completo.includes('atendimento'));
+
+        listaFiltrada.forEach(c => {
             const opt = document.createElement('option');
             opt.value = c.nome; // Salva o nome do colaborador
             opt.innerText = c.nome;
