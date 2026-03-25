@@ -12,7 +12,7 @@
             display:flex; justify-content:center; color:white; 
             overscroll-behavior-y: contain; /* [NOVO] Trava o "puxar para atualizar" no celular */
         }
-        .app { width:100%; max-width:420px; box-sizing:border-box; min-height: 100vh; padding: 20px; padding-bottom: 100px; }
+        .app { width:100%; max-width:960px; box-sizing:border-box; min-height: 100vh; padding: 20px 10px 100px; }
 
         /* Cabeçalho  altere aqui o nome e tamanho da fonte */
         .topo { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
@@ -97,8 +97,10 @@
             font-size: 18px; text-transform: uppercase; letter-spacing: 1px;
         }
         .sub-card {
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px; padding: 10px; margin-bottom: 10px;
+            margin-bottom: 15px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding: 15px 0;
         }
         .titulo-sub {
             font-size: 14px; font-weight: bold; color: white; margin-bottom: 10px;
@@ -159,25 +161,10 @@
         <div class="titulo-fin">Financeiro</div>
 
         <!-- Área Pix -->
-        <div class="sub-card">
+        <div class="sub-card" id="areaPix">
             <div class="titulo-sub"><span style="font-size:18px">💠</span> Área Pix</div>
-            <div class="linha-form" style="gap:5px;">
-                <div style="flex:1">
-                    <label class="lbl-fin">Pix Nº</label>
-                    <input type="number" id="pixNumero" placeholder="Nº" onchange="salvarRascunho()">
-                </div>
-                <div style="flex:1">
-                    <label class="lbl-fin">Cont. Ant</label>
-                    <input type="text" inputmode="numeric" id="pixContAnt" placeholder="0" oninput="formatarNumero(this); salvarRascunho()">
-                </div>
-                <div style="flex:1">
-                    <label class="lbl-fin">Cont. Atual</label>
-                    <input type="text" inputmode="numeric" id="pixContAtual" placeholder="0" oninput="formatarNumero(this); salvarRascunho()">
-                </div>
-                <div style="flex:1">
-                    <label class="lbl-fin">Valor</label>
-                    <input type="text" inputmode="numeric" id="valorPix" placeholder="0" oninput="formatarNumero(this); calcularTotais(); salvarRascunho()">
-                </div>
+            <div id="containerPix">
+                <!-- As linhas de Pix serão inseridas aqui via JS -->
             </div>
         </div>
 
@@ -235,10 +222,15 @@
     let rascunhoRestaurado = false; // Controle para não sobrescrever
 
     // --- FUNÇÃO UTILITÁRIA DE FORMATAÇÃO ---
-    window.formatarNumero = function(input) {
+    window.formatarNumero = function(input, maxDigits) {
         // Remove tudo que não for dígito
         let valor = input.value.replace(/\D/g, '');
         
+        // [NOVO] Limita o número de dígitos caso seja especificado
+        if (maxDigits && valor.length > maxDigits) {
+            valor = valor.substring(0, maxDigits);
+        }
+
         // Se o valor ficar vazio, limpa o campo
         if (valor === '') {
             input.value = '';
@@ -254,6 +246,37 @@
 
     window.parseFormatted = function(val) {
         return parseInt(String(val).replace(/\D/g, ''), 10) || 0;
+    }
+
+    // --- [NOVO] FUNÇÃO PARA CRIAR LINHAS DE PIX ---
+    function criarLinhaPix(data = {}) {
+        const container = document.getElementById('containerPix');
+        const div = document.createElement('div');
+        div.className = 'linha-form';
+        div.style.gap = '5px';
+        div.innerHTML = `
+            <div style="flex:1">
+                <label class="lbl-fin">Pix Nº</label>
+                <input type="number" class="pixNumero" placeholder="Nº" onchange="salvarRascunho()" value="${data.numero || ''}" oninput="if(this.value.length > 3) this.value = this.value.slice(0, 3);">
+            </div>
+            <div style="flex:2">
+                <label class="lbl-fin">Cont. Ant</label>
+                <input type="text" inputmode="numeric" class="pixContAnt" placeholder="0" oninput="formatarNumero(this, 6); salvarRascunho()" value="${data.contAnt || ''}">
+            </div>
+            <div style="flex:2">
+                <label class="lbl-fin">Cont. Atual</label>
+                <input type="text" inputmode="numeric" class="pixContAtual" placeholder="0" oninput="formatarNumero(this, 6); salvarRascunho()" value="${data.contAtual || ''}">
+            </div>
+            <div style="flex:1.5">
+                <label class="lbl-fin">Valor</label>
+                <input type="text" inputmode="numeric" class="valorPix" placeholder="0" oninput="formatarNumero(this, 4); calcularTotais(); salvarRascunho()" value="${data.valor || ''}">
+            </div>
+        `;
+        container.appendChild(div);
+        // Formata números que estão sendo restaurados do rascunho
+        if (data.contAnt) formatarNumero(div.querySelector('.pixContAnt'), 6);
+        if (data.contAtual) formatarNumero(div.querySelector('.pixContAtual'), 6);
+        if (data.valor) formatarNumero(div.querySelector('.valorPix'), 4);
     }
 
     // --- CARREGAMENTO DE DADOS ---
@@ -287,6 +310,11 @@
         if (document.querySelectorAll('.linha-produto').length === 0) {
             adicionarLinhaProduto();
         }
+
+        // Adiciona a linha de PIX se não houver e a busca estiver vazia
+        if (!document.getElementById('inputBuscaCliente').value && document.querySelectorAll('#containerPix .linha-form').length === 0) {
+            criarLinhaPix();
+        }
     });
 
     // --- LÓGICA DO CLIENTE ---
@@ -298,6 +326,10 @@
         
         if (!termo) {
             divResultado.style.display = 'none';
+            document.getElementById('areaPix').style.display = 'block';
+            if (document.querySelectorAll('#containerPix .linha-form').length === 0) {
+                criarLinhaPix();
+            }
             return;
         }
 
@@ -316,17 +348,51 @@
             `;
             document.getElementById('idClienteSelecionado').value = cliente.firebaseUrl;
             // [NOVO] Preenche a comissão automaticamente se disponível
+            
             if (cliente.comissao) {
                 document.getElementById('porcComissao').value = cliente.comissao.replace('%','').trim();
             } else {
                 document.getElementById('porcComissao').value = "";
             }
+
+            // [NOVO] Lógica para preencher a Área Pix
+            const containerPix = document.getElementById('containerPix');
+            const areaPix = document.getElementById('areaPix');
+            containerPix.innerHTML = ''; // Limpa as linhas existentes
+
+            const pixValues = [];
+            if (cliente.equip) {
+                const equipList = cliente.equip.split(', ');
+                equipList.forEach(item => {
+                    if (!item) return;
+                    let nomeEquip = item;
+                    // Remove a quantidade final ex: "(1)" para facilitar achar o Pix
+                    nomeEquip = nomeEquip.replace(/\s*\(([^)]+)\)$/, "").trim();
+                    
+                    const regexPix = /\s*\[Pix:\s*([^\]]+)\]$/i;
+                    const matchPix = nomeEquip.match(regexPix);
+                    if (matchPix) {
+                        pixValues.push(matchPix[1]);
+                    }
+                });
+            }
+
+            if (pixValues.length > 0) {
+                areaPix.style.display = 'block';
+                pixValues.forEach(pix => criarLinhaPix({ numero: pix }));
+            } else {
+                areaPix.style.display = 'none';
+            }
+
             calcularTotais();
             salvarRascunho();
         } else {
             divResultado.className = 'card-cliente erro'; // Vermelho
             divResultado.innerHTML = `❌ Cliente nº ${termo} não encontrado.`;
             document.getElementById('idClienteSelecionado').value = "";
+            document.getElementById('areaPix').style.display = 'block';
+            document.getElementById('containerPix').innerHTML = '';
+            criarLinhaPix();
         }
     }
 
@@ -418,11 +484,14 @@
 
     // --- CÁLCULOS FINANCEIROS ---
     window.calcularTotais = function() {
-        const vPix = window.parseFormatted(document.getElementById('valorPix').value);
+        let vPixTotal = 0;
+        document.querySelectorAll('.valorPix').forEach(input => {
+            vPixTotal += window.parseFormatted(input.value);
+        });
         const vDin = window.parseFormatted(document.getElementById('valorDinheiro').value);
         const pct = parseFloat(document.getElementById('porcComissao').value) || 0;
 
-        const total = Math.round(vPix + vDin);
+        const total = Math.round(vPixTotal + vDin);
         const valorComissao = Math.round(total * (pct / 100));
         const saldo = total - valorComissao;
 
@@ -461,14 +530,26 @@
     window.salvarRascunho = function() {
         const dados = {
             clienteBusca: document.getElementById('inputBuscaCliente').value || "",
-            pixNumero: document.getElementById('pixNumero').value || "",
-            pixContAnt: document.getElementById('pixContAnt').value || "",
-            pixContAtual: document.getElementById('pixContAtual').value || "",
-            valorPix: document.getElementById('valorPix').value || "",
+            pixLinhas: [],
             valorDinheiro: document.getElementById('valorDinheiro').value || "",
             porcComissao: document.getElementById('porcComissao').value || "",
             produtos: []
         };
+
+        document.querySelectorAll('#containerPix .linha-form').forEach(linha => {
+            const pixNumero = linha.querySelector('.pixNumero').value;
+            const pixContAnt = linha.querySelector('.pixContAnt').value;
+            const pixContAtual = linha.querySelector('.pixContAtual').value;
+            const valorPix = linha.querySelector('.valorPix').value;
+            if (pixNumero || pixContAnt || pixContAtual || valorPix) {
+                dados.pixLinhas.push({
+                    numero: pixNumero,
+                    contAnt: pixContAnt,
+                    contAtual: pixContAtual,
+                    valor: valorPix
+                });
+            }
+        });
 
         document.querySelectorAll('.linha-produto').forEach(linha => {
             const p = linha.querySelector('.input-prod').value;
@@ -503,17 +584,23 @@
                     buscarCliente(); // Dispara a busca visual
                 }
 
-                // Restaura Financeiro
-                document.getElementById('pixNumero').value = dados.pixNumero || "";
-
-                document.getElementById('pixContAnt').value = dados.pixContAnt || "";
-                formatarNumero(document.getElementById('pixContAnt'));
-
-                document.getElementById('pixContAtual').value = dados.pixContAtual || "";
-                formatarNumero(document.getElementById('pixContAtual'));
-
-                document.getElementById('valorPix').value = dados.valorPix || "";
-                formatarNumero(document.getElementById('valorPix'));
+                // 2. Restaura Financeiro
+                const containerPix = document.getElementById('containerPix');
+                const areaPix = document.getElementById('areaPix');
+                containerPix.innerHTML = ''; // Limpa para recriar
+                if (dados.pixLinhas && dados.pixLinhas.length > 0) {
+                    areaPix.style.display = 'block';
+                    dados.pixLinhas.forEach(linha => criarLinhaPix(linha));
+                } else {
+                    // Se não tinha rascunho de pix, mas o cliente foi buscado, a busca já populou.
+                    // Se não, cria uma linha vazia.
+                    if (!dados.clienteBusca) {
+                        areaPix.style.display = 'block';
+                        criarLinhaPix();
+                    } else {
+                        areaPix.style.display = 'none';
+                    }
+                }
 
                 document.getElementById('valorDinheiro').value = dados.valorDinheiro || "";
                 formatarNumero(document.getElementById('valorDinheiro'));
@@ -522,6 +609,7 @@
                 calcularTotais(); // Atualiza os cálculos visuais
 
                 // 2. Restaura Produtos
+                // 3. Restaura Produtos
                 const container = document.getElementById('containerProdutos');
                 container.innerHTML = ""; // Limpa para recriar
 
@@ -534,6 +622,7 @@
                 }
 
                 // 3. Restaura Foto
+                // 4. Restaura Foto
                 if (dados.fotoBase64) {
                     const img = document.getElementById('imgPreview');
                     img.src = dados.fotoBase64;
@@ -561,9 +650,14 @@
             document.getElementById('containerProdutos').innerHTML = "";
             document.getElementById('imgPreview').style.display = 'none';
             document.getElementById('textoFoto').style.display = 'block';
+            document.getElementById('areaPix').style.display = 'block';
+            document.getElementById('containerPix').innerHTML = "";
             // Se estiver vazio, tenta criar a primeira linha novamente
             if (document.querySelectorAll('.linha-produto').length === 0 && typeof window.adicionarLinhaProduto === 'function') {
                 window.adicionarLinhaProduto();
+            }
+            if (document.querySelectorAll('#containerPix .linha-form').length === 0 && typeof window.criarLinhaPix === 'function') {
+                window.criarLinhaPix();
             }
         }
     });
