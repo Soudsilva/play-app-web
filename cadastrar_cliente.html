@@ -140,11 +140,11 @@
         });
 
         novoGrupo.innerHTML = `
-            <select class="equip-select" style="flex: 3; margin-bottom:0;" data-value="${nome}">
+            <select class="equip-select" style="flex: 5; margin-bottom:0;" data-value="${nome}">
                 ${options}
             </select>
-            <input class="pix-input" value="${pix}" placeholder="Nº Pix" inputmode="numeric" style="flex: 2; margin-bottom:0;">
-            <input class="qtd-input" value="${qtd}" placeholder="Qtd" type="number" style="flex: 1; margin-bottom:0;">
+            <input class="qtd-input" value="${qtd}" placeholder="Qtd" inputmode="numeric" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);" style="flex: 1.5; margin-bottom:0; border: 2px solid #2196f3; text-align: center; padding: 10px 5px;">
+            <input class="pix-input" value="${pix}" placeholder="Pix" inputmode="numeric" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);" style="flex: 1.5; margin-bottom:0; border: 2px solid #4caf50; text-align: center; padding: 10px 5px;">
         `;
         container.appendChild(novoGrupo);
     }
