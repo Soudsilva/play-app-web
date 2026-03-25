@@ -128,12 +128,12 @@
             <span>Lista de Clientes</span>
         </div>
 
-        <div class="botao" onclick="abrirTela('manutencao')">
+        <div class="botao" id="btnManutencao" onclick="abrirTela('manutencao')">
             <span class="icone">🔧</span>
             <span>Manutenção</span>
         </div>
 
-        <div class="botao" onclick="abrirTela('gestao')">
+        <div class="botao" id="btnGestao" onclick="abrirTela('gestao')">
             <span class="icone">📊</span>
             <span>Gestão</span>
         </div>
@@ -154,17 +154,36 @@
 
 
 
-       <div class="botao" onclick="window.location.href='estoque.html'">
+       <div class="botao" id="btnEstoque" onclick="abrirEstoque()">
           <span class="icone">📦</span>
            <span>Estoque</span>
        </div>
 
 
-<div class="botao" onclick="window.location.href='movimentacao_estoq.html'">
-          <span class="icone">📦</span>
-           <span>Estoque Entr. Saídas </span>
+       <div class="botao" id="btnMovimentacao" onclick="window.location.href='movimentacao_estoq.html'">
+          <span class="icone">🔄</span>
+           <span>Entr. Saídas </span>
        </div>
 
+       <div class="botao" id="btnPedidos" onclick="window.location.href='pedidos.html'">
+          <span class="icone">🛒</span>
+           <span>Pedidos</span>
+       </div>
+
+       <div class="botao" id="btnFinanceiro" onclick="abrirTela('financeiro')" style="display: none;">
+          <span class="icone">💰</span>
+           <span>Financeiro</span>
+       </div>
+
+       <div class="botao" id="btnPix" onclick="abrirTela('pix')" style="display: none;">
+          <span class="icone">💠</span>
+           <span>Área Pix</span>
+       </div>
+
+       <div class="botao" id="btnFluxoCaixa" onclick="abrirTela('fluxo_caixa')" style="display: none;">
+          <span class="icone">💸</span>
+           <span>Fluxo de Caixa</span>
+       </div>
 
 
     </div>
@@ -181,26 +200,90 @@
         console.log("Abrindo tela: " + tela);
     }
 
+    // [NOVO] Redirecionamento inteligente do Estoque
+    window.abrirEstoque = function() {
+        const nome = document.getElementById('selectUsuario').value;
+        const usuario = listaColaboradores.find(c => c.nome === nome);
+
+        // Se for Gestor, vai para a tela avançada. Se for Estoque ou outro, vai para a padrão.
+        if (usuario && usuario.nivel_completo && usuario.nivel_completo.includes('gestao')) {
+            window.location.href = 'estoque_gestor.html';
+        } else {
+            window.location.href = 'estoque.html';
+        }
+    };
+
     // Verifica permissões baseado no nome selecionado
     function verificarPermissoes(nomeUsuario) {
         const usuario = listaColaboradores.find(c => c.nome === nomeUsuario);
-        
-        const btnAtendimento = document.getElementById('btnAtendimento');
-        const btnClientes = document.getElementById('btnClientes');
-        const btnRotas = document.getElementById('btnRotas');
-        const btnCadColaborador = document.getElementById('btnCadColaborador');
+        const perfil = usuario ? (usuario.nivel_completo || "") : "";
 
-        // Se o perfil contiver "estoque", ESCONDE os botões restritos
-        if (usuario && usuario.nivel_completo && usuario.nivel_completo.includes('estoque')) {
-            btnAtendimento.style.display = 'none';
-            btnClientes.style.display = 'none';
-            btnRotas.style.display = 'none';
-            btnCadColaborador.style.display = 'none';
+        // Mapeamento de todos os botões para facilitar o controle
+        const btns = {
+            atendimento: document.getElementById('btnAtendimento'),
+            clientes: document.getElementById('btnClientes'),
+            manutencao: document.getElementById('btnManutencao'),
+            gestao: document.getElementById('btnGestao'),
+            rotas: document.getElementById('btnRotas'),
+            cadColab: document.getElementById('btnCadColaborador'),
+            estoque: document.getElementById('btnEstoque'),
+            movimentacao: document.getElementById('btnMovimentacao'),
+            pedidos: document.getElementById('btnPedidos'),
+            financeiro: document.getElementById('btnFinanceiro'),
+            pix: document.getElementById('btnPix'),
+            fluxoCaixa: document.getElementById('btnFluxoCaixa')
+        };
+
+        // 1. PERFIL ESTOQUE
+        if (perfil.includes('estoque')) {
+            btns.atendimento.style.display = 'none';
+            btns.clientes.style.display = 'none';
+            btns.rotas.style.display = 'none';
+            btns.cadColab.style.display = 'none';
+            btns.pix.style.display = 'none';
+            btns.fluxoCaixa.style.display = 'none';
+            
+            btns.manutencao.style.display = 'flex';
+            btns.gestao.style.display = 'flex';
+            btns.estoque.style.display = 'flex';
+            btns.movimentacao.style.display = 'flex';
+            btns.pedidos.style.display = 'flex';
+            btns.financeiro.style.display = 'flex';
+
+        // 2. PERFIL ATENDIMENTO (Restrito conforme solicitado)
+        } else if (perfil.includes('atendimento')) {
+            btns.atendimento.style.display = 'flex';
+            btns.clientes.style.display = 'flex';
+            btns.manutencao.style.display = 'flex';
+            btns.gestao.style.display = 'flex';
+            btns.rotas.style.display = 'flex';
+            btns.pix.style.display = 'flex'; // [NOVO]
+            
+            // Fluxo de Caixa: Apenas Nível 2
+            btns.fluxoCaixa.style.display = perfil.includes('atendimento_2') ? 'flex' : 'none';
+            
+            // Oculta o restante
+            btns.cadColab.style.display = 'none';
+            btns.estoque.style.display = 'none';
+            btns.movimentacao.style.display = 'none';
+            btns.pedidos.style.display = 'none';
+            btns.financeiro.style.display = 'none';
+
+        // 3. PERFIL GESTÃO (Vê quase tudo)
         } else {
-            btnAtendimento.style.display = 'flex';
-            btnClientes.style.display = 'flex';
-            btnRotas.style.display = 'flex';
-            btnCadColaborador.style.display = 'flex';
+            btns.atendimento.style.display = 'flex';
+            btns.clientes.style.display = 'flex';
+            btns.manutencao.style.display = 'flex';
+            btns.gestao.style.display = 'flex';
+            btns.rotas.style.display = 'flex';
+            btns.cadColab.style.display = 'flex';
+            btns.estoque.style.display = 'flex';
+            btns.movimentacao.style.display = 'flex';
+            btns.pedidos.style.display = 'flex';
+            
+            btns.pix.style.display = perfil.includes('gestao') ? 'flex' : 'none'; // Apenas Gestão (ou atendimento acima)
+            btns.fluxoCaixa.style.display = perfil.includes('gestao') ? 'flex' : 'none';
+            btns.financeiro.style.display = 'none'; // Financeiro continua restrito ao Estoque
         }
     }
 

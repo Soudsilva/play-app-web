@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Estoque</title>
+    <title>Estoque (Gestor)</title>
     <style>
         body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; }
         .app { width:100%; max-width:420px; padding:15px; box-sizing:border-box; min-height: 100vh; }
@@ -13,7 +13,7 @@
         .btn-home { background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 50%; cursor: pointer; display: flex; position: absolute; right: 0; }
         .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
 
-        .secao-lista { margin-bottom: 25px; padding-right: 5px; border-radius: 8px; }
+        .secao-lista { margin-bottom: 25px; max-height: 400px; overflow-y: auto; padding-right: 5px; border-radius: 8px; }
         .subtitulo { font-size: 16px; color: #ffeb3b; margin-bottom: 12px; font-weight: bold; text-align: center; text-transform: uppercase; }
         
         .card-estoque { background: white; color: #333; border-radius: 12px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
@@ -40,26 +40,21 @@
         select option { background: #042d86; color: white; }
         .btn-salvar { background:#4caf50; padding:14px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-top: 10px; border: none; color: white; width: 100%; font-size: 15px; transition: 0.3s; }
 
-        /* Personalização do Campo de Busca (Branco e Centralizado) */
+        /* Personalização do Campo de Busca */
         #campoPesquisa {
             background: #fff; color: #333; width: 75%; display: block; margin: 0 auto 15px auto;
-            padding: 8px; /* <--- MUDE AQUI (Quanto menor o número, mais fino o campo) */
+            padding: 8px;
         }
         #campoPesquisa::placeholder {
-            color: #888; /* Cor cinza para o texto de ajuda ficar visível no fundo branco */
+            color: #888;
         }
-
-        /* Estilo para os filtros de checkbox */
-        .filtros-container { text-align: center; margin-bottom: 15px; font-size: 13px; color: white; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .filtros-container label { cursor: pointer; display: flex; align-items: center; gap: 3px; }
-        .filtros-container input { width: auto; margin: 0; } /* Reseta estilo global de input para checkbox */
     </style>
 </head>
 <body>
 
 <div class="app">
     <div class="topo">
-        <div class="titulo">Controle de Estoque</div>
+        <div class="titulo">Estoque (Gestor)</div>
         <div class="btn-home" onclick="window.location.href='index.html'">
             <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
         </div>
@@ -68,85 +63,92 @@
     <div class="secao-lista">
         <div class="subtitulo">Itens Registrados</div>
         <input type="text" id="campoPesquisa" placeholder="🔍 Buscar item...">
-        
-        <div class="filtros-container">
-            <span style="font-weight: bold; color: #ffeb3b;">Filtrar por Tipo:</span>
-            <label><input type="checkbox" class="filtro-tipo" value="produtos" checked onchange="aplicarFiltros()"> Produtos</label>
-            <label><input type="checkbox" class="filtro-tipo" value="peca" checked onchange="aplicarFiltros()"> Peças</label>
-            <label><input type="checkbox" class="filtro-tipo" value="maquina" checked onchange="aplicarFiltros()"> Máquinas</label>
-        </div>
-
         <div id="containerEstoque">
             <p style='text-align:center; opacity:0.5; font-size:12px;'>Carregando itens...</p>
         </div>
     </div>
 
+    <div class="divisor"><span>CADASTRAR / EDITAR ITEM</span></div>
+
+    <form class="form-container" id="formEstoque">
+        <input type="hidden" id="idItem" value=""> 
+        
+        <div>
+            <label class="label-focada">Nome do Item</label>
+            <input type="text" id="nomeItem" placeholder="Ex: Pelúcia 20cm, Motor, Grua..." required>
+        </div>
+
+        <div>
+            <label class="label-focada">Categoria</label>
+            <select id="categoriaItem">
+                <option value="produtos">Produtos</option>
+                <option value="peca">Peças</option>
+                <option value="maquina">Máquinas</option>
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;">
+                <label class="label-focada">Qtd. Atual</label>
+                <input type="number" id="qtdItem" placeholder="0" required>
+            </div>
+            <div style="flex: 1;">
+                <label class="label-focada">Estoque Mínimo</label>
+                <input type="number" id="minimoItem" placeholder="Avisar com...">
+            </div>
+        </div>
+
+        <button type="submit" class="btn-salvar" id="btnSalvarEstoque">+ Adicionar ao Estoque</button>
+        <button type="button" id="btnCancelarEdicao" style="display:none; background:transparent; color:white; border:none; font-size:12px; cursor:pointer; margin-top:5px;" onclick="cancelarEdicao()">Cancelar Edição</button>
+    </form>
 </div>
 
 <script type="module">
-    import { dbEscutarEstoque } from './database.js';
+    import { dbEscutarEstoque, dbSalvarItemEstoque, dbExcluirItemEstoque } from './database.js';
 
-    // [NOVO] LÓGICA DE FILTRAGEM UNIFICADA (Pesquisa + Checkboxes)
-    window.aplicarFiltros = function() {
-        const termo = document.getElementById('campoPesquisa').value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-        
-        // Pega quais checkboxes estão marcados
-        const tiposMarcados = Array.from(document.querySelectorAll('.filtro-tipo:checked')).map(cb => cb.value);
-
+    document.getElementById('campoPesquisa').addEventListener('input', function(e) {
+        const termo = e.target.value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         const cards = document.querySelectorAll('.card-estoque');
-        
         cards.forEach(card => {
             const nome = card.querySelector('.info-estoque b').innerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-            const categoriaItem = card.dataset.categoria; // Pega a categoria salva no data-attribute
-
-            // Exibe se: (Nome bate com pesquisa) E (Categoria está marcada nos checkboxes)
-            const correspondePesquisa = nome.includes(termo);
-            const correspondeTipo = tiposMarcados.includes(categoriaItem);
-
-            card.style.display = (correspondePesquisa && correspondeTipo) ? 'flex' : 'none';
+            card.style.display = nome.includes(termo) ? 'flex' : 'none';
         });
-    };
+    });
 
-    // Aciona o filtro também ao digitar
-    document.getElementById('campoPesquisa').addEventListener('input', aplicarFiltros);
-
-    // 1. CARREGAR A LISTA DE ESTOQUE
     function carregarEstoque() {
         const container = document.getElementById('containerEstoque');
-        
         dbEscutarEstoque((lista) => {
             container.innerHTML = ""; 
-            if (lista.length === 0) {
-                container.innerHTML = "<p style='text-align:center; opacity:0.5; font-size:12px;'>Estoque vazio.</p>";
-                return;
-            }
-
+            if (lista.length === 0) { container.innerHTML = "<p style='text-align:center; opacity:0.5; font-size:12px;'>Estoque vazio.</p>"; return; }
             lista.forEach((item) => {
                 const card = document.createElement('div');
                 card.className = 'card-estoque';
-                card.dataset.categoria = item.categoria; // Salva categoria oculta para facilitar o filtro
-                
-                let classeCor = "bg-produtos";
-                let nomeCategoria = "Produtos";
+                let classeCor = "bg-produtos", nomeCategoria = "Produtos";
                 if(item.categoria === "maquina") { classeCor = "bg-maquina"; nomeCategoria = "Máquina"; }
                 if(item.categoria === "peca") { classeCor = "bg-peca"; nomeCategoria = "Peça"; }
-
-                card.innerHTML = `
-                    <div class="info-estoque" style="flex:1;">
-                        <b>${item.nome}</b>
-                        <span class="badge ${classeCor}">${nomeCategoria}</span>
-                        <div style="font-size:11px; margin-top:5px; color:#999;">Mínimo ideal: ${item.minimo || 0}</div>
-                    </div>
-                    <div class="qtd-destaque">${item.quantidade}</div>
-                `;
+                card.innerHTML = `<div class="info-estoque" style="flex:1;"><b>${item.nome}</b><span class="badge ${classeCor}">${nomeCategoria}</span><div style="font-size:11px; margin-top:5px; color:#999;">Mínimo ideal: ${item.minimo || 0}</div></div><div class="qtd-destaque">${item.quantidade}</div><div class="acoes-card"><div class="btn-editar-card" onclick="prepararEdicao('${item.firebaseUrl}', '${item.nome}', '${item.categoria}', ${item.quantidade}, ${item.minimo})">EDITAR</div><div class="btn-excluir-card" onclick="excluirItem('${item.firebaseUrl}')">EXCLUIR</div></div>`;
                 container.appendChild(card);
             });
-
-            // Se já tiver algo escrito na busca (ex: numa atualização automática), reaplica o filtro
-            aplicarFiltros();
+            if(document.getElementById('campoPesquisa').value) { document.getElementById('campoPesquisa').dispatchEvent(new Event('input')); }
         });
     }
 
+    document.getElementById('formEstoque').onsubmit = async function(e) {
+        e.preventDefault();
+        const id = document.getElementById('idItem').value;
+        const dados = { nome: document.getElementById('nomeItem').value, categoria: document.getElementById('categoriaItem').value, quantidade: parseInt(document.getElementById('qtdItem').value), minimo: parseInt(document.getElementById('minimoItem').value) || 0, dataAtualizacao: new Date().toISOString() };
+        try { await dbSalvarItemEstoque(dados, id); cancelarEdicao(); } catch (err) { alert("Erro ao salvar."); }
+    };
+
+    window.prepararEdicao = function(id, nome, categoria, qtd, minimo) {
+        document.getElementById('idItem').value = id; document.getElementById('nomeItem').value = nome; document.getElementById('categoriaItem').value = categoria; document.getElementById('qtdItem').value = qtd; document.getElementById('minimoItem').value = minimo;
+        const btn = document.getElementById('btnSalvarEstoque'); btn.innerText = "Atualizar Item"; btn.style.background = "#ff9800"; document.getElementById('btnCancelarEdicao').style.display = "block"; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    };
+    window.cancelarEdicao = function() {
+        document.getElementById('formEstoque').reset(); document.getElementById('idItem').value = "";
+        const btn = document.getElementById('btnSalvarEstoque'); btn.innerText = "+ Adicionar ao Estoque"; btn.style.background = "#4caf50"; document.getElementById('btnCancelarEdicao').style.display = "none";
+    };
+    window.excluirItem = async function(id) { if(confirm("Deseja realmente excluir este item?")) { await dbExcluirItemEstoque(id); } };
     carregarEstoque();
 </script>
 </body>

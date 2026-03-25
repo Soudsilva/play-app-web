@@ -287,3 +287,37 @@ export async function dbExcluirItemEstoque(id) {
         throw error;
     }
 }
+
+// [BLOCO: PEDIDOS DE COMPRA]
+
+// Salvar ou Atualizar Pedido
+export async function dbSalvarPedido(pedido, id = null) {
+    try {
+        if (id) {
+            await update(ref(db, `pedidos/${id}`), pedido);
+        } else {
+            await push(ref(db, 'pedidos'), pedido);
+        }
+    } catch (error) {
+        console.error("Erro ao salvar pedido:", error);
+        throw error;
+    }
+}
+
+// Ler Pedidos
+export function dbEscutarPedidos(callback) {
+    onValue(ref(db, 'pedidos'), (snapshot) => {
+        const dados = snapshot.val();
+        const lista = dados ? Object.keys(dados).map(key => ({ firebaseUrl: key, ...dados[key] })) : [];
+        callback(lista);
+    });
+}
+
+// Excluir Pedido (Confirmar Compra)
+export async function dbExcluirPedido(id) {
+    try {
+        await remove(ref(db, `pedidos/${id}`));
+    } catch (error) {
+        console.error("Erro ao excluir pedido:", error);
+    }
+}

@@ -101,7 +101,7 @@
             <select id="filtroCategoria" class="sel-tipo" onchange="filtrarItens()">
                 <option value="maquina">Máquina</option>
                 <option value="peca">Peça</option>
-                <option value="insumo">Insumo</option>
+                <option value="produtos">Produtos</option>
             </select>
 
             <select id="selectItem" class="sel-item" onchange="mostrarSaldoAtual()">
@@ -126,6 +126,7 @@
 
     <div class="secao-historico">
         <div class="titulo-hist">Últimas Movimentações</div>
+        <input type="text" id="filtroHistorico" placeholder="🔍 Pesquisar no histórico..." oninput="filtrarHistorico()" style="width: 100%; margin-bottom: 15px; text-align: center;">
         <div id="listaHistorico">
             <p style="text-align:center; font-size:11px; opacity:0.5;">Carregando...</p>
         </div>
@@ -136,6 +137,8 @@
     import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbSalvarHistorico, dbEscutarHistorico, dbExcluirHistorico } from './database.js';
 
     let listaGlobal = [];
+    let historicoGlobal = [];
+    let colabsGlobal = [];
     let modoAtual = 'saida';
 
     // 1. CARREGAR ITENS DO BANCO
@@ -146,27 +149,34 @@
 
     // [NOVO] CARREGAR HISTÓRICO
     dbEscutarHistorico((lista) => {
+        historicoGlobal = lista.reverse();
+        filtrarHistorico();
+    });
+
+    window.filtrarHistorico = function() {
+        const termo = document.getElementById('filtroHistorico').value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const listaFiltrada = historicoGlobal.filter(mov => {
+            const texto = (mov.itemNome + " " + mov.responsavel + " " + mov.tipo + " " + (mov.obs || "")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            return texto.includes(termo);
+        });
+        renderizarHistorico(listaFiltrada);
+    };
+
+    function renderizarHistorico(lista) {
         const container = document.getElementById('listaHistorico');
         container.innerHTML = "";
-        
-        // Inverte a lista para mostrar o mais recente em cima
-        // Precisamos mapear as chaves firebase também se vierem do Object.values, 
-        // mas dbEscutarHistorico no database.js já manda array simples. 
-        // O ideal é garantir que temos o ID do histórico (firebaseUrl)
-        // Vou assumir que o database.js manda o objeto completo com chave se ajustarmos, 
-        // mas como lá está Object.values(data), precisamos garantir que a chave vá junto.
-        // Para simplificar, vou confiar que a ordem está certa.
-        
-        const listaInvertida = lista.reverse();
 
-        if(listaInvertida.length === 0) {
-            container.innerHTML = '<p style="text-align:center; font-size:11px; opacity:0.5;">Sem histórico recente.</p>';
+        if(lista.length === 0) {
+            container.innerHTML = '<p style="text-align:center; font-size:11px; opacity:0.5;">Nenhum registro encontrado.</p>';
             return;
         }
 
-        listaInvertida.forEach((mov, index) => {
+        lista.forEach((mov, index) => {
             const classeCor = mov.tipo === 'entrada' ? 'tag-entrada' : 'tag-saida';
             const textoTipo = mov.tipo === 'entrada' ? 'ENTRADA' : 'SAÍDA';
+            
+            const dataObj = new Date(mov.data);
+            const dataFormatada = dataObj.toLocaleString('pt-BR');
             
             const div = document.createElement('div');
             div.className = 'item-hist';
@@ -174,12 +184,14 @@
             div.style.alignItems = 'stretch';
 
             div.innerHTML = `
+                <div style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; margin-bottom: 8px;">
+                    <span class="hist-tipo-label" style="color:${mov.tipo === 'entrada' ? '#4caf50' : '#f44336'}">${textoTipo}</span> 
+                    <span style="font-size: 16px; color: #ccc; margin-left: 5px;">- ${dataFormatada}</span>
+                </div>
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div class="hist-esq">
-                        <span class="hist-tipo-label" style="color:${mov.tipo === 'entrada' ? '#4caf50' : '#f44336'}">${textoTipo}</span>
                         <span class="hist-nome-item">${mov.itemNome}</span>
                         <span class="hist-resp-label">Resp: ${mov.responsavel}</span>
-                        <span class="hist-data">${new Date(mov.data).toLocaleString('pt-BR')}</span>
                         ${mov.obs ? `<span class="hist-obs-label">Obs: ${mov.obs}</span>` : ''}
                     </div>
                     <div class="hist-dir ${classeCor}">
@@ -189,7 +201,8 @@
             `;
 
             // ADICIONA OS BOTÕES SOMENTE SE FOR O PRIMEIRO (ÍNDICE 0)
-            if (index === 0) {
+            // Exibe apenas se for o movimento mais recente global (para evitar exclusão de item antigo filtrado)
+            if (historicoGlobal.length > 0 && mov === historicoGlobal[0]) {
                 const divAcoes = document.createElement('div');
                 divAcoes.className = 'acoes-hist';
                 
@@ -204,15 +217,28 @@
 
             container.appendChild(div);
         });
-    });
+    }
 
     // [NOVO] CARREGAR COLABORADORES PARA O DROPDOWN
     dbEscutarColaboradores((colabs) => {
+        colabsGlobal = colabs;
+        renderizarResponsaveis();
+    });
+
+    function renderizarResponsaveis() {
         const select = document.getElementById('responsavel');
         select.innerHTML = '<option value="">Selecione o Responsável...</option>';
         
+        // [NOVO] Adiciona "Fornecedor" apenas se for ENTRADA
+        if (modoAtual === 'entrada') {
+            const optForn = document.createElement('option');
+            optForn.value = "Fornecedor";
+            optForn.innerText = "Fornecedor";
+            select.appendChild(optForn);
+        }
+
         // Filtra apenas colaboradores que tenham "atendimento" no perfil
-        const listaFiltrada = colabs.filter(c => c.nivel_completo && c.nivel_completo.includes('atendimento'));
+        const listaFiltrada = colabsGlobal.filter(c => c.nivel_completo && c.nivel_completo.includes('atendimento'));
 
         listaFiltrada.forEach(c => {
             const opt = document.createElement('option');
@@ -220,7 +246,7 @@
             opt.innerText = c.nome;
             select.appendChild(opt);
         });
-    });
+    }
 
     // 2. FILTRAR ITENS POR CATEGORIA
     window.filtrarItens = function() {
@@ -284,6 +310,7 @@
             btn.innerText = "CONFIRMAR SAÍDA";
             btn.style.background = "#f44336";
         }
+        renderizarResponsaveis(); // Atualiza a lista para mostrar/esconder "Fornecedor"
     };
 
     // 5. ATUALIZAR ESTOQUE NO BANCO
