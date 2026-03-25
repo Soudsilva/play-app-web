@@ -10,10 +10,11 @@
         .app { width:100%; max-width:420px; padding:20px; box-sizing: border-box; }
         
         /* Estilo padrão para todas as caixas de entrada e áreas de texto */
-        input, textarea { 
+        input, textarea, select { 
             width:100%; padding:10px; margin-bottom:10px; border-radius:8px; 
             border:none; font-size:16px; box-sizing: border-box; 
         }
+        select { background: white; color: #333; outline: none; }
         
         /* Estilo do botão azul */
         .botao { 
@@ -46,14 +47,6 @@
     <input id="endereco" placeholder="Endereço">
     
     <div id="container-equipamentos">
-        <div class="equip-group">
-            <input class="equip-input" placeholder="Equipamento 1" style="flex: 3; margin-bottom:0;">
-            <input class="qtd-input" placeholder="Qtd" type="number" style="flex: 1; margin-bottom:0;">
-        </div>
-        <div class="equip-group">
-            <input class="equip-input" placeholder="Equipamento 2" style="flex: 3; margin-bottom:0;">
-            <input class="qtd-input" placeholder="Qtd" type="number" style="flex: 1; margin-bottom:0;">
-        </div>
     </div>
     
     <textarea id="obs" placeholder="Observações"></textarea>
@@ -114,7 +107,47 @@
 
 <script type="module">
     // Importamos as ferramentas de banco de dados do seu arquivo externo
-    import { dbSalvarCliente, dbListarClientes } from './database.js';
+    import { dbSalvarCliente, dbListarClientes, dbEscutarEstoque } from './database.js';
+
+    let maquinasDisponiveis = [];
+
+    // --- CARREGAR MÁQUINAS ---
+    dbEscutarEstoque((lista) => {
+        maquinasDisponiveis = lista.filter(item => item.categoria === 'maquina');
+        
+        // Atualiza os selects existentes que estiverem na tela
+        document.querySelectorAll('.equip-select').forEach(select => {
+            const valorAtual = select.value || select.getAttribute('data-value');
+            select.innerHTML = '<option value="">Selecione a máquina...</option>';
+            maquinasDisponiveis.forEach(m => {
+                const option = document.createElement('option');
+                option.value = m.nome;
+                option.textContent = m.nome;
+                if (m.nome === valorAtual) option.selected = true;
+                select.appendChild(option);
+            });
+        });
+    });
+
+    window.adicionarLinhaEquipamento = function(nome = "", pix = "", qtd = "") {
+        const container = document.getElementById('container-equipamentos');
+        const novoGrupo = document.createElement('div');
+        novoGrupo.className = 'equip-group';
+        
+        let options = '<option value="">Selecione a máquina...</option>';
+        maquinasDisponiveis.forEach(m => {
+            options += `<option value="${m.nome}" ${m.nome === nome ? 'selected' : ''}>${m.nome}</option>`;
+        });
+
+        novoGrupo.innerHTML = `
+            <select class="equip-select" style="flex: 3; margin-bottom:0;" data-value="${nome}">
+                ${options}
+            </select>
+            <input class="pix-input" value="${pix}" placeholder="Nº Pix" inputmode="numeric" style="flex: 2; margin-bottom:0;">
+            <input class="qtd-input" value="${qtd}" placeholder="Qtd" type="number" style="flex: 1; margin-bottom:0;">
+        `;
+        container.appendChild(novoGrupo);
+    }
 
     /* --- PARTE A: DETECTAR EDIÇÃO ---
        Verifica se o link termina com "?edit=ID". Se sim, muda o título e carrega os dados. */
@@ -124,6 +157,8 @@
     if (editId) {
         document.querySelector('h2').innerText = "Editar Cliente";
         carregarDadosCliente(editId);
+    } else {
+        adicionarLinhaEquipamento();
     }
 
     /* --- PARTE B: CARREGAR DADOS NO FORMULÁRIO ---
@@ -149,18 +184,34 @@
                     container.innerHTML = ""; // Limpa os campos padrão
                     
                     lista.forEach((item) => {
-                        const partes = item.match(/(.+) \((.+)\)/);
-                        const nome = partes ? partes[1] : item;
-                        const qtd = partes ? partes[2] : "1";
+                        let nome = item;
+                        let qtd = "1";
+                        let pix = "";
 
-                        const novoGrupo = document.createElement('div');
-                        novoGrupo.className = 'equip-group';
-                        novoGrupo.innerHTML = `
-                            <input class="equip-input" value="${nome}" placeholder="Equipamento" style="flex: 3; margin-bottom:0;">
-                            <input class="qtd-input" value="${qtd}" placeholder="Qtd" type="number" style="flex: 1; margin-bottom:0;">
-                        `;
-                        container.appendChild(novoGrupo);
+                        // Extrai a quantidade. Ex: (2)
+                        const regexQtd = /\s*\(([^)]+)\)$/;
+                        const matchQtd = nome.match(regexQtd);
+                        if(matchQtd) {
+                            qtd = matchQtd[1];
+                            nome = nome.replace(regexQtd, "");
+                        }
+
+                        // Extrai o Pix. Ex: [Pix: 12345]
+                        const regexPix = /\s*\[Pix:\s*([^\]]+)\]$/;
+                        const matchPix = nome.match(regexPix);
+                        if(matchPix) {
+                            pix = matchPix[1];
+                            nome = nome.replace(regexPix, "");
+                        }
+
+                        nome = nome.trim();
+                        adicionarLinhaEquipamento(nome, pix, qtd);
                     });
+                    adicionarLinhaEquipamento(); // Adiciona uma linha vazia no final
+                } else {
+                    if (document.getElementById('container-equipamentos').children.length === 0) {
+                        adicionarLinhaEquipamento();
+                    }
                 }
 
                 // Especial: Marca os quadradinhos (checkboxes) dos dias
@@ -175,19 +226,15 @@
     }
 
     /* --- PARTE C: EQUIPAMENTOS DINÂMICOS ---
-       Sempre que o usuário escreve no último equipamento, cria uma linha nova abaixo. */
-    document.getElementById('container-equipamentos').addEventListener('input', () => {
-        const grupos = document.querySelectorAll('.equip-group');
-        const ultimoInput = grupos[grupos.length - 1].querySelector('.equip-input');
+       Sempre que o usuário seleciona uma máquina na última linha, cria uma nova abaixo. */
+    document.getElementById('container-equipamentos').addEventListener('change', (e) => {
+        if (e.target.classList.contains('equip-select')) {
+            const grupos = document.querySelectorAll('.equip-group');
+            const ultimoSelect = grupos[grupos.length - 1].querySelector('.equip-select');
 
-        if (ultimoInput.value.trim() !== "") {
-            const novoGrupo = document.createElement('div');
-            novoGrupo.className = 'equip-group';
-            novoGrupo.innerHTML = `
-                <input class="equip-input" placeholder="Equipamento ${grupos.length + 1}" style="flex: 3; margin-bottom:0;">
-                <input class="qtd-input" placeholder="Qtd" type="number" style="flex: 1; margin-bottom:0;">
-            `;
-            document.getElementById('container-equipamentos').appendChild(novoGrupo);
+            if (e.target === ultimoSelect && e.target.value !== "") {
+                adicionarLinhaEquipamento();
+            }
         }
     });
 
@@ -216,12 +263,19 @@
                 }
             }
 
-            // Junta Nome + (Qtd) de todos os equipamentos preenchidos
+            // Junta Nome + [Pix: x] + (Qtd) de todos os equipamentos preenchidos
             let listaEquipFinal = [];
             document.querySelectorAll('.equip-group').forEach(grupo => {
-                const n = grupo.querySelector('.equip-input').value.trim();
+                const n = grupo.querySelector('.equip-select').value.trim();
+                const p = grupo.querySelector('.pix-input').value.trim();
                 const q = grupo.querySelector('.qtd-input').value.trim() || "1";
-                if(n !== "") listaEquipFinal.push(`${n} (${q})`);
+                
+                if(n !== "") {
+                    let str = n;
+                    if(p !== "") str += ` [Pix: ${p}]`;
+                    str += ` (${q})`;
+                    listaEquipFinal.push(str);
+                }
             });
 
             const dias = Array.from(document.querySelectorAll(".dias:checked")).map(d => d.value);

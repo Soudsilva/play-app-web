@@ -61,6 +61,18 @@
         }
         .btn-finalizar:active { transform: scale(0.98); }
 
+        /* --- ESTILOS DO BLOCO PRODUTOS --- */
+        .card-produtos {
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+        }
+        .titulo-prod {
+            text-align: center; font-weight: bold; color: #ffeb3b; margin-bottom: 15px;
+            font-size: 18px; text-transform: uppercase; letter-spacing: 1px;
+        }
+
         /* Área de Upload de Foto */
         .area-foto {
             border: 2px dashed rgba(255,255,255,0.3);
@@ -135,9 +147,11 @@
     <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
 
     <!-- 2. PRODUTOS -->
-    <label>Produtos e Quantidades</label>
-    <div id="containerProdutos">
-        <!-- As linhas serão inseridas aqui via JS -->
+    <div class="card-produtos">
+        <div class="titulo-prod">Produtos</div>
+        <div id="containerProdutos">
+            <!-- As linhas serão inseridas aqui via JS -->
+        </div>
     </div>
 
     <!-- 3. FINANCEIRO -->
