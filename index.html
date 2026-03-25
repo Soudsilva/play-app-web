@@ -118,7 +118,7 @@
 
     <div class="menu">
 
-        <div class="botao" id="btnAtendimento" onclick="abrirTela('atendimento')">
+        <div class="botao" id="btnAtendimento" onclick="abrirAtendimento()">
             <span class="icone">🤝</span>
             <span>Atendimento</span>
         </div>
@@ -195,11 +195,6 @@
 
     let listaColaboradores = [];
 
-    // Torna a função global para funcionar com os 'onclick' do HTML
-    window.abrirTela = function(tela){
-        console.log("Abrindo tela: " + tela);
-    }
-
     // [NOVO] Redirecionamento inteligente do Estoque
     window.abrirEstoque = function() {
         const nome = document.getElementById('selectUsuario').value;
@@ -211,6 +206,28 @@
         } else {
             window.location.href = 'estoque.html';
         }
+    };
+
+    // [NOVO] Redirecionamento inteligente do Atendimento
+    window.abrirAtendimento = function() {
+        // [NOVO] Limpa o rascunho anterior para garantir que a tela abra zerada
+        localStorage.removeItem('rascunho_atendimento');
+
+        const nome = document.getElementById('selectUsuario').value;
+        const usuario = listaColaboradores.find(c => c.nome === nome);
+        const perfil = usuario ? (usuario.nivel_completo || "") : "";
+
+        if (perfil.includes('atendimento_1')) {
+            window.location.href = 'atendimento_nivel_1.html';
+        } else {
+            // Caso existam outras telas para outros niveis ou padrão
+            console.log("Abrindo atendimento padrão...");
+            // window.location.href = 'atendimento.html'; // Descomente quando existir
+        }
+    };
+
+    window.abrirTela = function(tela){
+        console.log("Abrindo tela genérica: " + tela);
     };
 
     // Verifica permissões baseado no nome selecionado
@@ -245,20 +262,44 @@
             
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'flex';
-            btns.estoque.style.display = 'flex';
+            
+            // [ALTERADO] Botão 'Estoque' (Base de dados) agora é exclusivo de Gestores
+            btns.estoque.style.display = 'none'; 
+            
+            // [MANTIDO] Botão 'Entr. Saídas' para perfil Estoque
             btns.movimentacao.style.display = 'flex';
+            
             btns.pedidos.style.display = 'flex';
             btns.financeiro.style.display = 'flex';
 
-        // 2. PERFIL ATENDIMENTO (Restrito conforme solicitado)
+        // 2. PERFIL ATENDIMENTO
         } else if (perfil.includes('atendimento')) {
-            btns.atendimento.style.display = 'flex';
+            
+            // [ALTERADO] Botão Atendimento oculto para Nível 2
+            if (perfil.includes('atendimento_2')) {
+                btns.atendimento.style.display = 'none';
+            } else {
+                btns.atendimento.style.display = 'flex';
+            }
+            
             btns.clientes.style.display = 'flex';
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'flex';
-            btns.rotas.style.display = 'flex';
-            btns.pix.style.display = 'flex'; // [NOVO]
             
+            // [ALTERADO] Rotas apenas para Nível 1
+            if (perfil.includes('atendimento_1')) {
+                btns.rotas.style.display = 'flex';
+            } else {
+                btns.rotas.style.display = 'none';
+            }
+            
+            // [ALTERADO] Área Pix não aparece para Nível 1
+            if (perfil.includes('atendimento_1')) {
+                btns.pix.style.display = 'none';
+            } else {
+                btns.pix.style.display = 'flex';
+            }
+
             // Fluxo de Caixa: Apenas Nível 2
             btns.fluxoCaixa.style.display = perfil.includes('atendimento_2') ? 'flex' : 'none';
             
@@ -269,16 +310,22 @@
             btns.pedidos.style.display = 'none';
             btns.financeiro.style.display = 'none';
 
-        // 3. PERFIL GESTÃO (Vê quase tudo)
+        // 3. PERFIL GESTÃO
         } else {
             btns.atendimento.style.display = 'flex';
             btns.clientes.style.display = 'flex';
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'flex';
-            btns.rotas.style.display = 'flex';
+            
+            // [ALTERADO] Rotas é exclusivo de Atendimento 1
+            btns.rotas.style.display = 'none'; 
+            
             btns.cadColab.style.display = 'flex';
             btns.estoque.style.display = 'flex';
-            btns.movimentacao.style.display = 'flex';
+            
+            // [ALTERADO] Movimentação (Entr. Saídas) fica para o perfil Estoque
+            btns.movimentacao.style.display = 'none';
+            
             btns.pedidos.style.display = 'flex';
             
             btns.pix.style.display = perfil.includes('gestao') ? 'flex' : 'none'; // Apenas Gestão (ou atendimento acima)

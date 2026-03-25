@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atendimento Nível 1</title>
+    <style>
+        body { 
+            margin:0; 
+            font-family:Arial, sans-serif; 
+            background:#042d86; 
+            display:flex; justify-content:center; color:white; 
+            overscroll-behavior-y: contain; /* [NOVO] Trava o "puxar para atualizar" no celular */
+        }
+        .app { width:100%; max-width:420px; box-sizing:border-box; min-height: 100vh; padding: 20px; padding-bottom: 100px; }
+
+        /* Cabeçalho  altere aqui o nome e tamanho da fonte */
+        .topo { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .titulo { font-size: 32px; font-weight: bold; }
+        .btn-voltar { background: rgba(255,255,255,0.2); border:none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+
+        /* Inputs Gerais */
+        label { font-size: 14px; color: #cfd6e3; margin-bottom: 5px; display: block; margin-top: 15px; }
+        input, select { 
+            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.3); 
+            background: white; color: #333; box-sizing: border-box; font-size: 16px; outline: none; 
+        }
+
+        /* Área do Cliente Encontrado */
+        .card-cliente {
+            background: #4caf50; /* Verde quando encontrado */
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 10px;
+            display: none; /* Escondido por padrão */
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .card-cliente.erro { background: #f44336; } /* Vermelho se não achar */
+        
+        /* Lista de Produtos Dinâmica */
+        .linha-produto {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            animation: slideDown 0.3s ease;
+        }
+        
+        .col-prod { flex: 2; } /* Dropdown ocupa mais espaço */
+        .col-qtd { flex: 1; }  /* Qtd ocupa menos */
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDown { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* Botão Finalizar */
+        .btn-finalizar {
+            background: #ffeb3b; color: #042d86; font-weight: bold; font-size: 18px;
+            border: none; padding: 15px; border-radius: 12px; cursor: pointer;
+            width: 100%; margin-top: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .btn-finalizar:active { transform: scale(0.98); }
+
+        /* Área de Upload de Foto */
+        .area-foto {
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+            cursor: pointer;
+            background: rgba(255,255,255,0.05);
+        }
+        .preview-img {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 8px;
+            display: none; /* Escondido até ter foto */
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    
+    <div class="topo">
+        <div class="titulo">Atendimento</div>
+    </div>
+
+    <!-- 1. BUSCA DE CLIENTE -->
+    <label style="text-align: center;">Número do Cliente</label>
+    <div style="display: flex; justify-content: center;">
+        <input type="number" id="inputBuscaCliente" placeholder="Nº" oninput="buscarCliente()" 
+               style="width: 40%; font-size: 28px; text-align: center; font-weight: bold;">
+    </div>
+
+    <!-- Galeria (Card) do Resultado -->
+    <div id="resultadoCliente" class="card-cliente">
+        <!-- Conteúdo preenchido via JS -->
+    </div>
+    <input type="hidden" id="idClienteSelecionado">
+
+    <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
+
+    <!-- 2. PRODUTOS -->
+    <label>Produtos e Quantidades</label>
+    <div id="containerProdutos">
+        <!-- As linhas serão inseridas aqui via JS -->
+    </div>
+
+    <!-- 3. FOTO DA FICHA -->
+    <label>Foto da Ficha</label>
+    <div class="area-foto" onclick="document.getElementById('inputFoto').click()">
+        <span id="textoFoto">📸 Toque para adicionar foto</span>
+        <img id="imgPreview" class="preview-img">
+        <!-- Input escondido, acionado pelo clique na div -->
+        <input type="file" id="inputFoto" accept="image/*" style="display: none;" onchange="mostrarPreview(this)">
+    </div>
+
+    <button class="btn-finalizar" onclick="salvarAtendimento()">FINALIZAR ATENDIMENTO</button>
+
+</div>
+
+<script type="module">
+    import { dbEscutarClientes, dbEscutarEstoque } from './database.js';
+
+    let listaClientes = [];
+    let listaProdutos = [];
+    let rascunhoRestaurado = false; // Controle para não sobrescrever
+
+    // --- CARREGAMENTO DE DADOS ---
+    
+    // 1. Carrega Clientes
+    dbEscutarClientes((lista) => {
+        listaClientes = lista;
+    });
+
+    // 2. Carrega Produtos e inicia a primeira linha
+    dbEscutarEstoque((lista) => {
+        // [ALTERADO] Filtra para não permitir nomes repetidos no dropdown
+        const nomesVistos = new Set();
+        const listaUnica = [];
+        
+        lista.forEach(item => {
+            if (item.categoria === 'produtos' && !nomesVistos.has(item.nome)) {
+                nomesVistos.add(item.nome);
+                listaUnica.push(item);
+            }
+        });
+        listaProdutos = listaUnica;
+
+        // Se for a primeira vez carregando e não tiver linhas, cria a primeira
+        // [ALTERADO] Tenta restaurar rascunho antes de criar linha vazia
+        if (!rascunhoRestaurado) {
+            restaurarRascunho();
+            rascunhoRestaurado = true;
+        }
+        
+        if (document.querySelectorAll('.linha-produto').length === 0) {
+            adicionarLinhaProduto();
+        }
+    });
+
+    // --- LÓGICA DO CLIENTE ---
+
+    window.buscarCliente = function() {
+        const termo = document.getElementById('inputBuscaCliente').value.trim();
+        salvarRascunho(); // [NOVO] Salva sempre que digitar
+        const divResultado = document.getElementById('resultadoCliente');
+        
+        if (!termo) {
+            divResultado.style.display = 'none';
+            return;
+        }
+
+        // Procura pelo campo "numero" do cliente
+        const cliente = listaClientes.find(c => c.numero == termo);
+
+        divResultado.style.display = 'block';
+
+        if (cliente) {
+            divResultado.className = 'card-cliente'; // Verde
+            divResultado.innerHTML = `
+                <div style="font-size: 28px; font-weight: bold;">${cliente.nome}</div>
+                <div style="font-size: 14px; opacity: 0.9;">Rota: ${cliente.rota || "Não informada"}</div>
+                <div style="font-size: 15px; color: #ffeb3b; margin-top:3px; font-weight:bold;">Equip: ${cliente.equip || "Nenhum"}</div>
+                <div style="font-size: 12px; margin-top:5px;">${cliente.endereco || "Endereço não cadastrado"}</div>
+            `;
+            document.getElementById('idClienteSelecionado').value = cliente.firebaseUrl;
+        } else {
+            divResultado.className = 'card-cliente erro'; // Vermelho
+            divResultado.innerHTML = `❌ Cliente nº ${termo} não encontrado.`;
+            document.getElementById('idClienteSelecionado').value = "";
+        }
+    }
+
+    // --- LÓGICA DOS PRODUTOS DINÂMICOS ---
+
+    // [NOVO] Função para atualizar opções e impedir duplicados
+    window.atualizarOpcoes = function() {
+        const selects = document.querySelectorAll('.input-prod');
+        const selecionados = Array.from(selects).map(s => s.value).filter(v => v);
+
+        selects.forEach(select => {
+            const valorAtual = select.value;
+            let opcoesHTML = `<option value="">Selecione o produto...</option>`;
+            
+            listaProdutos.forEach(p => {
+                // Adiciona se for o item já selecionado neste campo OU se não estiver selecionado em nenhum outro
+                if (p.firebaseUrl === valorAtual || !selecionados.includes(p.firebaseUrl)) {
+                    opcoesHTML += `<option value="${p.firebaseUrl}">${p.nome}</option>`;
+                }
+            });
+
+            select.innerHTML = opcoesHTML;
+            select.value = valorAtual; // Mantém a seleção
+        });
+    }
+
+    window.adicionarLinhaProduto = function(inputAnterior = null, valorProd = null, valorQtd = null) {
+        // Se foi chamado pelo input, e o input está vazio, não faz nada
+        if (inputAnterior && inputAnterior.value === "") return;
+        
+        // Verifica se a última linha já está vazia para não criar duplicatas vazias
+        const inputsQtd = document.querySelectorAll('.input-qtd');
+        if (inputsQtd.length > 0) {
+            const ultimoInput = inputsQtd[inputsQtd.length - 1];
+            if (ultimoInput.value === "") return; 
+        }
+
+        const container = document.getElementById('containerProdutos');
+        const div = document.createElement('div');
+        div.className = 'linha-produto';
+
+        // O conteúdo do Select será preenchido dinamicamente pela função atualizarOpcoes
+        div.innerHTML = `
+            <div class="col-prod">
+                <select class="input-prod" onchange="atualizarOpcoes()">
+                    <!-- Preenchido via JS -->
+                </select>
+            </div>
+            <div class="col-qtd">
+                <input type="number" class="input-qtd" placeholder="Qtd" oninput="adicionarLinhaProduto(this)" onchange="salvarRascunho()">
+            </div>
+        `;
+
+        container.appendChild(div);
+        
+        // [CORREÇÃO] Popula o select antes de definir o valor para que o browser reconheça a opção
+        atualizarOpcoes();
+
+        // [NOVO] Se vieram valores (da restauração), preenche eles
+        if (valorProd) {
+            div.querySelector('.input-prod').value = valorProd;
+        }
+        if (valorQtd) {
+            div.querySelector('.input-qtd').value = valorQtd;
+        }
+
+        // Atualiza todos os dropdowns para filtrar os itens
+        atualizarOpcoes();
+        salvarRascunho(); // Salva estado atual
+    }
+
+    // --- LÓGICA DA FOTO (PREVIEW) ---
+    window.mostrarPreview = function(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const img = document.getElementById('imgPreview');
+                img.src = e.target.result;
+                img.style.display = 'block';
+                
+                document.getElementById('textoFoto').style.display = 'none'; // Esconde o texto
+                salvarRascunho(); // [NOVO] Salva a foto no rascunho assim que selecionada
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // --- FINALIZAR (Simulação) ---
+    window.salvarAtendimento = function() {
+        const idCliente = document.getElementById('idClienteSelecionado').value;
+        if (!idCliente) return alert("Selecione um cliente válido.");
+
+        // Coleta itens com quantidade > 0
+        const linhas = document.querySelectorAll('.linha-produto');
+        let contagem = 0;
+        linhas.forEach(linha => {
+            if(linha.querySelector('.input-qtd').value > 0) contagem++;
+        });
+
+        if (contagem === 0) return alert("Insira quantidade em pelo menos um produto.");
+
+        // Limpa o rascunho pois finalizou com sucesso
+        localStorage.removeItem('rascunho_atendimento');
+        
+        alert("Atendimento registrado! (Lógica de salvar será configurada em breve)");
+        window.location.href = 'index.html';
+    }
+
+    // --- SISTEMA DE RASCUNHO (Auto-Save) ---
+    
+    window.salvarRascunho = function() {
+        const dados = {
+            clienteBusca: document.getElementById('inputBuscaCliente').value,
+            produtos: []
+        };
+
+        document.querySelectorAll('.linha-produto').forEach(linha => {
+            const p = linha.querySelector('.input-prod').value;
+            const q = linha.querySelector('.input-qtd').value;
+            if (p || q) { // Salva se tiver algo preenchido
+                dados.produtos.push({ prod: p, qtd: q });
+            }
+        });
+
+        // [NOVO] Salva também a foto se houver
+        const img = document.getElementById('imgPreview');
+        if (img.style.display === 'block' && img.src) {
+            dados.fotoBase64 = img.src;
+        }
+
+        try {
+            localStorage.setItem('rascunho_atendimento', JSON.stringify(dados));
+        } catch (e) {
+            console.warn("Imagem muito grande para salvar no rascunho.");
+        }
+    }
+
+    window.restaurarRascunho = function() {
+        const salvo = localStorage.getItem('rascunho_atendimento');
+        if (salvo) {
+            try {
+                const dados = JSON.parse(salvo);
+                
+                // 1. Restaura Cliente
+                if (dados.clienteBusca) {
+                    document.getElementById('inputBuscaCliente').value = dados.clienteBusca;
+                    buscarCliente(); // Dispara a busca visual
+                }
+
+                // 2. Restaura Produtos
+                const container = document.getElementById('containerProdutos');
+                container.innerHTML = ""; // Limpa para recriar
+
+                if (dados.produtos && dados.produtos.length > 0) {
+                    dados.produtos.forEach(item => {
+                        adicionarLinhaProduto(null, item.prod, item.qtd);
+                    });
+                    // Adiciona uma linha vazia no final para continuar digitando
+                    adicionarLinhaProduto();
+                }
+
+                // 3. Restaura Foto
+                if (dados.fotoBase64) {
+                    const img = document.getElementById('imgPreview');
+                    img.src = dados.fotoBase64;
+                    img.style.display = 'block';
+                    document.getElementById('textoFoto').style.display = 'none';
+                }
+                
+            } catch (e) {
+                console.error("Erro ao restaurar rascunho", e);
+            }
+        }
+    }
+    
+    // Adiciona listener para salvar quando muda o dropdown de produto
+    document.getElementById('containerProdutos').addEventListener('change', (e) => {
+        if(e.target.classList.contains('input-prod')) salvarRascunho();
+    });
+
+
+    // [NOVO] Segurança Extra: Ao entrar na página (mesmo pelo cache do celular), se não houver rascunho, limpa tudo.
+    window.addEventListener('pageshow', function() {
+        if (!localStorage.getItem('rascunho_atendimento')) {
+            document.getElementById('inputBuscaCliente').value = "";
+            document.getElementById('resultadoCliente').style.display = 'none';
+            document.getElementById('containerProdutos').innerHTML = "";
+            document.getElementById('imgPreview').style.display = 'none';
+            document.getElementById('textoFoto').style.display = 'block';
+            // Se estiver vazio, tenta criar a primeira linha novamente
+            if (document.querySelectorAll('.linha-produto').length === 0 && typeof window.adicionarLinhaProduto === 'function') {
+                window.adicionarLinhaProduto();
+            }
+        }
+    });
+
+</script>
+
+<!-- [NOVO] Script de Proteção de Saída (Fora do Módulo para execução imediata e robusta) -->
+<script>
+    // Função simples para adicionar um estado no histórico
+    function travarVoltar() {
+        history.pushState(null, null, window.location.href);
+    }
+
+    // 1. Tenta travar assim que a página carrega
+    window.addEventListener('load', function() {
+        travarVoltar();
+    });
+
+    // 2. Garante a trava na primeira interação (para contornar bloqueios de navegadores após refresh)
+    function garantirTrava() {
+        travarVoltar();
+        window.removeEventListener('click', garantirTrava);
+        window.removeEventListener('touchstart', garantirTrava);
+    }
+    window.addEventListener('click', garantirTrava);
+    window.addEventListener('touchstart', garantirTrava);
+
+    // 3. Evento disparado ao apertar Voltar
+    window.addEventListener('popstate', function (event) {
+        // IMPORTANTE: Empurra o estado de volta IMEDIATAMENTE para cancelar a saída
+        travarVoltar();
+
+        // Exibe a confirmação
+        if (confirm("Se voltar perderá as informações. Deseja sair?")) {
+            // Se confirmar, limpamos o rascunho e saímos manualmente
+            localStorage.removeItem('rascunho_atendimento');
+            
+            // Força a limpeza visual (caso o navegador faça cache)
+            try { document.querySelector('.app').style.display = 'none'; } catch(e) {}
+
+            window.location.href = 'index.html';
+        }
+    });
+</script>
+
+</body>
+</html>
