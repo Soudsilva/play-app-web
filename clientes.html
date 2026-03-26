@@ -94,7 +94,6 @@
         clientes.forEach(c => {
             // 1. Processar Equipamentos e Pix
             let equipString = "";
-            const pixToShow = [];
             if (c.equip) {
                 const equipList = c.equip.split(', ');
                 const equipsToShow = [];
@@ -117,10 +116,8 @@
                     }
                     nome = nome.trim();
                     if (nome) {
-                        equipsToShow.push(`${nome} ${qtd}`);
-                        if (pix) {
-                            pixToShow.push(`${nome} Placa Pix ${pix}`);
-                        }
+                        const formato = `${nome} ${qtd}${pix ? ` Pix ${pix}` : ''}`;
+                        equipsToShow.push(formato);
                     }
                 });
                 if (equipsToShow.length > 0) {
@@ -141,9 +138,7 @@
             }
             const rotaComissaoHtml = rotaComissaoContent ? `<div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin-bottom: 4px;">${rotaComissaoContent}</div>` : '';
 
-            const equipHtml = equipString ? `<div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin-bottom: 4px;"><b style="color: #ff9800;">Equip: </b> ${equipString}</div>` : '';
-            
-            const pixHtml = pixToShow.length > 0 ? `<div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin-bottom: 4px;"><b style="color: #ff9800;">Lista Pix: </b> ${pixToShow.join(' / ')}</div>` : '';
+            const equipHtml = equipString ? `<div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin-bottom: 4px;"><b style="color: #ff9800;">Equi.: </b> ${equipString}</div>` : '';
 
             const abertoHtml = c.aberto ? `<div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin-bottom: 4px;"><b style="color: #ff9800;">Aberto: </b> ${c.aberto}</div>` : '';
             
@@ -175,7 +170,6 @@
                 ${cidadeHtml}
                 ${rotaComissaoHtml}
                 ${equipHtml}
-                ${pixHtml}
                 ${abertoHtml}
                 ${obsHtml}
                 ${enderecoHtml}

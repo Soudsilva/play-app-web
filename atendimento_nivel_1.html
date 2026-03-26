@@ -16,7 +16,7 @@
 
         /* Cabeçalho  altere aqui o nome e tamanho da fonte */
         .topo { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
-        .titulo { font-size: 32px; font-weight: bold; }
+        .titulo { font-size: 30px; font-weight: bold; } /* Aumentei o tamanho aqui */
         .btn-voltar { background: rgba(255,255,255,0.2); border:none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
 
         /* Inputs Gerais */
@@ -170,17 +170,19 @@
 
         <!-- Área Dinheiro em Espécie -->
         <div class="sub-card">
-            <div class="titulo-sub"><span style="font-size:18px">💵</span> Dinheiro em Espécie</div>
+            <div class="titulo-sub"><span style="font-size:20px">💵</span> Dinheiro em Espécie</div>
             
-            <div>
-                <label class="lbl-fin">Dinheiro (R$)</label>
-                <input type="text" inputmode="numeric" id="valorDinheiro" placeholder="0" oninput="formatarNumero(this); calcularTotais(); salvarRascunho()">
+            <div style="display: flex; justify-content: center;">
+                <div style="width: 50%;">
+                    <label class="lbl-fin" style="text-align: center;">Dinheiro (R$)</label>
+                    <input type="text" inputmode="numeric" id="valorDinheiro" placeholder="0" oninput="formatarNumero(this, 8); calcularTotais(); salvarRascunho()" style="text-align: center;">
+                </div>
             </div>
 
             <div class="linha-form" style="margin-top:10px;">
                 <div style="flex:1">
                     <label class="lbl-fin">Comissão %</label>
-                    <input type="number" id="porcComissao" placeholder="%" oninput="calcularTotais(); salvarRascunho()">
+                    <input type="number" id="porcComissao" placeholder="%" oninput="calcularTotais(); salvarRascunho()" style="text-align: center;">
                 </div>
                 <div style="flex:2">
                     <label class="lbl-fin">Valor Comissão</label>
@@ -191,23 +193,41 @@
             <div class="linha-form">
                 <div style="flex:1">
                     <label class="lbl-fin">Total Geral</label>
-                    <input type="text" id="totalGeral" class="input-readonly" readonly placeholder="R$ 0.00">
+                    <input type="text" id="totalGeral" class="input-readonly" readonly placeholder="R$ 0.00" style="text-align: center;">
                 </div>
                 <div style="flex:1">
                     <label class="lbl-fin">Saldo Final</label>
-                    <input type="text" id="saldoFinal" class="input-saldo" readonly placeholder="R$ 0.00">
+                    <input type="text" id="saldoFinal" class="input-saldo" readonly placeholder="R$ 0.00" style="text-align: center;">
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 3. FOTO DA FICHA -->
-    <label>Foto da Ficha</label>
-    <div class="area-foto" onclick="document.getElementById('inputFoto').click()">
-        <span id="textoFoto">📸 Toque para adicionar foto</span>
-        <img id="imgPreview" class="preview-img">
-        <!-- Input escondido, acionado pelo clique na div -->
-        <input type="file" id="inputFoto" accept="image/*" style="display: none;" onchange="mostrarPreview(this)">
+    <!-- 4. FOTOS -->
+    <div class="card-financeiro" style="margin-top: 25px;">
+        <div class="titulo-fin">Fotos</div>
+
+        <!-- Foto da Ficha (Principal) -->
+        <div class="sub-card">
+            <div class="titulo-sub" style="justify-content: center; font-size: 16px; color: #ffeb3b;">
+                📷 FOTO DA FICHA
+            </div>
+            <div class="area-foto" onclick="document.getElementById('inputFotoFicha').click()">
+                <span id="textoFotoFicha" style="font-size: 14px; opacity: 0.8;">Toque para adicionar</span>
+                <img id="imgPreviewFicha" class="preview-img">
+                <input type="file" id="inputFotoFicha" accept="image/*" style="display: none;" onchange="mostrarPreview(this, 'imgPreviewFicha', 'textoFotoFicha')">
+            </div>
+        </div>
+
+        <!-- Fotos dos Contadores Pix (Dinâmico) -->
+        <div id="containerFotosPix">
+            <!-- Inserido via JS -->
+        </div>
+
+        <!-- Fotos das Máquinas (Dinâmico) -->
+        <div id="containerFotosMaquinas">
+            <!-- Inserido via JS -->
+        </div>
     </div>
 
     <button class="btn-finalizar" onclick="salvarAtendimento()">FINALIZAR ATENDIMENTO</button>
@@ -339,11 +359,44 @@
         divResultado.style.display = 'block';
 
         if (cliente) {
+            // [NOVO] Processa a string de equipamentos para o formato correto
+            let equipString = "Nenhum";
+            if (cliente.equip) {
+                const equipList = cliente.equip.split(', ');
+                const equipsToShow = [];
+                equipList.forEach(item => {
+                    if (!item) return;
+                    let nome = item;
+                    let qtd = "1";
+                    let pix = "";
+                    const regexQtd = /\s*\(([^)]+)\)$/;
+                    const matchQtd = nome.match(regexQtd);
+                    if (matchQtd) {
+                        qtd = matchQtd[1];
+                        nome = nome.replace(regexQtd, "").trim();
+                    }
+                    const regexPix = /\s*\[Pix:\s*([^\]]+)\]$/;
+                    const matchPix = nome.match(regexPix);
+                    if (matchPix) {
+                        pix = matchPix[1];
+                        nome = nome.replace(regexPix, "").trim();
+                    }
+                    nome = nome.trim();
+                    if (nome) {
+                        const formato = `${nome} ${qtd}${pix ? ` Pix ${pix}` : ''}`;
+                        equipsToShow.push(formato);
+                    }
+                });
+                if (equipsToShow.length > 0) {
+                    equipString = equipsToShow.join(' / ');
+                }
+            }
+
             divResultado.className = 'card-cliente'; // Verde
             divResultado.innerHTML = `
                 <div style="font-size: 28px; font-weight: bold;">${cliente.nome}</div>
                 <div style="font-size: 14px; opacity: 0.9;">Rota: ${cliente.rota || "Não informada"}</div>
-                <div style="font-size: 15px; color: #ffeb3b; margin-top:3px; font-weight:bold;">Equip: ${cliente.equip || "Nenhum"}</div>
+                <div style="font-size: 15px; color: #ffeb3b; margin-top:3px; font-weight:bold;">Equi.: ${equipString}</div>
                 <div style="font-size: 12px; margin-top:5px;">${cliente.endereco || "Endereço não cadastrado"}</div>
             `;
             document.getElementById('idClienteSelecionado').value = cliente.firebaseUrl;
@@ -358,19 +411,43 @@
             // [NOVO] Lógica para preencher a Área Pix
             const containerPix = document.getElementById('containerPix');
             const areaPix = document.getElementById('areaPix');
+            const containerFotosPix = document.getElementById('containerFotosPix');
+            const containerFotosMaquinas = document.getElementById('containerFotosMaquinas');
             containerPix.innerHTML = ''; // Limpa as linhas existentes
+            containerFotosMaquinas.innerHTML = ''; // Limpa as fotos das maquinas existentes
+            containerFotosPix.innerHTML = ''; // Limpa as fotos pix existentes
 
             const pixValues = [];
             if (cliente.equip) {
                 const equipList = cliente.equip.split(', ');
-                equipList.forEach(item => {
+
+                equipList.forEach((item, index) => {
                     if (!item) return;
-                    let nomeEquip = item;
-                    // Remove a quantidade final ex: "(1)" para facilitar achar o Pix
-                    nomeEquip = nomeEquip.replace(/\s*\(([^)]+)\)$/, "").trim();
-                    
+
+                    // --- 1. Lógica para Fotos de TODAS as máquinas ---
+                    let nomeLimpo = item.replace(/\s*\(([^)]+)\)$/, "").trim(); // remove qty
+                    nomeLimpo = nomeLimpo.replace(/\s*\[Pix:\s*([^\]]+)\]$/, "").trim(); // remove pix
+
+                    if (nomeLimpo) {
+                        const divFoto = document.createElement('div');
+                        divFoto.className = 'sub-card';
+                        divFoto.innerHTML = `
+                            <div class="titulo-sub" style="justify-content: center; font-size: 16px; color: #ffeb3b;">
+                                FOTO: ${nomeLimpo.toUpperCase()}
+                            </div>
+                            <div class="area-foto" onclick="document.getElementById('inputFotoMaquina_${index}').click()">
+                                <span id="textoFotoMaquina_${index}" style="font-size: 14px; opacity: 0.8;">Toque para adicionar</span>
+                                <img id="imgPreviewMaquina_${index}" class="preview-img">
+                                <input type="file" id="inputFotoMaquina_${index}" class="input-foto-maquina" accept="image/*" style="display: none;" onchange="mostrarPreview(this, 'imgPreviewMaquina_${index}', 'textoFotoMaquina_${index}')">
+                            </div>
+                        `;
+                        containerFotosMaquinas.appendChild(divFoto);
+                    }
+
+                    // --- 2. Lógica para encontrar valores de PIX ---
+                    let nomeEquipComPix = item.replace(/\s*\(([^)]+)\)$/, "").trim();
                     const regexPix = /\s*\[Pix:\s*([^\]]+)\]$/i;
-                    const matchPix = nomeEquip.match(regexPix);
+                    const matchPix = nomeEquipComPix.match(regexPix);
                     if (matchPix) {
                         pixValues.push(matchPix[1]);
                     }
@@ -379,7 +456,24 @@
 
             if (pixValues.length > 0) {
                 areaPix.style.display = 'block';
-                pixValues.forEach(pix => criarLinhaPix({ numero: pix }));
+                pixValues.forEach((pix, index) => {
+                    criarLinhaPix({ numero: pix });
+
+                    // Cria a área de foto para este PIX
+                    const divFoto = document.createElement('div');
+                    divFoto.className = 'sub-card';
+                    divFoto.innerHTML = `
+                        <div class="titulo-sub" style="justify-content: center; font-size: 16px; color: #ffeb3b;">
+                            FOTO DO CONTADOR PIX Nº ${pix}
+                        </div>
+                        <div class="area-foto" onclick="document.getElementById('inputFotoPix_${index}').click()">
+                            <span id="textoFotoPix_${index}" style="font-size: 14px; opacity: 0.8;">Toque para adicionar</span>
+                            <img id="imgPreviewPix_${index}" class="preview-img">
+                            <input type="file" id="inputFotoPix_${index}" class="input-foto-pix" accept="image/*" style="display: none;" onchange="mostrarPreview(this, 'imgPreviewPix_${index}', 'textoFotoPix_${index}')">
+                        </div>
+                    `;
+                    containerFotosPix.appendChild(divFoto);
+                });
             } else {
                 areaPix.style.display = 'none';
             }
@@ -392,6 +486,8 @@
             document.getElementById('idClienteSelecionado').value = "";
             document.getElementById('areaPix').style.display = 'block';
             document.getElementById('containerPix').innerHTML = '';
+            document.getElementById('containerFotosPix').innerHTML = '';
+            document.getElementById('containerFotosMaquinas').innerHTML = '';
             criarLinhaPix();
         }
     }
@@ -465,17 +561,19 @@
     }
 
     // --- LÓGICA DA FOTO (PREVIEW) ---
-    window.mostrarPreview = function(input) {
+    window.mostrarPreview = function(input, imgId, textoId) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             
             reader.onload = function(e) {
-                const img = document.getElementById('imgPreview');
+                const img = document.getElementById(imgId);
                 img.src = e.target.result;
                 img.style.display = 'block';
                 
-                document.getElementById('textoFoto').style.display = 'none'; // Esconde o texto
-                salvarRascunho(); // [NOVO] Salva a foto no rascunho assim que selecionada
+                if (document.getElementById(textoId)) {
+                    document.getElementById(textoId).style.display = 'none'; // Esconde o texto
+                }
+                salvarRascunho(); // Salva a foto no rascunho assim que selecionada
             }
             
             reader.readAsDataURL(input.files[0]);
@@ -559,11 +657,35 @@
             }
         });
 
-        // [NOVO] Salva também a foto se houver
-        const img = document.getElementById('imgPreview');
-        if (img.style.display === 'block' && img.src) {
-            dados.fotoBase64 = img.src;
+        // Salva foto da ficha
+        const imgFicha = document.getElementById('imgPreviewFicha');
+        if (imgFicha.style.display === 'block' && imgFicha.src) {
+            dados.fotoFichaBase64 = imgFicha.src;
         }
+
+        // Salva fotos do pix
+        dados.fotosPix = [];
+        document.querySelectorAll('.input-foto-pix').forEach((input, index) => {
+            const img = document.getElementById(`imgPreviewPix_${index}`);
+            if (img && img.style.display === 'block' && img.src) {
+                dados.fotosPix.push({
+                    index: index,
+                    src: img.src
+                });
+            }
+        });
+
+        // Salva fotos das maquinas
+        dados.fotosMaquinas = [];
+        document.querySelectorAll('.input-foto-maquina').forEach((input, index) => {
+            const img = document.getElementById(`imgPreviewMaquina_${index}`);
+            if (img && img.style.display === 'block' && img.src) {
+                dados.fotosMaquinas.push({
+                    index: index,
+                    src: img.src
+                });
+            }
+        });
 
         try {
             localStorage.setItem('rascunho_atendimento', JSON.stringify(dados));
@@ -603,7 +725,7 @@
                 }
 
                 document.getElementById('valorDinheiro').value = dados.valorDinheiro || "";
-                formatarNumero(document.getElementById('valorDinheiro'));
+                formatarNumero(document.getElementById('valorDinheiro'), 8);
 
                 document.getElementById('porcComissao').value = dados.porcComissao || "";
                 calcularTotais(); // Atualiza os cálculos visuais
@@ -621,13 +743,38 @@
                     adicionarLinhaProduto();
                 }
 
-                // 3. Restaura Foto
-                // 4. Restaura Foto
-                if (dados.fotoBase64) {
-                    const img = document.getElementById('imgPreview');
-                    img.src = dados.fotoBase64;
+                // 4. Restaura Foto da Ficha
+                if (dados.fotoFichaBase64) {
+                    const img = document.getElementById('imgPreviewFicha');
+                    img.src = dados.fotoFichaBase64;
                     img.style.display = 'block';
-                    document.getElementById('textoFoto').style.display = 'none';
+                    document.getElementById('textoFotoFicha').style.display = 'none';
+                }
+
+                // 5. Restaura Fotos do Pix (após buscarCliente ter criado os inputs)
+                if (dados.fotosPix && dados.fotosPix.length > 0) {
+                    dados.fotosPix.forEach(foto => {
+                        const img = document.getElementById(`imgPreviewPix_${foto.index}`);
+                        const texto = document.getElementById(`textoFotoPix_${foto.index}`);
+                        if (img && texto) {
+                            img.src = foto.src;
+                            img.style.display = 'block';
+                            texto.style.display = 'none';
+                        }
+                    });
+                }
+
+                // 6. Restaura Fotos das Máquinas (após buscarCliente ter criado os inputs)
+                if (dados.fotosMaquinas && dados.fotosMaquinas.length > 0) {
+                    dados.fotosMaquinas.forEach(foto => {
+                        const img = document.getElementById(`imgPreviewMaquina_${foto.index}`);
+                        const texto = document.getElementById(`textoFotoMaquina_${foto.index}`);
+                        if (img && texto) {
+                            img.src = foto.src;
+                            img.style.display = 'block';
+                            texto.style.display = 'none';
+                        }
+                    });
                 }
                 
             } catch (e) {
@@ -648,8 +795,10 @@
             document.getElementById('inputBuscaCliente').value = "";
             document.getElementById('resultadoCliente').style.display = 'none';
             document.getElementById('containerProdutos').innerHTML = "";
-            document.getElementById('imgPreview').style.display = 'none';
-            document.getElementById('textoFoto').style.display = 'block';
+            document.getElementById('imgPreviewFicha').style.display = 'none';
+            document.getElementById('textoFotoFicha').style.display = 'block';
+            document.getElementById('containerFotosPix').innerHTML = '';
+            document.getElementById('containerFotosMaquinas').innerHTML = '';
             document.getElementById('areaPix').style.display = 'block';
             document.getElementById('containerPix').innerHTML = "";
             // Se estiver vazio, tenta criar a primeira linha novamente
