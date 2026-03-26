@@ -305,6 +305,27 @@
     let rascunhoRestaurado = false; // Controle para não sobrescrever
     let currentFileInputId = null; // [NOVO] Armazena o ID do input de foto a ser acionado
 
+    function obterIdAtendimentoEmEdicao() {
+        return localStorage.getItem('atendimento_em_edicao_id') || "";
+    }
+
+    function obterDataAtendimentoEmEdicao() {
+        return localStorage.getItem('atendimento_em_edicao_data') || "";
+    }
+
+    function limparEstadoEdicao() {
+        localStorage.removeItem('atendimento_em_edicao_id');
+        localStorage.removeItem('atendimento_em_edicao_data');
+    }
+
+    function atualizarModoEdicao() {
+        const btn = document.querySelector('.btn-finalizar');
+        if (!btn) return;
+        btn.innerText = obterIdAtendimentoEmEdicao() ? "SALVAR EDIÇÃO" : "FINALIZAR ATENDIMENTO";
+    }
+
+    atualizarModoEdicao();
+
     // --- [NOVO] LÓGICA DO MODAL DE FOTO ---
     window.abrirModalFoto = function(inputId) {
         currentFileInputId = inputId;
@@ -725,19 +746,134 @@
     }
 
     // --- FINALIZAR (Simulação) ---
+    function validarProdutosObrigatorios() {
+        const linhas = Array.from(document.querySelectorAll('.linha-produto'));
+        const preenchidas = linhas
+            .map((linha, index) => {
+                const prodId = (linha.querySelector('.input-prod')?.value || "").trim();
+                const qtdRaw = (linha.querySelector('.input-qtd')?.value || "").trim();
+                const qtd = window.parseFormatted(qtdRaw);
+                return { index, prodId, qtdRaw, qtd };
+            })
+            // Ignora linhas totalmente vazias
+            .filter(l => l.prodId !== "" || l.qtdRaw !== "");
+
+        if (preenchidas.length === 0) {
+            return "Em PRODUTOS, preencha pelo menos 1 item (Produto e Qtd).";
+        }
+
+        const incompletas = preenchidas.filter(l => l.prodId === "" || l.qtd <= 0);
+        if (incompletas.length > 0) {
+            const linhasTxt = incompletas.map(l => `linha ${l.index + 1}`).join(', ');
+            return `Em PRODUTOS, não deixe campos em branco. Complete Produto e Qtd em: ${linhasTxt}.`;
+        }
+
+        return null;
+    }
+
+    function validarFotosObrigatorias() {
+        const faltas = [];
+
+        const imgFicha = document.getElementById('imgPreviewFicha');
+        const fichaOk = imgFicha && imgFicha.style.display === 'block' && !!imgFicha.src;
+        if (!fichaOk) {
+            faltas.push("- Envie a FOTO DA FICHA.");
+        }
+
+        // Máquinas: todas as fotos geradas para o cliente são obrigatórias
+        const faltandoMaquinas = [];
+        document.querySelectorAll('.input-foto-maquina').forEach(input => {
+            const index = input.id.split('_').pop();
+            const img = document.getElementById(`imgPreviewMaquina_${index}`);
+            const ok = img && img.style.display === 'block' && !!img.src;
+            if (!ok) {
+                const titulo = input.closest('.sub-card')?.querySelector('.titulo-sub')?.innerText?.trim();
+                faltandoMaquinas.push(titulo || `Máquina ${Number(index) + 1}`);
+            }
+        });
+        if (faltandoMaquinas.length > 0) {
+            faltas.push(`- Envie TODAS as fotos das MÁQUINAS: ${faltandoMaquinas.join(', ')}.`);
+        }
+
+        // PIX: se houver inputs de foto de pix, todos são obrigatórios
+        const faltandoPix = [];
+        document.querySelectorAll('.input-foto-pix').forEach(input => {
+            const index = input.id.split('_').pop();
+            const img = document.getElementById(`imgPreviewPix_${index}`);
+            const ok = img && img.style.display === 'block' && !!img.src;
+            if (!ok) {
+                const titulo = input.closest('.sub-card')?.querySelector('.titulo-sub')?.innerText?.trim();
+                faltandoPix.push(titulo || `Pix ${Number(index) + 1}`);
+            }
+        });
+        if (faltandoPix.length > 0) {
+            faltas.push(`- Envie TODAS as fotos dos CONTADORES PIX: ${faltandoPix.join(', ')}.`);
+        }
+
+        if (faltas.length > 0) {
+            return `Em FOTOS, todos os envios são obrigatórios:\n${faltas.join('\n')}`;
+        }
+
+        return null;
+    }
+
+    function validarDinheiroInformado() {
+        const valorDinheiro = (document.getElementById('valorDinheiro')?.value || "").trim();
+        if (valorDinheiro === "") {
+            return 'Preencha o campo "Dinheiro em espécie", mesmo que seja 0.';
+        }
+
+        return null;
+    }
+
+    function validarPixObrigatorio() {
+        const areaPix = document.getElementById('areaPix');
+        if (!areaPix || window.getComputedStyle(areaPix).display === 'none') {
+            return null;
+        }
+
+        const linhasPix = Array.from(document.querySelectorAll('#containerPix .linha-form'));
+        if (linhasPix.length === 0) {
+            return "Em ÁREA PIX, preencha os campos obrigatórios.";
+        }
+
+        const incompletas = linhasPix
+            .map((linha, index) => {
+                const numero = (linha.querySelector('.pixNumero')?.value || "").trim();
+                const contAnt = (linha.querySelector('.pixContAnt')?.value || "").trim();
+                const contAtual = (linha.querySelector('.pixContAtual')?.value || "").trim();
+                const valor = (linha.querySelector('.valorPix')?.value || "").trim();
+                const completo = numero !== "" && contAnt !== "" && contAtual !== "" && valor !== "";
+                return { index, completo };
+            })
+            .filter(linha => !linha.completo);
+
+        if (incompletas.length > 0) {
+            const linhasTxt = incompletas.map(linha => `linha ${linha.index + 1}`).join(', ');
+            return `Em ÁREA PIX, preencha todos os campos em: ${linhasTxt}.`;
+        }
+
+        return null;
+    }
+
     window.salvarAtendimento = async function() { // [ALTERADO] para async
         const btn = document.querySelector('.btn-finalizar');
         const idCliente = document.getElementById('idClienteSelecionado').value;
+        const atendimentoEmEdicaoId = obterIdAtendimentoEmEdicao();
+        const dataOriginalEdicao = obterDataAtendimentoEmEdicao();
         if (!idCliente) return alert("Selecione um cliente válido.");
 
-        // Coleta itens com quantidade > 0
-        const linhas = document.querySelectorAll('.linha-produto');
-        let contagem = 0;
-        linhas.forEach(linha => {
-            if (window.parseFormatted(linha.querySelector('.input-qtd').value) > 0) contagem++;
-        });
+        const erroDinheiro = validarDinheiroInformado();
+        if (erroDinheiro) return alert(erroDinheiro);
 
-        if (contagem === 0) return alert("Insira quantidade em pelo menos um produto.");
+        const erroPix = validarPixObrigatorio();
+        if (erroPix) return alert(erroPix);
+
+        const erroProdutos = validarProdutosObrigatorios();
+        if (erroProdutos) return alert(erroProdutos);
+
+        const erroFotos = validarFotosObrigatorias();
+        if (erroFotos) return alert(erroFotos);
 
         // [NOVO] Inicia o processo de salvamento
         btn.disabled = true;
@@ -835,25 +971,31 @@
 
             // --- 3. Montagem do Objeto Final ---
             const dadosAtendimento = {
-                atendente, data: new Date().toISOString(),
+                atendente,
+                data: atendimentoEmEdicaoId && dataOriginalEdicao ? dataOriginalEdicao : new Date().toISOString(),
                 cliente: { id: idCliente, nome: clienteNome, numero: clienteNumero },
                 produtos, financeiro, fotos
             };
 
+            if (atendimentoEmEdicaoId) {
+                dadosAtendimento.ultimaEdicao = new Date().toISOString();
+            }
+
             // --- 4. Salvar no Banco de Dados ---
             btn.innerText = "FINALIZANDO...";
-            await dbSalvarAtendimento(dadosAtendimento);
+            await dbSalvarAtendimento(dadosAtendimento, atendimentoEmEdicaoId || null);
 
             // --- 5. Limpeza e Redirecionamento ---
             localStorage.removeItem('rascunho_atendimento');
-            alert("Atendimento registrado com sucesso!");
+            limparEstadoEdicao();
+            alert(atendimentoEmEdicaoId ? "Atendimento atualizado com sucesso!" : "Atendimento registrado com sucesso!");
             window.location.href = 'index.html';
 
         } catch (error) {
             console.error("Falha ao salvar atendimento:", error);
             alert("Ocorreu um erro ao salvar o atendimento. Detalhe: " + error.message);
             btn.disabled = false;
-            btn.innerText = "FINALIZAR ATENDIMENTO";
+            atualizarModoEdicao();
         }
     }
 
@@ -958,10 +1100,10 @@
                     }
                 }
 
-                document.getElementById('valorDinheiro').value = dados.valorDinheiro || "";
+                document.getElementById('valorDinheiro').value = dados.valorDinheiro ?? "";
                 formatarNumero(document.getElementById('valorDinheiro'), 8);
 
-                document.getElementById('porcComissao').value = dados.porcComissao || "";
+                document.getElementById('porcComissao').value = dados.porcComissao ?? "";
                 calcularTotais(); // Atualiza os cálculos visuais
 
                 // 2. Restaura Produtos
@@ -971,7 +1113,8 @@
 
                 if (dados.produtos && dados.produtos.length > 0) {
                     dados.produtos.forEach(item => {
-                        adicionarLinhaProduto(null, item.prod, item.qtd);
+                        const prodId = item.prod || (listaProdutos.find(p => p.nome === item.prodNome)?.firebaseUrl || "");
+                        adicionarLinhaProduto(null, prodId, item.qtd);
                     });
                     // Adiciona uma linha vazia no final para continuar digitando
                     adicionarLinhaProduto();
@@ -1025,7 +1168,9 @@
 
     // [NOVO] Segurança Extra: Ao entrar na página (mesmo pelo cache do celular), se não houver rascunho, limpa tudo.
     window.addEventListener('pageshow', function() {
+        atualizarModoEdicao();
         if (!localStorage.getItem('rascunho_atendimento')) {
+            limparEstadoEdicao();
             document.getElementById('inputBuscaCliente').value = "";
             document.getElementById('resultadoCliente').style.display = 'none';
             document.getElementById('containerProdutos').innerHTML = "";
@@ -1077,6 +1222,7 @@
         if (confirm("Se voltar perderá as informações. Deseja sair?")) {
             // Se confirmar, limpamos o rascunho e saímos manualmente
             localStorage.removeItem('rascunho_atendimento');
+            limparEstadoEdicao();
             
             // Força a limpeza visual (caso o navegador faça cache)
             try { document.querySelector('.app').style.display = 'none'; } catch(e) {}

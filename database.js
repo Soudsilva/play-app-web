@@ -369,11 +369,15 @@ export async function storageSalvarFoto(base64String) {
 }
 
 // [NOVO] Salvar o registro completo do atendimento
-export async function dbSalvarAtendimento(atendimento) {
+export async function dbSalvarAtendimento(atendimento, idExistente = null) {
     try {
-        // Cria uma nova entrada na coleção 'atendimentos'
-        const atendimentosRef = ref(db, 'atendimentos');
-        await push(atendimentosRef, atendimento);
+        if (idExistente) {
+            await set(ref(db, `atendimentos/${idExistente}`), atendimento);
+        } else {
+            // Cria uma nova entrada na coleção 'atendimentos'
+            const atendimentosRef = ref(db, 'atendimentos');
+            await push(atendimentosRef, atendimento);
+        }
     } catch (error) {
         console.error("ERRO AO SALVAR ATENDIMENTO:", error);
         throw error;
@@ -393,4 +397,13 @@ export function dbEscutarAtendimentos(callback) {
         }
         callback(lista);
     });
+}
+
+export async function dbExcluirAtendimento(id) {
+    try {
+        await remove(ref(db, `atendimentos/${id}`));
+    } catch (error) {
+        console.error("ERRO AO EXCLUIR ATENDIMENTO:", error);
+        throw error;
+    }
 }

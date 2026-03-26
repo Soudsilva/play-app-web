@@ -46,6 +46,28 @@
         .foto-legenda { font-size: 10px; color: #ccc; font-weight: bold; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .sem-envios { text-align: center; opacity: 0.6; margin-top: 50px; font-size: 16px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px;}
+        .envio-acoes { margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.2); }
+        .acoes-linha { display: flex; gap: 10px; }
+        .btn-acao {
+            flex: 1;
+            border: none;
+            border-radius: 10px;
+            padding: 11px 12px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-editar { background: #ff9800; }
+        .btn-excluir { background: #f44336; }
+        .btn-acao:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .acao-bloqueio {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #cfd6e3;
+        }
     </style>
 </head>
 <body>
@@ -64,16 +86,97 @@
 </div>
 
 <script type="module">
-    import { dbEscutarAtendimentos } from './database.js';
+    import { dbEscutarAtendimentos, dbEscutarColaboradores, dbExcluirAtendimento } from './database.js';
 
     // Pega quem está logado no celular no momento
     const usuarioLogado = localStorage.getItem('usuarioLogado');
+    let atendimentosSalvos = [];
+    let colaboradoresSalvos = [];
+    let colaboradoresCarregados = false;
 
     function formatarMoeda(valor) {
         return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
     }
 
-    dbEscutarAtendimentos((atendimentos) => {
+    function obterPerfilPorNome(nome) {
+        return colaboradoresSalvos.find(c => c.nome === nome)?.nivel_completo || "";
+    }
+
+    function obterNomeAutorEnvio(envio) {
+        return envio.enviadoPor || envio.autor || envio.responsavel || envio.atendente || "";
+    }
+
+    function obterPerfilAutorEnvio(envio) {
+        return envio.perfilAutor || envio.autorPerfil || envio.perfil || obterPerfilPorNome(obterNomeAutorEnvio(envio));
+    }
+
+    function ehMesmoDiaAtual(dataIso) {
+        if (!dataIso) return false;
+        const dataEnvio = new Date(dataIso);
+        const agora = new Date();
+
+        return dataEnvio.getFullYear() === agora.getFullYear()
+            && dataEnvio.getMonth() === agora.getMonth()
+            && dataEnvio.getDate() === agora.getDate();
+    }
+
+    function obterMotivoBloqueio(envio) {
+        if (!colaboradoresCarregados) {
+            return "Carregando permissões do usuário...";
+        }
+
+        const nomeAutor = obterNomeAutorEnvio(envio);
+        const perfilAutor = obterPerfilAutorEnvio(envio);
+
+        if (perfilAutor.includes('estoque')) {
+            return "Enviado por perfil estoque.";
+        }
+        if (nomeAutor !== usuarioLogado) {
+            return "Somente o próprio autor pode alterar.";
+        }
+        if (!ehMesmoDiaAtual(envio.data)) {
+            return "Edição e exclusão só ficam liberadas no mesmo dia do envio.";
+        }
+
+        return "";
+    }
+
+    function podeAlterarEnvio(envio) {
+        return !obterMotivoBloqueio(envio);
+    }
+
+    function montarRascunhoEdicao(envio) {
+        const financeiro = envio.financeiro || {};
+        const fotos = envio.fotos || {};
+
+        return {
+            clienteBusca: envio.cliente?.numero || "",
+            pixLinhas: Array.isArray(financeiro.pix) ? financeiro.pix.map(pix => ({
+                numero: pix.numero || "",
+                contAnt: pix.contAnt ?? "",
+                contAtual: pix.contAtual ?? "",
+                valor: pix.valor ?? ""
+            })) : [],
+            valorDinheiro: financeiro.dinheiro ?? "",
+            porcComissao: financeiro.comissaoPorcentagem ?? "",
+            produtos: Array.isArray(envio.produtos) ? envio.produtos.map(produto => ({
+                prod: "",
+                prodNome: produto.nome || "",
+                qtd: produto.quantidade ?? ""
+            })) : [],
+            fotoFichaBase64: fotos.ficha || "",
+            fotosPix: Array.isArray(fotos.pix) ? fotos.pix.map((foto, index) => ({
+                index,
+                src: foto.url || ""
+            })) : [],
+            fotosMaquinas: Array.isArray(fotos.maquinas) ? fotos.maquinas.map((foto, index) => ({
+                index,
+                src: foto.url || ""
+            })) : []
+        };
+    }
+
+    function renderizarEnvios() {
         const container = document.getElementById('listaEnvios');
         container.innerHTML = '';
 
@@ -83,7 +186,7 @@
         }
 
         // Filtra só os que foram enviados por ele e ordena da data mais recente (maior) para a mais velha (menor)
-        const meusEnvios = atendimentos
+        const meusEnvios = atendimentosSalvos
             .filter(a => a.atendente === usuarioLogado)
             .sort((a, b) => new Date(b.data) - new Date(a.data));
 
@@ -160,10 +263,66 @@
                 htmlFotos = `<div class="secao-titulo">Imagens</div><div style="font-size:12px; color:#aaa; font-style: italic;">Nenhuma foto foi anexada neste envio.</div>`;
             }
 
-            card.innerHTML = `<div class="envio-header"><div class="envio-data">📅 Recebido em ${dataFormatada}</div><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>${htmlProdutos}${htmlFin}${htmlFotos}`;
+            const motivoBloqueio = obterMotivoBloqueio(envio);
+            const liberado = podeAlterarEnvio(envio);
+            const htmlAcoes = `
+                <div class="envio-acoes">
+                    <div class="acoes-linha">
+                        <button class="btn-acao btn-editar btn-editar-envio" ${liberado ? '' : 'disabled'}>Editar</button>
+                        <button class="btn-acao btn-excluir btn-excluir-envio" ${liberado ? '' : 'disabled'}>Excluir</button>
+                    </div>
+                    ${liberado ? '' : `<div class="acao-bloqueio">${motivoBloqueio}</div>`}
+                </div>
+            `;
+
+            card.innerHTML = `<div class="envio-header"><div class="envio-data">📅 Recebido em ${dataFormatada}</div><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}`;
+            if (liberado) {
+                card.querySelector('.btn-editar-envio')?.addEventListener('click', () => window.editarEnvio(envio));
+                card.querySelector('.btn-excluir-envio')?.addEventListener('click', () => window.excluirEnvio(envio.firebaseUrl));
+            }
             container.appendChild(card);
         });
+    }
+
+    dbEscutarColaboradores((colaboradores) => {
+        colaboradoresSalvos = colaboradores;
+        colaboradoresCarregados = true;
+        renderizarEnvios();
     });
+
+    dbEscutarAtendimentos((atendimentos) => {
+        atendimentosSalvos = atendimentos;
+        renderizarEnvios();
+    });
+
+    window.editarEnvio = function(envio) {
+        if (!podeAlterarEnvio(envio)) {
+            alert(obterMotivoBloqueio(envio));
+            return;
+        }
+
+        localStorage.setItem('rascunho_atendimento', JSON.stringify(montarRascunhoEdicao(envio)));
+        localStorage.setItem('atendimento_em_edicao_id', envio.firebaseUrl);
+        localStorage.setItem('atendimento_em_edicao_data', envio.data || "");
+        window.location.href = 'atendimento_nivel_1.html';
+    };
+
+    window.excluirEnvio = async function(id) {
+        const envio = atendimentosSalvos.find(item => item.firebaseUrl === id);
+        if (!envio) {
+            alert("Envio não encontrado.");
+            return;
+        }
+
+        if (!podeAlterarEnvio(envio)) {
+            alert(obterMotivoBloqueio(envio));
+            return;
+        }
+
+        if (confirm("Excluir este envio? Esta ação não pode ser desfeita.")) {
+            await dbExcluirAtendimento(id);
+        }
+    };
 </script>
 </body>
 </html>
