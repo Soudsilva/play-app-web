@@ -7,18 +7,19 @@
 // --- 1. IMPORTAÇÃO DAS FERRAMENTAS ---
 // Aqui estamos "pegando emprestado" as funções prontas do Google (Firebase) para não ter que criar tudo do zero.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { 
-    getDatabase, 
-    ref, 
-    set, 
-    get, 
-    push, 
-    remove, 
+import {
+    getDatabase,
+    ref,
+    set,
+    get,
+    push,
+    remove,
     onValue,
     update,
     query,
     limitToLast
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 // --- 2. CONFIGURAÇÃO (AS CHAVES DO COFRE) ---
 // Estas são as credenciais que permitem que seu site converse especificamente com o SEU banco de dados.
@@ -36,6 +37,7 @@ const firebaseConfig = {
 // Aqui ligamos o "motor" do Firebase usando as configurações acima.
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const storage = getStorage(app);
 
 /* --- FUNÇÕES PARA CLIENTES --- */
 
@@ -48,9 +50,9 @@ export function dbEscutarClientes(callback) {
         const data = snapshot.val();
         if (data) {
             // Transforma os dados brutos do banco em uma lista organizada
-            const lista = Object.keys(data).map(key => ({ 
-                ...data[key], 
-                firebaseUrl: key 
+            const lista = Object.keys(data).map(key => ({
+                ...data[key],
+                firebaseUrl: key
             }));
             // Devolve a lista pronta para quem chamou a função
             callback(lista);
@@ -173,9 +175,9 @@ export function dbEscutarColaboradores(callback) {
     onValue(colabRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
-            const lista = Object.keys(data).map(key => ({ 
-                ...data[key], 
-                firebaseUrl: key 
+            const lista = Object.keys(data).map(key => ({
+                ...data[key],
+                firebaseUrl: key
             })).sort((a, b) => {
                 // CORREÇÃO: Agora ordena pelo campo 'ordem' para respeitar o arrastar e soltar
                 return (a.ordem || 0) - (b.ordem || 0); 
@@ -205,7 +207,7 @@ export async function dbSalvarColaborador(colaborador, idExistente = null) {
         } else {
             // USANDO O TIMESTAMP NEGATIVO: 
             // Quanto mais recente o cadastro, menor o número, logo, fica no topo.
-            colaborador.ordem = -Date.now(); 
+            colaborador.ordem = -Date.now();
             const colabRef = ref(db, 'colaboradores');
             await push(colabRef, colaborador);
         }
@@ -320,4 +322,75 @@ export async function dbExcluirPedido(id) {
     } catch (error) {
         console.error("Erro ao excluir pedido:", error);
     }
+}
+
+/* --- FUNÇÕES PARA ATENDIMENTO --- */
+
+// [NOVO] Helper para converter Base64 em Blob para upload
+function base64ToBlob(base64, contentType = 'image/jpeg') {
+    const byteCharacters = atob(base64.split(',')[1]);
+    const byteArrays = [];
+    for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+        const slice = byteCharacters.slice(offset, offset + 512);
+        const byteNumbers = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
+    }
+    return new Blob(byteArrays, { type: contentType });
+}
+
+// [NOVO] Salvar uma foto no Firebase Storage
+export async function storageSalvarFoto(base64String) {
+    try {
+        // 1. Converte a string base64 para um formato de arquivo (Blob)
+        const blob = base64ToBlob(base64String);
+        
+        // 2. Cria um nome de arquivo único para evitar sobreposições
+        const nomeArquivo = `atendimentos/${Date.now()}-${Math.round(Math.random() * 1E9)}.jpg`;
+        const fotoRef = storageRef(storage, nomeArquivo);
+        
+        // 3. Faz o upload do arquivo (Com limite de 15 segundos para não travar)
+        const uploadPromise = uploadBytes(fotoRef, blob);
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite de upload excedido. A internet pode estar instável.")), 15000));
+        
+        const snapshot = await Promise.race([uploadPromise, timeoutPromise]);
+        
+        // 4. Pega a URL pública do arquivo que acabamos de subir
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        
+        return downloadURL;
+    } catch (error) {
+        console.error("Erro ao fazer upload da foto:", error);
+        throw error; // Re-lança o erro para ser tratado na tela de atendimento
+    }
+}
+
+// [NOVO] Salvar o registro completo do atendimento
+export async function dbSalvarAtendimento(atendimento) {
+    try {
+        // Cria uma nova entrada na coleção 'atendimentos'
+        const atendimentosRef = ref(db, 'atendimentos');
+        await push(atendimentosRef, atendimento);
+    } catch (error) {
+        console.error("ERRO AO SALVAR ATENDIMENTO:", error);
+        throw error;
+    }
+}
+
+// [NOVO] Escutar todos os atendimentos salvos
+export function dbEscutarAtendimentos(callback) {
+    const atendimentosRef = ref(db, 'atendimentos');
+    onValue(atendimentosRef, (snapshot) => {
+        const data = snapshot.val();
+        const lista = [];
+        if (data) {
+            Object.keys(data).forEach(key => {
+                lista.push({ firebaseUrl: key, ...data[key] });
+            });
+        }
+        callback(lista);
+    });
 }

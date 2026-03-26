@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Envios</title>
+    <style>
+        body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; }
+        .app { width:100%; max-width:600px; padding:15px; box-sizing:border-box; min-height: 100vh; padding-bottom: 50px; }
+        
+        .topo { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; position: relative; width: 100%; min-height: 45px; }
+        .titulo { font-size: 24px; font-weight: bold; text-align: center; }
+        .btn-home { background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 50%; cursor: pointer; display: flex; position: absolute; right: 0; }
+        .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
+
+        /* Card de cada Envio */
+        .card-envio { 
+            background: rgba(255,255,255,0.08); 
+            border-radius: 12px; 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            border: 1px solid rgba(255,255,255,0.2); 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        
+        /* Cabeçalho do Card */
+        .envio-header { border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 10px; }
+        .envio-data { font-size: 13px; color: #ffeb3b; font-weight: bold; }
+        .envio-cliente { font-size: 20px; font-weight: bold; margin-top: 5px; color: white; }
+
+        /* Títulos de Seção Interna */
+        .secao-titulo { 
+            font-size: 14px; font-weight: bold; color: #ffeb3b; margin: 15px 0 8px 0; 
+            text-transform: uppercase; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 3px; 
+        }
+        
+        /* Linhas de Informação */
+        .info-linha { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; align-items: center;}
+        .info-linha span { color: #cfd6e3; }
+        .info-linha strong { color: white; font-size: 15px;}
+
+        /* Galeria de Fotos Interna */
+        .foto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
+        .foto-item { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 5px; text-align: center; }
+        .foto-item img { width: 100%; height: 100px; object-fit: cover; border-radius: 4px; margin-bottom: 5px; border: 1px solid rgba(255,255,255,0.2); }
+        .foto-legenda { font-size: 10px; color: #ccc; font-weight: bold; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .sem-envios { text-align: center; opacity: 0.6; margin-top: 50px; font-size: 16px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px;}
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div class="topo">
+        <div class="titulo">Meus Envios</div>
+        <div class="btn-home" onclick="window.location.href='index.html'">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
+        </div>
+    </div>
+
+    <div id="listaEnvios">
+        <p class="sem-envios">Carregando seus envios...</p>
+    </div>
+</div>
+
+<script type="module">
+    import { dbEscutarAtendimentos } from './database.js';
+
+    // Pega quem está logado no celular no momento
+    const usuarioLogado = localStorage.getItem('usuarioLogado');
+
+    function formatarMoeda(valor) {
+        return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    dbEscutarAtendimentos((atendimentos) => {
+        const container = document.getElementById('listaEnvios');
+        container.innerHTML = '';
+
+        if (!usuarioLogado) {
+            container.innerHTML = '<p class="sem-envios">Nenhum usuário logado. Volte ao Menu Inicial e selecione seu nome.</p>';
+            return;
+        }
+
+        // Filtra só os que foram enviados por ele e ordena da data mais recente (maior) para a mais velha (menor)
+        const meusEnvios = atendimentos
+            .filter(a => a.atendente === usuarioLogado)
+            .sort((a, b) => new Date(b.data) - new Date(a.data));
+
+        if (meusEnvios.length === 0) {
+            container.innerHTML = '<p class="sem-envios">Você ainda não tem nenhum atendimento salvo no sistema.</p>';
+            return;
+        }
+
+        // Constrói os Cards
+        meusEnvios.forEach(envio => {
+            const card = document.createElement('div');
+            card.className = 'card-envio';
+
+            const dataFormatada = new Date(envio.data).toLocaleString('pt-BR');
+            const clienteNome = envio.cliente?.nome || 'Cliente Desconhecido';
+            const clienteNumero = envio.cliente?.numero || 'S/N';
+
+            // --- 1. PRODUTOS ---
+            let htmlProdutos = '';
+            if (envio.produtos && envio.produtos.length > 0) {
+                htmlProdutos += `<div class="secao-titulo">Produtos</div>`;
+                envio.produtos.forEach(p => {
+                    htmlProdutos += `<div class="info-linha"><span>${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
+                });
+            }
+
+            // --- 2. FINANCEIRO ---
+            let htmlFin = `<div class="secao-titulo">Financeiro</div>`;
+            const fin = envio.financeiro || {};
+            
+            // Área Pix do Card
+            if (fin.pix && fin.pix.length > 0) {
+                fin.pix.forEach(p => {
+                    htmlFin += `
+                        <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-bottom: 5px; font-size: 13px;">
+                            <strong style="color: #ffeb3b;">Pix ${p.numero}:</strong> Cont: ${p.contAnt} ➔ ${p.contAtual} <br>
+                            <div style="margin-top: 3px;">Valor apurado: <span style="color:#4caf50; font-weight:bold;">${formatarMoeda(p.valor)}</span></div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Totais
+            htmlFin += `
+                <div class="info-linha" style="margin-top: 10px;"><span>Dinheiro em Espécie</span> <strong>${formatarMoeda(fin.dinheiro)}</strong></div>
+                <div class="info-linha"><span>Total Geral</span> <strong>${formatarMoeda(fin.totalGeral)}</strong></div>
+                <div class="info-linha"><span>Comissão (${fin.comissaoPorcentagem || 0}%)</span> <strong style="color:#f44336;">- ${formatarMoeda(fin.comissaoValor)}</strong></div>
+                <div class="info-linha"><span>Saldo Final (Acerto)</span> <strong style="color:#4caf50; font-size:18px;">${formatarMoeda(fin.saldoFinal)}</strong></div>
+            `;
+
+            // --- 3. FOTOS ---
+            let htmlFotos = `<div class="secao-titulo">Imagens (Toque para ampliar)</div><div class="foto-grid">`;
+            const fotos = envio.fotos || {};
+            
+            // [CORREÇÃO] Filtra links corrompidos
+            const ehImagemValida = (url) => url && (url.startsWith('data:') || url.includes('firebasestorage'));
+            let temFoto = false;
+            
+            if (fotos.ficha && ehImagemValida(fotos.ficha)) { 
+                htmlFotos += `<div class="foto-item"><a href="${fotos.ficha}" target="_blank"><img src="${fotos.ficha}"></a><div class="foto-legenda">FICHA</div></div>`; 
+                temFoto = true; 
+            }
+            
+            if (fotos.maquinas && Array.isArray(fotos.maquinas)) {
+                fotos.maquinas.forEach(m => { if (ehImagemValida(m.url)) { htmlFotos += `<div class="foto-item"><a href="${m.url}" target="_blank"><img src="${m.url}"></a><div class="foto-legenda">${m.nome}</div></div>`; temFoto = true; }});
+            }
+            
+            if (fotos.pix && Array.isArray(fotos.pix)) {
+                fotos.pix.forEach(p => { if (ehImagemValida(p.url)) { htmlFotos += `<div class="foto-item"><a href="${p.url}" target="_blank"><img src="${p.url}"></a><div class="foto-legenda">PIX ${p.numero}</div></div>`; temFoto = true; }});
+            }
+            
+            htmlFotos += `</div>`;
+            if (!temFoto) {
+                htmlFotos = `<div class="secao-titulo">Imagens</div><div style="font-size:12px; color:#aaa; font-style: italic;">Nenhuma foto foi anexada neste envio.</div>`;
+            }
+
+            card.innerHTML = `<div class="envio-header"><div class="envio-data">📅 Recebido em ${dataFormatada}</div><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>${htmlProdutos}${htmlFin}${htmlFotos}`;
+            container.appendChild(card);
+        });
+    });
+</script>
+</body>
+</html>
