@@ -107,9 +107,58 @@
 
 <script type="module">
     // Importamos as ferramentas de banco de dados do seu arquivo externo
-    import { dbSalvarCliente, dbListarClientes, dbEscutarEstoque } from './database.js';
+    import { dbSalvarCliente, dbListarClientes, dbEscutarEstoque, dbEscutarColaboradores } from './database.js';
 
     let maquinasDisponiveis = [];
+    let perfilUsuarioLogado = "";
+    let nomeUsuarioLogado = localStorage.getItem('usuarioLogado') || "";
+    let clienteEmEdicao = null;
+    let perfilCarregado = false;
+    let editId = "";
+
+    function normalizarTexto(valor) {
+        return String(valor || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim();
+    }
+
+    function obterDataLocalIso(data) {
+        const base = data ? new Date(data) : new Date();
+        if (Number.isNaN(base.getTime())) return "";
+        const ano = base.getFullYear();
+        const mes = String(base.getMonth() + 1).padStart(2, "0");
+        const dia = String(base.getDate()).padStart(2, "0");
+        return `${ano}-${mes}-${dia}`;
+    }
+
+    function usuarioPodeEditarCliente(cliente) {
+        if (perfilUsuarioLogado.includes('gestao')) return true;
+        if (!perfilUsuarioLogado.includes('atendimento')) return false;
+        if (!cliente) return true;
+
+        const autorCadastro = cliente.cadastradoPor || cliente.ponto_aberto || "";
+        const diaCadastro = cliente.dataCadastroDia || obterDataLocalIso(cliente.dataCadastro);
+        const mesmoUsuario = normalizarTexto(autorCadastro) === normalizarTexto(nomeUsuarioLogado);
+        const mesmoDia = diaCadastro === obterDataLocalIso();
+        return mesmoUsuario && mesmoDia;
+    }
+
+    function bloquearEdicaoSemPermissao() {
+        alert("VocÃª nÃ£o tem permissÃ£o para editar este cliente.");
+        window.location.href = "clientes.html";
+    }
+
+    dbEscutarColaboradores((colaboradores) => {
+        nomeUsuarioLogado = localStorage.getItem('usuarioLogado') || "";
+        const usuarioAtual = colaboradores.find(c => c.nome === nomeUsuarioLogado);
+        perfilUsuarioLogado = String(usuarioAtual?.nivel_completo || "");
+        perfilCarregado = true;
+        if (editId && clienteEmEdicao && !usuarioPodeEditarCliente(clienteEmEdicao)) {
+            bloquearEdicaoSemPermissao();
+        }
+    });
 
     // --- CARREGAR MÁQUINAS ---
     dbEscutarEstoque((lista) => {
@@ -152,7 +201,7 @@
     /* --- PARTE A: DETECTAR EDIÇÃO ---
        Verifica se o link termina com "?edit=ID". Se sim, muda o título e carrega os dados. */
     const urlParams = new URLSearchParams(window.location.search);
-    const editId = urlParams.get('edit');
+    editId = urlParams.get('edit');
 
     if (editId) {
         document.querySelector('h2').innerText = "Editar Cliente";
@@ -169,6 +218,12 @@
             const cliente = clientes.find(c => c.firebaseUrl.includes(id));
 
             if (cliente) {
+                clienteEmEdicao = cliente;
+                if (perfilCarregado && !usuarioPodeEditarCliente(cliente)) {
+                    bloquearEdicaoSemPermissao();
+                    return;
+                }
+
                 document.getElementById("ponto_aberto").value = cliente.ponto_aberto || "";
                 document.getElementById("nome").value = cliente.nome || "";
                 document.getElementById("cidade").value = cliente.cidade || "";
@@ -252,6 +307,13 @@
 
             if (editId) {
                 const clienteAtual = clientes.find(c => c.firebaseUrl.includes(editId));
+                if (!clienteAtual) {
+                    throw new Error("Cliente nÃ£o encontrado.");
+                }
+                clienteEmEdicao = clienteAtual;
+                if (!usuarioPodeEditarCliente(clienteAtual)) {
+                    throw new Error("VocÃª nÃ£o tem permissÃ£o para editar este cliente.");
+                }
                 numeroFinal = clienteAtual.numero;
             } else {
                 // Lógica para achar o próximo número da lista (ex: 1, 2, 3...)
@@ -279,6 +341,9 @@
             });
 
             const dias = Array.from(document.querySelectorAll(".dias:checked")).map(d => d.value);
+            const dataCadastro = clienteEmEdicao?.dataCadastro || new Date().toISOString();
+            const dataCadastroDia = clienteEmEdicao?.dataCadastroDia || obterDataLocalIso();
+            const cadastradoPor = clienteEmEdicao?.cadastradoPor || nomeUsuarioLogado || "N/A";
 
             const dadosFinal = {
                 numero: numeroFinal,
@@ -290,7 +355,10 @@
                 endereco: document.getElementById("endereco").value,
                 aberto: dias.join(", "),
                 equip: listaEquipFinal.join(", "), 
-                obs: document.getElementById("obs").value
+                obs: document.getElementById("obs").value,
+                cadastradoPor,
+                dataCadastro,
+                dataCadastroDia
             };
 
             await dbSalvarCliente(dadosFinal, idParaSalvar);
