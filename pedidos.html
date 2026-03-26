@@ -106,6 +106,23 @@
 
     const usuarioLogado = localStorage.getItem('usuarioLogado') || "Desconhecido";
 
+    function calcularTextoDiasPedido(dataIso) {
+        if (!dataIso) return 'Pedido feito hoje';
+
+        const agora = new Date();
+        const dataPedido = new Date(dataIso);
+
+        const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+        const pedidoDia = new Date(dataPedido.getFullYear(), dataPedido.getMonth(), dataPedido.getDate());
+
+        const diffTempo = hoje - pedidoDia;
+        const diffDias = Math.max(0, Math.floor(diffTempo / (1000 * 60 * 60 * 24)));
+
+        if (diffDias === 0) return 'Pedido feito hoje';
+        if (diffDias === 1) return 'Pedido feito há 1 dia';
+        return `Pedido feito há ${diffDias} dias`;
+    }
+
     // 1. CARREGAR PEDIDOS
     dbEscutarPedidos((lista) => {
         const container = document.getElementById('listaPedidos');
@@ -141,19 +158,14 @@
             
             const classeEditar = souDono ? 'ativo-editar' : '';
             const acaoEditar = souDono ? `editarPedido(${JSON.stringify(p)})` : '';
-
-            // [NOVO] Cálculo de dias
-            const dataPedido = p.data ? new Date(p.data) : new Date();
-            const diffTempo = Math.abs(new Date() - dataPedido);
-            const diffDias = Math.floor(diffTempo / (1000 * 60 * 60 * 24)); 
-            const textoDias = diffDias === 0 ? "Hoje" : (diffDias === 1 ? "Há 1 dia" : `Há ${diffDias} dias`);
+            const textoDias = calcularTextoDiasPedido(p.data);
 
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <span class="desc-item">${p.descricao}</span>
                     <div style="display:flex; flex-direction:column; align-items:flex-end;">
                         <span class="badge ${classeCor}">${nomeCat}</span>
-                        <span style="font-size:11px; color:#999; margin-top:5px; white-space:nowrap;">📅 ${textoDias}</span>
+                        <span style="font-size:11px; color:#999; margin-top:5px; white-space:nowrap;">${textoDias}</span>
                     </div>
                 </div>
                 

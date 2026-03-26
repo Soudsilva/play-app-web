@@ -261,10 +261,10 @@
             btns.fluxoCaixa.style.display = 'none';
             
             btns.manutencao.style.display = 'flex';
-            btns.gestao.style.display = 'flex';
+            btns.gestao.style.display = 'none';
             
-            // [ALTERADO] Botão 'Estoque' (Base de dados) agora é exclusivo de Gestores
-            btns.estoque.style.display = 'none'; 
+            // Perfil Estoque também pode acessar a tela padrão de estoque.
+            btns.estoque.style.display = 'flex'; 
             
             // [MANTIDO] Botão 'Entr. Saídas' para perfil Estoque
             btns.movimentacao.style.display = 'flex';
