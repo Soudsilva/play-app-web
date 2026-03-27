@@ -467,6 +467,13 @@
             });
         });
 
+        const equipamentosDetalhados = Array.isArray(cliente?.equipDetalhes) ? cliente.equipDetalhes : [];
+        equipamentosDetalhados.forEach(item => {
+            const numeroPix = String(item?.pix || "").trim();
+            if (!numeroPix || ultimoContadorPorPix[numeroPix] != null) return;
+            ultimoContadorPorPix[numeroPix] = window.parseFormatted(item?.contador);
+        });
+
         return ultimoContadorPorPix;
     }
 

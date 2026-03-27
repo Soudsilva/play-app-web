@@ -63,11 +63,6 @@
             opacity: 0.45;
             cursor: not-allowed;
         }
-        .acao-bloqueio {
-            margin-top: 8px;
-            font-size: 12px;
-            color: #cfd6e3;
-        }
     </style>
 </head>
 <body>
@@ -120,29 +115,22 @@
             && dataEnvio.getDate() === agora.getDate();
     }
 
-    function obterMotivoBloqueio(envio) {
+    function podeAlterarEnvio(envio) {
         if (!colaboradoresCarregados) {
-            return "Carregando permissões do usuário...";
+            return false;
         }
 
         const nomeAutor = obterNomeAutorEnvio(envio);
         const perfilAutor = obterPerfilAutorEnvio(envio);
 
         if (perfilAutor.includes('estoque')) {
-            return "Enviado por perfil estoque.";
+            return false;
         }
         if (nomeAutor !== usuarioLogado) {
-            return "Somente o próprio autor pode alterar.";
-        }
-        if (!ehMesmoDiaAtual(envio.data)) {
-            return "Edição e exclusão só ficam liberadas no mesmo dia do envio.";
+            return false;
         }
 
-        return "";
-    }
-
-    function podeAlterarEnvio(envio) {
-        return !obterMotivoBloqueio(envio);
+        return ehMesmoDiaAtual(envio.data);
     }
 
     function montarRascunhoEdicao(envio) {
@@ -263,7 +251,6 @@
                 htmlFotos = `<div class="secao-titulo">Imagens</div><div style="font-size:12px; color:#aaa; font-style: italic;">Nenhuma foto foi anexada neste envio.</div>`;
             }
 
-            const motivoBloqueio = obterMotivoBloqueio(envio);
             const liberado = podeAlterarEnvio(envio);
             const htmlAcoes = liberado ? `
                 <div class="envio-acoes">
@@ -272,7 +259,7 @@
                         <button class="btn-acao btn-excluir btn-excluir-envio">Excluir</button>
                     </div>
                 </div>
-            ` : (motivoBloqueio ? `<div class="envio-acoes"><div class="acao-bloqueio">${motivoBloqueio}</div></div>` : '');
+            ` : '';
 
             card.innerHTML = `<div class="envio-header"><div class="envio-data">📅 Recebido em ${dataFormatada}</div><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}`;
             if (liberado) {
@@ -296,7 +283,6 @@
 
     window.editarEnvio = function(envio) {
         if (!podeAlterarEnvio(envio)) {
-            alert(obterMotivoBloqueio(envio));
             return;
         }
 
@@ -314,7 +300,6 @@
         }
 
         if (!podeAlterarEnvio(envio)) {
-            alert(obterMotivoBloqueio(envio));
             return;
         }
 

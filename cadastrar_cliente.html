@@ -105,10 +105,29 @@
         .btn-mapa-endereco:disabled {
             cursor: not-allowed;
         }
+        .btn-mapa-endereco .icone-mapa,
+        .btn-mapa-endereco .spinner-mapa {
+            transition: opacity 0.2s ease;
+        }
         .btn-mapa-endereco img {
             width: 28px;
             height: 28px;
             object-fit: contain;
+        }
+        .spinner-mapa {
+            display: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.28);
+            border-top-color: white;
+            animation: girarSpinnerMapa 0.75s linear infinite;
+        }
+        .btn-mapa-endereco.is-busy .icone-mapa {
+            display: none;
+        }
+        .btn-mapa-endereco.is-busy .spinner-mapa {
+            display: block;
         }
         @keyframes pulsoBotaoEndereco {
             from {
@@ -117,6 +136,196 @@
             to {
                 filter: brightness(1.18);
             }
+        }
+        @keyframes girarSpinnerMapa {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .card-fotos-instalacao {
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 12px;
+            margin-bottom: 12px;
+            background: rgba(0,0,0,0.2);
+        }
+        .titulo-fotos-instalacao {
+            text-align: center;
+            font-weight: bold;
+            color: #ffeb3b;
+            margin-bottom: 12px;
+            font-size: 17px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .sub-card-foto {
+            margin-left: -15px;
+            margin-right: -15px;
+            border-top: 4px solid rgba(255,255,255,0.36);
+            padding: 15px 15px 0;
+        }
+        .sub-card-foto:first-of-type {
+            margin-top: -4px;
+        }
+        .titulo-sub-foto {
+            font-size: 15px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .area-foto {
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(255,255,255,0.05);
+        }
+        .preview-img {
+            width: 100%;
+            max-height: 280px;
+            object-fit: contain;
+            border-radius: 8px;
+            display: none;
+            margin-top: 10px;
+        }
+        .sem-fotos-maquinas {
+            display: none;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #0f2a66;
+            padding: 24px;
+            border-radius: 12px;
+            border: 2px solid #ffeb3b;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 85%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+        }
+        .modal-content button {
+            padding: 14px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .modal-content button:active {
+            transform: scale(0.97);
+        }
+        .modal-btn-icone {
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .modal-btn-icone svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        #btnCameraFotoCliente {
+            background: #4467a8;
+            color: white;
+        }
+        #btnGaleriaFotoCliente {
+            background: #4caf50;
+            color: white;
+        }
+        .btn-cancelar-modal {
+            background: transparent;
+            border: 1px solid #f44336 !important;
+            color: #f44336;
+        }
+        .alerta-play-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.72);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1100;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .alerta-play-box {
+            width: 100%;
+            max-width: 360px;
+            background: linear-gradient(180deg, #173d8f 0%, #0f2a66 100%);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 16px;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.38);
+            overflow: hidden;
+        }
+        .alerta-play-topo {
+            padding: 16px 18px 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffeb3b;
+            text-align: center;
+        }
+        .alerta-play-msg {
+            padding: 0 18px 18px;
+            color: white;
+            font-size: 15px;
+            line-height: 1.45;
+            text-align: center;
+            white-space: pre-line;
+        }
+        .alerta-play-acoes {
+            padding: 0 18px 18px;
+        }
+        .alerta-play-btn {
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            background: #ffeb3b;
+            color: #0f2a66;
+            font-weight: bold;
+            font-size: 15px;
+            padding: 13px 14px;
+            cursor: pointer;
+        }
+        .alerta-play-btn:active {
+            transform: scale(0.98);
         }
     </style>
 </head>
@@ -136,7 +345,8 @@
     <div class="linha-endereco">
         <input id="endereco" placeholder="Use localização ou cole endereço do Google Maps" autocapitalize="off" autocomplete="off" spellcheck="false">
         <button type="button" class="btn-mapa-endereco" onclick="abrirMapaEndereco()" aria-label="Abrir mapa">
-            <img src="assets/img/Localizacao.png" alt="Mapa">
+            <img class="icone-mapa" src="assets/img/Localizacao.png" alt="Mapa">
+            <span class="spinner-mapa" aria-hidden="true"></span>
         </button>
         <button type="button" class="btn-acao-endereco btn-limpar-endereco" onclick="limparEndereco()" aria-label="Limpar endereço" title="Limpar endereço">&#10006;</button>
     </div>
@@ -152,8 +362,20 @@
         onblur="adicionarRota(this)" 
         onfocus="removerRota(this)">
 
-    
-
+    <div class="card-fotos-instalacao">
+        <div class="titulo-fotos-instalacao">Área Fotos</div>
+        <div class="sub-card-foto">
+            <div class="titulo-sub-foto">FICHA</div>
+            <div class="area-foto" onclick="abrirModalFoto('inputFotoFichaInstalacao')">
+                <span id="textoFotoFichaInstalacao" style="font-size:14px; opacity:0.8;">Toque para adicionar</span>
+                <img id="imgPreviewFichaInstalacao" class="preview-img">
+                <input type="file" id="inputFotoFichaInstalacao" accept="image/*" style="display:none;" onchange="mostrarPreview(this, 'imgPreviewFichaInstalacao', 'textoFotoFichaInstalacao')">
+            </div>
+        </div>
+        <div id="containerFotosMaquinasInstalacao">
+            <div class="sem-fotos-maquinas">Selecione uma mÃ¡quina para liberar a foto.</div>
+        </div>
+    </div>
 
 <div style="border:1px solid rgba(255,255,255,0.3); border-radius:10px; padding:10px; margin-bottom:10px;">
     <div style="margin-bottom:8px; text-align:center; font-weight:bold;">Dias aberto</div>
@@ -201,9 +423,45 @@
     <div id="btnVoltar" class="botao" style="margin-top:5px; background: rgba(255,255,255,0.1);">Voltar</div>
 </div>
 
+<div id="modalFotoCliente" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-title">Adicionar Foto</div>
+        <button id="btnCameraFotoCliente">
+            <span class="modal-btn-icone" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 7h3l2-2h6l2 2h3v12H4z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                </svg>
+            </span>
+            <span>Usar Camera</span>
+        </button>
+        <button id="btnGaleriaFotoCliente">
+            <span class="modal-btn-icone" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <rect x="3" y="5" width="18" height="14" rx="2"/>
+                    <circle cx="9" cy="10" r="1.5"/>
+                    <path d="M21 15l-5-5-6 6-2-2-5 5"/>
+                </svg>
+            </span>
+            <span>Enviar da Galeria</span>
+        </button>
+        <button id="btnCancelarModalFotoCliente" class="btn-cancelar-modal">Cancelar</button>
+    </div>
+</div>
+
+<div id="alertaPlayOverlay" class="alerta-play-overlay">
+    <div class="alerta-play-box" role="alertdialog" aria-modal="true" aria-labelledby="alertaPlayTitulo" aria-describedby="alertaPlayMensagem">
+        <div id="alertaPlayTitulo" class="alerta-play-topo">A Play informa,</div>
+        <div id="alertaPlayMensagem" class="alerta-play-msg"></div>
+        <div class="alerta-play-acoes">
+            <button id="alertaPlayOk" type="button" class="alerta-play-btn">Entendi</button>
+        </div>
+    </div>
+</div>
+
 <script type="module">
     // Importamos as ferramentas de banco de dados do seu arquivo externo
-    import { dbSalvarCliente, dbListarClientes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores } from './database.js';
+    import { dbSalvarCliente, dbListarClientes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, storageSalvarFoto } from './database.js';
 
     let maquinasDisponiveis = [];
     let clientesCadastrados = [];
@@ -212,6 +470,9 @@
     let clienteEmEdicao = null;
     let perfilCarregado = false;
     let editId = "";
+    let currentFileInputId = null;
+    let proximoEquipamentoRowId = 0;
+    let ultimoElementoFocadoAntesDoAlerta = null;
 
     function normalizarTexto(valor) {
         return String(valor || "")
@@ -220,6 +481,59 @@
             .toLowerCase()
             .trim();
     }
+
+    function escaparHtml(valor) {
+        return String(valor || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function criarRowIdEquipamento(rowIdExistente = "") {
+        const numeroExistente = parseInt(String(rowIdExistente || "").replace(/\D/g, ""), 10);
+        if (!Number.isNaN(numeroExistente) && numeroExistente > proximoEquipamentoRowId) {
+            proximoEquipamentoRowId = numeroExistente;
+        }
+
+        if (rowIdExistente) return String(rowIdExistente);
+
+        proximoEquipamentoRowId += 1;
+        return `equip_${proximoEquipamentoRowId}`;
+    }
+
+    function fecharAlertaPlay() {
+        const overlay = document.getElementById('alertaPlayOverlay');
+        if (!overlay) return;
+
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+        if (ultimoElementoFocadoAntesDoAlerta && typeof ultimoElementoFocadoAntesDoAlerta.focus === 'function') {
+            ultimoElementoFocadoAntesDoAlerta.focus();
+        }
+        ultimoElementoFocadoAntesDoAlerta = null;
+    }
+
+    function mostrarAlertaPlay(mensagem) {
+        const overlay = document.getElementById('alertaPlayOverlay');
+        const msg = document.getElementById('alertaPlayMensagem');
+        if (!overlay || !msg) return;
+
+        ultimoElementoFocadoAntesDoAlerta = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        msg.textContent = String(mensagem || "");
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        document.getElementById('alertaPlayOk')?.focus();
+    }
+
+    window.alert = mostrarAlertaPlay;
+    document.getElementById('alertaPlayOk').addEventListener('click', fecharAlertaPlay);
+    document.getElementById('alertaPlayOverlay').addEventListener('click', (e) => {
+        if (e.target.id === 'alertaPlayOverlay') {
+            fecharAlertaPlay();
+        }
+    });
 
     function obterDataLocalIso(data) {
         const base = data ? new Date(data) : new Date();
@@ -270,6 +584,87 @@
 
         const bairro = bairroBase.trim();
         return bairro ? `${cidade} - ${bairro}` : cidade;
+    }
+
+    window.abrirModalFoto = function(inputId) {
+        currentFileInputId = inputId;
+        document.getElementById('modalFotoCliente').style.display = 'flex';
+    }
+
+    function fecharModalFoto() {
+        document.getElementById('modalFotoCliente').style.display = 'none';
+        currentFileInputId = null;
+    }
+
+    document.getElementById('btnCameraFotoCliente').addEventListener('click', () => {
+        if (!currentFileInputId) return;
+        const input = document.getElementById(currentFileInputId);
+        input?.setAttribute('capture', 'environment');
+        input?.click();
+        fecharModalFoto();
+    });
+
+    document.getElementById('btnGaleriaFotoCliente').addEventListener('click', () => {
+        if (!currentFileInputId) return;
+        const input = document.getElementById(currentFileInputId);
+        input?.removeAttribute('capture');
+        input?.click();
+        fecharModalFoto();
+    });
+
+    document.getElementById('btnCancelarModalFotoCliente').addEventListener('click', fecharModalFoto);
+    document.getElementById('modalFotoCliente').addEventListener('click', (e) => {
+        if (e.target.id === 'modalFotoCliente') {
+            fecharModalFoto();
+        }
+    });
+
+    function definirPreviewFoto(imgId, textoId, src) {
+        const imgEl = document.getElementById(imgId);
+        const textoEl = document.getElementById(textoId);
+        if (!imgEl) return;
+
+        imgEl.src = src;
+        imgEl.style.display = 'block';
+        if (textoEl) {
+            textoEl.style.display = 'none';
+        }
+    }
+
+    window.mostrarPreview = function(input, imgId, textoId) {
+        if (!(input.files && input.files[0])) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imgObj = new Image();
+            imgObj.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 1600;
+                const MAX_HEIGHT = 1600;
+                let width = imgObj.width;
+                let height = imgObj.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else if (height > MAX_HEIGHT) {
+                    width *= MAX_HEIGHT / height;
+                    height = MAX_HEIGHT;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(imgObj, 0, 0, width, height);
+
+                definirPreviewFoto(imgId, textoId, canvas.toDataURL('image/jpeg', 0.8));
+            };
+            imgObj.src = e.target.result;
+        };
+
+        reader.readAsDataURL(input.files[0]);
     }
 
     function enderecoContemLink(valor) {
@@ -348,6 +743,197 @@
         inputCidade.value = cidadeBairro;
         inputCidade.dataset.preenchidoAutomaticamente = "1";
         return true;
+    }
+
+    function obterEquipamentosDetalhadosDoFormulario() {
+        return Array.from(document.querySelectorAll('.equip-group')).map(grupo => ({
+            rowId: String(grupo.dataset.equipRowId || ""),
+            nome: grupo.querySelector('.equip-select')?.value.trim() || "",
+            qtd: grupo.querySelector('.qtd-input')?.value.trim() || "",
+            pix: grupo.querySelector('.pix-input')?.value.trim() || "",
+            contador: grupo.querySelector('.contador-input')?.value.trim() || ""
+        }));
+    }
+
+    function obterEquipamentosDetalhadosDoCliente(cliente) {
+        if (Array.isArray(cliente?.equipDetalhes) && cliente.equipDetalhes.length > 0) {
+            return cliente.equipDetalhes.map((item, index) => ({
+                rowId: criarRowIdEquipamento(item?.rowId || `equip_${index + 1}`),
+                nome: String(item?.nome || "").trim(),
+                qtd: String(item?.qtd || item?.quantidade || "1").trim() || "1",
+                pix: String(item?.pix || "").trim(),
+                contador: String(item?.contador || "").trim()
+            }));
+        }
+
+        if (!cliente?.equip) return [];
+
+        return String(cliente.equip)
+            .split(", ")
+            .map((item, index) => {
+                let nome = item;
+                let qtd = "1";
+                let pix = "";
+
+                const regexQtd = /\s*\(([^)]+)\)$/;
+                const matchQtd = nome.match(regexQtd);
+                if (matchQtd) {
+                    qtd = matchQtd[1];
+                    nome = nome.replace(regexQtd, "");
+                }
+
+                const regexPix = /\s*\[Pix:\s*([^\]]+)\]$/;
+                const matchPix = nome.match(regexPix);
+                if (matchPix) {
+                    pix = matchPix[1];
+                    nome = nome.replace(regexPix, "");
+                }
+
+                return {
+                    rowId: criarRowIdEquipamento(`equip_${index + 1}`),
+                    nome: nome.trim(),
+                    qtd: String(qtd || "1").trim() || "1",
+                    pix: String(pix || "").trim(),
+                    contador: ""
+                };
+            })
+            .filter(item => item.nome);
+    }
+
+    function capturarFotosMaquinasAtuais() {
+        const fotosPorRowId = {};
+        document.querySelectorAll('#containerFotosMaquinasInstalacao .sub-card-foto').forEach(card => {
+            const rowId = String(card.dataset.rowId || "");
+            const img = card.querySelector('.preview-img');
+            if (!rowId || !img || img.style.display !== 'block' || !img.src) return;
+            fotosPorRowId[rowId] = {
+                rowId,
+                nome: String(card.dataset.nomeMaquina || ""),
+                src: img.src
+            };
+        });
+        return fotosPorRowId;
+    }
+
+    function renderizarFotosMaquinasInstalacao(fotosSalvas = null) {
+        const container = document.getElementById('containerFotosMaquinasInstalacao');
+        if (!container) return;
+
+        const equipamentos = obterEquipamentosDetalhadosDoFormulario().filter(item => item.nome);
+        const fotosPorRowId = Array.isArray(fotosSalvas)
+            ? fotosSalvas.reduce((acc, foto, index) => {
+                const rowId = String(foto?.rowId || equipamentos[index]?.rowId || "");
+                const src = foto?.url || foto?.src || "";
+                if (!rowId || !src) return acc;
+                acc[rowId] = { rowId, nome: foto.nome || "", src };
+                return acc;
+            }, {})
+            : capturarFotosMaquinasAtuais();
+
+        container.innerHTML = "";
+
+        if (equipamentos.length === 0) {
+            return;
+        }
+
+        equipamentos.forEach((equipamento) => {
+            const rowIdSeguro = escaparHtml(equipamento.rowId);
+            const titulo = equipamento.nome.toUpperCase();
+
+            const bloco = document.createElement('div');
+            bloco.className = 'sub-card-foto';
+            bloco.dataset.rowId = equipamento.rowId;
+            bloco.dataset.nomeMaquina = equipamento.nome;
+            bloco.innerHTML = `
+                <div class="titulo-sub-foto">${escaparHtml(titulo)}</div>
+                <div class="area-foto" onclick="abrirModalFoto('inputFotoMaquinaInstalacao_${rowIdSeguro}')">
+                    <span id="textoFotoMaquinaInstalacao_${rowIdSeguro}" style="font-size:14px; opacity:0.8;">Toque para adicionar</span>
+                    <img id="imgPreviewMaquinaInstalacao_${rowIdSeguro}" class="preview-img">
+                    <input type="file" id="inputFotoMaquinaInstalacao_${rowIdSeguro}" class="input-foto-maquina-instalacao" accept="image/*" style="display:none;" onchange="mostrarPreview(this, 'imgPreviewMaquinaInstalacao_${rowIdSeguro}', 'textoFotoMaquinaInstalacao_${rowIdSeguro}')">
+                </div>
+            `;
+
+            container.appendChild(bloco);
+
+            const fotoExistente = fotosPorRowId[equipamento.rowId];
+            if (fotoExistente?.src) {
+                definirPreviewFoto(
+                    `imgPreviewMaquinaInstalacao_${equipamento.rowId}`,
+                    `textoFotoMaquinaInstalacao_${equipamento.rowId}`,
+                    fotoExistente.src
+                );
+            }
+        });
+    }
+
+    function validarFotosMaquinasInstalacaoObrigatorias() {
+        const imgFicha = document.getElementById('imgPreviewFichaInstalacao');
+        const fichaOk = imgFicha && imgFicha.style.display === 'block' && !!imgFicha.src;
+        if (!fichaOk) {
+            alert("Envie a foto da ficha.");
+            return false;
+        }
+
+        const faltando = obterEquipamentosDetalhadosDoFormulario()
+            .filter(item => item.nome)
+            .filter(item => {
+                const img = document.getElementById(`imgPreviewMaquinaInstalacao_${item.rowId}`);
+                return !(img && img.style.display === 'block' && !!img.src);
+            })
+            .map(item => item.nome);
+
+        if (faltando.length === 0) return true;
+
+        alert(`Envie a foto de todas as mÃ¡quinas instaladas: ${faltando.join(", ")}.`);
+        return false;
+    }
+
+    function limparCamposLinhaEquipamento(grupo) {
+        if (!grupo) return;
+        const qtdInput = grupo.querySelector('.qtd-input');
+        const pixInput = grupo.querySelector('.pix-input');
+        const contadorInput = grupo.querySelector('.contador-input');
+
+        if (qtdInput) qtdInput.value = "";
+        if (pixInput) {
+            pixInput.value = "";
+            delete pixInput.dataset.pixRemovidoPorDuplicidade;
+        }
+        if (contadorInput) contadorInput.value = "";
+    }
+
+    function linhaEquipamentoEstaVazia(grupo) {
+        if (!grupo) return false;
+
+        const maquina = grupo.querySelector('.equip-select')?.value.trim() || "";
+        const qtd = grupo.querySelector('.qtd-input')?.value.trim() || "";
+        const pix = grupo.querySelector('.pix-input')?.value.trim() || "";
+        const contador = grupo.querySelector('.contador-input')?.value.trim() || "";
+
+        return !maquina && !qtd && !pix && !contador;
+    }
+
+    function normalizarLinhasEquipamento() {
+        const container = document.getElementById('container-equipamentos');
+        if (!container) return;
+
+        const grupos = Array.from(container.querySelectorAll('.equip-group'));
+        let encontrouLinhaVazia = false;
+
+        grupos.forEach(grupo => {
+            if (!linhaEquipamentoEstaVazia(grupo)) return;
+
+            if (!encontrouLinhaVazia) {
+                encontrouLinhaVazia = true;
+                return;
+            }
+
+            grupo.remove();
+        });
+
+        if (container.querySelectorAll('.equip-group').length === 0) {
+            adicionarLinhaEquipamento();
+        }
     }
 
     function preencherCidadePelaLocalizacao(dados, forcar = true) {
@@ -518,7 +1104,6 @@
             { id: "comissao", nome: "Comissão" },
             { id: "endereco", nome: "Endereço" },
             { id: "cidade", nome: "Cidade" },
-            { id: "obs", nome: "Observações" },
             { id: "rota", nome: "Rota" }
         ];
 
@@ -556,20 +1141,35 @@
                 grupo,
                 maquina: grupo.querySelector('.equip-select')?.value.trim() || "",
                 qtd: grupo.querySelector('.qtd-input')?.value.trim() || "",
-                pix: grupo.querySelector('.pix-input')?.value.trim() || ""
+                pix: grupo.querySelector('.pix-input')?.value.trim() || "",
+                contador: grupo.querySelector('.contador-input')?.value.trim() || ""
             }))
-            .filter(item => item.maquina || item.qtd || item.pix);
+            .filter(item => item.maquina || item.qtd || item.pix || item.contador);
 
         if (linhasPreenchidas.length === 0) {
-            alert("Preencha pelo menos 1 equipamento com máquina, quantidade e Pix.");
+            alert("Preencha pelo menos 1 equipamento com máquina e quantidade.");
             linhasEquipamento[0]?.querySelector('.equip-select')?.focus();
             return false;
         }
 
-        const linhaIncompleta = linhasPreenchidas.find(item => !item.maquina || !item.qtd || !item.pix);
+        const linhaIncompleta = linhasPreenchidas.find(item => !item.maquina || !item.qtd);
         if (linhaIncompleta) {
-            alert("Complete máquina, quantidade e Pix em todos os equipamentos preenchidos.");
+            alert("Complete máquina e quantidade em todos os equipamentos preenchidos.");
             linhaIncompleta.grupo.querySelector('.equip-select')?.focus();
+            return false;
+        }
+
+        const linhaPixSemContador = linhasPreenchidas.find(item => item.pix && !item.contador);
+        if (linhaPixSemContador) {
+            alert("Se preencher o Pix, informe também o contador da mesma máquina.");
+            linhaPixSemContador.grupo.querySelector('.contador-input')?.focus();
+            return false;
+        }
+
+        const linhaContadorSemPix = linhasPreenchidas.find(item => item.contador && !item.pix);
+        if (linhaContadorSemPix) {
+            alert("O contador só pode ser informado quando o campo Pix estiver preenchido.");
+            linhaContadorSemPix.grupo.querySelector('.pix-input')?.focus();
             return false;
         }
 
@@ -693,10 +1293,11 @@
         });
     });
 
-    window.adicionarLinhaEquipamento = function(nome = "", pix = "", qtd = "") {
+    window.adicionarLinhaEquipamento = function(nome = "", pix = "", qtd = "", contador = "", rowId = "") {
         const container = document.getElementById('container-equipamentos');
         const novoGrupo = document.createElement('div');
         novoGrupo.className = 'equip-group';
+        novoGrupo.dataset.equipRowId = criarRowIdEquipamento(rowId);
         
         let options = '<option value="">Selecione a máquina...</option>';
         maquinasDisponiveis.forEach(m => {
@@ -704,13 +1305,15 @@
         });
 
         novoGrupo.innerHTML = `
-            <select class="equip-select" style="flex: 5; margin-bottom:0;" data-value="${nome}">
+            <select class="equip-select" style="flex: 4.4; margin-bottom:0;" data-value="${nome}">
                 ${options}
             </select>
-            <input class="qtd-input" value="${qtd}" placeholder="Qtd" inputmode="numeric" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);" style="flex: 1.5; margin-bottom:0; border: 2px solid #2196f3; text-align: center; padding: 10px 5px;">
-            <input class="pix-input" value="${pix}" placeholder="Pix" inputmode="numeric" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);" style="flex: 1.5; margin-bottom:0; border: 2px solid #4caf50; text-align: center; padding: 10px 5px;">
+            <input class="qtd-input" value="${qtd}" placeholder="Qtd" inputmode="numeric" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);" style="flex: 1.1; margin-bottom:0; border: 2px solid #2196f3; text-align: center; padding: 10px 5px;">
+            <input class="pix-input" value="${pix}" placeholder="Pix" inputmode="numeric" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);" style="flex: 1.2; margin-bottom:0; border: 2px solid #4caf50; text-align: center; padding: 10px 5px;">
+            <input class="contador-input" value="${contador}" placeholder="Cont." inputmode="numeric" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);" style="flex: 1.7; margin-bottom:0; border: 2px solid #ffeb3b; text-align: center; padding: 10px 5px;">
         `;
         container.appendChild(novoGrupo);
+        normalizarLinhasEquipamento();
     }
 
     /* --- PARTE A: DETECTAR EDIÇÃO ---
@@ -723,6 +1326,7 @@
         carregarDadosCliente(editId);
     } else {
         adicionarLinhaEquipamento();
+        renderizarFotosMaquinasInstalacao();
     }
 
     atualizarEstadoCampoCidade();
@@ -781,34 +1385,13 @@
                 document.getElementById("obs").value = cliente.obs || "";
 
                 // Especial: Recria as linhas de equipamentos baseadas no texto salvo
-                if (cliente.equip) {
-                    const lista = cliente.equip.split(", ");
+                const equipamentosDetalhados = obterEquipamentosDetalhadosDoCliente(cliente);
+                if (equipamentosDetalhados.length > 0) {
                     const container = document.getElementById('container-equipamentos');
                     container.innerHTML = ""; // Limpa os campos padrão
                     
-                    lista.forEach((item) => {
-                        let nome = item;
-                        let qtd = "1";
-                        let pix = "";
-
-                        // Extrai a quantidade. Ex: (2)
-                        const regexQtd = /\s*\(([^)]+)\)$/;
-                        const matchQtd = nome.match(regexQtd);
-                        if(matchQtd) {
-                            qtd = matchQtd[1];
-                            nome = nome.replace(regexQtd, "");
-                        }
-
-                        // Extrai o Pix. Ex: [Pix: 12345]
-                        const regexPix = /\s*\[Pix:\s*([^\]]+)\]$/;
-                        const matchPix = nome.match(regexPix);
-                        if(matchPix) {
-                            pix = matchPix[1];
-                            nome = nome.replace(regexPix, "");
-                        }
-
-                        nome = nome.trim();
-                        adicionarLinhaEquipamento(nome, pix, qtd);
+                    equipamentosDetalhados.forEach((item) => {
+                        adicionarLinhaEquipamento(item.nome, item.pix, item.qtd, item.contador, item.rowId);
                     });
                     adicionarLinhaEquipamento(); // Adiciona uma linha vazia no final
                 } else {
@@ -816,6 +1399,13 @@
                         adicionarLinhaEquipamento();
                     }
                 }
+
+                const fotoFichaInstalacao = cliente.fotoFichaInstalacao || cliente.fotosInstalacao?.ficha || "";
+                if (fotoFichaInstalacao) {
+                    definirPreviewFoto('imgPreviewFichaInstalacao', 'textoFotoFichaInstalacao', fotoFichaInstalacao);
+                }
+
+                renderizarFotosMaquinasInstalacao(cliente.fotosMaquinasInstalacao || []);
 
                 // Especial: Marca os quadradinhos (checkboxes) dos dias
                 if (cliente.aberto) {
@@ -832,12 +1422,20 @@
        Sempre que o usuário seleciona uma máquina na última linha, cria uma nova abaixo. */
     document.getElementById('container-equipamentos').addEventListener('change', (e) => {
         if (e.target.classList.contains('equip-select')) {
+            const grupoAtual = e.target.closest('.equip-group');
+            if (!e.target.value) {
+                limparCamposLinhaEquipamento(grupoAtual);
+            }
+
             const grupos = document.querySelectorAll('.equip-group');
             const ultimoSelect = grupos[grupos.length - 1].querySelector('.equip-select');
 
             if (e.target === ultimoSelect && e.target.value !== "") {
                 adicionarLinhaEquipamento();
             }
+
+            normalizarLinhasEquipamento();
+            renderizarFotosMaquinasInstalacao();
         }
     });
 
@@ -885,6 +1483,12 @@
                 return;
             }
 
+            if (!validarFotosMaquinasInstalacaoObrigatorias()) {
+                btn.innerText = "Salvar Cliente";
+                btn.style.pointerEvents = "auto";
+                return;
+            }
+
             let numeroFinal;
             let idParaSalvar = editId || null; // Se editId existe, usamos ele para salvar por cima
 
@@ -908,20 +1512,63 @@
                 }
             }
 
+            const equipamentosDetalhados = obterEquipamentosDetalhadosDoFormulario()
+                .filter(item => item.nome)
+                .map(item => ({
+                    rowId: item.rowId,
+                    nome: item.nome,
+                    qtd: item.qtd || "1",
+                    pix: item.pix,
+                    contador: item.contador
+                }));
+
             // Junta Nome + [Pix: x] + (Qtd) de todos os equipamentos preenchidos
             let listaEquipFinal = [];
-            document.querySelectorAll('.equip-group').forEach(grupo => {
-                const n = grupo.querySelector('.equip-select').value.trim();
-                const p = grupo.querySelector('.pix-input').value.trim();
-                const q = grupo.querySelector('.qtd-input').value.trim() || "1";
-                
-                if(n !== "") {
-                    let str = n;
-                    if(p !== "") str += ` [Pix: ${p}]`;
-                    str += ` (${q})`;
-                    listaEquipFinal.push(str);
-                }
+            equipamentosDetalhados.forEach(item => {
+                let str = item.nome;
+                if (item.pix !== "") str += ` [Pix: ${item.pix}]`;
+                str += ` (${item.qtd})`;
+                listaEquipFinal.push(str);
             });
+
+            const fotosMaquinasInstalacao = [];
+            for (const equipamento of equipamentosDetalhados) {
+                const img = document.getElementById(`imgPreviewMaquinaInstalacao_${equipamento.rowId}`);
+                if (!(img && img.style.display === 'block' && img.src)) continue;
+
+                let url = null;
+                try {
+                    if (img.src.startsWith('data:')) {
+                        url = await storageSalvarFoto(img.src);
+                    } else if (img.src.startsWith('http') && !img.src.includes('.html')) {
+                        url = img.src;
+                    }
+                } catch (e) {
+                    console.warn("Falha ao salvar foto da maquina instalada", e);
+                }
+
+                if (url) {
+                    fotosMaquinasInstalacao.push({
+                        rowId: equipamento.rowId,
+                        nome: equipamento.nome,
+                        url
+                    });
+                }
+            }
+
+            let fotoFichaInstalacao = "";
+            const imgFichaInstalacao = document.getElementById('imgPreviewFichaInstalacao');
+            if (imgFichaInstalacao && imgFichaInstalacao.style.display === 'block' && imgFichaInstalacao.src) {
+                try {
+                    if (imgFichaInstalacao.src.startsWith('data:')) {
+                        fotoFichaInstalacao = await storageSalvarFoto(imgFichaInstalacao.src);
+                    } else if (imgFichaInstalacao.src.startsWith('http') && !imgFichaInstalacao.src.includes('.html')) {
+                        fotoFichaInstalacao = imgFichaInstalacao.src;
+                    }
+                } catch (e) {
+                    console.warn("Falha ao salvar foto da ficha", e);
+                }
+            }
 
             const dias = Array.from(document.querySelectorAll(".dias:checked")).map(d => d.value);
             const dataCadastro = clienteEmEdicao?.dataCadastro || new Date().toISOString();
@@ -939,6 +1586,9 @@
                 endereco: document.getElementById("endereco").value,
                 aberto: dias.join(", "),
                 equip: listaEquipFinal.join(", "), 
+                equipDetalhes: equipamentosDetalhados,
+                fotoFichaInstalacao,
+                fotosMaquinasInstalacao,
                 obs: document.getElementById("obs").value,
                 cadastradoPor,
                 dataCadastro,
