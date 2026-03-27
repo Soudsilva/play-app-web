@@ -28,6 +28,49 @@
 
         /* Alinhamento para os equipamentos ficarem lado a lado (Equip + Qtd) */
         .equip-group { display: flex; gap: 8px; margin-bottom: 8px; }
+        .campo-cidade {
+            background: #b8c0d1;
+            color: #1f2f57;
+            border: 1px solid rgba(255,255,255,0.35);
+        }
+        .campo-cidade::placeholder {
+            color: rgba(31,47,87,0.7);
+        }
+        .campo-cidade:disabled {
+            opacity: 1;
+            cursor: not-allowed;
+        }
+        .linha-endereco {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+            margin-bottom: 10px;
+        }
+        .linha-endereco #endereco {
+            width: auto;
+            flex: 1;
+            min-width: 0;
+            margin-bottom: 0;
+        }
+        .btn-mapa-endereco {
+            width: 52px;
+            min-width: 52px;
+            border: none;
+            border-radius: 8px;
+            background: #4467a8;
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0;
+        }
+        .btn-mapa-endereco img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+        }
     </style>
 </head>
 <body>
@@ -43,8 +86,13 @@
         onblur="adicionarPorcentagem(this)"  
         onfocus="removerPorcentagem(this)">
 
-    <input id="cidade" placeholder="Cidade">
-    <input id="endereco" placeholder="Endereço">
+    <div class="linha-endereco">
+        <input id="endereco" placeholder="Endereço">
+        <button type="button" class="btn-mapa-endereco" onclick="abrirMapaEndereco()" aria-label="Abrir mapa">
+            <img src="assets/img/Localizacao.png" alt="Mapa">
+        </button>
+    </div>
+    <input id="cidade" class="campo-cidade" placeholder="Cidade" disabled>
     
     <div id="container-equipamentos">
     </div>
@@ -107,9 +155,10 @@
 
 <script type="module">
     // Importamos as ferramentas de banco de dados do seu arquivo externo
-    import { dbSalvarCliente, dbListarClientes, dbEscutarEstoque, dbEscutarColaboradores } from './database.js';
+    import { dbSalvarCliente, dbListarClientes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores } from './database.js';
 
     let maquinasDisponiveis = [];
+    let clientesCadastrados = [];
     let perfilUsuarioLogado = "";
     let nomeUsuarioLogado = localStorage.getItem('usuarioLogado') || "";
     let clienteEmEdicao = null;
@@ -133,6 +182,268 @@
         return `${ano}-${mes}-${dia}`;
     }
 
+    function extrairCidadeBairroDoEndereco(endereco) {
+        const texto = String(endereco || "").replace(/\s+/g, " ").trim();
+        if (!texto) return "";
+
+        const partes = texto.split(",").map(parte => parte.trim()).filter(Boolean);
+        if (partes.length === 0) return "";
+
+        let cidade = "";
+        let indiceCidade = -1;
+
+        for (let i = partes.length - 1; i >= 0; i--) {
+            const trechoSemCep = partes[i].replace(/\b\d{5}-?\d{3}\b/g, "").trim();
+            const matchCidade = trechoSemCep.match(/^(.+?)\s*-\s*([A-Z]{2})$/i);
+            if (matchCidade) {
+                cidade = matchCidade[1].trim();
+                indiceCidade = i;
+                break;
+            }
+        }
+
+        if (!cidade || indiceCidade <= 0) {
+            return "";
+        }
+
+        let bairroBase = partes[indiceCidade - 1].replace(/\b\d{5}-?\d{3}\b/g, "").trim();
+        if (bairroBase.includes(" - ")) {
+            const partesBairro = bairroBase.split(" - ").map(parte => parte.trim()).filter(Boolean);
+            bairroBase = partesBairro[partesBairro.length - 1] || "";
+        }
+
+        if ((!bairroBase || /^\d+[A-Za-z-]*$/.test(bairroBase)) && indiceCidade > 1) {
+            bairroBase = partes[indiceCidade - 2].replace(/\b\d{5}-?\d{3}\b/g, "").trim();
+            if (bairroBase.includes(" - ")) {
+                const partesBairro = bairroBase.split(" - ").map(parte => parte.trim()).filter(Boolean);
+                bairroBase = partesBairro[partesBairro.length - 1] || "";
+            }
+        }
+
+        const bairro = bairroBase.trim();
+        return bairro ? `${cidade} - ${bairro}` : cidade;
+    }
+
+    function enderecoContemLink(valor) {
+        return /(https?:\/\/|www\.)/i.test(String(valor || "").trim());
+    }
+
+    function validarEnderecoSemLink(exibirAlerta = true) {
+        const inputEndereco = document.getElementById("endereco");
+        if (!inputEndereco) return true;
+
+        const endereco = String(inputEndereco.value || "").trim();
+        if (!endereco) return true;
+        if (!enderecoContemLink(endereco)) return true;
+
+        inputEndereco.value = "";
+        atualizarEstadoCampoCidade();
+
+        if (exibirAlerta) {
+            alert("Cole ou digite apenas o endereco em texto. Links de mapa nao sao permitidos nesse campo.");
+        }
+
+        inputEndereco.focus();
+        return false;
+    }
+
+    function preencherCidadePeloEndereco(forcar = false) {
+        const inputEndereco = document.getElementById("endereco");
+        const inputCidade = document.getElementById("cidade");
+        if (!inputEndereco || !inputCidade) return false;
+
+        const cidadeBairro = extrairCidadeBairroDoEndereco(inputEndereco.value);
+        if (!cidadeBairro) return false;
+
+        const cidadeAtual = String(inputCidade.value || "").trim();
+        const podeSobrescrever = !cidadeAtual || inputCidade.dataset.preenchidoAutomaticamente === "1" || forcar;
+        if (!podeSobrescrever) return false;
+
+        inputCidade.value = cidadeBairro;
+        inputCidade.dataset.preenchidoAutomaticamente = "1";
+        return true;
+    }
+
+    function preencherCidadePelaLocalizacao(dados, forcar = true) {
+        const inputCidade = document.getElementById("cidade");
+        if (!inputCidade) return false;
+
+        const endereco = dados?.address || {};
+        const bairro = endereco.suburb || endereco.neighbourhood || endereco.quarter || endereco.city_district || "";
+        const cidade = endereco.city || endereco.town || endereco.village || endereco.municipality || endereco.county || "";
+        const cidadeBairro = [cidade, bairro].filter(Boolean).join(" - ").trim();
+
+        if (!cidadeBairro) return false;
+
+        const cidadeAtual = String(inputCidade.value || "").trim();
+        const podeSobrescrever = !cidadeAtual || inputCidade.dataset.preenchidoAutomaticamente === "1" || forcar;
+        if (!podeSobrescrever) return false;
+
+        inputCidade.disabled = false;
+        inputCidade.value = cidadeBairro;
+        inputCidade.dataset.preenchidoAutomaticamente = "1";
+        return true;
+    }
+
+    function montarEnderecoDaLocalizacao(dados) {
+        const endereco = dados?.address || {};
+        const rua = endereco.road || endereco.pedestrian || endereco.footway || endereco.path || "";
+        const numero = endereco.house_number || "";
+        const bairro = endereco.suburb || endereco.neighbourhood || endereco.quarter || endereco.city_district || "";
+        const cidade = endereco.city || endereco.town || endereco.village || endereco.municipality || endereco.county || "";
+        const estado = endereco.state_code || endereco.state || "";
+        const cep = endereco.postcode || "";
+
+        const primeiraParte = [rua, numero].filter(Boolean).join(", ");
+        const segundaParte = bairro ? ` - ${bairro}` : "";
+        const terceiraParte = [cidade, estado].filter(Boolean).join(" - ");
+        const partesFinais = [primeiraParte + segundaParte, terceiraParte, cep].filter(Boolean);
+
+        return partesFinais.join(", ").trim();
+    }
+
+    async function buscarEnderecoPorCoordenadas(latitude, longitude) {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&addressdetails=1&accept-language=pt-BR`;
+        const resposta = await fetch(url, {
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+
+        if (!resposta.ok) {
+            throw new Error("Nao foi possivel consultar o endereco da sua localizacao.");
+        }
+
+        return resposta.json();
+    }
+
+    function definirEstadoBotaoMapa(carregando) {
+        const botao = document.querySelector('.btn-mapa-endereco');
+        if (!botao) return;
+
+        botao.disabled = carregando;
+        botao.style.opacity = carregando ? "0.7" : "1";
+    }
+
+    window.abrirMapaEndereco = async function() {
+        if (!navigator.geolocation) {
+            alert("Seu aparelho ou navegador nao permite usar localizacao.");
+            return;
+        }
+
+        const hostSeguroLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+        if (!window.isSecureContext && !hostSeguroLocal) {
+            alert("No celular, a localizacao do navegador normalmente so funciona em HTTPS. Abra esta pagina em HTTPS para preencher o endereco automaticamente.");
+            return;
+        }
+
+        definirEstadoBotaoMapa(true);
+
+        try {
+            const posicao = await new Promise((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0
+                });
+            });
+
+            const { latitude, longitude } = posicao.coords;
+            const dadosLocalizacao = await buscarEnderecoPorCoordenadas(latitude, longitude);
+            const enderecoAtual = montarEnderecoDaLocalizacao(dadosLocalizacao) || String(dadosLocalizacao?.display_name || "").trim();
+
+            if (!enderecoAtual) {
+                throw new Error("Nao foi possivel identificar um endereco para a localizacao atual.");
+            }
+
+            const inputEndereco = document.getElementById("endereco");
+            inputEndereco.value = enderecoAtual;
+
+            atualizarEstadoCampoCidade();
+            if (!preencherCidadePelaLocalizacao(dadosLocalizacao, true)) {
+                preencherCidadePeloEndereco(true);
+            }
+        } catch (erro) {
+            if (erro?.code === 1) {
+                alert("Permita a localizacao no navegador. Se estiver no celular, confirme tambem que a pagina foi aberta em HTTPS e que o navegador tem permissao de localizacao.");
+            } else if (erro?.code === 2) {
+                alert("Nao foi possivel obter sua localizacao atual.");
+            } else if (erro?.code === 3) {
+                alert("A localizacao demorou demais para responder. Tente novamente.");
+            } else {
+                alert(erro?.message || "Nao foi possivel preencher o endereco pela localizacao.");
+            }
+        } finally {
+            definirEstadoBotaoMapa(false);
+        }
+    }
+
+    function atualizarEstadoCampoCidade() {
+        const inputEndereco = document.getElementById("endereco");
+        const inputCidade = document.getElementById("cidade");
+        if (!inputEndereco || !inputCidade) return;
+
+        const enderecoPreenchido = String(inputEndereco.value || "").trim() !== "";
+        inputCidade.disabled = !enderecoPreenchido;
+
+        if (!enderecoPreenchido) {
+            inputCidade.value = "";
+            delete inputCidade.dataset.preenchidoAutomaticamente;
+        }
+    }
+
+    function validarCamposObrigatorios() {
+        const camposObrigatorios = [
+            { id: "ponto_aberto", nome: "Ponto Aberto por" },
+            { id: "nome", nome: "Nome do cliente" },
+            { id: "comissao", nome: "Comissão" },
+            { id: "endereco", nome: "Endereço" },
+            { id: "cidade", nome: "Cidade" },
+            { id: "obs", nome: "Observações" },
+            { id: "rota", nome: "Rota" }
+        ];
+
+        for (const campo of camposObrigatorios) {
+            const input = document.getElementById(campo.id);
+            if (!input || String(input.value || "").trim() !== "") continue;
+
+            alert(`Preencha o campo ${campo.nome}.`);
+            input.focus();
+            return false;
+        }
+
+        const diasSelecionados = Array.from(document.querySelectorAll(".dias:checked"));
+        if (diasSelecionados.length < 2) {
+            alert("Selecione pelo menos 2 dias em Dias aberto.");
+            return false;
+        }
+
+        const linhasEquipamento = Array.from(document.querySelectorAll('.equip-group'));
+        const linhasPreenchidas = linhasEquipamento
+            .map(grupo => ({
+                grupo,
+                maquina: grupo.querySelector('.equip-select')?.value.trim() || "",
+                qtd: grupo.querySelector('.qtd-input')?.value.trim() || "",
+                pix: grupo.querySelector('.pix-input')?.value.trim() || ""
+            }))
+            .filter(item => item.maquina || item.qtd || item.pix);
+
+        if (linhasPreenchidas.length === 0) {
+            alert("Preencha pelo menos 1 equipamento com máquina, quantidade e Pix.");
+            linhasEquipamento[0]?.querySelector('.equip-select')?.focus();
+            return false;
+        }
+
+        const linhaIncompleta = linhasPreenchidas.find(item => !item.maquina || !item.qtd || !item.pix);
+        if (linhaIncompleta) {
+            alert("Complete máquina, quantidade e Pix em todos os equipamentos preenchidos.");
+            linhaIncompleta.grupo.querySelector('.equip-select')?.focus();
+            return false;
+        }
+
+        return true;
+    }
+
     function usuarioPodeEditarCliente(cliente) {
         if (perfilUsuarioLogado.includes('gestao')) return true;
         if (!perfilUsuarioLogado.includes('atendimento')) return false;
@@ -143,6 +454,74 @@
         const mesmoUsuario = normalizarTexto(autorCadastro) === normalizarTexto(nomeUsuarioLogado);
         const mesmoDia = diaCadastro === obterDataLocalIso();
         return mesmoUsuario && mesmoDia;
+    }
+
+    function extrairPixDoEquipamento(equipTexto) {
+        if (!equipTexto) return [];
+        return String(equipTexto)
+            .split(", ")
+            .map(item => {
+                const matchPix = item.match(/\[Pix:\s*([^\]]+)\]/i);
+                return matchPix ? String(matchPix[1]).trim() : "";
+            })
+            .filter(Boolean);
+    }
+
+    function encontrarConflitoPix(pix, inputAtual = null) {
+        const pixNormalizado = String(pix || "").trim();
+        if (!pixNormalizado) return null;
+
+        const pixJaDigitadosNaTela = Array.from(document.querySelectorAll('.pix-input'))
+            .filter(input => input !== inputAtual)
+            .map(input => String(input.value || "").trim())
+            .filter(Boolean);
+
+        if (pixJaDigitadosNaTela.includes(pixNormalizado)) {
+            return { tipo: 'formulario' };
+        }
+
+        return clientesCadastrados.find(cliente => {
+            if (editId && cliente.firebaseUrl && cliente.firebaseUrl.includes(editId)) {
+                return false;
+            }
+            return extrairPixDoEquipamento(cliente.equip).includes(pixNormalizado);
+        }) || null;
+    }
+
+    function validarPixInput(input, exibirAlerta = true) {
+        if (!input) return true;
+
+        const pix = String(input.value || "").trim();
+        if (!pix) return !input.dataset.pixRemovidoPorDuplicidade;
+
+        const conflito = encontrarConflitoPix(pix, input);
+        if (!conflito) {
+            delete input.dataset.pixRemovidoPorDuplicidade;
+            return true;
+        }
+
+        input.value = "";
+        input.dataset.pixRemovidoPorDuplicidade = "1";
+
+        if (exibirAlerta) {
+            const mensagem = conflito.tipo === 'formulario'
+                ? `O numero Pix ${pix} ja foi informado em outra maquina deste cadastro.`
+                : `Ja existe um cliente com o numero Pix ${pix} cadastrado.`;
+            alert(mensagem);
+        }
+
+        return false;
+    }
+
+    function validarTodosOsPixAntesDeSalvar() {
+        const inputsPix = Array.from(document.querySelectorAll('.pix-input'));
+        for (const input of inputsPix) {
+            if (!validarPixInput(input, true)) {
+                input.focus();
+                return false;
+            }
+        }
+        return true;
     }
 
     function bloquearEdicaoSemPermissao() {
@@ -161,6 +540,10 @@
     });
 
     // --- CARREGAR MÁQUINAS ---
+    dbEscutarClientes((lista) => {
+        clientesCadastrados = lista;
+    });
+
     dbEscutarEstoque((lista) => {
         maquinasDisponiveis = lista.filter(item => item.categoria === 'maquina');
         
@@ -210,8 +593,46 @@
         adicionarLinhaEquipamento();
     }
 
+    atualizarEstadoCampoCidade();
+
     /* --- PARTE B: CARREGAR DADOS NO FORMULÁRIO ---
        Puxa as informações do Firebase e coloca dentro das caixinhas (inputs) */
+    document.getElementById('endereco').addEventListener('input', () => {
+        atualizarEstadoCampoCidade();
+    });
+
+    document.getElementById('endereco').addEventListener('blur', () => {
+        if (!validarEnderecoSemLink(true)) return;
+        atualizarEstadoCampoCidade();
+        preencherCidadePeloEndereco(false);
+    });
+
+    document.getElementById('endereco').addEventListener('change', () => {
+        if (!validarEnderecoSemLink(true)) return;
+        atualizarEstadoCampoCidade();
+        preencherCidadePeloEndereco(false);
+    });
+
+    document.getElementById('endereco').addEventListener('paste', (e) => {
+        const textoColado = e.clipboardData?.getData('text') || "";
+        if (enderecoContemLink(textoColado)) {
+            e.preventDefault();
+            document.getElementById('endereco').value = "";
+            atualizarEstadoCampoCidade();
+            alert("Cole apenas o endereco em texto. Link de mapa nao e aceito nesse campo.");
+            return;
+        }
+
+        setTimeout(() => {
+            atualizarEstadoCampoCidade();
+            preencherCidadePeloEndereco(false);
+        }, 0);
+    });
+
+    document.getElementById('cidade').addEventListener('input', () => {
+        delete document.getElementById('cidade').dataset.preenchidoAutomaticamente;
+    });
+
     async function carregarDadosCliente(id) {
         try {
             const clientes = await dbListarClientes();
@@ -226,9 +647,10 @@
 
                 document.getElementById("ponto_aberto").value = cliente.ponto_aberto || "";
                 document.getElementById("nome").value = cliente.nome || "";
-                document.getElementById("cidade").value = cliente.cidade || "";
                 document.getElementById("comissao").value = cliente.comissao || "";
                 document.getElementById("endereco").value = cliente.endereco || "";
+                atualizarEstadoCampoCidade();
+                document.getElementById("cidade").value = cliente.cidade || "";
                 document.getElementById("rota").value = cliente.rota || "";
                 document.getElementById("obs").value = cliente.obs || "";
 
@@ -295,6 +717,18 @@
 
     /* --- PARTE D: AÇÃO DE SALVAR ---
        Coleta tudo e decide: É um cliente NOVO ou uma ATUALIZAÇÃO de um antigo? */
+    document.getElementById('container-equipamentos').addEventListener('focusout', (e) => {
+        if (e.target.classList.contains('pix-input')) {
+            validarPixInput(e.target, true);
+        }
+    });
+
+    document.getElementById('container-equipamentos').addEventListener('input', (e) => {
+        if (e.target.classList.contains('pix-input')) {
+            delete e.target.dataset.pixRemovidoPorDuplicidade;
+        }
+    });
+
     document.getElementById('btnSalvar').onclick = async () => {
         const btn = document.getElementById('btnSalvar');
         btn.innerText = "Salvando...";
@@ -302,6 +736,29 @@
 
         try {
             const clientes = await dbListarClientes();
+            clientesCadastrados = clientes;
+
+            if (!validarEnderecoSemLink(true)) {
+                btn.innerText = "Salvar Cliente";
+                btn.style.pointerEvents = "auto";
+                return;
+            }
+
+            preencherCidadePeloEndereco(false);
+            atualizarEstadoCampoCidade();
+
+            if (!validarCamposObrigatorios()) {
+                btn.innerText = "Salvar Cliente";
+                btn.style.pointerEvents = "auto";
+                return;
+            }
+
+            if (!validarTodosOsPixAntesDeSalvar()) {
+                btn.innerText = "Salvar Cliente";
+                btn.style.pointerEvents = "auto";
+                return;
+            }
+
             let numeroFinal;
             let idParaSalvar = editId || null; // Se editId existe, usamos ele para salvar por cima
 
@@ -344,6 +801,7 @@
             const dataCadastro = clienteEmEdicao?.dataCadastro || new Date().toISOString();
             const dataCadastroDia = clienteEmEdicao?.dataCadastroDia || obterDataLocalIso();
             const cadastradoPor = clienteEmEdicao?.cadastradoPor || nomeUsuarioLogado || "N/A";
+            preencherCidadePeloEndereco(false);
 
             const dadosFinal = {
                 numero: numeroFinal,
