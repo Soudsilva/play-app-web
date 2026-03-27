@@ -1011,11 +1011,18 @@
             .map(parte => parte.trim())
             .filter(Boolean);
 
+        if (partes.length >= 1 && /^\d{1,6}[A-Za-z]?$/.test(partes[0])) {
+            return partes[0];
+        }
+
         if (partes.length >= 2 && /^\d{1,6}[A-Za-z]?$/.test(partes[1])) {
             return partes[1];
         }
 
         const primeiraParte = partes[0] || "";
+        const matchInicio = primeiraParte.match(/^\s*(\d{1,6}[A-Za-z]?)\b/);
+        if (matchInicio) return matchInicio[1];
+
         const matchFinal = primeiraParte.match(/\b(\d{1,6}[A-Za-z]?)\s*$/);
         return matchFinal ? matchFinal[1] : "";
     }
@@ -1032,7 +1039,16 @@
 
     function obterRuaDaLocalizacao(dados) {
         const endereco = dados?.address || {};
-        return String(endereco.road || endereco.pedestrian || endereco.footway || endereco.path || "").trim();
+        const ruaDireta = String(endereco.road || endereco.pedestrian || endereco.footway || endereco.path || "").trim();
+        if (ruaDireta) return ruaDireta;
+
+        const primeiraParte = String(dados?.display_name || dados?.name || "")
+            .split(",")[0]
+            .trim()
+            .replace(/^\d{1,6}[A-Za-z]?\s*,?\s*/, "")
+            .trim();
+
+        return primeiraParte;
     }
 
     function obterBairroDaLocalizacao(dados) {
@@ -1086,7 +1102,7 @@
         ].join(",");
     }
 
-    async function buscarEnderecoNumeradoMaisProximo(latitude, longitude, dadosBase) {
+    async function buscarEnderecoNumeradoMaisProximo(latitude, longitude, dadosBase, raioBuscaMetros = 150) {
         const rua = obterRuaDaLocalizacao(dadosBase);
         if (!rua) return "";
 
@@ -1094,7 +1110,7 @@
         const cidade = obterCidadeDaLocalizacao(dadosBase);
         const estado = obterEstadoDaLocalizacao(dadosBase);
         const termosBusca = [rua, bairro, cidade, estado].filter(Boolean).join(", ");
-        const viewbox = montarViewBoxProximo(latitude, longitude, 150);
+        const viewbox = montarViewBoxProximo(latitude, longitude, raioBuscaMetros);
         const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(termosBusca)}&limit=25&addressdetails=1&accept-language=pt-BR&countrycodes=br&dedupe=0&bounded=1&viewbox=${encodeURIComponent(viewbox)}`;
 
         const resposta = await fetch(url, {
@@ -1147,29 +1163,43 @@
         return candidatosOrdenados[0]?.numero || "";
     }
 
-    async function buscarNumeroProximoDaLocalizacao(latitude, longitude, dadosBase = null) {
+    function gerarTentativasPorRaio(raioBaseMetros = 35) {
+        const raioCurto = Math.max(12, Math.round(raioBaseMetros * 0.35));
+        const raioMedio = Math.max(20, Math.round(raioBaseMetros * 0.7));
+        const raioLongo = Math.max(35, Math.round(raioBaseMetros));
+
+        return [
+            [0, 0],
+            [raioCurto, 0],
+            [-raioCurto, 0],
+            [0, raioCurto],
+            [0, -raioCurto],
+            [raioMedio, raioMedio],
+            [raioMedio, -raioMedio],
+            [-raioMedio, raioMedio],
+            [-raioMedio, -raioMedio],
+            [raioLongo, 0],
+            [-raioLongo, 0],
+            [0, raioLongo],
+            [0, -raioLongo],
+            [raioLongo, raioCurto],
+            [raioLongo, -raioCurto],
+            [-raioLongo, raioCurto],
+            [-raioLongo, -raioCurto]
+        ];
+    }
+
+    async function buscarNumeroProximoDaLocalizacao(latitude, longitude, dadosBase = null, precisaoMetros = 0) {
+        const raioBusca = Math.min(Math.max(150, Math.round((precisaoMetros || 0) * 2)), 800);
+
         if (dadosBase) {
             try {
-                const numeroBusca = await buscarEnderecoNumeradoMaisProximo(latitude, longitude, dadosBase);
+                const numeroBusca = await buscarEnderecoNumeradoMaisProximo(latitude, longitude, dadosBase, raioBusca);
                 if (numeroBusca) return numeroBusca;
             } catch (_) {}
         }
 
-        const tentativas = [
-            [0, 0],
-            [12, 0],
-            [-12, 0],
-            [0, 12],
-            [0, -12],
-            [20, 20],
-            [20, -20],
-            [-20, 20],
-            [-20, -20],
-            [35, 0],
-            [-35, 0],
-            [0, 35],
-            [0, -35]
-        ];
+        const tentativas = gerarTentativasPorRaio(Math.max(35, Math.round(raioBusca * 0.35)));
 
         for (const [deslocamentoNorte, deslocamentoLeste] of tentativas) {
             try {
@@ -1277,12 +1307,12 @@
                 });
             });
 
-            const { latitude, longitude } = posicao.coords;
+            const { latitude, longitude, accuracy } = posicao.coords;
             const dadosLocalizacao = await buscarEnderecoPorCoordenadas(latitude, longitude, 19);
             let numeroAlternativo = "";
 
             if (!obterNumeroEndereco(dadosLocalizacao)) {
-                numeroAlternativo = await buscarNumeroProximoDaLocalizacao(latitude, longitude, dadosLocalizacao);
+                numeroAlternativo = await buscarNumeroProximoDaLocalizacao(latitude, longitude, dadosLocalizacao, accuracy);
             }
 
             const enderecoAtual = montarEnderecoDaLocalizacao(dadosLocalizacao, numeroAlternativo) || String(dadosLocalizacao?.display_name || "").trim();
