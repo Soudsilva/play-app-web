@@ -71,6 +71,20 @@
             margin-bottom: 0;
             text-align: center;
         }
+        #comissao {
+            padding-left: 10px;
+            padding-right: 38px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23ffeb3b'/%3E%3Cpath d='M8 16L16 8' stroke='%230f2a66' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='9' cy='9' r='1.6' fill='%230f2a66'/%3E%3Ccircle cx='15' cy='15' r='1.6' fill='%230f2a66'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: calc(100% - 10px) center;
+            background-size: 20px 20px;
+            font-weight: bold;
+        }
+        #comissao:focus,
+        #comissao.comissao-preenchida {
+            background-image: none;
+            padding-right: 10px;
+        }
         .linha-endereco #endereco {
             width: auto;
             flex: 1;
@@ -365,14 +379,14 @@
     <input id="ponto_aberto" placeholder="Ponto Aberto por:">
     <input id="nome" placeholder="Nome do cliente">
     
-    <input id="comissao" placeholder="Comissão" maxlength="3" inputmode="numeric"  
+    <input id="comissao" placeholder="Perc." maxlength="3" inputmode="numeric"  
         oninput="somenteNumero(this)"
         onblur="adicionarPorcentagem(this)"  
         onfocus="removerPorcentagem(this)">
 
     <div class="linha-endereco">
         <input id="numero_endereco" class="campo-numero-endereco" placeholder="NÂº" inputmode="numeric" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);">
-        <input id="endereco" placeholder="Use localização ou cole endereço do Google Maps" autocapitalize="off" autocomplete="off" spellcheck="false">
+        <input id="endereco" placeholder="Cole o endereco do Google Maps" autocapitalize="off" autocomplete="off" spellcheck="false">
         <button type="button" class="btn-mapa-endereco" onclick="abrirMapaEndereco()" aria-label="Abrir mapa">
             <img class="icone-mapa" src="assets/img/Localizacao.png" alt="Mapa">
             <span class="spinner-mapa" aria-hidden="true"></span>
@@ -488,6 +502,7 @@
     </div>
 </div>
 
+<script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     // Importamos as ferramentas de banco de dados do seu arquivo externo
     import { dbSalvarCliente, dbListarClientes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, storageSalvarFoto } from './database.js';
@@ -1340,53 +1355,24 @@
         window.setTimeout(() => botaoLimpar?.classList.remove('is-busy'), 180);
     }
 
-    window.abrirMapaEndereco = async function() {
-        if (!navigator.geolocation) {
-            alert("Seu aparelho ou navegador nao permite usar localizacao.");
-            return;
-        }
-
-        const hostSeguroLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
-        if (!window.isSecureContext && !hostSeguroLocal) {
-            alert("No celular, a localizacao do navegador normalmente so funciona em HTTPS. Abra esta pagina em HTTPS para preencher o endereco automaticamente.");
-            return;
-        }
+    window.abrirMapaEndereco = function() {
+        const enderecoBase = String(document.getElementById("endereco")?.value || "").trim();
+        const numero = String(document.getElementById("numero_endereco")?.value || "").trim();
+        const cidade = String(document.getElementById("cidade")?.value || "").trim();
+        const consulta = montarEnderecoCompleto(enderecoBase, numero) || cidade;
+        const urlMapa = consulta
+            ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(consulta)}`
+            : "https://www.google.com/maps";
 
         definirEstadoBotaoMapa(true);
 
         try {
-            const posicao = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject, {
-                    enableHighAccuracy: true,
-                    timeout: 15000,
-                    maximumAge: 0
-                });
-            });
-
-            const { latitude, longitude } = posicao.coords;
-            const dadosLocalizacao = await buscarEnderecoPorCoordenadas(latitude, longitude, 19);
-            const enderecoAtual = montarEnderecoDaLocalizacao(dadosLocalizacao) || String(dadosLocalizacao?.display_name || "").trim();
-
-            if (!enderecoAtual) {
-                throw new Error("Nao foi possivel identificar um endereco para a localizacao atual.");
-            }
-
-            aplicarEnderecoNoFormulario(enderecoAtual, "gps");
-            if (!preencherCidadePelaLocalizacao(dadosLocalizacao, true)) {
-                preencherCidadePeloEndereco(true);
-            }
-        } catch (erro) {
-            if (erro?.code === 1) {
-                alert("Permita a localizacao no navegador. Se estiver no celular, confirme tambem que a pagina foi aberta em HTTPS e que o navegador tem permissao de localizacao.");
-            } else if (erro?.code === 2) {
-                alert("Nao foi possivel obter sua localizacao atual.");
-            } else if (erro?.code === 3) {
-                alert("A localizacao demorou demais para responder. Tente novamente.");
-            } else {
-                alert(erro?.message || "Nao foi possivel preencher o endereco pela localizacao.");
+            const novaAba = window.open(urlMapa, "_blank", "noopener,noreferrer");
+            if (!novaAba) {
+                window.location.href = urlMapa;
             }
         } finally {
-            definirEstadoBotaoMapa(false);
+            window.setTimeout(() => definirEstadoBotaoMapa(false), 180);
         }
     }
 
@@ -1414,7 +1400,7 @@
             { id: "numero_endereco", nome: "NÃºmero" },
             { id: "ponto_aberto", nome: "Ponto Aberto por" },
             { id: "nome", nome: "Nome do cliente" },
-            { id: "comissao", nome: "Comissão" },
+            { id: "comissao", nome: "Perc." },
             { id: "endereco", nome: "Endereço" },
             { id: "cidade", nome: "Cidade" },
             { id: "rota", nome: "Rota" }
@@ -1566,6 +1552,7 @@
 
     function bloquearEdicaoSemPermissao() {
         alert("VocÃª nÃ£o tem permissÃ£o para editar este cliente.");
+        window.liberarSaidaCadastro?.();
         window.location.href = "clientes.html";
     }
 
@@ -1707,7 +1694,8 @@
 
                 document.getElementById("ponto_aberto").value = cliente.ponto_aberto || "";
                 document.getElementById("nome").value = cliente.nome || "";
-                document.getElementById("comissao").value = cliente.comissao || "";
+                document.getElementById("comissao").value = formatarComissaoParaExibicao(cliente.comissao || "");
+                atualizarVisualComissao(document.getElementById("comissao"));
                 const numeroEnderecoSalvo = String(cliente.numero_endereco || extrairNumeroEnderecoDoTexto(cliente.endereco || "")).trim();
                 const enderecoBaseSalvo = String(cliente.endereco_base || removerNumeroDoEndereco(cliente.endereco || "", numeroEnderecoSalvo)).trim();
                 document.getElementById("endereco").value = enderecoBaseSalvo;
@@ -1910,6 +1898,7 @@
             const dataCadastroDia = clienteEmEdicao?.dataCadastroDia || obterDataLocalIso();
             const cadastradoPor = clienteEmEdicao?.cadastradoPor || nomeUsuarioLogado || "N/A";
             preencherCidadePeloEndereco(false);
+            const comissaoFinal = formatarComissaoParaSalvar(document.getElementById("comissao").value);
             const enderecoBaseFinal = String(document.getElementById("endereco").value || "").trim();
             const numeroEnderecoFinal = String(document.getElementById("numero_endereco").value || "").trim();
             const enderecoCompletoFinal = montarEnderecoCompleto(enderecoBaseFinal, numeroEnderecoFinal);
@@ -1919,7 +1908,7 @@
                 ponto_aberto: document.getElementById("ponto_aberto").value,
                 nome: document.getElementById("nome").value,
                 cidade: document.getElementById("cidade").value,
-                comissao: document.getElementById("comissao").value,
+                comissao: comissaoFinal,
                 rota: document.getElementById("rota").value,
                 endereco: enderecoCompletoFinal,
                 endereco_base: enderecoBaseFinal,
@@ -1936,6 +1925,7 @@
             };
 
             await dbSalvarCliente(dadosFinal, idParaSalvar);
+            window.liberarSaidaCadastro?.();
             window.location.href = "clientes.html";
 
         } catch (error) {
@@ -1945,19 +1935,42 @@
         }
     };
 
-    document.getElementById('btnVoltar').onclick = () => window.location.href = "clientes.html";
+    document.getElementById('btnVoltar').onclick = () => window.confirmarSaidaCadastro?.();
 </script>
 
 <script>
     // COMISSÃO: Só deixa digitar números e limita a 2 dígitos
+    function extrairNumeroComissao(valor){
+        return String(valor || "")
+            .replace(/comis\.\s*/gi, "")
+            .replace(/perc\.\s*/gi, "")
+            .replace(/comissao\s*/gi, "")
+            .replace(/\D/g, "")
+            .substring(0,2);
+    }
+    function formatarComissaoParaSalvar(valor){
+        const numero = extrairNumeroComissao(valor);
+        return numero ? `${numero}%` : "";
+    }
+    function formatarComissaoParaExibicao(valor){
+        const numero = extrairNumeroComissao(valor);
+        return numero ? `Perc. ${numero}%` : "";
+    }
+    function atualizarVisualComissao(campo){
+        if (!campo) return;
+        campo.classList.toggle("comissao-preenchida", extrairNumeroComissao(campo.value) !== "");
+    }
     function somenteNumero(campo){
-        campo.value = campo.value.replace(/\D/g,'').substring(0,2);
+        campo.value = extrairNumeroComissao(campo.value);
+        atualizarVisualComissao(campo);
     }
     function adicionarPorcentagem(campo){
-        if(campo.value !== "" && !campo.value.includes("%")) campo.value += "%";
+        campo.value = formatarComissaoParaExibicao(campo.value);
+        atualizarVisualComissao(campo);
     }
     function removerPorcentagem(campo){
-        campo.value = campo.value.replace("%","");
+        campo.value = extrairNumeroComissao(campo.value);
+        atualizarVisualComissao(campo);
     }
 
     // ROTA: Só números e adiciona o prefixo "R." ao sair
@@ -1990,7 +2003,9 @@
         campoRota.classList.add("campo-rota-curto");
         campoComissao.classList.add("campo-comissao-curto");
         campoRota.placeholder = "Rota";
+        campoComissao.placeholder = "Perc.";
         campoRota.maxLength = 5;
+        atualizarVisualComissao(campoComissao);
 
         linha.appendChild(campoRota);
         linha.appendChild(campoComissao);
@@ -2022,6 +2037,68 @@ window.addEventListener('pageshow', function(event) {
         // const campoId = document.getElementById('idEdicao');
         // if (campoId) campoId.value = "";
     }
+});
+
+const DESTINO_SAIDA_CADASTRO = 'clientes.html';
+let permitirSaidaCadastro = false;
+
+function travarVoltarCadastro() {
+    if (permitirSaidaCadastro) return;
+    history.pushState(null, null, window.location.href);
+}
+
+function garantirTravaSaidaCadastro() {
+    travarVoltarCadastro();
+    window.removeEventListener('click', garantirTravaSaidaCadastro);
+    window.removeEventListener('touchstart', garantirTravaSaidaCadastro);
+}
+
+window.liberarSaidaCadastro = function() {
+    permitirSaidaCadastro = true;
+    window.removeEventListener('click', garantirTravaSaidaCadastro);
+    window.removeEventListener('touchstart', garantirTravaSaidaCadastro);
+};
+
+window.confirmarSaidaCadastro = async function() {
+    if (permitirSaidaCadastro) {
+        window.location.href = DESTINO_SAIDA_CADASTRO;
+        return true;
+    }
+
+    const desejaSair = typeof window.playConfirm === 'function'
+        ? await window.playConfirm("Se sair perdera as informacoes nao salvas. Deseja sair?", {
+            secondaryLabel: "Sim",
+            secondaryResult: true,
+            primaryLabel: "Nao",
+            primaryResult: false,
+            overlayResult: false
+        })
+        : window.confirm("Se sair perdera as informacoes nao salvas. Deseja sair?");
+
+    if (!desejaSair) return false;
+
+    window.liberarSaidaCadastro();
+    window.setTimeout(function() {
+        try {
+            window.location.replace(DESTINO_SAIDA_CADASTRO);
+        } catch (error) {
+            window.location.href = DESTINO_SAIDA_CADASTRO;
+        }
+    }, 80);
+
+    return true;
+};
+
+window.addEventListener('load', function() {
+    travarVoltarCadastro();
+});
+
+window.addEventListener('click', garantirTravaSaidaCadastro);
+window.addEventListener('touchstart', garantirTravaSaidaCadastro);
+
+window.addEventListener('popstate', async function() {
+    travarVoltarCadastro();
+    await window.confirmarSaidaCadastro();
 });
 
 

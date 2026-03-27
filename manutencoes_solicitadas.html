@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manuten&ccedil;&otilde;es Solicitadas</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(54, 105, 214, 0.55), transparent 34%),
+                linear-gradient(180deg, #11317a 0%, #0b2256 42%, #071634 100%);
+            display: flex;
+            justify-content: center;
+            color: white;
+            min-height: 100vh;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 440px;
+            padding: 18px;
+            box-sizing: border-box;
+        }
+
+        .topo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 18px;
+            position: relative;
+            padding: 10px 0 2px;
+        }
+
+        .titulo-wrap {
+            text-align: center;
+        }
+
+        .titulo {
+            font-size: 29px;
+            font-weight: bold;
+            line-height: 1.05;
+            color: #ffffff;
+            letter-spacing: 0.3px;
+        }
+
+        .subtitulo {
+            margin-top: 4px;
+            font-size: 13px;
+            letter-spacing: 1.6px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.76);
+        }
+
+        .btn-home {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            background: rgba(255,255,255,0.16);
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.24);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+        }
+
+        .btn-home:active {
+            background: rgba(255,255,255,0.34);
+            transform: translateY(-50%) scale(0.92);
+        }
+
+        .btn-home img {
+            width: 22px;
+            height: 22px;
+            filter: brightness(0) invert(1);
+        }
+
+        .resumo-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .resumo-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.08) 100%);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 18px;
+            padding: 14px;
+            box-shadow: 0 14px 30px rgba(0,0,0,0.18);
+            backdrop-filter: blur(8px);
+        }
+
+        .resumo-titulo {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: rgba(255,255,255,0.72);
+            margin-bottom: 6px;
+        }
+
+        .resumo-valor {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffeb3b;
+            line-height: 1;
+        }
+
+        .resumo-texto {
+            margin-top: 7px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.78);
+        }
+
+        .estado-card {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 16px;
+            padding: 18px;
+            text-align: center;
+            color: rgba(255,255,255,0.78);
+            margin-bottom: 14px;
+        }
+
+        .lista-manutencoes {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .card-manutencao {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 20px;
+            padding: 16px 16px 14px 18px;
+            box-shadow: 0 18px 38px rgba(0,0,0,0.2);
+            backdrop-filter: blur(8px);
+        }
+
+        .card-manutencao::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            border-radius: 20px 0 0 20px;
+            background: #4caf50;
+        }
+
+        .card-manutencao.urgencia-media::before {
+            background: #ffb300;
+        }
+
+        .card-manutencao.urgencia-alta::before {
+            background: #ff5252;
+        }
+
+        .cliente-topo {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .cliente-identidade {
+            min-width: 0;
+        }
+
+        .cliente-nome {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffffff;
+            line-height: 1.15;
+            margin-bottom: 5px;
+            word-break: break-word;
+        }
+
+        .cliente-numero {
+            font-size: 13px;
+            color: rgba(255,255,255,0.74);
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 14px 0 12px;
+        }
+
+        .chip {
+            border-radius: 999px;
+            padding: 6px 11px;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 0.2px;
+        }
+
+        .chip-tipo {
+            background: #ffeb3b;
+            color: #0f2a66;
+        }
+
+        .chip-dias {
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .chip-dias.baixa {
+            background: rgba(76,175,80,0.14);
+            color: #bbf4c1;
+            border-color: rgba(76,175,80,0.28);
+        }
+
+        .chip-dias.media {
+            background: rgba(255,179,0,0.16);
+            color: #ffe398;
+            border-color: rgba(255,179,0,0.3);
+        }
+
+        .chip-dias.alta {
+            background: rgba(255,82,82,0.16);
+            color: #ffb2b2;
+            border-color: rgba(255,82,82,0.26);
+        }
+
+        .grid-info {
+            display: grid;
+            gap: 8px;
+        }
+
+        .linha-info {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 9px 11px;
+            font-size: 14px;
+            line-height: 1.35;
+        }
+
+        .linha-info b {
+            color: #ff9800;
+        }
+
+        .bloco-acao {
+            margin-top: 12px;
+            background: rgba(6, 17, 43, 0.36);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 14px;
+            padding: 12px;
+        }
+
+        .bloco-acao-titulo {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ffeb3b;
+            margin-bottom: 7px;
+        }
+
+        .bloco-acao-texto {
+            font-size: 15px;
+            line-height: 1.5;
+            color: white;
+            white-space: pre-line;
+        }
+
+        .foto-solicitacao {
+            margin-top: 12px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(4, 13, 32, 0.45);
+        }
+
+        .foto-solicitacao-titulo {
+            padding: 10px 12px 0;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ffeb3b;
+            font-weight: bold;
+        }
+
+        .foto-solicitacao img {
+            width: 100%;
+            max-height: 290px;
+            object-fit: contain;
+            display: block;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 390px) {
+            .resumo-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div class="topo">
+        <div class="titulo-wrap">
+            <div class="titulo">Manuten&ccedil;&otilde;es</div>
+            <div class="subtitulo">Solicitadas</div>
+        </div>
+        <div class="btn-home" onclick="window.location.href='index.html'" aria-label="Home" role="button" tabindex="0">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
+        </div>
+    </div>
+
+    <div id="resumoGrid" class="resumo-grid" style="display:none;">
+        <div class="resumo-card">
+            <div class="resumo-titulo">Pendentes</div>
+            <div id="resumoPendentes" class="resumo-valor">0</div>
+            <div class="resumo-texto">Solicitacoes em aberto no momento.</div>
+        </div>
+        <div class="resumo-card">
+            <div class="resumo-titulo">Mais Antiga</div>
+            <div id="resumoMaisAntiga" class="resumo-valor">0</div>
+            <div id="resumoMaisAntigaTexto" class="resumo-texto">Sem solicitacoes pendentes.</div>
+        </div>
+    </div>
+
+    <div id="estadoLista" class="estado-card">Carregando manutencoes solicitadas...</div>
+    <div id="listaManutencoes" class="lista-manutencoes"></div>
+</div>
+
+<script type="module">
+    import { dbEscutarClientes, dbEscutarManutencoes } from './database.js';
+
+    let clientes = [];
+    let manutencoes = [];
+
+    function escaparHtml(valor) {
+        return String(valor || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function parseData(valor) {
+        const data = new Date(valor || "");
+        return Number.isNaN(data.getTime()) ? null : data;
+    }
+
+    function calcularDiasEmAberto(valorData) {
+        const data = parseData(valorData);
+        if (!data) return 0;
+
+        const hoje = new Date();
+        const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+        const inicioData = new Date(data.getFullYear(), data.getMonth(), data.getDate());
+        const diffMs = inicioHoje.getTime() - inicioData.getTime();
+
+        return Math.max(0, Math.floor(diffMs / 86400000));
+    }
+
+    function formatarDiasEmAberto(dias) {
+        if (dias <= 0) return "Hoje";
+        if (dias === 1) return "1 dia";
+        return `${dias} dias`;
+    }
+
+    function formatarData(valorData) {
+        const data = parseData(valorData);
+        if (!data) return "Data nao informada";
+        return data.toLocaleDateString('pt-BR');
+    }
+
+    function obterClasseUrgencia(dias) {
+        if (dias >= 7) return "alta";
+        if (dias >= 3) return "media";
+        return "baixa";
+    }
+
+    function obterClienteRelacionado(manutencao) {
+        return clientes.find(cliente => {
+            if (manutencao?.clienteId && cliente?.firebaseUrl) {
+                return manutencao.clienteId === cliente.firebaseUrl;
+            }
+            return manutencao?.clienteNumero == cliente?.numero;
+        }) || null;
+    }
+
+    function obterManutencoesPendentesEnriquecidas() {
+        return manutencoes
+            .filter(manutencao => {
+                const status = String(manutencao?.status || "pendente").toLowerCase();
+                return status !== 'concluida' && status !== 'concluido';
+            })
+            .map(manutencao => {
+                const cliente = obterClienteRelacionado(manutencao);
+                const diasEmAberto = calcularDiasEmAberto(manutencao?.dataRegistro);
+
+                return {
+                    ...manutencao,
+                    clienteNome: manutencao?.clienteNome || cliente?.nome || "Cliente sem nome",
+                    clienteNumero: manutencao?.clienteNumero || cliente?.numero || "",
+                    clienteCidade: manutencao?.clienteCidade || cliente?.cidade || "Nao informada",
+                    clienteRota: manutencao?.clienteRota || cliente?.rota || "Nao informada",
+                    solicitante: manutencao?.cadastradoPor || "Nao informado",
+                    diasEmAberto,
+                    classeUrgencia: obterClasseUrgencia(diasEmAberto),
+                    dataFormatada: formatarData(manutencao?.dataRegistro)
+                };
+            })
+            .sort((a, b) => {
+                const dataA = parseData(a?.dataRegistro)?.getTime() || 0;
+                const dataB = parseData(b?.dataRegistro)?.getTime() || 0;
+                return dataA - dataB;
+            });
+    }
+
+    function renderizarResumo(lista) {
+        const resumoGrid = document.getElementById('resumoGrid');
+        const pendentesEl = document.getElementById('resumoPendentes');
+        const maisAntigaEl = document.getElementById('resumoMaisAntiga');
+        const maisAntigaTextoEl = document.getElementById('resumoMaisAntigaTexto');
+
+        resumoGrid.style.display = 'grid';
+        pendentesEl.textContent = String(lista.length);
+
+        if (lista.length === 0) {
+            maisAntigaEl.textContent = "0";
+            maisAntigaTextoEl.textContent = "Sem solicitacoes pendentes.";
+            return;
+        }
+
+        const maiorDias = Math.max(...lista.map(item => item.diasEmAberto));
+        maisAntigaEl.textContent = String(maiorDias);
+        maisAntigaTextoEl.textContent = maiorDias <= 0
+            ? "A mais antiga foi aberta hoje."
+            : `A mais antiga esta aberta ha ${formatarDiasEmAberto(maiorDias).toLowerCase()}.`;
+    }
+
+    function renderizarLista() {
+        const lista = obterManutencoesPendentesEnriquecidas();
+        const estado = document.getElementById('estadoLista');
+        const container = document.getElementById('listaManutencoes');
+
+        renderizarResumo(lista);
+        container.innerHTML = "";
+
+        if (lista.length === 0) {
+            estado.style.display = 'block';
+            estado.textContent = "Nenhuma manutencao pendente no momento.";
+            return;
+        }
+
+        estado.style.display = 'none';
+
+        lista.forEach(item => {
+            const card = document.createElement('div');
+            card.className = `card-manutencao urgencia-${item.classeUrgencia}`;
+            card.innerHTML = `
+                <div class="cliente-topo">
+                    <div class="cliente-identidade">
+                        <div class="cliente-nome">${escaparHtml(item.clienteNome)}</div>
+                        <div class="cliente-numero">Cliente ${escaparHtml(item.clienteNumero || "Sem numero")} • Solicitado em ${escaparHtml(item.dataFormatada)}</div>
+                    </div>
+                </div>
+
+                <div class="chips">
+                    <span class="chip chip-tipo">${escaparHtml(item.tipoAcao || "Manutencao")}</span>
+                    <span class="chip chip-dias ${escaparHtml(item.classeUrgencia)}">Em aberto ha ${escaparHtml(formatarDiasEmAberto(item.diasEmAberto).toLowerCase())}</span>
+                </div>
+
+                <div class="grid-info">
+                    <div class="linha-info"><b>Rota:</b> ${escaparHtml(item.clienteRota)}</div>
+                    <div class="linha-info"><b>Cidade:</b> ${escaparHtml(item.clienteCidade)}</div>
+                    <div class="linha-info"><b>Solicitado por:</b> ${escaparHtml(item.solicitante)}</div>
+                </div>
+
+                <div class="bloco-acao">
+                    <div class="bloco-acao-titulo">O que deve ser feito</div>
+                    <div class="bloco-acao-texto">${escaparHtml(item.observacoes || "Sem observacoes.")}</div>
+                </div>
+
+                ${item.fotoSolicitacao ? `
+                    <div class="foto-solicitacao">
+                        <div class="foto-solicitacao-titulo">Foto da solicitacao</div>
+                        <img src="${escaparHtml(item.fotoSolicitacao)}" alt="Foto da solicitacao de ${escaparHtml(item.clienteNome)}">
+                    </div>
+                ` : ''}
+            `;
+
+            container.appendChild(card);
+        });
+    }
+
+    dbEscutarClientes((lista) => {
+        clientes = lista;
+        renderizarLista();
+    });
+
+    dbEscutarManutencoes((lista) => {
+        manutencoes = lista;
+        renderizarLista();
+    });
+</script>
+
+</body>
+</html>

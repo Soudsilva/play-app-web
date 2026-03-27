@@ -343,13 +343,13 @@ function base64ToBlob(base64, contentType = 'image/jpeg') {
 }
 
 // [NOVO] Salvar uma foto no Firebase Storage
-export async function storageSalvarFoto(base64String) {
+export async function storageSalvarFoto(base64String, pasta = 'atendimentos') {
     try {
         // 1. Converte a string base64 para um formato de arquivo (Blob)
         const blob = base64ToBlob(base64String);
         
         // 2. Cria um nome de arquivo único para evitar sobreposições
-        const nomeArquivo = `atendimentos/${Date.now()}-${Math.round(Math.random() * 1E9)}.jpg`;
+        const nomeArquivo = `${String(pasta || 'atendimentos').replace(/^\/+|\/+$/g, '')}/${Date.now()}-${Math.round(Math.random() * 1E9)}.jpg`;
         const fotoRef = storageRef(storage, nomeArquivo);
         
         // 3. Faz o upload do arquivo (Com limite de 15 segundos para não travar)
@@ -399,6 +399,22 @@ export function dbEscutarAtendimentos(callback) {
     });
 }
 
+export async function dbListarAtendimentos() {
+    try {
+        const snapshot = await get(ref(db, 'atendimentos'));
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            return Object.keys(data).map(key => ({
+                ...data[key],
+                firebaseUrl: key
+            }));
+        }
+    } catch (error) {
+        console.error("ERRO AO LISTAR ATENDIMENTOS:", error);
+    }
+    return [];
+}
+
 export async function dbExcluirAtendimento(id) {
     try {
         await remove(ref(db, `atendimentos/${id}`));
@@ -406,4 +422,34 @@ export async function dbExcluirAtendimento(id) {
         console.error("ERRO AO EXCLUIR ATENDIMENTO:", error);
         throw error;
     }
+}
+
+/* --- FUNCOES PARA MANUTENCAO --- */
+
+export async function dbSalvarManutencao(manutencao, idExistente = null) {
+    try {
+        if (idExistente) {
+            await set(ref(db, `manutencoes/${idExistente}`), manutencao);
+        } else {
+            const manutencoesRef = ref(db, 'manutencoes');
+            await push(manutencoesRef, manutencao);
+        }
+    } catch (error) {
+        console.error("ERRO AO SALVAR MANUTENCAO:", error);
+        throw error;
+    }
+}
+
+export function dbEscutarManutencoes(callback) {
+    const manutencoesRef = ref(db, 'manutencoes');
+    onValue(manutencoesRef, (snapshot) => {
+        const data = snapshot.val();
+        const lista = [];
+        if (data) {
+            Object.keys(data).forEach(key => {
+                lista.push({ firebaseUrl: key, ...data[key] });
+            });
+        }
+        callback(lista);
+    });
 }

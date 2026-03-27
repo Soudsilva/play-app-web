@@ -1,0 +1,662 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manuten&ccedil;&atilde;o do Cliente</title>
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #042d86;
+        display: flex;
+        justify-content: center;
+        color: white;
+    }
+    .app {
+        width: 100%;
+        max-width: 420px;
+        padding: 18px;
+        box-sizing: border-box;
+    }
+    .topo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        padding: 10px 0;
+        margin-bottom: 18px;
+    }
+    .titulo {
+        text-align: center;
+        font-size: 28px;
+        font-weight: bold;
+    }
+    .btn-home {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        background: rgba(255,255,255,0.2);
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+    .btn-home:active {
+        background: rgba(255,255,255,0.4);
+        transform: translateY(-50%) scale(0.9);
+    }
+    .btn-home img {
+        width: 22px;
+        height: 22px;
+        filter: brightness(0) invert(1);
+    }
+    .card {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 14px;
+        padding: 14px;
+        margin-bottom: 14px;
+    }
+    .card-titulo {
+        text-align: center;
+        font-weight: bold;
+        color: #ffeb3b;
+        font-size: 17px;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+    }
+    .dado {
+        display: table;
+        border: 1px solid rgba(255,255,255,0.26);
+        border-radius: 8px;
+        padding: 6px 10px;
+        margin-bottom: 8px;
+        line-height: 1.35;
+    }
+    .dado:last-child {
+        margin-bottom: 0;
+    }
+    .dado b {
+        color: #ff9800;
+    }
+    label {
+        display: block;
+        font-size: 14px;
+        color: #dfe6fb;
+        margin: 10px 0 6px;
+    }
+    input,
+    textarea,
+    select {
+        width: 100%;
+        padding: 12px;
+        border-radius: 10px;
+        border: none;
+        box-sizing: border-box;
+        font-size: 16px;
+        outline: none;
+    }
+    textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+    .lista-fotos {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .foto-cliente {
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 12px;
+        padding: 10px;
+        background: rgba(0,0,0,0.15);
+    }
+    .foto-cliente-titulo {
+        font-size: 13px;
+        font-weight: bold;
+        color: #ffeb3b;
+        margin-bottom: 8px;
+        text-align: center;
+    }
+    .foto-cliente img,
+    .preview-img {
+        width: 100%;
+        max-height: 280px;
+        object-fit: contain;
+        border-radius: 10px;
+        background: rgba(3,12,33,0.55);
+    }
+    .preview-img {
+        display: none;
+        margin-top: 10px;
+    }
+    .sem-fotos {
+        text-align: center;
+        opacity: 0.78;
+        font-size: 14px;
+        padding: 6px 0 2px;
+    }
+    .area-foto {
+        border: 2px dashed rgba(255,255,255,0.3);
+        border-radius: 12px;
+        padding: 18px;
+        text-align: center;
+        cursor: pointer;
+        background: rgba(255,255,255,0.05);
+    }
+    .area-foto:active {
+        transform: scale(0.99);
+    }
+    .botao {
+        background: #4467a8;
+        padding: 14px;
+        text-align: center;
+        border-radius: 30px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 12px;
+    }
+    .botao-secundario {
+        background: rgba(255,255,255,0.12);
+    }
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background: #0f2a66;
+        padding: 24px;
+        border-radius: 12px;
+        border: 2px solid #ffeb3b;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 85%;
+        max-width: 320px;
+        text-align: center;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    }
+    .modal-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: white;
+    }
+    .modal-content button {
+        padding: 14px;
+        border-radius: 8px;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    #btnCameraFotoManutenÃ§Ã£o {
+        background: #4467a8;
+        color: white;
+    }
+    #btnGaleriaFotoManutenÃ§Ã£o {
+        background: #4caf50;
+        color: white;
+    }
+    .btn-cancelar-modal {
+        background: transparent;
+        border: 1px solid #f44336 !important;
+        color: #f44336;
+    }
+    .modal-btn-icone {
+        width: 20px;
+        height: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-btn-icone svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+</style>
+</head>
+<body>
+
+<div class="app">
+    <div class="topo">
+        <div class="titulo">Manuten&ccedil;&atilde;o</div>
+        <div id="btnHomeTopo" class="btn-home" aria-label="Home" role="button" tabindex="0">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
+        </div>
+    </div>
+
+    <div id="statusCarregando" class="card">
+        <div class="card-titulo">Carregando</div>
+        <div class="sem-fotos">Buscando dados do cliente...</div>
+    </div>
+
+    <div id="conteudoManutencao" style="display:none;">
+        <div class="card">
+            <div class="card-titulo">Dados do Cliente</div>
+            <div id="resumoCliente"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-titulo">Fotos Recentes</div>
+            <div id="listaFotosCliente" class="lista-fotos"></div>
+            <div id="semFotosCliente" class="sem-fotos" style="display:none;">Nenhuma foto recente encontrada para este cliente.</div>
+        </div>
+
+        <div class="card">
+            <div class="card-titulo">Solicitacao</div>
+
+            <label for="tipoManutencao">Tipo da acao</label>
+            <select id="tipoManutencao">
+                <option value="">Selecione...</option>
+                <option value="Manutencao">Manutencao</option>
+                <option value="Adicionar">Adicionar</option>
+                <option value="Retirar">Retirar</option>
+                <option value="Repor">Repor</option>
+            </select>
+
+            <label for="observacoesManutencao">Observacoes do que deve ser feito</label>
+            <textarea id="observacoesManutencao" placeholder="Descreva o que precisa ser feito"></textarea>
+
+            <label>Foto da solicitacao</label>
+            <div class="area-foto" onclick="abrirModalFoto('inputFotoManutencao')">
+                <span id="textoFotoManutencao" style="font-size:14px; opacity:0.82;">Toque para adicionar</span>
+                <img id="imgPreviewManutencao" class="preview-img" alt="Preview da foto da manutencao">
+                <input type="file" id="inputFotoManutencao" accept="image/*" style="display:none;" onchange="mostrarPreview(this, 'imgPreviewManutencao', 'textoFotoManutencao')">
+            </div>
+        </div>
+
+        <div id="btnSalvar" class="botao">Salvar Manutencao</div>
+        <div id="btnVoltar" class="botao botao-secundario">Voltar</div>
+    </div>
+</div>
+
+<div id="modalFotoManutencao" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-title">Adicionar Foto</div>
+        <button id="btnCameraFotoManutencao" type="button">
+            <span class="modal-btn-icone" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M4 7h3l2-2h6l2 2h3v12H4z"></path>
+                    <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+            </span>
+            <span>Usar Camera</span>
+        </button>
+        <button id="btnGaleriaFotoManutencao" type="button">
+            <span class="modal-btn-icone" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                    <circle cx="9" cy="10" r="1.5"></circle>
+                    <path d="M21 15l-5-5-6 6-2-2-5 5"></path>
+                </svg>
+            </span>
+            <span>Enviar da Galeria</span>
+        </button>
+        <button id="btnCancelarModalFotoManutencao" type="button" class="btn-cancelar-modal">Cancelar</button>
+    </div>
+</div>
+
+<script src="assets/js/play-dialogs.js"></script>
+<script type="module">
+    import { dbListarAtendimentos, dbListarClientes, dbSalvarManutencao, storageSalvarFoto } from './database.js';
+
+    let clienteAtual = null;
+    let currentFileInputId = null;
+    let fotosClienteReferenciaAtuais = [];
+
+    function escaparHtml(valor) {
+        return String(valor || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function voltarParaClientes() {
+        window.location.href = 'clientes.html';
+    }
+
+    function obterClienteIdDaUrl() {
+        const params = new URLSearchParams(window.location.search);
+        return String(params.get('cliente') || "").trim();
+    }
+
+    function obterTimestampAtendimento(atendimento) {
+        const dataBase = atendimento?.ultimaEdicao || atendimento?.data || "";
+        const timestamp = Date.parse(dataBase);
+        return Number.isNaN(timestamp) ? 0 : timestamp;
+    }
+
+    function obterAtendimentoMaisRecenteDoCliente(cliente, atendimentos) {
+        if (!cliente || !Array.isArray(atendimentos)) return null;
+
+        return atendimentos
+            .filter(atendimento => {
+                if (atendimento?.cliente?.id && cliente.firebaseUrl) {
+                    return atendimento.cliente.id === cliente.firebaseUrl;
+                }
+                return atendimento?.cliente?.numero == cliente.numero;
+            })
+            .sort((a, b) => obterTimestampAtendimento(b) - obterTimestampAtendimento(a))[0] || null;
+    }
+
+    function obterFotosDoUltimoAtendimento(cliente, atendimentos) {
+        const atendimento = obterAtendimentoMaisRecenteDoCliente(cliente, atendimentos);
+        if (!atendimento?.fotos) return [];
+
+        const fotos = [];
+
+        if (Array.isArray(atendimento.fotos.maquinas)) {
+            atendimento.fotos.maquinas.forEach((foto, index) => {
+                const url = foto?.url || foto?.src || "";
+                if (!url) return;
+                fotos.push({
+                    titulo: foto?.nome ? `Maquina: ${foto.nome}` : `Maquina ${index + 1}`,
+                    url
+                });
+            });
+        }
+
+        return fotos;
+    }
+
+    function obterFotosClienteReferencia(cliente, atendimentos = []) {
+        const fotosDoAtendimento = obterFotosDoUltimoAtendimento(cliente, atendimentos);
+        if (fotosDoAtendimento.length > 0) {
+            return fotosDoAtendimento;
+        }
+
+        const fotos = [];
+
+        if (Array.isArray(cliente?.fotosMaquinasInstalacao)) {
+            cliente.fotosMaquinasInstalacao.forEach((foto, index) => {
+                const url = foto?.url || foto?.src || "";
+                if (!url) return;
+                fotos.push({
+                    titulo: foto?.nome ? `Maquina: ${foto.nome}` : `Maquina ${index + 1}`,
+                    url
+                });
+            });
+        }
+
+        return fotos;
+    }
+
+    function renderizarResumoCliente(cliente) {
+        const resumo = document.getElementById('resumoCliente');
+        if (!resumo) return;
+
+        const blocos = [
+            { titulo: 'Cliente', valor: [cliente.numero, cliente.nome].filter(Boolean).join(' - ') },
+            { titulo: 'Cidade', valor: cliente.cidade || '' },
+            { titulo: 'Endereco', valor: cliente.endereco || '' },
+            { titulo: 'Equip.', valor: cliente.equip || '' }
+        ].filter(item => item.valor);
+
+        resumo.innerHTML = blocos
+            .map(item => `<div class="dado"><b>${escaparHtml(item.titulo)}:</b> ${escaparHtml(item.valor)}</div>`)
+            .join('');
+    }
+
+    function renderizarFotosCliente(cliente, atendimentos = []) {
+        const lista = document.getElementById('listaFotosCliente');
+        const vazio = document.getElementById('semFotosCliente');
+        if (!lista || !vazio) return;
+
+        const fotos = obterFotosClienteReferencia(cliente, atendimentos);
+        fotosClienteReferenciaAtuais = fotos;
+        lista.innerHTML = "";
+
+        if (fotos.length === 0) {
+            vazio.style.display = 'block';
+            return;
+        }
+
+        vazio.style.display = 'none';
+        fotos.forEach((foto) => {
+            const bloco = document.createElement('div');
+            bloco.className = 'foto-cliente';
+            bloco.innerHTML = `
+                <div class="foto-cliente-titulo">${escaparHtml(foto.titulo)}</div>
+                <img src="${escaparHtml(foto.url)}" alt="${escaparHtml(foto.titulo)}">
+            `;
+            lista.appendChild(bloco);
+        });
+    }
+
+    window.abrirModalFoto = function(inputId) {
+        currentFileInputId = inputId;
+        document.getElementById('modalFotoManutencao').style.display = 'flex';
+    };
+
+    function fecharModalFoto() {
+        document.getElementById('modalFotoManutencao').style.display = 'none';
+        currentFileInputId = null;
+    }
+
+    document.getElementById('btnCameraFotoManutencao').addEventListener('click', () => {
+        if (!currentFileInputId) return;
+        const input = document.getElementById(currentFileInputId);
+        input?.setAttribute('capture', 'environment');
+        input?.click();
+        fecharModalFoto();
+    });
+
+    document.getElementById('btnGaleriaFotoManutencao').addEventListener('click', () => {
+        if (!currentFileInputId) return;
+        const input = document.getElementById(currentFileInputId);
+        input?.removeAttribute('capture');
+        input?.click();
+        fecharModalFoto();
+    });
+
+    document.getElementById('btnCancelarModalFotoManutencao').addEventListener('click', fecharModalFoto);
+    document.getElementById('modalFotoManutencao').addEventListener('click', (e) => {
+        if (e.target.id === 'modalFotoManutencao') {
+            fecharModalFoto();
+        }
+    });
+
+    function definirPreviewFoto(imgId, textoId, src) {
+        const imgEl = document.getElementById(imgId);
+        const textoEl = document.getElementById(textoId);
+        if (!imgEl) return;
+
+        imgEl.src = src;
+        imgEl.style.display = 'block';
+        if (textoEl) {
+            textoEl.style.display = 'none';
+        }
+    }
+
+    window.mostrarPreview = function(input, imgId, textoId) {
+        if (!(input.files && input.files[0])) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imgObj = new Image();
+            imgObj.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 1600;
+                const MAX_HEIGHT = 1600;
+                let width = imgObj.width;
+                let height = imgObj.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else if (height > MAX_HEIGHT) {
+                    width *= MAX_HEIGHT / height;
+                    height = MAX_HEIGHT;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(imgObj, 0, 0, width, height);
+                definirPreviewFoto(imgId, textoId, canvas.toDataURL('image/jpeg', 0.8));
+            };
+            imgObj.src = e.target.result;
+        };
+
+        reader.readAsDataURL(input.files[0]);
+    };
+
+    async function carregarCliente() {
+        const status = document.getElementById('statusCarregando');
+        const conteudo = document.getElementById('conteudoManutencao');
+        const clienteId = obterClienteIdDaUrl();
+
+        if (!clienteId) {
+            await window.playAlert("Cliente nao informado para a manutencao.");
+            voltarParaClientes();
+            return;
+        }
+
+        try {
+            const [clientes, atendimentos] = await Promise.all([
+                dbListarClientes(),
+                dbListarAtendimentos()
+            ]);
+            clienteAtual = clientes.find(cliente => String(cliente.firebaseUrl || "") === clienteId) || null;
+
+            if (!clienteAtual) {
+                throw new Error("Cliente nao encontrado.");
+            }
+
+            renderizarResumoCliente(clienteAtual);
+            renderizarFotosCliente(clienteAtual, atendimentos);
+            status.style.display = 'none';
+            conteudo.style.display = 'block';
+        } catch (error) {
+            status.innerHTML = `
+                <div class="card-titulo">Erro</div>
+                <div class="sem-fotos">${escaparHtml(error?.message || "Nao foi possivel carregar o cliente.")}</div>
+            `;
+        }
+    }
+
+    async function validarFormulario() {
+        if (!clienteAtual) {
+            await window.playAlert("Carregue um cliente antes de salvar.");
+            return false;
+        }
+
+        const tipo = document.getElementById('tipoManutencao');
+        const observacoes = document.getElementById('observacoesManutencao');
+        const img = document.getElementById('imgPreviewManutencao');
+
+        if (!String(tipo.value || "").trim()) {
+            await window.playAlert("Selecione o tipo da acao.");
+            tipo.focus();
+            return false;
+        }
+
+        if (!String(observacoes.value || "").trim()) {
+            await window.playAlert("Preencha as observacoes do que deve ser feito.");
+            observacoes.focus();
+            return false;
+        }
+
+        const fotoOk = img && img.style.display === 'block' && !!img.src;
+        if (!fotoOk) {
+            await window.playAlert("Adicione a foto da solicitacao.");
+            return false;
+        }
+
+        return true;
+    }
+
+    async function salvarManutencao() {
+        const btn = document.getElementById('btnSalvar');
+        const tipo = document.getElementById('tipoManutencao');
+        const observacoes = document.getElementById('observacoesManutencao');
+        const img = document.getElementById('imgPreviewManutencao');
+
+        if (!(await validarFormulario())) return;
+
+        btn.innerText = "Salvando...";
+        btn.style.pointerEvents = "none";
+
+        try {
+            let fotoSolicitacao = "";
+            if (img && img.src) {
+                if (img.src.startsWith('data:')) {
+                    fotoSolicitacao = await storageSalvarFoto(img.src, 'manutencoes');
+                } else if (img.src.startsWith('http') && !img.src.includes('.html')) {
+                    fotoSolicitacao = img.src;
+                }
+            }
+
+            const manutencao = {
+                clienteId: clienteAtual.firebaseUrl || "",
+                clienteNumero: clienteAtual.numero || "",
+                clienteNome: clienteAtual.nome || "",
+                clienteCidade: clienteAtual.cidade || "",
+                clienteRota: clienteAtual.rota || "",
+                clienteEndereco: clienteAtual.endereco || "",
+                clienteEquip: clienteAtual.equip || "",
+                tipoAcao: String(tipo.value || "").trim(),
+                observacoes: String(observacoes.value || "").trim(),
+                fotoSolicitacao,
+                fotosClienteReferencia: fotosClienteReferenciaAtuais,
+                status: "pendente",
+                cadastradoPor: localStorage.getItem('usuarioLogado') || "",
+                dataRegistro: new Date().toISOString()
+            };
+
+            await dbSalvarManutencao(manutencao);
+            await window.playAlert("Manutencao salva com sucesso!");
+            voltarParaClientes();
+        } catch (error) {
+            await window.playAlert(error?.message || "Nao foi possivel salvar a manutencao.");
+        } finally {
+            btn.innerText = "Salvar Manutencao";
+            btn.style.pointerEvents = "auto";
+        }
+    }
+
+    document.getElementById('btnSalvar').addEventListener('click', salvarManutencao);
+    document.getElementById('btnVoltar').addEventListener('click', voltarParaClientes);
+    document.getElementById('btnHomeTopo').addEventListener('click', () => {
+        window.location.href = 'index.html';
+    });
+    document.getElementById('btnHomeTopo').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            window.location.href = 'index.html';
+        }
+    });
+
+    carregarCliente();
+</script>
+
+</body>
+</html>

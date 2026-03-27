@@ -312,6 +312,14 @@
         window.location.href = `cadastrar_cliente.html?edit=${id}`;
     };
 
+    window.abrirConfiguracoes = function(url) {
+        const id = String(url || "").split('/').pop().replace('.json', '');
+        if (!id) {
+            alert("Cliente nao encontrado.");
+            return;
+        }
+        window.location.href = `manutencao_cliente.html?cliente=${encodeURIComponent(id)}`;
+    };
     window.abrirMapa = function(endereco) {
         if (!endereco) { alert("Sem endereço."); return; }
         const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`;

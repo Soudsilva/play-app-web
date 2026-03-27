@@ -228,6 +228,10 @@
     };
 
     window.abrirTela = function(tela){
+        if (tela === 'manutencao') {
+            window.location.href = 'manutencoes_solicitadas.html';
+            return;
+        }
         console.log("Abrindo tela genérica: " + tela);
     };
 
