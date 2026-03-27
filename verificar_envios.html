@@ -265,15 +265,14 @@
 
             const motivoBloqueio = obterMotivoBloqueio(envio);
             const liberado = podeAlterarEnvio(envio);
-            const htmlAcoes = `
+            const htmlAcoes = liberado ? `
                 <div class="envio-acoes">
                     <div class="acoes-linha">
-                        <button class="btn-acao btn-editar btn-editar-envio" ${liberado ? '' : 'disabled'}>Editar</button>
-                        <button class="btn-acao btn-excluir btn-excluir-envio" ${liberado ? '' : 'disabled'}>Excluir</button>
+                        <button class="btn-acao btn-editar btn-editar-envio">Editar</button>
+                        <button class="btn-acao btn-excluir btn-excluir-envio">Excluir</button>
                     </div>
-                    ${liberado ? '' : `<div class="acao-bloqueio">${motivoBloqueio}</div>`}
                 </div>
-            `;
+            ` : (motivoBloqueio ? `<div class="envio-acoes"><div class="acao-bloqueio">${motivoBloqueio}</div></div>` : '');
 
             card.innerHTML = `<div class="envio-header"><div class="envio-data">📅 Recebido em ${dataFormatada}</div><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}`;
             if (liberado) {
