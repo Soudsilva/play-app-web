@@ -344,6 +344,7 @@
     </div>
 </div>
 
+<script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, storageSalvarFoto } from './database.js';
 
@@ -1137,7 +1138,7 @@
             // --- 5. Limpeza e Redirecionamento ---
             localStorage.removeItem('rascunho_atendimento');
             limparEstadoEdicao();
-            alert(atendimentoEmEdicaoId ? "Atendimento atualizado com sucesso!" : "Atendimento registrado com sucesso!");
+            await window.playAlert(atendimentoEmEdicaoId ? "Atendimento atualizado com sucesso!" : "Atendimento registrado com sucesso!");
             window.location.href = 'index.html';
 
         } catch (error) {
@@ -1363,12 +1364,12 @@
     window.addEventListener('touchstart', garantirTrava);
 
     // 3. Evento disparado ao apertar Voltar
-    window.addEventListener('popstate', function (event) {
+    window.addEventListener('popstate', async function (event) {
         // IMPORTANTE: Empurra o estado de volta IMEDIATAMENTE para cancelar a saída
         travarVoltar();
 
         // Exibe a confirmação
-        if (confirm("Se voltar perderá as informações. Deseja sair?")) {
+        if (await window.playConfirm("Se voltar perderá as informações. Deseja sair?")) {
             // Se confirmar, limpamos o rascunho e saímos manualmente
             localStorage.removeItem('rascunho_atendimento');
             limparEstadoEdicao();

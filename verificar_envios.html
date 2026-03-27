@@ -80,6 +80,7 @@
     </div>
 </div>
 
+<script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { dbEscutarAtendimentos, dbEscutarColaboradores, dbExcluirAtendimento } from './database.js';
 
@@ -303,7 +304,7 @@
             return;
         }
 
-        if (confirm("Excluir este envio? Esta ação não pode ser desfeita.")) {
+        if (await window.playConfirm("Excluir este envio? Esta ação não pode ser desfeita.")) {
             await dbExcluirAtendimento(id);
         }
     };

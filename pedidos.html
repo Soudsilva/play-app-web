@@ -101,6 +101,7 @@
     </div>
 </div>
 
+<script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { dbSalvarPedido, dbEscutarPedidos, dbExcluirPedido } from './database.js';
 
@@ -224,7 +225,7 @@
 
     // 5. CONFIRMAR COMPRA (EXCLUIR)
     window.confirmarCompra = async function(id) {
-        if(confirm("Confirmar que este item foi comprado e recebido? Ele sairá da lista.")) {
+        if(await window.playConfirm("Confirmar que este item foi comprado e recebido? Ele sairá da lista.")) {
             await dbExcluirPedido(id);
         }
     };

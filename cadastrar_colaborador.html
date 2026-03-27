@@ -101,6 +101,7 @@
     </form>
 </div>
 
+<script src="assets/js/play-dialogs.js"></script>
 <script type="module">
   import { dbEscutarColaboradores, dbSalvarColaborador, dbExcluirColaborador, dbAtualizarOrdemColaborador } from './database.js';
 
@@ -135,9 +136,9 @@
               container.appendChild(card);
 
               document.getElementById(`edit-${c.firebaseUrl}`).onclick = (e) => { e.stopPropagation(); prepararEdicao(c); };
-              document.getElementById(`del-${c.firebaseUrl}`).onclick = (e) => {
+              document.getElementById(`del-${c.firebaseUrl}`).onclick = async (e) => {
                   e.stopPropagation();
-                  if(confirm("Deseja excluir este colaborador?")) dbExcluirColaborador(c.firebaseUrl);
+                  if(await window.playConfirm("Deseja excluir este colaborador?")) dbExcluirColaborador(c.firebaseUrl);
               };
           });
       });

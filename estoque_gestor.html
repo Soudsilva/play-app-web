@@ -103,6 +103,7 @@
     </form>
 </div>
 
+<script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { dbEscutarEstoque, dbSalvarItemEstoque, dbExcluirItemEstoque } from './database.js';
 
@@ -148,7 +149,7 @@
         document.getElementById('formEstoque').reset(); document.getElementById('idItem').value = "";
         const btn = document.getElementById('btnSalvarEstoque'); btn.innerText = "+ Adicionar ao Estoque"; btn.style.background = "#4caf50"; document.getElementById('btnCancelarEdicao').style.display = "none";
     };
-    window.excluirItem = async function(id) { if(confirm("Deseja realmente excluir este item?")) { await dbExcluirItemEstoque(id); } };
+    window.excluirItem = async function(id) { if(await window.playConfirm("Deseja realmente excluir este item?")) { await dbExcluirItemEstoque(id); } };
     carregarEstoque();
 </script>
 </body>

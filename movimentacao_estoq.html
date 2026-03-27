@@ -133,6 +133,7 @@
     </div>
 </div>
 
+<script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbSalvarHistorico, dbEscutarHistorico, dbExcluirHistorico } from './database.js';
 
@@ -377,7 +378,7 @@
 
     // Reverte o estoque e apaga o histórico
     window.excluirUltimo = async function(movString) {
-        if(!confirm("Deseja desfazer essa movimentação? O saldo do estoque será revertido.")) return;
+        if(!(await window.playConfirm("Deseja desfazer essa movimentação? O saldo do estoque será revertido."))) return;
         
         const mov = JSON.parse(decodeURIComponent(movString));
         // Precisamos encontrar o item no estoque atual para atualizar o saldo

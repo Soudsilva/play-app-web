@@ -84,6 +84,7 @@
     </div>
 </div>
 
+<script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { dbEscutarClientes, dbExcluirCliente, dbEscutarColaboradores } from './database.js';
 
@@ -296,7 +297,7 @@
             alert("VocÃª nÃ£o tem permissÃ£o para excluir este cliente.");
             return;
         }
-        if (confirm("Deseja realmente excluir este cliente?")) {
+        if (await window.playConfirm("Deseja realmente excluir este cliente?")) {
             try { await dbExcluirCliente(id); } catch (e) { alert("Erro ao excluir."); }
         }
     };

@@ -473,6 +473,7 @@
     let currentFileInputId = null;
     let proximoEquipamentoRowId = 0;
     let ultimoElementoFocadoAntesDoAlerta = null;
+    let elementoParaFocarDepoisDoAlerta = null;
 
     function normalizarTexto(valor) {
         return String(valor || "")
@@ -503,31 +504,60 @@
         return `equip_${proximoEquipamentoRowId}`;
     }
 
+    function elementoEhCampoDigitavel(elemento) {
+        const tagName = elemento?.tagName || "";
+        const type = String(elemento?.type || "").toLowerCase();
+        return tagName === 'TEXTAREA'
+            || (tagName === 'INPUT' && !['button', 'submit', 'reset', 'checkbox', 'radio', 'file', 'color', 'range'].includes(type))
+            || !!elemento?.isContentEditable;
+    }
+
+    function focarAposFecharAlerta() {
+        const elemento = elementoParaFocarDepoisDoAlerta;
+        elementoParaFocarDepoisDoAlerta = null;
+        if (!elemento || typeof elemento.focus !== 'function') return;
+
+        window.setTimeout(() => {
+            try {
+                elemento.focus();
+            } catch (_) {}
+        }, 0);
+    }
+
     function fecharAlertaPlay() {
         const overlay = document.getElementById('alertaPlayOverlay');
         if (!overlay) return;
 
         overlay.style.display = 'none';
         document.body.style.overflow = '';
-        if (ultimoElementoFocadoAntesDoAlerta && typeof ultimoElementoFocadoAntesDoAlerta.focus === 'function') {
+        const eraCampoDigitavel = elementoEhCampoDigitavel(ultimoElementoFocadoAntesDoAlerta);
+        if (elementoParaFocarDepoisDoAlerta) {
+            focarAposFecharAlerta();
+        } else if (!eraCampoDigitavel && ultimoElementoFocadoAntesDoAlerta && typeof ultimoElementoFocadoAntesDoAlerta.focus === 'function') {
             ultimoElementoFocadoAntesDoAlerta.focus();
         }
         ultimoElementoFocadoAntesDoAlerta = null;
     }
 
-    function mostrarAlertaPlay(mensagem) {
+    function mostrarAlertaPlay(mensagem, elementoParaFocar = null) {
         const overlay = document.getElementById('alertaPlayOverlay');
         const msg = document.getElementById('alertaPlayMensagem');
         if (!overlay || !msg) return;
 
         ultimoElementoFocadoAntesDoAlerta = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        elementoParaFocarDepoisDoAlerta = elementoParaFocar instanceof HTMLElement ? elementoParaFocar : null;
+        if (ultimoElementoFocadoAntesDoAlerta && typeof ultimoElementoFocadoAntesDoAlerta.blur === 'function') {
+            ultimoElementoFocadoAntesDoAlerta.blur();
+        }
         msg.textContent = String(mensagem || "");
         overlay.style.display = 'flex';
         document.body.style.overflow = 'hidden';
         document.getElementById('alertaPlayOk')?.focus();
     }
 
-    window.alert = mostrarAlertaPlay;
+    window.alert = function(mensagem) {
+        mostrarAlertaPlay(mensagem);
+    };
     document.getElementById('alertaPlayOk').addEventListener('click', fecharAlertaPlay);
     document.getElementById('alertaPlayOverlay').addEventListener('click', (e) => {
         if (e.target.id === 'alertaPlayOverlay') {
@@ -721,10 +751,10 @@
         atualizarEstadoCampoCidade();
 
         if (exibirAlerta) {
-            alert("Cole ou digite apenas o endereco em texto. Links de mapa nao sao permitidos nesse campo.");
+            mostrarAlertaPlay("Cole ou digite apenas o endereco em texto. Links de mapa nao sao permitidos nesse campo.", inputEndereco);
+        } else {
+            inputEndereco.focus();
         }
-
-        inputEndereco.focus();
         return false;
     }
 
@@ -1111,8 +1141,7 @@
             const input = document.getElementById(campo.id);
             if (!input || String(input.value || "").trim() !== "") continue;
 
-            alert(`Preencha o campo ${campo.nome}.`);
-            input.focus();
+            mostrarAlertaPlay(`Preencha o campo ${campo.nome}.`, input);
             return false;
         }
 
@@ -1124,8 +1153,7 @@
         const enderecoValido = origemEndereco === "gps" || enderecoTemFormatoMaps(enderecoAtual) || enderecoLegadoMantido;
 
         if (!enderecoValido) {
-            alert("Use a localizacao ou cole um endereco copiado do Google Maps no campo Endereco.");
-            inputEndereco?.focus();
+            mostrarAlertaPlay("Use a localizacao ou cole um endereco copiado do Google Maps no campo Endereco.", inputEndereco);
             return false;
         }
 
@@ -1147,29 +1175,25 @@
             .filter(item => item.maquina || item.qtd || item.pix || item.contador);
 
         if (linhasPreenchidas.length === 0) {
-            alert("Preencha pelo menos 1 equipamento com máquina e quantidade.");
-            linhasEquipamento[0]?.querySelector('.equip-select')?.focus();
+            mostrarAlertaPlay("Preencha pelo menos 1 equipamento com máquina e quantidade.", linhasEquipamento[0]?.querySelector('.equip-select'));
             return false;
         }
 
         const linhaIncompleta = linhasPreenchidas.find(item => !item.maquina || !item.qtd);
         if (linhaIncompleta) {
-            alert("Complete máquina e quantidade em todos os equipamentos preenchidos.");
-            linhaIncompleta.grupo.querySelector('.equip-select')?.focus();
+            mostrarAlertaPlay("Complete máquina e quantidade em todos os equipamentos preenchidos.", linhaIncompleta.grupo.querySelector('.equip-select'));
             return false;
         }
 
         const linhaPixSemContador = linhasPreenchidas.find(item => item.pix && !item.contador);
         if (linhaPixSemContador) {
-            alert("Se preencher o Pix, informe também o contador da mesma máquina.");
-            linhaPixSemContador.grupo.querySelector('.contador-input')?.focus();
+            mostrarAlertaPlay("Se preencher o Pix, informe também o contador da mesma máquina.", linhaPixSemContador.grupo.querySelector('.contador-input'));
             return false;
         }
 
         const linhaContadorSemPix = linhasPreenchidas.find(item => item.contador && !item.pix);
         if (linhaContadorSemPix) {
-            alert("O contador só pode ser informado quando o campo Pix estiver preenchido.");
-            linhaContadorSemPix.grupo.querySelector('.pix-input')?.focus();
+            mostrarAlertaPlay("O contador só pode ser informado quando o campo Pix estiver preenchido.", linhaContadorSemPix.grupo.querySelector('.pix-input'));
             return false;
         }
 
@@ -1239,7 +1263,7 @@
             const mensagem = conflito.tipo === 'formulario'
                 ? `O numero Pix ${pix} ja foi informado em outra maquina deste cadastro.`
                 : `Ja existe um cliente com o numero Pix ${pix} cadastrado.`;
-            alert(mensagem);
+            mostrarAlertaPlay(mensagem, input);
         }
 
         return false;
@@ -1249,7 +1273,6 @@
         const inputsPix = Array.from(document.querySelectorAll('.pix-input'));
         for (const input of inputsPix) {
             if (!validarPixInput(input, true)) {
-                input.focus();
                 return false;
             }
         }
