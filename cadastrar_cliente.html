@@ -46,6 +46,13 @@
             align-items: stretch;
             margin-bottom: 10px;
         }
+        .campo-numero-endereco {
+            width: 74px;
+            min-width: 74px;
+            margin-bottom: 0;
+            text-align: center;
+            order: 2;
+        }
         .linha-rota-comissao {
             display: flex;
             gap: 8px;
@@ -69,6 +76,7 @@
             flex: 1;
             min-width: 0;
             margin-bottom: 0;
+            order: 1;
         }
         .btn-mapa-endereco {
             width: 52px;
@@ -83,6 +91,7 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 0;
+            order: 3;
         }
         .btn-acao-endereco {
             width: 44px;
@@ -98,6 +107,7 @@
             justify-content: center;
             margin-bottom: 0;
             padding: 0;
+            order: 4;
         }
         .btn-mapa-endereco,
         .btn-acao-endereco {
@@ -361,6 +371,7 @@
         onfocus="removerPorcentagem(this)">
 
     <div class="linha-endereco">
+        <input id="numero_endereco" class="campo-numero-endereco" placeholder="NÂº" inputmode="numeric" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);">
         <input id="endereco" placeholder="Use localização ou cole endereço do Google Maps" autocapitalize="off" autocomplete="off" spellcheck="false">
         <button type="button" class="btn-mapa-endereco" onclick="abrirMapaEndereco()" aria-label="Abrir mapa">
             <img class="icone-mapa" src="assets/img/Localizacao.png" alt="Mapa">
@@ -734,14 +745,85 @@
         return temCidadeUf && temRua;
     }
 
-    function aplicarEnderecoNoFormulario(endereco, origem = "maps") {
+    function escaparTextoParaRegex(texto) {
+        return String(texto || "").replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function removerNumeroDoEndereco(endereco, numero = "") {
+        const enderecoLimpo = String(endereco || "").replace(/\s+/g, " ").trim();
+        const numeroLimpo = String(numero || extrairNumeroEnderecoDoTexto(enderecoLimpo)).trim();
+        if (!enderecoLimpo || !numeroLimpo) return enderecoLimpo;
+
+        const numeroEscapado = escaparTextoParaRegex(numeroLimpo);
+        const partes = enderecoLimpo.split(",").map(parte => parte.trim()).filter(Boolean);
+        if (partes.length === 0) return "";
+
+        if (partes[0] && new RegExp(`^${numeroEscapado}$`).test(partes[0])) {
+            partes.shift();
+            return partes.join(", ").trim();
+        }
+
+        if (partes[1]) {
+            const segundaParteSemNumero = partes[1].replace(new RegExp(`^${numeroEscapado}(?:\\s*-\\s*|\\s+)?`), "").trim();
+            if (segundaParteSemNumero !== partes[1]) {
+                if (segundaParteSemNumero) {
+                    partes[1] = segundaParteSemNumero;
+                } else {
+                    partes.splice(1, 1);
+                }
+                return partes.join(", ").trim();
+            }
+        }
+
+        const primeiraParte = partes[0];
+        const primeiraParteSemNumeroNoInicio = primeiraParte.replace(new RegExp(`^${numeroEscapado}\\s*,?\\s*`), "").trim();
+        if (primeiraParteSemNumeroNoInicio !== primeiraParte) {
+            partes[0] = primeiraParteSemNumeroNoInicio;
+            return partes.filter(Boolean).join(", ").trim();
+        }
+
+        const primeiraParteSemNumeroNoFim = primeiraParte.replace(new RegExp(`(?:,?\\s*)${numeroEscapado}\\s*$`), "").trim();
+        if (primeiraParteSemNumeroNoFim !== primeiraParte) {
+            partes[0] = primeiraParteSemNumeroNoFim;
+            return partes.filter(Boolean).join(", ").trim();
+        }
+
+        return enderecoLimpo;
+    }
+
+    function separarNumeroDoEndereco(endereco, numeroPreferencial = "") {
+        const enderecoLimpo = String(endereco || "").replace(/\s+/g, " ").trim();
+        const numero = String(numeroPreferencial || extrairNumeroEnderecoDoTexto(enderecoLimpo)).trim();
+        return {
+            enderecoBase: removerNumeroDoEndereco(enderecoLimpo, numero),
+            numero
+        };
+    }
+
+    function montarEnderecoCompleto(enderecoBase, numero = "") {
+        const enderecoLimpo = String(enderecoBase || "").replace(/\s+/g, " ").trim();
+        const numeroLimpo = String(numero || "").trim();
+        if (!enderecoLimpo) return "";
+        if (!numeroLimpo) return enderecoLimpo;
+
+        const partes = enderecoLimpo.split(",").map(parte => parte.trim()).filter(Boolean);
+        if (partes.length === 0) return numeroLimpo;
+
+        const primeiraParte = partes.shift();
+        return [`${primeiraParte}, ${numeroLimpo}`, ...partes].join(", ").trim();
+    }
+
+    function aplicarEnderecoNoFormulario(endereco, origem = "maps", numeroPreferencial = "") {
         const inputEndereco = document.getElementById("endereco");
-        if (!inputEndereco) return false;
+        const inputNumero = document.getElementById("numero_endereco");
+        if (!inputEndereco || !inputNumero) return false;
 
         const enderecoLimpo = String(endereco || "").replace(/\s+/g, " ").trim();
         if (!enderecoLimpo) return false;
 
-        inputEndereco.value = enderecoLimpo;
+        const partesEndereco = separarNumeroDoEndereco(enderecoLimpo, numeroPreferencial);
+        inputEndereco.value = partesEndereco.enderecoBase || enderecoLimpo;
+        inputNumero.value = partesEndereco.numero;
         inputEndereco.dataset.origemEndereco = origem;
         atualizarEstadoCampoCidade();
         return true;
@@ -749,9 +831,11 @@
 
     function limparEnderecoNoFormulario() {
         const inputEndereco = document.getElementById("endereco");
+        const inputNumero = document.getElementById("numero_endereco");
         if (!inputEndereco) return;
 
         inputEndereco.value = "";
+        if (inputNumero) inputNumero.value = "";
         delete inputEndereco.dataset.origemEndereco;
         atualizarEstadoCampoCidade();
     }
@@ -764,9 +848,7 @@
         if (!endereco) return true;
         if (!enderecoContemLink(endereco)) return true;
 
-        inputEndereco.value = "";
-        delete inputEndereco.dataset.origemEndereco;
-        atualizarEstadoCampoCidade();
+        limparEnderecoNoFormulario();
 
         if (exibirAlerta) {
             mostrarAlertaPlay("Cole apenas o endereco em texto. Links de mapa nao sao permitidos nesse campo.", inputEndereco);
@@ -1019,6 +1101,11 @@
             return partes[1];
         }
 
+        if (partes.length >= 2) {
+            const matchNumeroNoSegundoTrecho = partes[1].match(/^\s*(\d{1,6}[A-Za-z]?)(?:\s*-\s*.*)?$/);
+            if (matchNumeroNoSegundoTrecho) return matchNumeroNoSegundoTrecho[1];
+        }
+
         const primeiraParte = partes[0] || "";
         const matchInicio = primeiraParte.match(/^\s*(\d{1,6}[A-Za-z]?)\b/);
         if (matchInicio) return matchInicio[1];
@@ -1102,6 +1189,35 @@
         ].join(",");
     }
 
+    async function buscarJsonNoMapa(url, mensagemFalha, timeoutMs = 7000) {
+        const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+        const timeoutId = controller
+            ? window.setTimeout(() => controller.abort(), timeoutMs)
+            : null;
+
+        try {
+            const resposta = await fetch(url, {
+                headers: {
+                    "Accept": "application/json"
+                },
+                cache: "no-store",
+                signal: controller?.signal
+            });
+
+            if (!resposta.ok) {
+                throw new Error(mensagemFalha);
+            }
+
+            return await resposta.json();
+        } catch (_) {
+            throw new Error(mensagemFalha);
+        } finally {
+            if (timeoutId) {
+                window.clearTimeout(timeoutId);
+            }
+        }
+    }
+
     async function buscarEnderecoNumeradoMaisProximo(latitude, longitude, dadosBase, raioBuscaMetros = 150) {
         const rua = obterRuaDaLocalizacao(dadosBase);
         if (!rua) return "";
@@ -1111,19 +1227,8 @@
         const estado = obterEstadoDaLocalizacao(dadosBase);
         const termosBusca = [rua, bairro, cidade, estado].filter(Boolean).join(", ");
         const viewbox = montarViewBoxProximo(latitude, longitude, raioBuscaMetros);
-        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(termosBusca)}&limit=25&addressdetails=1&accept-language=pt-BR&countrycodes=br&dedupe=0&bounded=1&viewbox=${encodeURIComponent(viewbox)}`;
-
-        const resposta = await fetch(url, {
-            headers: {
-                "Accept": "application/json"
-            }
-        });
-
-        if (!resposta.ok) {
-            throw new Error("Nao foi possivel procurar um numero de endereco proximo.");
-        }
-
-        const resultados = await resposta.json();
+        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(termosBusca)}&limit=12&addressdetails=1&accept-language=pt-BR&countrycodes=br&dedupe=1&bounded=1&viewbox=${encodeURIComponent(viewbox)}`;
+        const resultados = await buscarJsonNoMapa(url, "Nao foi possivel buscar um numero proximo agora.");
         if (!Array.isArray(resultados) || resultados.length === 0) return "";
 
         const ruaBaseNormalizada = normalizarTexto(rua);
@@ -1163,54 +1268,15 @@
         return candidatosOrdenados[0]?.numero || "";
     }
 
-    function gerarTentativasPorRaio(raioBaseMetros = 35) {
-        const raioCurto = Math.max(12, Math.round(raioBaseMetros * 0.35));
-        const raioMedio = Math.max(20, Math.round(raioBaseMetros * 0.7));
-        const raioLongo = Math.max(35, Math.round(raioBaseMetros));
-
-        return [
-            [0, 0],
-            [raioCurto, 0],
-            [-raioCurto, 0],
-            [0, raioCurto],
-            [0, -raioCurto],
-            [raioMedio, raioMedio],
-            [raioMedio, -raioMedio],
-            [-raioMedio, raioMedio],
-            [-raioMedio, -raioMedio],
-            [raioLongo, 0],
-            [-raioLongo, 0],
-            [0, raioLongo],
-            [0, -raioLongo],
-            [raioLongo, raioCurto],
-            [raioLongo, -raioCurto],
-            [-raioLongo, raioCurto],
-            [-raioLongo, -raioCurto]
-        ];
-    }
-
     async function buscarNumeroProximoDaLocalizacao(latitude, longitude, dadosBase = null, precisaoMetros = 0) {
-        const raioBusca = Math.min(Math.max(150, Math.round((precisaoMetros || 0) * 2)), 800);
+        if (!dadosBase) return "";
+        const raioBusca = Math.min(Math.max(120, Math.round((precisaoMetros || 0) * 1.2)), 300);
 
-        if (dadosBase) {
-            try {
-                const numeroBusca = await buscarEnderecoNumeradoMaisProximo(latitude, longitude, dadosBase, raioBusca);
-                if (numeroBusca) return numeroBusca;
-            } catch (_) {}
+        try {
+            return await buscarEnderecoNumeradoMaisProximo(latitude, longitude, dadosBase, raioBusca);
+        } catch (_) {
+            return "";
         }
-
-        const tentativas = gerarTentativasPorRaio(Math.max(35, Math.round(raioBusca * 0.35)));
-
-        for (const [deslocamentoNorte, deslocamentoLeste] of tentativas) {
-            try {
-                const ponto = deslocarCoordenadas(latitude, longitude, deslocamentoNorte, deslocamentoLeste);
-                const dadosTentativa = await buscarEnderecoPorCoordenadas(ponto.latitude, ponto.longitude, 19);
-                const numero = obterNumeroEndereco(dadosTentativa);
-                if (numero) return numero;
-            } catch (_) {}
-        }
-
-        return "";
     }
 
     function montarEnderecoDaLocalizacao(dados, numeroAlternativo = "") {
@@ -1232,17 +1298,7 @@
 
     async function buscarEnderecoPorCoordenadas(latitude, longitude, zoom = 18) {
         const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&zoom=${encodeURIComponent(zoom)}&addressdetails=1&accept-language=pt-BR`;
-        const resposta = await fetch(url, {
-            headers: {
-                "Accept": "application/json"
-            }
-        });
-
-        if (!resposta.ok) {
-            throw new Error("Nao foi possivel consultar o endereco da sua localizacao.");
-        }
-
-        return resposta.json();
+        return buscarJsonNoMapa(url, "Nao foi possivel consultar o mapa agora. Tente novamente em alguns segundos.");
     }
 
     function definirEstadoBotaoMapa(carregando) {
@@ -1307,15 +1363,9 @@
                 });
             });
 
-            const { latitude, longitude, accuracy } = posicao.coords;
+            const { latitude, longitude } = posicao.coords;
             const dadosLocalizacao = await buscarEnderecoPorCoordenadas(latitude, longitude, 19);
-            let numeroAlternativo = "";
-
-            if (!obterNumeroEndereco(dadosLocalizacao)) {
-                numeroAlternativo = await buscarNumeroProximoDaLocalizacao(latitude, longitude, dadosLocalizacao, accuracy);
-            }
-
-            const enderecoAtual = montarEnderecoDaLocalizacao(dadosLocalizacao, numeroAlternativo) || String(dadosLocalizacao?.display_name || "").trim();
+            const enderecoAtual = montarEnderecoDaLocalizacao(dadosLocalizacao) || String(dadosLocalizacao?.display_name || "").trim();
 
             if (!enderecoAtual) {
                 throw new Error("Nao foi possivel identificar um endereco para a localizacao atual.");
@@ -1361,6 +1411,7 @@
 
     function validarCamposObrigatorios() {
         const camposObrigatorios = [
+            { id: "numero_endereco", nome: "NÃºmero" },
             { id: "ponto_aberto", nome: "Ponto Aberto por" },
             { id: "nome", nome: "Nome do cliente" },
             { id: "comissao", nome: "Comissão" },
@@ -1368,6 +1419,8 @@
             { id: "cidade", nome: "Cidade" },
             { id: "rota", nome: "Rota" }
         ];
+        const ordemCamposObrigatorios = ["ponto_aberto", "nome", "comissao", "endereco", "numero_endereco", "cidade", "rota"];
+        camposObrigatorios.sort((a, b) => ordemCamposObrigatorios.indexOf(a.id) - ordemCamposObrigatorios.indexOf(b.id));
 
         for (const campo of camposObrigatorios) {
             const input = document.getElementById(campo.id);
@@ -1601,6 +1654,7 @@
     }
 
     document.getElementById('endereco').setAttribute('inputmode', 'none');
+    document.getElementById('numero_endereco').setAttribute('placeholder', 'Nº');
     document.getElementById('endereco').addEventListener('keydown', (e) => {
         if (!permitirAcaoNoCampoEndereco(e)) {
             e.preventDefault();
@@ -1654,9 +1708,12 @@
                 document.getElementById("ponto_aberto").value = cliente.ponto_aberto || "";
                 document.getElementById("nome").value = cliente.nome || "";
                 document.getElementById("comissao").value = cliente.comissao || "";
-                document.getElementById("endereco").value = cliente.endereco || "";
-                document.getElementById("endereco").dataset.enderecoInicial = cliente.endereco || "";
-                document.getElementById("endereco").dataset.origemEndereco = enderecoTemFormatoMaps(cliente.endereco || "") ? "maps" : "legado";
+                const numeroEnderecoSalvo = String(cliente.numero_endereco || extrairNumeroEnderecoDoTexto(cliente.endereco || "")).trim();
+                const enderecoBaseSalvo = String(cliente.endereco_base || removerNumeroDoEndereco(cliente.endereco || "", numeroEnderecoSalvo)).trim();
+                document.getElementById("endereco").value = enderecoBaseSalvo;
+                document.getElementById("numero_endereco").value = numeroEnderecoSalvo;
+                document.getElementById("endereco").dataset.enderecoInicial = enderecoBaseSalvo;
+                document.getElementById("endereco").dataset.origemEndereco = enderecoTemFormatoMaps(enderecoBaseSalvo || cliente.endereco || "") ? "maps" : "legado";
                 atualizarEstadoCampoCidade();
                 document.getElementById("cidade").value = cliente.cidade || "";
                 document.getElementById("rota").value = cliente.rota || "";
@@ -1853,6 +1910,9 @@
             const dataCadastroDia = clienteEmEdicao?.dataCadastroDia || obterDataLocalIso();
             const cadastradoPor = clienteEmEdicao?.cadastradoPor || nomeUsuarioLogado || "N/A";
             preencherCidadePeloEndereco(false);
+            const enderecoBaseFinal = String(document.getElementById("endereco").value || "").trim();
+            const numeroEnderecoFinal = String(document.getElementById("numero_endereco").value || "").trim();
+            const enderecoCompletoFinal = montarEnderecoCompleto(enderecoBaseFinal, numeroEnderecoFinal);
 
             const dadosFinal = {
                 numero: numeroFinal,
@@ -1861,7 +1921,9 @@
                 cidade: document.getElementById("cidade").value,
                 comissao: document.getElementById("comissao").value,
                 rota: document.getElementById("rota").value,
-                endereco: document.getElementById("endereco").value,
+                endereco: enderecoCompletoFinal,
+                endereco_base: enderecoBaseFinal,
+                numero_endereco: numeroEnderecoFinal,
                 aberto: dias.join(", "),
                 equip: listaEquipFinal.join(", "), 
                 equipDetalhes: equipamentosDetalhados,
