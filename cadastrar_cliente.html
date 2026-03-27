@@ -1030,6 +1030,40 @@
         ).trim();
     }
 
+    function obterRuaDaLocalizacao(dados) {
+        const endereco = dados?.address || {};
+        return String(endereco.road || endereco.pedestrian || endereco.footway || endereco.path || "").trim();
+    }
+
+    function obterBairroDaLocalizacao(dados) {
+        const endereco = dados?.address || {};
+        return String(endereco.suburb || endereco.neighbourhood || endereco.quarter || endereco.city_district || "").trim();
+    }
+
+    function obterCidadeDaLocalizacao(dados) {
+        const endereco = dados?.address || {};
+        return String(endereco.city || endereco.town || endereco.village || endereco.municipality || endereco.county || "").trim();
+    }
+
+    function obterEstadoDaLocalizacao(dados) {
+        const endereco = dados?.address || {};
+        return String(endereco.state_code || endereco.state || "").trim();
+    }
+
+    function calcularDistanciaMetros(latitudeA, longitudeA, latitudeB, longitudeB) {
+        const raioTerra = 6371000;
+        const paraRadiano = (graus) => (graus * Math.PI) / 180;
+        const deltaLat = paraRadiano(latitudeB - latitudeA);
+        const deltaLon = paraRadiano(longitudeB - longitudeA);
+        const latA = paraRadiano(latitudeA);
+        const latB = paraRadiano(latitudeB);
+
+        const a = Math.sin(deltaLat / 2) ** 2
+            + Math.cos(latA) * Math.cos(latB) * Math.sin(deltaLon / 2) ** 2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return raioTerra * c;
+    }
+
     function deslocarCoordenadas(latitude, longitude, deslocamentoNorteMetros = 0, deslocamentoLesteMetros = 0) {
         const latitudeNova = latitude + (deslocamentoNorteMetros / 111111);
         const divisorLongitude = Math.cos((latitude * Math.PI) / 180) * 111111 || 111111;
@@ -1041,7 +1075,86 @@
         };
     }
 
-    async function buscarNumeroProximoDaLocalizacao(latitude, longitude) {
+    function montarViewBoxProximo(latitude, longitude, raioMetros = 120) {
+        const cantoSuperiorEsquerdo = deslocarCoordenadas(latitude, longitude, raioMetros, -raioMetros);
+        const cantoInferiorDireito = deslocarCoordenadas(latitude, longitude, -raioMetros, raioMetros);
+        return [
+            cantoSuperiorEsquerdo.longitude,
+            cantoSuperiorEsquerdo.latitude,
+            cantoInferiorDireito.longitude,
+            cantoInferiorDireito.latitude
+        ].join(",");
+    }
+
+    async function buscarEnderecoNumeradoMaisProximo(latitude, longitude, dadosBase) {
+        const rua = obterRuaDaLocalizacao(dadosBase);
+        if (!rua) return "";
+
+        const bairro = obterBairroDaLocalizacao(dadosBase);
+        const cidade = obterCidadeDaLocalizacao(dadosBase);
+        const estado = obterEstadoDaLocalizacao(dadosBase);
+        const termosBusca = [rua, bairro, cidade, estado].filter(Boolean).join(", ");
+        const viewbox = montarViewBoxProximo(latitude, longitude, 150);
+        const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(termosBusca)}&limit=25&addressdetails=1&accept-language=pt-BR&countrycodes=br&dedupe=0&bounded=1&viewbox=${encodeURIComponent(viewbox)}`;
+
+        const resposta = await fetch(url, {
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+
+        if (!resposta.ok) {
+            throw new Error("Nao foi possivel procurar um numero de endereco proximo.");
+        }
+
+        const resultados = await resposta.json();
+        if (!Array.isArray(resultados) || resultados.length === 0) return "";
+
+        const ruaBaseNormalizada = normalizarTexto(rua);
+        const candidatos = resultados
+            .map(item => {
+                const numero = obterNumeroEndereco(item);
+                if (!numero) return null;
+
+                const ruaItem = obterRuaDaLocalizacao(item) || String(item?.name || item?.display_name || "").split(",")[0];
+                const ruaItemNormalizada = normalizarTexto(ruaItem);
+                const mesmaRua = !!ruaBaseNormalizada && (
+                    ruaItemNormalizada.includes(ruaBaseNormalizada)
+                    || ruaBaseNormalizada.includes(ruaItemNormalizada)
+                );
+
+                const latitudeItem = parseFloat(item?.lat);
+                const longitudeItem = parseFloat(item?.lon);
+                const distancia = Number.isFinite(latitudeItem) && Number.isFinite(longitudeItem)
+                    ? calcularDistanciaMetros(latitude, longitude, latitudeItem, longitudeItem)
+                    : Number.POSITIVE_INFINITY;
+
+                return {
+                    numero,
+                    mesmaRua,
+                    distancia
+                };
+            })
+            .filter(Boolean);
+
+        const ordenarPorDistancia = (a, b) => a.distancia - b.distancia;
+        const candidatosMesmaRua = candidatos.filter(item => item.mesmaRua).sort(ordenarPorDistancia);
+        if (candidatosMesmaRua.length > 0) {
+            return candidatosMesmaRua[0].numero;
+        }
+
+        const candidatosOrdenados = candidatos.sort(ordenarPorDistancia);
+        return candidatosOrdenados[0]?.numero || "";
+    }
+
+    async function buscarNumeroProximoDaLocalizacao(latitude, longitude, dadosBase = null) {
+        if (dadosBase) {
+            try {
+                const numeroBusca = await buscarEnderecoNumeradoMaisProximo(latitude, longitude, dadosBase);
+                if (numeroBusca) return numeroBusca;
+            } catch (_) {}
+        }
+
         const tentativas = [
             [0, 0],
             [12, 0],
@@ -1169,7 +1282,7 @@
             let numeroAlternativo = "";
 
             if (!obterNumeroEndereco(dadosLocalizacao)) {
-                numeroAlternativo = await buscarNumeroProximoDaLocalizacao(latitude, longitude);
+                numeroAlternativo = await buscarNumeroProximoDaLocalizacao(latitude, longitude, dadosLocalizacao);
             }
 
             const enderecoAtual = montarEnderecoDaLocalizacao(dadosLocalizacao, numeroAlternativo) || String(dadosLocalizacao?.display_name || "").trim();
