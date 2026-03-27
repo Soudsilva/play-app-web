@@ -290,6 +290,7 @@
         localStorage.setItem('rascunho_atendimento', JSON.stringify(montarRascunhoEdicao(envio)));
         localStorage.setItem('atendimento_em_edicao_id', envio.firebaseUrl);
         localStorage.setItem('atendimento_em_edicao_data', envio.data || "");
+        sessionStorage.setItem('atendimento_tela_origem', 'verificar_envios.html');
         window.location.href = 'atendimento_nivel_1.html';
     };
 

@@ -218,6 +218,7 @@
         const perfil = usuario ? (usuario.nivel_completo || "") : "";
 
         if (perfil.includes('atendimento_1')) {
+            sessionStorage.setItem('atendimento_tela_origem', 'index.html');
             window.location.href = 'atendimento_nivel_1.html';
         } else {
             // Caso existam outras telas para outros niveis ou padrão

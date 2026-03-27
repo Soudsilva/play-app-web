@@ -1138,6 +1138,7 @@
             // --- 5. Limpeza e Redirecionamento ---
             localStorage.removeItem('rascunho_atendimento');
             limparEstadoEdicao();
+            sessionStorage.removeItem('atendimento_tela_origem');
             await window.playAlert(atendimentoEmEdicaoId ? "Atendimento atualizado com sucesso!" : "Atendimento registrado com sucesso!");
             window.location.href = 'index.html';
 
@@ -1345,8 +1346,54 @@
 <!-- [NOVO] Script de Proteção de Saída (Fora do Módulo para execução imediata e robusta) -->
 <script>
     // Função simples para adicionar um estado no histórico
+    const CHAVE_TELA_ORIGEM_ATENDIMENTO = 'atendimento_tela_origem';
+    let permitirSaidaAtendimento = false;
+
     function travarVoltar() {
+        if (permitirSaidaAtendimento) return;
         history.pushState(null, null, window.location.href);
+    }
+
+    function obterTelaAnterior() {
+        const origemSalva = sessionStorage.getItem(CHAVE_TELA_ORIGEM_ATENDIMENTO);
+        if (origemSalva && origemSalva !== 'atendimento_nivel_1.html') {
+            return origemSalva;
+        }
+
+        try {
+            if (document.referrer) {
+                const urlAnterior = new URL(document.referrer);
+                if (urlAnterior.origin === window.location.origin) {
+                    const caminho = urlAnterior.pathname.split('/').pop();
+                    if (caminho && caminho !== 'atendimento_nivel_1.html') return caminho;
+                }
+            }
+        } catch (e) {}
+
+        return 'index.html';
+    }
+
+    function sairParaTelaAnterior() {
+        const destino = 'index.html';
+        permitirSaidaAtendimento = true;
+        window.removeEventListener('click', garantirTrava);
+        window.removeEventListener('touchstart', garantirTrava);
+        try {
+            localStorage.removeItem('rascunho_atendimento');
+            localStorage.removeItem('atendimento_em_edicao_id');
+            localStorage.removeItem('atendimento_em_edicao_data');
+            sessionStorage.removeItem(CHAVE_TELA_ORIGEM_ATENDIMENTO);
+        } catch (error) {
+            console.error('Falha ao limpar estado antes de sair do atendimento:', error);
+        } finally {
+            window.setTimeout(function() {
+                try {
+                    window.location.replace(destino);
+                } catch (error) {
+                    window.location.href = destino;
+                }
+            }, 80);
+        }
     }
 
     // 1. Tenta travar assim que a página carrega
@@ -1369,15 +1416,14 @@
         travarVoltar();
 
         // Exibe a confirmação
-        if (await window.playConfirm("Se voltar perderá as informações. Deseja sair?")) {
-            // Se confirmar, limpamos o rascunho e saímos manualmente
-            localStorage.removeItem('rascunho_atendimento');
-            limparEstadoEdicao();
-            
-            // Força a limpeza visual (caso o navegador faça cache)
-            try { document.querySelector('.app').style.display = 'none'; } catch(e) {}
-
-            window.location.href = 'index.html';
+        if (await window.playConfirm("Se sair perderá as informações não enviadas. Deseja sair?", {
+            secondaryLabel: "Sim",
+            secondaryResult: true,
+            primaryLabel: "Não",
+            primaryResult: false,
+            overlayResult: false
+        })) {
+            sairParaTelaAnterior();
         }
     });
 </script>

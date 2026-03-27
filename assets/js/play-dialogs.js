@@ -171,11 +171,18 @@
         });
     };
 
-    window.playConfirm = function(message) {
+    window.playConfirm = function(message, options) {
         return new Promise(function(resolve) {
             const { root, box, message: messageEl, actions } = getDialogParts();
             const previouslyFocused = document.activeElement;
             const openedFromTextEntry = isTextEntryElement(previouslyFocused);
+            const settings = options || {};
+            const hasOwn = Object.prototype.hasOwnProperty;
+            const secondaryLabel = settings.secondaryLabel || settings.cancelLabel || "Cancelar";
+            const primaryLabel = settings.primaryLabel || settings.confirmLabel || "Continuar";
+            const secondaryResult = hasOwn.call(settings, "secondaryResult") ? settings.secondaryResult : false;
+            const primaryResult = hasOwn.call(settings, "primaryResult") ? settings.primaryResult : true;
+            const overlayResult = hasOwn.call(settings, "overlayResult") ? settings.overlayResult : false;
             if (openedFromTextEntry) {
                 previouslyFocused.blur();
             }
@@ -192,18 +199,18 @@
                 resolve(result);
             };
 
-            const cancelButton = createButton("Cancelar", "play-dialogs-btn-secondary", function() {
-                close(false);
+            const cancelButton = createButton(secondaryLabel, "play-dialogs-btn-secondary", function() {
+                close(secondaryResult);
             });
-            const confirmButton = createButton("Continuar", "play-dialogs-btn-primary", function() {
-                close(true);
+            const confirmButton = createButton(primaryLabel, "play-dialogs-btn-primary", function() {
+                close(primaryResult);
             });
 
             actions.appendChild(cancelButton);
             actions.appendChild(confirmButton);
 
             root.onclick = function(event) {
-                if (event.target === root) close(false);
+                if (event.target === root) close(overlayResult);
             };
 
             root.style.display = "flex";

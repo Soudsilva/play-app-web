@@ -46,6 +46,24 @@
             align-items: stretch;
             margin-bottom: 10px;
         }
+        .linha-rota-comissao {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+            margin-bottom: 10px;
+        }
+        .campo-rota-curto {
+            width: 118px;
+            min-width: 118px;
+            margin-bottom: 0;
+            text-align: center;
+        }
+        .campo-comissao-curto {
+            width: 96px;
+            min-width: 96px;
+            margin-bottom: 0;
+            text-align: center;
+        }
         .linha-endereco #endereco {
             width: auto;
             flex: 1;
@@ -751,7 +769,7 @@
         atualizarEstadoCampoCidade();
 
         if (exibirAlerta) {
-            mostrarAlertaPlay("Cole ou digite apenas o endereco em texto. Links de mapa nao sao permitidos nesse campo.", inputEndereco);
+            mostrarAlertaPlay("Cole apenas o endereco em texto. Links de mapa nao sao permitidos nesse campo.", inputEndereco);
         } else {
             inputEndereco.focus();
         }
@@ -987,10 +1005,75 @@
         return true;
     }
 
-    function montarEnderecoDaLocalizacao(dados) {
+    function extrairNumeroEnderecoDoTexto(texto) {
+        const partes = String(texto || "")
+            .split(",")
+            .map(parte => parte.trim())
+            .filter(Boolean);
+
+        if (partes.length >= 2 && /^\d{1,6}[A-Za-z]?$/.test(partes[1])) {
+            return partes[1];
+        }
+
+        const primeiraParte = partes[0] || "";
+        const matchFinal = primeiraParte.match(/\b(\d{1,6}[A-Za-z]?)\s*$/);
+        return matchFinal ? matchFinal[1] : "";
+    }
+
+    function obterNumeroEndereco(dados) {
+        const endereco = dados?.address || {};
+        return String(
+            endereco.house_number ||
+            extrairNumeroEnderecoDoTexto(dados?.display_name) ||
+            extrairNumeroEnderecoDoTexto(dados?.name) ||
+            ""
+        ).trim();
+    }
+
+    function deslocarCoordenadas(latitude, longitude, deslocamentoNorteMetros = 0, deslocamentoLesteMetros = 0) {
+        const latitudeNova = latitude + (deslocamentoNorteMetros / 111111);
+        const divisorLongitude = Math.cos((latitude * Math.PI) / 180) * 111111 || 111111;
+        const longitudeNova = longitude + (deslocamentoLesteMetros / divisorLongitude);
+
+        return {
+            latitude: latitudeNova,
+            longitude: longitudeNova
+        };
+    }
+
+    async function buscarNumeroProximoDaLocalizacao(latitude, longitude) {
+        const tentativas = [
+            [0, 0],
+            [12, 0],
+            [-12, 0],
+            [0, 12],
+            [0, -12],
+            [20, 20],
+            [20, -20],
+            [-20, 20],
+            [-20, -20],
+            [35, 0],
+            [-35, 0],
+            [0, 35],
+            [0, -35]
+        ];
+
+        for (const [deslocamentoNorte, deslocamentoLeste] of tentativas) {
+            try {
+                const ponto = deslocarCoordenadas(latitude, longitude, deslocamentoNorte, deslocamentoLeste);
+                const dadosTentativa = await buscarEnderecoPorCoordenadas(ponto.latitude, ponto.longitude, 19);
+                const numero = obterNumeroEndereco(dadosTentativa);
+                if (numero) return numero;
+            } catch (_) {}
+        }
+
+        return "";
+    }
+
+    function montarEnderecoDaLocalizacao(dados, numeroAlternativo = "") {
         const endereco = dados?.address || {};
         const rua = endereco.road || endereco.pedestrian || endereco.footway || endereco.path || "";
-        const numero = endereco.house_number || "";
+        const numero = obterNumeroEndereco(dados) || String(numeroAlternativo || "").trim();
         const bairro = endereco.suburb || endereco.neighbourhood || endereco.quarter || endereco.city_district || "";
         const cidade = endereco.city || endereco.town || endereco.village || endereco.municipality || endereco.county || "";
         const estado = endereco.state_code || endereco.state || "";
@@ -1004,8 +1087,8 @@
         return partesFinais.join(", ").trim();
     }
 
-    async function buscarEnderecoPorCoordenadas(latitude, longitude) {
-        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&addressdetails=1&accept-language=pt-BR`;
+    async function buscarEnderecoPorCoordenadas(latitude, longitude, zoom = 18) {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&zoom=${encodeURIComponent(zoom)}&addressdetails=1&accept-language=pt-BR`;
         const resposta = await fetch(url, {
             headers: {
                 "Accept": "application/json"
@@ -1082,8 +1165,14 @@
             });
 
             const { latitude, longitude } = posicao.coords;
-            const dadosLocalizacao = await buscarEnderecoPorCoordenadas(latitude, longitude);
-            const enderecoAtual = montarEnderecoDaLocalizacao(dadosLocalizacao) || String(dadosLocalizacao?.display_name || "").trim();
+            const dadosLocalizacao = await buscarEnderecoPorCoordenadas(latitude, longitude, 19);
+            let numeroAlternativo = "";
+
+            if (!obterNumeroEndereco(dadosLocalizacao)) {
+                numeroAlternativo = await buscarNumeroProximoDaLocalizacao(latitude, longitude);
+            }
+
+            const enderecoAtual = montarEnderecoDaLocalizacao(dadosLocalizacao, numeroAlternativo) || String(dadosLocalizacao?.display_name || "").trim();
 
             if (!enderecoAtual) {
                 throw new Error("Nao foi possivel identificar um endereco para a localizacao atual.");
@@ -1356,10 +1445,33 @@
 
     /* --- PARTE B: CARREGAR DADOS NO FORMULÁRIO ---
        Puxa as informações do Firebase e coloca dentro das caixinhas (inputs) */
+    function permitirAcaoNoCampoEndereco(e) {
+        const tecla = String(e.key || "");
+        const comCtrlOuMeta = e.ctrlKey || e.metaKey;
+        const teclasLiberadas = ["Tab", "Shift", "Control", "Meta", "Alt", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "Escape"];
+
+        if (teclasLiberadas.includes(tecla)) return true;
+        if (comCtrlOuMeta && ["v", "V", "c", "C", "a", "A"].includes(tecla)) return true;
+        if (e.shiftKey && tecla === "Insert") return true;
+
+        return false;
+    }
+
+    document.getElementById('endereco').setAttribute('inputmode', 'none');
+    document.getElementById('endereco').addEventListener('keydown', (e) => {
+        if (!permitirAcaoNoCampoEndereco(e)) {
+            e.preventDefault();
+        }
+    });
+
     document.getElementById('endereco').addEventListener('beforeinput', (e) => {
         if (e.inputType !== 'insertFromPaste') {
             e.preventDefault();
         }
+    });
+
+    document.getElementById('endereco').addEventListener('drop', (e) => {
+        e.preventDefault();
     });
 
     document.getElementById('endereco').addEventListener('blur', () => {
@@ -1645,17 +1757,41 @@
 
     // ROTA: Só números e adiciona o prefixo "R." ao sair
     function somenteNumeroRota(campo){
-        campo.value = campo.value.replace(/\D/g,'');
+        campo.value = campo.value.replace(/\D/g,'').substring(0,3);
     }
     function adicionarRota(campo){
         if(campo.value !== "" && !campo.value.startsWith("R.")) {
-            let valor = campo.value.padStart(2, '0');
+            let valor = campo.value.substring(0,3);
             campo.value = "R." + valor;
         }
     }
     function removerRota(campo){
         campo.value = campo.value.replace("R.", "");
     }
+
+    function organizarCamposRotaComissao() {
+        const campoRota = document.getElementById("rota");
+        const campoComissao = document.getElementById("comissao");
+        const linhaEndereco = document.querySelector(".linha-endereco");
+        if (!campoRota || !campoComissao || !linhaEndereco) return;
+
+        let linha = document.querySelector(".linha-rota-comissao");
+        if (!linha) {
+            linha = document.createElement("div");
+            linha.className = "linha-rota-comissao";
+            linhaEndereco.parentNode.insertBefore(linha, linhaEndereco);
+        }
+
+        campoRota.classList.add("campo-rota-curto");
+        campoComissao.classList.add("campo-comissao-curto");
+        campoRota.placeholder = "Rota";
+        campoRota.maxLength = 5;
+
+        linha.appendChild(campoRota);
+        linha.appendChild(campoComissao);
+    }
+
+    organizarCamposRotaComissao();
 
 
 
