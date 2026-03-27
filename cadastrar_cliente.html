@@ -66,10 +66,57 @@
             justify-content: center;
             margin-bottom: 0;
         }
+        .btn-acao-endereco {
+            width: 44px;
+            min-width: 44px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.16);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0;
+            padding: 0;
+        }
+        .btn-mapa-endereco,
+        .btn-acao-endereco {
+            transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+        .btn-limpar-endereco {
+            background: rgba(255,255,255,0.12);
+            font-size: 18px;
+        }
+        .btn-mapa-endereco:active,
+        .btn-acao-endereco:active,
+        .btn-mapa-endereco.is-busy,
+        .btn-acao-endereco.is-busy {
+            transform: scale(0.94);
+            filter: brightness(1.12);
+            box-shadow: inset 0 0 0 2px rgba(255,255,255,0.18);
+        }
+        .btn-mapa-endereco.is-busy,
+        .btn-acao-endereco.is-busy {
+            animation: pulsoBotaoEndereco 0.85s ease-in-out infinite alternate;
+        }
+        .btn-acao-endereco:disabled,
+        .btn-mapa-endereco:disabled {
+            cursor: not-allowed;
+        }
         .btn-mapa-endereco img {
             width: 28px;
             height: 28px;
             object-fit: contain;
+        }
+        @keyframes pulsoBotaoEndereco {
+            from {
+                filter: brightness(1);
+            }
+            to {
+                filter: brightness(1.18);
+            }
         }
     </style>
 </head>
@@ -87,10 +134,11 @@
         onfocus="removerPorcentagem(this)">
 
     <div class="linha-endereco">
-        <input id="endereco" placeholder="Use localização ou cole endereço do Google Maps" readonly>
+        <input id="endereco" placeholder="Use localização ou cole endereço do Google Maps" autocapitalize="off" autocomplete="off" spellcheck="false">
         <button type="button" class="btn-mapa-endereco" onclick="abrirMapaEndereco()" aria-label="Abrir mapa">
             <img src="assets/img/Localizacao.png" alt="Mapa">
         </button>
+        <button type="button" class="btn-acao-endereco btn-limpar-endereco" onclick="limparEndereco()" aria-label="Limpar endereço" title="Limpar endereço">&#10006;</button>
     </div>
     <input id="cidade" class="campo-cidade" placeholder="Cidade" disabled>
     
@@ -256,6 +304,15 @@
         return true;
     }
 
+    function limparEnderecoNoFormulario() {
+        const inputEndereco = document.getElementById("endereco");
+        if (!inputEndereco) return;
+
+        inputEndereco.value = "";
+        delete inputEndereco.dataset.origemEndereco;
+        atualizarEstadoCampoCidade();
+    }
+
     function validarEnderecoSemLink(exibirAlerta = true) {
         const inputEndereco = document.getElementById("endereco");
         if (!inputEndereco) return true;
@@ -352,6 +409,37 @@
 
         botao.disabled = carregando;
         botao.style.opacity = carregando ? "0.7" : "1";
+        botao.classList.toggle('is-busy', carregando);
+    }
+
+    function processarTextoColadoEndereco(textoColado, exibirAlerta = true) {
+        const texto = String(textoColado || "").trim();
+        if (!texto) {
+            if (exibirAlerta) {
+                alert("Não encontrei texto para colar no endereço.");
+            }
+            return false;
+        }
+
+        if (!enderecoTemFormatoMaps(texto)) {
+            limparEnderecoNoFormulario();
+            if (exibirAlerta) {
+                alert("Use apenas a localização ou cole um endereço copiado do Google Maps nesse campo.");
+            }
+            return false;
+        }
+
+        aplicarEnderecoNoFormulario(texto, "maps");
+        preencherCidadePeloEndereco(true);
+        return true;
+    }
+
+    window.limparEndereco = function() {
+        const botaoLimpar = document.querySelector('.btn-limpar-endereco');
+        botaoLimpar?.classList.add('is-busy');
+        limparEnderecoNoFormulario();
+        document.getElementById("endereco")?.focus();
+        window.setTimeout(() => botaoLimpar?.classList.remove('is-busy'), 180);
     }
 
     window.abrirMapaEndereco = async function() {
@@ -407,10 +495,15 @@
     function atualizarEstadoCampoCidade() {
         const inputEndereco = document.getElementById("endereco");
         const inputCidade = document.getElementById("cidade");
+        const botaoLimpar = document.querySelector('.btn-limpar-endereco');
         if (!inputEndereco || !inputCidade) return;
 
         const enderecoPreenchido = String(inputEndereco.value || "").trim() !== "";
         inputCidade.disabled = !enderecoPreenchido;
+        if (botaoLimpar) {
+            botaoLimpar.disabled = !enderecoPreenchido;
+            botaoLimpar.style.opacity = enderecoPreenchido ? "1" : "0.45";
+        }
 
         if (!enderecoPreenchido) {
             inputCidade.value = "";
@@ -656,18 +749,8 @@
 
     document.getElementById('endereco').addEventListener('paste', (e) => {
         const textoColado = e.clipboardData?.getData('text') || "";
-        if (!enderecoTemFormatoMaps(textoColado)) {
-            e.preventDefault();
-            document.getElementById('endereco').value = "";
-            delete document.getElementById('endereco').dataset.origemEndereco;
-            atualizarEstadoCampoCidade();
-            alert("Use apenas a localizacao ou cole um endereco copiado do Google Maps nesse campo.");
-            return;
-        }
-
         e.preventDefault();
-        aplicarEnderecoNoFormulario(textoColado, "maps");
-        preencherCidadePeloEndereco(true);
+        processarTextoColadoEndereco(textoColado, true);
     });
 
     document.getElementById('cidade').addEventListener('input', () => {
