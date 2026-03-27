@@ -87,7 +87,7 @@
         onfocus="removerPorcentagem(this)">
 
     <div class="linha-endereco">
-        <input id="endereco" placeholder="Endereço">
+        <input id="endereco" placeholder="Use localização ou cole endereço do Google Maps" readonly>
         <button type="button" class="btn-mapa-endereco" onclick="abrirMapaEndereco()" aria-label="Abrir mapa">
             <img src="assets/img/Localizacao.png" alt="Mapa">
         </button>
@@ -228,6 +228,34 @@
         return /(https?:\/\/|www\.)/i.test(String(valor || "").trim());
     }
 
+    function enderecoTemFormatoMaps(valor) {
+        const texto = String(valor || "").replace(/\s+/g, " ").trim();
+        if (!texto) return false;
+        if (enderecoContemLink(texto)) return false;
+
+        const partes = texto.split(",").map(parte => parte.trim()).filter(Boolean);
+        if (partes.length < 3) return false;
+
+        const temCidadeUf = partes.some(parte => /^.+\s-\s[A-Z]{2}$/i.test(parte));
+        const primeiraParte = partes[0] || "";
+        const temRua = /[A-Za-zÀ-ÿ]/.test(primeiraParte);
+
+        return temCidadeUf && temRua;
+    }
+
+    function aplicarEnderecoNoFormulario(endereco, origem = "maps") {
+        const inputEndereco = document.getElementById("endereco");
+        if (!inputEndereco) return false;
+
+        const enderecoLimpo = String(endereco || "").replace(/\s+/g, " ").trim();
+        if (!enderecoLimpo) return false;
+
+        inputEndereco.value = enderecoLimpo;
+        inputEndereco.dataset.origemEndereco = origem;
+        atualizarEstadoCampoCidade();
+        return true;
+    }
+
     function validarEnderecoSemLink(exibirAlerta = true) {
         const inputEndereco = document.getElementById("endereco");
         if (!inputEndereco) return true;
@@ -237,6 +265,7 @@
         if (!enderecoContemLink(endereco)) return true;
 
         inputEndereco.value = "";
+        delete inputEndereco.dataset.origemEndereco;
         atualizarEstadoCampoCidade();
 
         if (exibirAlerta) {
@@ -356,10 +385,7 @@
                 throw new Error("Nao foi possivel identificar um endereco para a localizacao atual.");
             }
 
-            const inputEndereco = document.getElementById("endereco");
-            inputEndereco.value = enderecoAtual;
-
-            atualizarEstadoCampoCidade();
+            aplicarEnderecoNoFormulario(enderecoAtual, "gps");
             if (!preencherCidadePelaLocalizacao(dadosLocalizacao, true)) {
                 preencherCidadePeloEndereco(true);
             }
@@ -409,6 +435,19 @@
 
             alert(`Preencha o campo ${campo.nome}.`);
             input.focus();
+            return false;
+        }
+
+        const inputEndereco = document.getElementById("endereco");
+        const enderecoAtual = String(inputEndereco?.value || "").trim();
+        const origemEndereco = inputEndereco?.dataset.origemEndereco || "";
+        const enderecoInicial = String(inputEndereco?.dataset.enderecoInicial || "").trim();
+        const enderecoLegadoMantido = !!editId && origemEndereco === "legado" && enderecoAtual === enderecoInicial;
+        const enderecoValido = origemEndereco === "gps" || enderecoTemFormatoMaps(enderecoAtual) || enderecoLegadoMantido;
+
+        if (!enderecoValido) {
+            alert("Use a localizacao ou cole um endereco copiado do Google Maps no campo Endereco.");
+            inputEndereco?.focus();
             return false;
         }
 
@@ -597,8 +636,10 @@
 
     /* --- PARTE B: CARREGAR DADOS NO FORMULÁRIO ---
        Puxa as informações do Firebase e coloca dentro das caixinhas (inputs) */
-    document.getElementById('endereco').addEventListener('input', () => {
-        atualizarEstadoCampoCidade();
+    document.getElementById('endereco').addEventListener('beforeinput', (e) => {
+        if (e.inputType !== 'insertFromPaste') {
+            e.preventDefault();
+        }
     });
 
     document.getElementById('endereco').addEventListener('blur', () => {
@@ -615,18 +656,18 @@
 
     document.getElementById('endereco').addEventListener('paste', (e) => {
         const textoColado = e.clipboardData?.getData('text') || "";
-        if (enderecoContemLink(textoColado)) {
+        if (!enderecoTemFormatoMaps(textoColado)) {
             e.preventDefault();
             document.getElementById('endereco').value = "";
+            delete document.getElementById('endereco').dataset.origemEndereco;
             atualizarEstadoCampoCidade();
-            alert("Cole apenas o endereco em texto. Link de mapa nao e aceito nesse campo.");
+            alert("Use apenas a localizacao ou cole um endereco copiado do Google Maps nesse campo.");
             return;
         }
 
-        setTimeout(() => {
-            atualizarEstadoCampoCidade();
-            preencherCidadePeloEndereco(false);
-        }, 0);
+        e.preventDefault();
+        aplicarEnderecoNoFormulario(textoColado, "maps");
+        preencherCidadePeloEndereco(true);
     });
 
     document.getElementById('cidade').addEventListener('input', () => {
@@ -649,6 +690,8 @@
                 document.getElementById("nome").value = cliente.nome || "";
                 document.getElementById("comissao").value = cliente.comissao || "";
                 document.getElementById("endereco").value = cliente.endereco || "";
+                document.getElementById("endereco").dataset.enderecoInicial = cliente.endereco || "";
+                document.getElementById("endereco").dataset.origemEndereco = enderecoTemFormatoMaps(cliente.endereco || "") ? "maps" : "legado";
                 atualizarEstadoCampoCidade();
                 document.getElementById("cidade").value = cliente.cidade || "";
                 document.getElementById("rota").value = cliente.rota || "";
