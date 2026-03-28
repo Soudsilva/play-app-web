@@ -260,6 +260,14 @@
         color: #ffffff;
     }
 
+    .cliente-campos-largura {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-top: 6px;
+        margin-bottom: 6px;
+    }
+
     /* Ações editar/excluir */
     .acoes-cliente {
         display: flex;
@@ -282,6 +290,193 @@
 
     .btn-copiar-img { width: 15px; height: 15px; cursor: pointer; vertical-align: middle; margin-left: 6px; opacity: 0.7; }
     .btn-copiar-img:active { transform: scale(0.9); }
+
+    /* Modal de fotos */
+    .fotos-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.65);
+        z-index: 1000;
+        align-items: flex-end;
+        justify-content: center;
+    }
+    .fotos-overlay.aberto { display: flex; }
+
+    .fotos-sheet {
+        width: 100%;
+        max-width: 440px;
+        background: linear-gradient(180deg, #11317a 0%, #0b2256 100%);
+        border-radius: 22px 22px 0 0;
+        padding: 0 0 env(safe-area-inset-bottom, 16px);
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+        border-top: 1px solid rgba(255,255,255,0.18);
+        animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
+    .fotos-sheet-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.15);
+        flex-shrink: 0;
+    }
+
+    .fotos-sheet-titulo {
+        font-size: 16px;
+        font-weight: bold;
+        color: #ffeb3b;
+        letter-spacing: 0.3px;
+    }
+
+    .fotos-sheet-subtitulo {
+        font-size: 12px;
+        color: rgba(255,255,255,0.6);
+        margin-top: 2px;
+    }
+
+    .fotos-sheet-fechar {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.2);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .fotos-sheet-fechar:active { background: rgba(255,255,255,0.25); }
+    .fotos-sheet-fechar svg { width: 14px; height: 14px; stroke: white; fill: none; stroke-width: 2.5; stroke-linecap: round; }
+
+    .fotos-sheet-corpo {
+        overflow-y: auto;
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .fotos-secao-titulo {
+        font-size: 11px;
+        font-weight: bold;
+        color: rgba(255,255,255,0.55);
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+
+    .fotos-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .foto-item {
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.12);
+        cursor: pointer;
+    }
+    .foto-item:active { transform: scale(0.97); }
+
+    .foto-item img {
+        width: 100%;
+        aspect-ratio: 4/3;
+        object-fit: cover;
+        display: block;
+    }
+
+    .foto-item-label {
+        font-size: 11px;
+        font-weight: bold;
+        color: rgba(255,255,255,0.75);
+        padding: 6px 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .abast-card {
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.13);
+        border-radius: 12px;
+        padding: 10px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+    .abast-linha {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        color: #fff;
+        gap: 8px;
+    }
+
+    .abast-label {
+        color: rgba(255,255,255,0.65);
+        font-size: 13px;
+    }
+
+    .abast-val {
+        font-weight: bold;
+        color: #fff;
+        text-align: right;
+    }
+
+.fotos-vazio {
+        text-align: center;
+        color: rgba(255,255,255,0.45);
+        font-size: 14px;
+        padding: 24px 0;
+    }
+
+    .fotos-carregando {
+        text-align: center;
+        color: rgba(255,255,255,0.55);
+        font-size: 14px;
+        padding: 24px 0;
+    }
+
+    /* Lightbox */
+    .lightbox-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.92);
+        z-index: 1100;
+        align-items: center;
+        justify-content: center;
+    }
+    .lightbox-overlay.aberto { display: flex; }
+    .lightbox-overlay img {
+        max-width: 94vw;
+        max-height: 88vh;
+        border-radius: 10px;
+        object-fit: contain;
+    }
+    .lightbox-overlay .lb-fechar {
+        position: absolute;
+        top: 18px; right: 18px;
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.15);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        border: 1px solid rgba(255,255,255,0.25);
+    }
+    .lightbox-overlay .lb-fechar svg { width: 16px; height: 16px; stroke: white; fill: none; stroke-width: 2.5; stroke-linecap: round; }
 </style>
 </head>
 <body>
@@ -318,9 +513,35 @@
     <input type="text" id="campoPesquisaFlutuante" placeholder="Buscar...">
 </div>
 
+<!-- Modal de Fotos do Cliente -->
+<div class="fotos-overlay" id="fotosOverlay" onclick="fecharFotos(event)">
+    <div class="fotos-sheet">
+        <div class="fotos-sheet-header">
+            <div>
+                <div class="fotos-sheet-titulo" id="fotosTitulo">Fotos</div>
+                <div class="fotos-sheet-subtitulo" id="fotosSubtitulo"></div>
+            </div>
+            <div class="fotos-sheet-fechar" onclick="fecharFotosBtn()">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </div>
+        </div>
+        <div class="fotos-sheet-corpo" id="fotosCorpo">
+            <div class="fotos-carregando">Carregando fotos...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox-overlay" id="lightboxOverlay" onclick="fecharLightbox()">
+    <img id="lightboxImg" src="" alt="">
+    <div class="lb-fechar">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+</div>
+
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
-    import { dbEscutarClientes, dbExcluirCliente, dbEscutarColaboradores } from './database.js';
+    import { dbEscutarClientes, dbExcluirCliente, dbEscutarColaboradores, dbListarAtendimentos } from './database.js';
 
     let perfilUsuarioLogado = "";
     let nomeUsuarioLogado = "";
@@ -412,8 +633,10 @@
             }
             if (equipString) campos.push(`<div class="campo-item"><b>Equip.:</b> ${equipString}</div>`);
             if (c.aberto) campos.push(`<div class="campo-item"><b>Aberto:</b> ${c.aberto}</div>`);
-            if (c.endereco) campos.push(`<div class="campo-item"><b>End.:</b> <span class="copiar">${c.endereco}</span><img src="https://cdn-icons-png.flaticon.com/512/1621/1621635.png" class="btn-copiar-img" onclick="copiarTexto('${c.endereco}')"></div>`);
-            if (c.obs) campos.push(`<div class="campo-item obs-item"><b>Obs:</b> ${c.obs}</div>`);
+
+            const camposLargura = [];
+            if (c.endereco) camposLargura.push(`<div class="campo-item"><b>End.:</b> <span class="copiar">${c.endereco}</span><img src="https://cdn-icons-png.flaticon.com/512/1621/1621635.png" class="btn-copiar-img" onclick="copiarTexto('${c.endereco}')"></div>`);
+            if (c.obs) camposLargura.push(`<div class="campo-item obs-item"><b>Obs:</b> ${c.obs}</div>`);
 
             const acoesVisuaisHtml = usuarioPodeGerenciarCliente(c) ? `
                 <div class="acoes-cliente">
@@ -460,8 +683,18 @@
                                 <img src="assets/img/Localizacao.png" alt="Localização">
                                 <span>Localização</span>
                             </div>
+                            <div class="icone-acao-cliente" onclick="abrirFotos('${c.firebaseUrl}')">
+                                <svg viewBox="0 0 24 24" style="width:34px;height:34px;stroke:#ffeb3b;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;" aria-hidden="true">
+                                    <rect x="2" y="7" width="20" height="14" rx="3"/>
+                                    <circle cx="12" cy="14" r="3.2"/>
+                                    <path d="M8 7l1.5-3h5L16 7"/>
+                                    <circle cx="18.5" cy="10.5" r="0.8" fill="#ffeb3b" stroke="none"/>
+                                </svg>
+                                <span>Fotos</span>
+                            </div>
                         </div>
                     </div>
+                    ${camposLargura.length > 0 ? `<div class="cliente-campos-largura">${camposLargura.join('')}</div>` : ''}
                     ${acoesVisuaisHtml}
                 </div>
             `;
@@ -561,6 +794,151 @@
         const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`;
         window.open(url, '_blank');
     };
+
+    window.abrirFotos = async function(url) {
+        const id = String(url || "").split('/').pop().replace('.json', '');
+        const cliente = clientesSalvos.find(c => c.firebaseUrl === id);
+        if (!cliente) { alert("Cliente não encontrado."); return; }
+
+        const overlay = document.getElementById('fotosOverlay');
+        const corpo = document.getElementById('fotosCorpo');
+        const titulo = document.getElementById('fotosTitulo');
+        const subtitulo = document.getElementById('fotosSubtitulo');
+
+        titulo.textContent = `N. ${cliente.numero} — ${cliente.nome}`;
+        subtitulo.textContent = 'Fotos do cliente';
+        corpo.innerHTML = '<div class="fotos-carregando">Carregando fotos...</div>';
+        overlay.classList.add('aberto');
+        document.body.style.overflow = 'hidden';
+        history.pushState({ fotosSheet: true }, '');
+
+        try {
+            const atendimentos = await dbListarAtendimentos();
+            const atendimentosDoCliente = atendimentos
+                .filter(a => a?.cliente?.numero == cliente.numero)
+                .sort((a, b) => {
+                    const ta = a.dataHora || a.data || a.timestamp || 0;
+                    const tb = b.dataHora || b.data || b.timestamp || 0;
+                    return String(tb).localeCompare(String(ta));
+                });
+            const ultimoAtendimento = atendimentosDoCliente[0] || null;
+
+            const secoes = [];
+
+            // Foto da ficha
+            const fotosficha = [];
+            const fichaInstalacao = cliente.fotoFichaInstalacao || cliente.fotosInstalacao?.ficha || "";
+            if (fichaInstalacao) fotosficha.push({ titulo: 'Ficha (instalação)', url: fichaInstalacao });
+            if (ultimoAtendimento?.fotos?.ficha) fotosficha.push({ titulo: 'Ficha (último atend.)', url: ultimoAtendimento.fotos.ficha });
+            if (fotosficha.length > 0) secoes.push({ nome: 'Foto da Ficha', fotos: fotosficha });
+
+            // Fotos de máquinas
+            const fotosMaquinas = [];
+            if (Array.isArray(ultimoAtendimento?.fotos?.maquinas) && ultimoAtendimento.fotos.maquinas.length > 0) {
+                ultimoAtendimento.fotos.maquinas.forEach((f, i) => {
+                    const u = f?.url || f?.src || "";
+                    if (u) fotosMaquinas.push({ titulo: f?.nome ? `Máq: ${f.nome}` : `Máquina ${i+1}`, url: u });
+                });
+            } else if (Array.isArray(cliente.fotosMaquinasInstalacao)) {
+                cliente.fotosMaquinasInstalacao.forEach((f, i) => {
+                    const u = f?.url || f?.src || "";
+                    if (u) fotosMaquinas.push({ titulo: f?.nome ? `Máq: ${f.nome}` : `Máquina ${i+1}`, url: u });
+                });
+            }
+            if (fotosMaquinas.length > 0) secoes.push({ nome: 'Fotos de Máquinas', fotos: fotosMaquinas });
+
+            // Seção de reposição de produtos
+            let abastecidoHtml = '';
+            if (ultimoAtendimento) {
+                const produtos = ultimoAtendimento.produtos || [];
+                const linhas = [];
+
+                if (Array.isArray(produtos) && produtos.length > 0) {
+                    produtos.forEach(p => {
+                        if (p.nome) linhas.push(`<div class="abast-linha"><span class="abast-label">${p.nome}</span><span class="abast-val">${p.quantidade ?? ''}</span></div>`);
+                    });
+                }
+
+                if (linhas.length > 0) {
+                    const dataAtend = ultimoAtendimento.data ? new Date(ultimoAtendimento.data).toLocaleDateString('pt-BR') : '';
+                    const atendente = ultimoAtendimento.atendente || '';
+                    abastecidoHtml = `
+                        <div>
+                            <div class="fotos-secao-titulo">Reposição${dataAtend ? ` — ${dataAtend}` : ''}</div>
+                            <div class="abast-card">
+                                ${atendente ? `<div class="abast-linha"><span class="abast-label">Atendente</span><span class="abast-val">${atendente}</span></div>` : ''}
+                                ${linhas.join('')}
+                            </div>
+                        </div>`;
+                }
+            }
+
+            if (secoes.length === 0 && !abastecidoHtml) {
+                corpo.innerHTML = '<div class="fotos-vazio">Nenhuma informação encontrada para este cliente.</div>';
+                return;
+            }
+
+            corpo.innerHTML = abastecidoHtml + secoes.map(s => `
+                <div>
+                    <div class="fotos-secao-titulo">${s.nome}</div>
+                    <div class="fotos-grid">
+                        ${s.fotos.map(f => `
+                            <div class="foto-item" onclick="abrirLightbox('${f.url.replace(/'/g, "\\'")}')">
+                                <img src="${f.url}" alt="${f.titulo}" loading="lazy">
+                                <div class="foto-item-label">${f.titulo}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+        } catch(e) {
+            corpo.innerHTML = '<div class="fotos-vazio">Erro ao carregar fotos.</div>';
+        }
+    };
+
+    function _fecharFotosSheet() {
+        const overlay = document.getElementById('fotosOverlay');
+        if (!overlay.classList.contains('aberto')) return;
+        overlay.classList.remove('aberto');
+        document.body.style.overflow = '';
+    }
+
+    window.fecharFotos = function(e) {
+        if (e && e.target !== document.getElementById('fotosOverlay')) return;
+        _fecharFotosSheet();
+        if (history.state?.fotosSheet) history.back();
+    };
+
+    window.fecharFotosBtn = function() {
+        _fecharFotosSheet();
+        if (history.state?.fotosSheet) history.back();
+    };
+
+    window.abrirLightbox = function(url) {
+        const lb = document.getElementById('lightboxOverlay');
+        document.getElementById('lightboxImg').src = url;
+        lb.classList.add('aberto');
+        history.pushState({ lightbox: true }, '');
+    };
+
+    window.fecharLightbox = function() {
+        const lb = document.getElementById('lightboxOverlay');
+        if (!lb.classList.contains('aberto')) return;
+        lb.classList.remove('aberto');
+        document.getElementById('lightboxImg').src = '';
+        if (history.state?.lightbox) history.back();
+    };
+
+    window.addEventListener('popstate', function(e) {
+        const lb = document.getElementById('lightboxOverlay');
+        if (lb.classList.contains('aberto')) {
+            lb.classList.remove('aberto');
+            document.getElementById('lightboxImg').src = '';
+            return;
+        }
+        _fecharFotosSheet();
+    });
 </script>
 </body>
 </html>
