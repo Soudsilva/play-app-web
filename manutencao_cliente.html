@@ -155,16 +155,39 @@
         transform: scale(0.99);
     }
     .botao {
-        background: #4467a8;
-        padding: 14px;
+        background: linear-gradient(135deg, #1e88e5, #1565c0);
+        padding: 16px;
         text-align: center;
         border-radius: 30px;
         font-weight: bold;
+        font-size: 17px;
         cursor: pointer;
-        margin-top: 12px;
+        margin-top: 16px;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 18px rgba(21,101,192,0.45);
+        border: 1px solid rgba(255,255,255,0.18);
+    }
+    .botao:active {
+        transform: scale(0.97);
+        box-shadow: 0 2px 8px rgba(21,101,192,0.3);
     }
     .botao-secundario {
-        background: rgba(255,255,255,0.12);
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        font-size: 13px;
+        font-weight: normal;
+        color: rgba(255,255,255,0.45);
+        padding: 10px;
+        margin-top: 4px;
+        letter-spacing: 0;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+    .botao-secundario:active {
+        color: rgba(255,255,255,0.7);
+        transform: none;
+        box-shadow: none;
     }
     .modal-overlay {
         position: fixed;
@@ -283,7 +306,7 @@
             </div>
         </div>
 
-        <div id="btnSalvar" class="botao">Salvar Manutencao</div>
+        <div id="btnSalvar" class="botao">Enviar Solicitação</div>
         <div id="btnVoltar" class="botao botao-secundario">Voltar</div>
     </div>
 </div>
@@ -625,7 +648,7 @@
         });
         if (!confirmado) return;
 
-        btn.innerText = "Salvando...";
+        btn.innerText = "Enviando...";
         btn.style.pointerEvents = "none";
 
         try {
@@ -661,7 +684,7 @@
         } catch (error) {
             await window.playAlert(error?.message || "Nao foi possivel salvar a manutencao.");
         } finally {
-            btn.innerText = "Salvar Manutencao";
+            btn.innerText = "Enviar Solicitação";
             btn.style.pointerEvents = "auto";
         }
     }
@@ -689,7 +712,7 @@
         window.removeEventListener('click', _trava);
     });
 
-    window.addEventListener('popstate', function() {
+    window.addEventListener('popstate', async function() {
         travarVoltar();
 
         const dialogRoot = document.getElementById('play-dialogs-root');
@@ -698,7 +721,15 @@
             return;
         }
 
-        voltarParaClientes();
+        const confirmar = await window.playConfirm("Se sair perderá as informações não enviadas. Deseja sair?", {
+            secondaryLabel: "Sim",
+            secondaryResult: true,
+            primaryLabel: "Não",
+            primaryResult: false,
+            overlayResult: false
+        });
+
+        if (confirmar) voltarParaClientes();
     });
 
     carregarCliente();

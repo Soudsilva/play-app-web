@@ -5,79 +5,262 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lista de Clientes</title>
 <style>
-    /* -------------------------------------------------------------------------
-       [ESTILO GERAL]
-       ------------------------------------------------------------------------- */
-    body { margin:0; font-family:Arial; background:#042d86; display:flex; justify-content:center; color:white; }
-    .app { width:100%; max-width:420px; padding:15px; box-sizing:border-box; }
-    
-    /* Cabeçalho Fixo no Topo do Container */
-    .topo { 
-        display: flex; 
-        justify-content: center; 
-        align-items: center;
-        width: 100%; 
-        margin-bottom: 20px; 
-        position: relative; /* Âncora para a casinha */
-        padding: 10px 0;
-    }
-    .titulo { font-size:28px; font-weight:bold; }
+    * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    .copiar { -webkit-user-select: text !important; user-select: text !important; }
 
-    /* [BOTÃO HOME - A CASINHA] */
-    .btn-home {
-        position: absolute; 
-        right: 0;           
-        top: 50%;           
-        transform: translateY(-50%); 
-        cursor: pointer;
-        background: rgba(255, 255, 255, 0.2);
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
+    body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background:
+            radial-gradient(circle at top, rgba(54,105,214,0.55), transparent 34%),
+            linear-gradient(180deg, #11317a 0%, #0b2256 42%, #071634 100%);
+        min-height: 100vh;
         display: flex;
-        align-items: center;
         justify-content: center;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        transition: 0.2s;
+        color: white;
     }
-    .btn-home:active { background: rgba(255, 255, 255, 0.4); transform: translateY(-50%) scale(0.9); }
+
+    .app {
+        width: 100%;
+        max-width: 440px;
+        padding: 18px;
+    }
+
+    .topo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 20px;
+        position: relative;
+        padding: 10px 0 2px;
+    }
+
+    .titulo-wrap { text-align: center; }
+    .titulo { font-size: 29px; font-weight: bold; letter-spacing: 0.3px; }
+    .subtitulo { margin-top: 3px; font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase; color: #ffffff; }
+
+    .btn-home {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        background: rgba(255,255,255,0.16);
+        width: 42px; height: 42px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        border: 1px solid rgba(255,255,255,0.24);
+        box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+    }
+    .btn-home:active { background: rgba(255,255,255,0.34); transform: translateY(-50%) scale(0.92); }
     .btn-home img { width: 22px; height: 22px; filter: brightness(0) invert(1); }
 
-    /* Cards e Elementos */
-    .cliente { 
-        background:rgba(255,255,255,0.1); padding:15px; border-radius:12px; 
-        margin-bottom:15px; border:1px solid rgba(255,255,255,0.2); position: relative; 
+    /* Barra de ações */
+    .barra-acoes {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 16px;
+        align-items: center;
     }
-    .botao-add { background:#4467a8; padding:15px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-bottom:20px; }
-    #campoPesquisa { width:100%; padding:12px; border-radius:10px; border:none; font-size:16px; margin-bottom:20px; box-sizing:border-box; }
 
-    /* Bloqueios e Seleção */
-    * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
-    .copiar { -webkit-user-select: text !important; user-select: text !important; }
-    .btn-copiar-img { width: 18px; height: 18px; cursor: pointer; vertical-align: middle; margin-left: 8px; opacity: 0.8; }
+    .botao-add {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        background: linear-gradient(135deg, #1e88e5, #1565c0);
+        padding: 11px 18px;
+        border-radius: 50px;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+        white-space: nowrap;
+        box-shadow: 0 4px 14px rgba(21,101,192,0.4);
+        border: 1px solid rgba(255,255,255,0.18);
+        flex-shrink: 0;
+    }
+    .botao-add:active { transform: scale(0.97); }
+    .botao-add svg { width: 15px; height: 15px; stroke: white; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+    /* Campo de busca */
+    .search-wrap {
+        position: relative;
+        flex: 1;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 50px;
+        display: flex;
+        align-items: center;
+        padding: 0 14px 0 10px;
+    }
+    .search-wrap svg {
+        width: 15px; height: 15px;
+        stroke: rgba(255,255,255,0.5);
+        fill: none; stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round;
+        flex-shrink: 0;
+    }
+    #campoPesquisa {
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 10px 8px;
+        color: white;
+        font-size: 14px;
+        outline: none;
+        width: 100%;
+    }
+    #campoPesquisa::placeholder { color: rgba(255,255,255,0.85); font-weight: bold; }
+
+    /* Cards */
+    .cliente {
+        background: linear-gradient(160deg, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.06) 100%);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 20px;
+        margin-bottom: 14px;
+        overflow: hidden;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+        backdrop-filter: blur(8px);
+        position: relative;
+    }
+
+    .cliente-accent {
+        height: 4px;
+        background: linear-gradient(90deg, #4caf50, #81c784);
+        width: 100%;
+    }
+
+    .cliente-corpo {
+        padding: 14px 16px 12px;
+    }
+
+    .cliente-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        gap: 10px;
+    }
+
+    .cliente-col-esq {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .cliente-numero-nome {
+        font-size: 20px;
+        font-weight: bold;
+        color: #ffffff;
+        line-height: 1.2;
+        word-break: break-word;
+    }
+
+    .cliente-numero-nome .num {
+        color: #ff9800;
+    }
+
+    .cliente-icones {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+
+    .icone-acao-cliente {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+    }
+
+    .icone-acao-cliente img {
+        width: 34px; height: 34px;
+    }
+
+    .icone-acao-cliente span {
+        font-size: 9px;
+        font-weight: bold;
+        color: #ffeb3b;
+        letter-spacing: 0.3px;
+    }
+
+    /* Campos de info */
+    .cliente-campos {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-bottom: 10px;
+        margin-top: 8px;
+    }
+
+    .campo-linha {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .campo-item {
+        font-size: 15px;
+        color: #ffffff;
+        line-height: 1.5;
+    }
+
+    .campo-item b { color: #ff9800; }
+
+    .campo-item.obs-item {
+        font-style: italic;
+        font-size: 14px;
+        color: #ffffff;
+    }
+
+    /* Ações editar/excluir */
+    .acoes-cliente {
+        display: flex;
+        gap: 12px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255,255,255,0.2);
+        align-items: center;
+    }
+
+    .acao-cliente {
+        display: inline-flex; align-items: center; gap: 5px;
+        cursor: pointer; font-size: 13px; font-weight: 600;
+        transition: transform 0.15s ease;
+    }
+    .acao-cliente svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+    .acao-cliente.editar { color: #ffeb3b; }
+    .acao-cliente.excluir { color: #ff8a8a; }
+    .acao-cliente:active { transform: scale(0.95); }
+    .acao-divisor { color: #ffffff; }
+
+    .btn-copiar-img { width: 15px; height: 15px; cursor: pointer; vertical-align: middle; margin-left: 6px; opacity: 0.7; }
     .btn-copiar-img:active { transform: scale(0.9); }
-    .acoes-cliente { display:flex; gap:14px; padding:10px 0 5px 5px; align-items:center; }
-    .acao-cliente { display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; font-weight:600; color:#e9eefc; opacity:0.9; transition:opacity 0.2s ease, transform 0.2s ease; }
-    .acao-cliente svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; flex:none; }
-    .acao-cliente.editar { color:#ffeb3b; }
-    .acao-cliente.excluir { color:#ff8a8a; }
-    .acao-cliente:active { transform:scale(0.97); }
-    .acao-divisor { color:rgba(255,255,255,0.25); }
-
 </style>
 </head>
 <body>
 
 <div class="app">
     <div class="topo">
-        <div class="titulo">Clientes</div>
+        <div class="titulo-wrap">
+            <div class="titulo">Clientes</div>
+            <div class="subtitulo">Lista geral</div>
+        </div>
         <div class="btn-home" onclick="window.location.href='index.html'">
             <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
         </div>
     </div>
 
-    <div class="botao-add" id="btnNovo"> Cadastrar Cliente</div>
-    <input type="text" id="campoPesquisa" placeholder="Buscar cliente...">
+    <div class="barra-acoes">
+        <div class="botao-add" id="btnNovo">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Novo Cliente
+        </div>
+        <div class="search-wrap">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+            <input type="text" id="campoPesquisa" placeholder="Buscar...">
+        </div>
+    </div>
 
     <div id="listaClientes">
         <p style="text-align:center">Conectando ao banco...</p>
@@ -167,52 +350,33 @@
                 }
             }
 
-            // 2. Construir blocos de HTML condicionalmente
-            const cidadeHtml = c.cidade ? `<div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin-bottom: 4px;"><b style="color: #ff9800;">Cidade: </b> <span class="copiar">${c.cidade}</span></div>` : '';
-
-            let rotaComissaoContent = '';
-            if (c.rota) {
-                rotaComissaoContent += `<b style="color: #ff9800;">Rota: </b> <span class="copiar">${c.rota}</span>`;
+            // 2. Construir campos de info
+            const campos = [];
+            if (c.cidade) campos.push(`<div class="campo-item"><b>Cidade:</b> <span class="copiar">${c.cidade}</span></div>`);
+            if (c.rota || c.comissao) {
+                let rc = '';
+                if (c.rota) rc += `<b>Rota:</b> <span class="copiar">${c.rota}</span>`;
+                if (c.comissao) rc += `${c.rota ? ' &nbsp;' : ''}<b>Perc.:</b> ${c.comissao}`;
+                campos.push(`<div class="campo-item">${rc}</div>`);
             }
-            if (c.comissao) {
-                const margin = c.rota ? 'margin-left: 10px;' : '';
-                rotaComissaoContent += `<span style="${margin}"><b style="color: #ff9800;">Perc.: </b> ${c.comissao}</span>`;
-            }
-            const rotaComissaoHtml = rotaComissaoContent ? `<div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin-bottom: 4px;">${rotaComissaoContent}</div>` : '';
-
-            const equipHtml = equipString ? `<div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin-bottom: 4px;"><b style="color: #ff9800;">Equi.: </b> ${equipString}</div>` : '';
-
-            const abertoHtml = c.aberto ? `<div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin-bottom: 4px;"><b style="color: #ff9800;">Aberto: </b> ${c.aberto}</div>` : '';
-            
-            const obsHtml = c.obs ? `<div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px 0; font-style: italic; font-size: 12px;"><b style="color: #ff9800;">Obs: </b> ${c.obs}</div>` : '';
-
-            const enderecoHtml = c.endereco ? `<div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 3px 8px; margin: 0 0 4px 0;"><b style="color: #ff9800;">Endereço: </b> <span>${c.endereco}</span> <img src="https://cdn-icons-png.flaticon.com/512/1621/1621635.png" class="btn-copiar-img" onclick="copiarTexto('${c.endereco}')"></div>` : '';
-
-            const acoesHtml = usuarioPodeGerenciarCliente(c) ? `
-                <div style="display: flex; gap: 15px; padding: 10px 0 5px 5px; align-items: center;">
-                    <div onclick="editarCliente('${c.firebaseUrl}')" style="color: #ffeb3b; font-weight: bold; cursor: pointer; font-size: 14px;">âœŽ Editar</div>
-                    <span style="color: rgba(255,255,255,0.2);">|</span>
-                    <div onclick="excluirCliente('${c.firebaseUrl}')" style="color: #ff4d4d; font-weight: bold; cursor: pointer; font-size: 14px;">X Excluir</div>
-                </div>
-            ` : '';
+            if (equipString) campos.push(`<div class="campo-item"><b>Equip.:</b> ${equipString}</div>`);
+            if (c.aberto) campos.push(`<div class="campo-item"><b>Aberto:</b> ${c.aberto}</div>`);
+            if (c.endereco) campos.push(`<div class="campo-item"><b>End.:</b> <span class="copiar">${c.endereco}</span><img src="https://cdn-icons-png.flaticon.com/512/1621/1621635.png" class="btn-copiar-img" onclick="copiarTexto('${c.endereco}')"></div>`);
+            if (c.obs) campos.push(`<div class="campo-item obs-item"><b>Obs:</b> ${c.obs}</div>`);
 
             const acoesVisuaisHtml = usuarioPodeGerenciarCliente(c) ? `
                 <div class="acoes-cliente">
                     <div onclick="editarCliente('${c.firebaseUrl}')" class="acao-cliente editar">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M12 20h9"/>
-                            <path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4z"/>
+                            <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4z"/>
                         </svg>
                         <span>Editar</span>
                     </div>
                     <span class="acao-divisor">|</span>
                     <div onclick="excluirCliente('${c.firebaseUrl}')" class="acao-cliente excluir">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M3 6h18"/>
-                            <path d="M8 6V4h8v2"/>
-                            <path d="M19 6l-1 14H6L5 6"/>
-                            <path d="M10 11v6"/>
-                            <path d="M14 11v6"/>
+                            <path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/>
+                            <path d="M10 11v6"/><path d="M14 11v6"/>
                         </svg>
                         <span>Excluir</span>
                     </div>
@@ -223,33 +387,32 @@
             const card = document.createElement('div');
             card.className = 'cliente';
             card.innerHTML = `
-                <div style="width: calc(100% + 20px); height: 4px; background-color: #4caf50; margin: -10px -10px 15px -10px; border-radius: 4px 4px 0 0;"></div>
-                
-                <div style="float: right; display: flex; flex-direction: column; align-items: center; gap: 15px; margin-left: 15px; margin-bottom: 10px;">
-                    <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;" onclick="abrirConfiguracoes('${c.firebaseUrl}')">
-                        <img src="assets/img/engrenagen.png" style="width: 40px; height: 40px;">
-                        <span style="font-size: 9px; color: #ffeb3b; font-weight: bold;">Manutenção</span>
+                <div class="cliente-accent"></div>
+                <div class="cliente-corpo">
+                    <div class="cliente-header">
+                        <div class="cliente-col-esq">
+                            <div class="cliente-numero-nome">
+                                <span class="num">N. ${c.numero}</span> — ${c.nome}
+                            </div>
+                            <div class="cliente-campos">
+                                <div class="campo-linha">
+                                    ${campos.join('')}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="cliente-icones">
+                            <div class="icone-acao-cliente" onclick="abrirConfiguracoes('${c.firebaseUrl}')">
+                                <img src="assets/img/engrenagen.png" alt="Manutenção">
+                                <span>Manutenção</span>
+                            </div>
+                            <div class="icone-acao-cliente" onclick="abrirMapa('${c.endereco || ""}')">
+                                <img src="assets/img/Localizacao.png" alt="Localização">
+                                <span>Localização</span>
+                            </div>
+                        </div>
                     </div>
-                    <div style="display: flex; flex-direction: column; align-items: center; cursor: pointer;" onclick="abrirMapa('${c.endereco || ""}')">
-                        <img src="assets/img/Localizacao.png" style="width: 40px; height: 40px;">
-                        <span style="font-size: 9px; color: #ffeb3b; font-weight: bold;">Localização</span>
-                    </div>
+                    ${acoesVisuaisHtml}
                 </div>
-
-                <div style="display: table; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 4px 8px; margin-bottom: 10px; font-weight: bold; font-size: 20px;">
-                    <span style="color: #ff9800;">N. </span> <span style="color: #ffeb3b;">${c.numero} - ${c.nome}</span>
-                </div>
-                
-                ${cidadeHtml}
-                ${rotaComissaoHtml}
-                ${equipHtml}
-                ${abertoHtml}
-                ${obsHtml}
-                ${enderecoHtml}
-                
-                <div style="clear: both;"></div>
-
-                ${acoesVisuaisHtml}
             `;
             listaHTML.appendChild(card);
         });

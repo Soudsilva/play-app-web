@@ -6,6 +6,11 @@
     <title>Manuten&ccedil;&otilde;es Solicitadas</title>
 
     <style>
+        * {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
         body {
             margin: 0;
             font-family: Arial, Helvetica, sans-serif;
@@ -107,7 +112,8 @@
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 1.2px;
-            color: rgba(255,255,255,0.65);
+            color: #ffffff;
+            font-weight: bold;
         }
 
         .resumo-valor {
@@ -157,7 +163,8 @@
         }
 
         #campoPesquisa::placeholder {
-            color: rgba(255,255,255,0.32);
+            color: rgba(255,255,255,0.75);
+            font-weight: bold;
         }
 
         .search-clear {
@@ -219,6 +226,44 @@
             background: #ff5252;
         }
 
+        .card-selecao {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .card-selecao.selecionado {
+            background: rgba(76,175,80,0.15);
+            border-color: rgba(76,175,80,0.4);
+        }
+
+        .card-selecao input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #4caf50;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .card-selecao-texto {
+            font-size: 16px;
+            color: #ffffff;
+            line-height: 1.3;
+        }
+
+        .card-selecao-tecnico {
+            font-size: 13px;
+            color: #81c784;
+            font-weight: bold;
+        }
+
         .card-info-linhas {
             margin-bottom: 12px;
         }
@@ -245,10 +290,36 @@
             color: #ff9800;
         }
 
+        .rota-cidade-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .rota-cidade-stack b {
+            color: #ff9800;
+        }
+
         .icones-acao {
             display: flex;
             gap: 10px;
             align-items: center;
+        }
+
+        .icone-btn-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        .icone-label {
+            font-size: 10px;
+            color: #ffffff;
+            letter-spacing: 0.3px;
         }
 
         .icone-btn {
@@ -341,6 +412,7 @@
             letter-spacing: 1px;
             color: #ffeb3b;
             font-weight: bold;
+            text-align: center;
         }
 
         .foto-solicitacao img {
@@ -350,6 +422,196 @@
             display: block;
             padding: 10px;
             box-sizing: border-box;
+            cursor: zoom-in;
+        }
+
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.92);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .lightbox.aberto {
+            display: flex;
+        }
+
+        .lightbox img {
+            max-width: 96vw;
+            max-height: 96vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .lightbox-fechar {
+            position: absolute;
+            top: 16px;
+            right: 18px;
+            font-size: 32px;
+            color: white;
+            cursor: pointer;
+            line-height: 1;
+            opacity: 0.75;
+        }
+
+        .lightbox-fechar:active {
+            opacity: 1;
+        }
+
+        .ultima-visita {
+            margin-top: 10px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 15px;
+            color: rgba(255,255,255,0.75);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ultima-visita b {
+            color: #ffffff;
+        }
+
+        .barra-flutuante {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+            z-index: 500;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .barra-flutuante.visivel {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .btn-navegar-rota {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(15,50,30,0.94), rgba(8,35,18,0.97));
+            border: 1px solid rgba(76,175,80,0.55);
+            border-radius: 50px;
+            padding: 10px 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(76,175,80,0.15);
+            backdrop-filter: blur(12px);
+        }
+
+        .btn-navegar-rota:active {
+            transform: scale(0.96);
+        }
+
+        .btn-navegar-icone {
+            width: 22px;
+            height: 22px;
+            background: rgba(76,175,80,0.25);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .btn-navegar-icone svg {
+            width: 15px;
+            height: 15px;
+            stroke: #81c784;
+            fill: none;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .btn-navegar-label {
+            font-size: 15px;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: 0.2px;
+        }
+
+        .btn-navegar-sub {
+            font-size: 13px;
+            color: #81c784;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-navegar-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .btn-minhas-selecoes {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(20,40,90,0.92), rgba(10,25,60,0.96));
+            border: 1px solid rgba(76,175,80,0.5);
+            border-radius: 50px;
+            padding: 10px 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(76,175,80,0.15);
+            backdrop-filter: blur(12px);
+        }
+
+        .btn-minhas-selecoes:active {
+            transform: scale(0.96);
+        }
+
+        .btn-selecoes-icone {
+            width: 22px;
+            height: 22px;
+            background: rgba(76,175,80,0.25);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .btn-selecoes-icone svg {
+            width: 15px;
+            height: 15px;
+            stroke: #81c784;
+            fill: none;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .btn-selecoes-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .btn-selecoes-label {
+            font-size: 15px;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: 0.2px;
+        }
+
+        .btn-selecoes-contador {
+            font-size: 13px;
+            color: #81c784;
+            letter-spacing: 0.3px;
         }
 
         @media (max-width: 390px) {
@@ -392,13 +654,47 @@
     <div id="listaManutencoes" class="lista-manutencoes"></div>
 </div>
 
+<div id="barraFlutuante" class="barra-flutuante">
+    <div id="btnNavegarRota" class="btn-navegar-rota">
+        <div class="btn-navegar-icone">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+            </svg>
+        </div>
+        <div class="btn-navegar-info">
+            <span class="btn-navegar-label">Gerar rota</span>
+            <span id="btnNavegarSub" class="btn-navegar-sub"></span>
+        </div>
+    </div>
+
+    <div id="btnMinhasSelecoes" class="btn-minhas-selecoes">
+        <div class="btn-selecoes-icone">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+        </div>
+        <div class="btn-selecoes-info">
+            <span class="btn-selecoes-label">Ver minhas seleções</span>
+            <span id="btnSelecoesCont" class="btn-selecoes-contador"></span>
+        </div>
+    </div>
+</div>
+
+<div id="lightbox" class="lightbox">
+    <span class="lightbox-fechar" id="fecharLightbox">&times;</span>
+    <img id="lightboxImg" src="" alt="">
+</div>
+
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
-    import { dbEscutarClientes, dbEscutarManutencoes, dbSalvarManutencao } from './database.js';
+    import { dbEscutarClientes, dbEscutarManutencoes, dbSalvarManutencao, dbEscutarAtendimentos } from './database.js';
 
     let clientes = [];
     let manutencoes = [];
+    let atendimentos = [];
     let termoPesquisa = "";
+    let filtroMinhasSelecoes = false;
 
     function normalizar(texto) {
         return String(texto || "")
@@ -469,6 +765,35 @@
         return "baixa";
     }
 
+    function obterUltimaVisita(clienteId, clienteNumero) {
+        const atendimento = atendimentos
+            .filter(a => {
+                if (a?.cliente?.id && clienteId) return a.cliente.id === clienteId;
+                return a?.cliente?.numero == clienteNumero;
+            })
+            .sort((a, b) => {
+                const tA = Date.parse(a?.ultimaEdicao || a?.data || "") || 0;
+                const tB = Date.parse(b?.ultimaEdicao || b?.data || "") || 0;
+                return tB - tA;
+            })[0] || null;
+
+        if (!atendimento) return null;
+
+        const dataBase = atendimento.ultimaEdicao || atendimento.data || "";
+        const data = new Date(dataBase);
+        const dataOk = !Number.isNaN(data.getTime());
+        const hoje = new Date();
+        const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+        const inicioData = new Date(data.getFullYear(), data.getMonth(), data.getDate());
+        const dias = dataOk ? Math.max(0, Math.floor((inicioHoje - inicioData) / 86400000)) : null;
+
+        return {
+            atendente: atendimento.atendente || "N/A",
+            dataFormatada: dataOk ? data.toLocaleDateString('pt-BR') : "N/A",
+            dias
+        };
+    }
+
     function obterClienteRelacionado(manutencao) {
         return clientes.find(cliente => {
             if (manutencao?.clienteId && cliente?.firebaseUrl) {
@@ -498,7 +823,8 @@
                     solicitante: manutencao?.cadastradoPor || "Nao informado",
                     diasEmAberto,
                     classeUrgencia: obterClasseUrgencia(diasEmAberto),
-                    dataFormatada: formatarData(manutencao?.dataRegistro)
+                    dataFormatada: formatarData(manutencao?.dataRegistro),
+                    ultimaVisita: obterUltimaVisita(manutencao?.clienteId, manutencao?.clienteNumero)
                 };
             })
             .sort((a, b) => {
@@ -515,6 +841,103 @@
         resumoGrid.style.display = 'flex';
         pendentesEl.textContent = String(lista.length);
     }
+
+    document.getElementById('btnNavegarRota').addEventListener('click', () => {
+        const usuarioLogado = localStorage.getItem('usuarioLogado') || "";
+        const selecionados = manutencoes.filter(m => {
+            const status = String(m?.status || "pendente").toLowerCase();
+            return status !== 'concluida' && status !== 'concluido' && m.selecionadoPor === usuarioLogado;
+        });
+
+        const enderecos = selecionados
+            .map(m => m.clienteEndereco || m.clienteCidade || "")
+            .filter(Boolean);
+
+        if (enderecos.length === 0) {
+            window.playAlert("Nenhum endereço encontrado nas suas seleções.");
+            return;
+        }
+
+        const paradas = enderecos.map(e => encodeURIComponent(e)).join('/');
+        window.open(`https://www.google.com/maps/dir/${paradas}`, '_blank');
+    });
+
+    document.getElementById('btnMinhasSelecoes').addEventListener('click', () => {
+        filtroMinhasSelecoes = !filtroMinhasSelecoes;
+        const label = document.querySelector('.btn-selecoes-label');
+        label.textContent = filtroMinhasSelecoes ? 'Ver todas' : 'Ver minhas seleções';
+        renderizarLista();
+        if (filtroMinhasSelecoes) window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+
+    window.alternarSelecao = async function(id, marcado, checkbox) {
+        const item = manutencoes.find(m => m.firebaseUrl === id);
+        if (!item) return;
+
+        const usuarioLogado = localStorage.getItem('usuarioLogado') || "Técnico";
+
+        if (!marcado && item.selecionadoPor && item.selecionadoPor !== usuarioLogado) {
+            checkbox.checked = true;
+            await window.playAlert(`Apenas ${escaparHtml(item.selecionadoPor)} pode desmarcar este serviço.`);
+            return;
+        }
+
+        if (!marcado) {
+            const confirmar = await window.playConfirm("Você não vai mais realizar esse serviço?", {
+                secondaryLabel: "Não vou mais",
+                secondaryResult: true,
+                primaryLabel: "Vou sim",
+                primaryResult: false,
+                overlayResult: false
+            });
+
+            if (!confirmar) {
+                checkbox.checked = true;
+                return;
+            }
+        }
+        const atualizado = { ...item };
+        delete atualizado.firebaseUrl;
+
+        if (marcado) {
+            atualizado.selecionadoPor = usuarioLogado;
+            atualizado.dataSelecionado = new Date().toISOString();
+        } else {
+            delete atualizado.selecionadoPor;
+            delete atualizado.dataSelecionado;
+        }
+
+        try {
+            await dbSalvarManutencao(atualizado, id);
+        } catch (e) {
+            await window.playAlert(e?.message || "Erro ao salvar seleção.");
+        }
+    };
+
+    window.abrirLightbox = function(src) {
+        lightboxImg.src = src;
+        lightbox.classList.add('aberto');
+        history.pushState({ lightbox: true }, '');
+    };
+
+    function fecharLightbox() {
+        lightbox.classList.remove('aberto');
+        lightboxImg.src = "";
+    }
+
+    document.getElementById('fecharLightbox').addEventListener('click', fecharLightbox);
+    lightbox.addEventListener('click', (e) => {
+        if (e.target === lightbox) fecharLightbox();
+    });
+
+    window.addEventListener('popstate', () => {
+        if (lightbox.classList.contains('aberto')) {
+            fecharLightbox();
+        }
+    });
 
     window.abrirLocalizacao = function abrirLocalizacao(endereco) {
         const query = encodeURIComponent(endereco || "");
@@ -561,9 +984,30 @@
 
         estado.style.display = 'none';
 
-        const listaFiltrada = termoPesquisa
+        const usuarioLogado = localStorage.getItem('usuarioLogado') || "";
+        const minhasSelecoes = lista.filter(item => item.selecionadoPor === usuarioLogado);
+
+        const barra = document.getElementById('barraFlutuante');
+        const btnCont = document.getElementById('btnSelecoesCont');
+        const btnNavegarSub = document.getElementById('btnNavegarSub');
+
+        if (minhasSelecoes.length > 0) {
+            btnCont.textContent = `${minhasSelecoes.length} ${minhasSelecoes.length === 1 ? 'selecionado' : 'selecionados'}`;
+            const enderecos = minhasSelecoes.filter(i => i.clienteEndereco || i.clienteCidade);
+            btnNavegarSub.textContent = `${enderecos.length} ${enderecos.length === 1 ? 'parada' : 'paradas'}`;
+            barra.classList.add('visivel');
+        } else {
+            barra.classList.remove('visivel');
+            filtroMinhasSelecoes = false;
+        }
+
+        let listaFiltrada = termoPesquisa
             ? lista.filter(item => itemBatePesquisa(item, normalizar(termoPesquisa)))
             : lista;
+
+        if (filtroMinhasSelecoes) {
+            listaFiltrada = listaFiltrada.filter(item => item.selecionadoPor === usuarioLogado);
+        }
 
         if (listaFiltrada.length === 0) {
             estado.style.display = 'block';
@@ -574,23 +1018,42 @@
         listaFiltrada.forEach(item => {
             const card = document.createElement('div');
             card.className = `card-manutencao urgencia-${item.classeUrgencia}`;
+            const estaSelecionado = !!item.selecionadoPor;
+            const usuarioLogado = localStorage.getItem('usuarioLogado') || "";
+            const selecaoLabel = estaSelecionado
+                ? `<span class="card-selecao-tecnico">${escaparHtml(item.selecionadoPor)}</span> vai realizar este serviço`
+                : 'Marcar que farei este serviço';
+
             card.innerHTML = `
+                <label class="card-selecao${estaSelecionado ? ' selecionado' : ''}">
+                    <input type="checkbox" ${estaSelecionado ? 'checked' : ''} onchange="alternarSelecao('${escaparHtml(item.firebaseUrl)}', this.checked, this)">
+                    <span class="card-selecao-texto">${selecaoLabel}</span>
+                </label>
+
                 <div class="card-info-linhas">
                     <div class="linha-nome">${item.clienteNumero ? 'N. ' + escaparHtml(item.clienteNumero) + ' - ' : ''}${escaparHtml(item.clienteNome)}</div>
                     <div class="linha-rota-icons">
-                        <div style="display:inline-block; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:3px 8px;"><b style="color:#ff9800;">Rota: </b>${escaparHtml(item.clienteRota)}</div>
+                        <div class="rota-cidade-stack">
+                            <div><b>Rota:</b> ${escaparHtml(item.clienteRota)}</div>
+                            <div><b>Cidade:</b> ${escaparHtml(item.clienteCidade)}</div>
+                        </div>
                         <div class="icones-acao">
-                            <div class="icone-btn" onclick="abrirLocalizacao('${escaparHtml(item.clienteEndereco || item.clienteCidade)}')">
-                                <img src="assets/img/Localizacao.png" alt="Localização">
+                            <div class="icone-btn-wrap" onclick="abrirLocalizacao('${escaparHtml(item.clienteEndereco || item.clienteCidade)}')">
+                                <div class="icone-btn">
+                                    <img src="assets/img/Localizacao.png" alt="Localização">
+                                </div>
+                                <span class="icone-label">Localização</span>
                             </div>
-                            <div class="icone-btn icone-ok" onclick="confirmarConclusao('${escaparHtml(item.firebaseUrl)}')">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M20 6L9 17l-5-5"/>
-                                </svg>
+                            <div class="icone-btn-wrap" onclick="confirmarConclusao('${escaparHtml(item.firebaseUrl)}')">
+                                <div class="icone-btn icone-ok">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M20 6L9 17l-5-5"/>
+                                    </svg>
+                                </div>
+                                <span class="icone-label">Realizada</span>
                             </div>
                         </div>
                     </div>
-                    <div class="linha-cidade"><b>Cidade:</b> ${escaparHtml(item.clienteCidade)}</div>
                     <div class="linha-solicitado"><b>Solicitado:</b> ${escaparHtml(item.solicitante)} &nbsp;&nbsp; solicitação feita há ${escaparHtml(formatarDiasEmAberto(item.diasEmAberto).toLowerCase())}</div>
                 </div>
 
@@ -602,7 +1065,13 @@
                 ${item.fotoSolicitacao ? `
                     <div class="foto-solicitacao">
                         <div class="foto-solicitacao-titulo">Foto da solicitacao</div>
-                        <img src="${escaparHtml(item.fotoSolicitacao)}" alt="Foto da solicitacao de ${escaparHtml(item.clienteNome)}">
+                        <img src="${escaparHtml(item.fotoSolicitacao)}" alt="Foto da solicitacao de ${escaparHtml(item.clienteNome)}" onclick="abrirLightbox(this.src)">
+                    </div>
+                ` : ''}
+
+                ${item.ultimaVisita ? `
+                    <div class="ultima-visita">
+                        Visita: <b>${escaparHtml(item.ultimaVisita.atendente)}</b> ${escaparHtml(item.ultimaVisita.dataFormatada)}${item.ultimaVisita.dias !== null ? ` &nbsp;Dias: <b>${item.ultimaVisita.dias}</b>` : ''}
                     </div>
                 ` : ''}
             `;
@@ -635,6 +1104,11 @@
 
     dbEscutarManutencoes((lista) => {
         manutencoes = lista;
+        renderizarLista();
+    });
+
+    dbEscutarAtendimentos((lista) => {
+        atendimentos = lista;
         renderizarLista();
     });
 </script>
