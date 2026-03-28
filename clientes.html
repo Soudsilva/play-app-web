@@ -112,6 +112,52 @@
     }
     #campoPesquisa::placeholder { color: rgba(255,255,255,0.85); font-weight: bold; }
 
+    .search-flutuante {
+        position: fixed;
+        top: -70px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 36px);
+        max-width: 404px;
+        background: rgba(10, 30, 80, 0.92);
+        border: 1px solid rgba(255,255,255,0.22);
+        border-radius: 50px;
+        display: flex;
+        align-items: center;
+        padding: 0 14px 0 12px;
+        box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+        backdrop-filter: blur(14px);
+        z-index: 999;
+        transition: top 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .search-flutuante.visivel {
+        top: 14px;
+    }
+
+    .search-flutuante svg {
+        width: 16px; height: 16px;
+        stroke: rgba(255,255,255,0.7);
+        fill: none; stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round;
+        flex-shrink: 0;
+    }
+
+    #campoPesquisaFlutuante {
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 12px 8px;
+        color: white;
+        font-size: 15px;
+        outline: none;
+    }
+
+    #campoPesquisaFlutuante::placeholder {
+        color: rgba(255,255,255,0.75);
+        font-weight: bold;
+    }
+
     /* Cards */
     .cliente {
         background: linear-gradient(160deg, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.06) 100%);
@@ -148,7 +194,7 @@
     }
 
     .cliente-numero-nome {
-        font-size: 20px;
+        font-size: 22px;
         font-weight: bold;
         color: #ffffff;
         line-height: 1.2;
@@ -156,7 +202,7 @@
     }
 
     .cliente-numero-nome .num {
-        color: #ff9800;
+        color: #ffffff;
     }
 
     .cliente-icones {
@@ -265,6 +311,11 @@
     <div id="listaClientes">
         <p style="text-align:center">Conectando ao banco...</p>
     </div>
+</div>
+
+<div class="search-flutuante" id="searchFlutuante">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+    <input type="text" id="campoPesquisaFlutuante" placeholder="Buscar...">
 </div>
 
 <script src="assets/js/play-dialogs.js"></script>
@@ -429,14 +480,36 @@
 
     document.getElementById('btnNovo').onclick = () => window.location.href="cadastrar_cliente.html";
 
-    document.getElementById('campoPesquisa').oninput = (e) => {
-        const termo = e.target.value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); 
+    function aplicarBusca(termo) {
+        const normalizado = termo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
         const cards = document.querySelectorAll('.cliente');
         cards.forEach(card => {
             const textoCard = card.innerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-            card.style.display = textoCard.includes(termo) ? "block" : "none";
+            card.style.display = textoCard.includes(normalizado) ? "block" : "none";
         });
+    }
+
+    document.getElementById('campoPesquisa').oninput = (e) => {
+        aplicarBusca(e.target.value);
+        document.getElementById('campoPesquisaFlutuante').value = e.target.value;
     };
+
+    document.getElementById('campoPesquisaFlutuante').oninput = (e) => {
+        aplicarBusca(e.target.value);
+        document.getElementById('campoPesquisa').value = e.target.value;
+    };
+
+    const barraBusca = document.getElementById('searchFlutuante');
+    const barraNormal = document.querySelector('.search-wrap');
+
+    window.addEventListener('scroll', () => {
+        const limiar = barraNormal.getBoundingClientRect().bottom;
+        if (limiar < 0) {
+            barraBusca.classList.add('visivel');
+        } else {
+            barraBusca.classList.remove('visivel');
+        }
+    }, { passive: true });
 
     window.copiarTexto = function(texto) {
         if (!texto) return;
