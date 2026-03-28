@@ -84,40 +84,93 @@
         }
 
         .resumo-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            display: flex;
+            align-items: center;
             gap: 12px;
             margin-bottom: 16px;
-        }
-
-        .resumo-card {
-            background: linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.08) 100%);
-            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.14);
             border-radius: 18px;
-            padding: 14px;
-            box-shadow: 0 14px 30px rgba(0,0,0,0.18);
+            padding: 10px 14px;
             backdrop-filter: blur(8px);
         }
 
-        .resumo-titulo {
+        .resumo-pendentes {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .resumo-label {
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 1.2px;
-            color: rgba(255,255,255,0.72);
-            margin-bottom: 6px;
+            color: rgba(255,255,255,0.65);
         }
 
         .resumo-valor {
-            font-size: 28px;
+            font-size: 22px;
             font-weight: bold;
             color: #ffeb3b;
             line-height: 1;
         }
 
-        .resumo-texto {
-            margin-top: 7px;
-            font-size: 13px;
-            color: rgba(255,255,255,0.78);
+        .resumo-divider {
+            width: 1px;
+            align-self: stretch;
+            background: rgba(255,255,255,0.18);
+            flex-shrink: 0;
+        }
+
+        .search-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .search-wrap svg {
+            position: absolute;
+            left: 10px;
+            width: 15px;
+            height: 15px;
+            stroke: rgba(255,255,255,0.45);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            pointer-events: none;
+        }
+
+        #campoPesquisa {
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 6px 28px 6px 30px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        #campoPesquisa::placeholder {
+            color: rgba(255,255,255,0.32);
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 4px;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.4);
+            font-size: 14px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            display: none;
         }
 
         .estado-card {
@@ -166,90 +219,86 @@
             background: #ff5252;
         }
 
-        .cliente-topo {
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            align-items: flex-start;
+        .card-info-linhas {
+            margin-bottom: 12px;
         }
 
-        .cliente-identidade {
-            min-width: 0;
-        }
-
-        .cliente-nome {
-            font-size: 22px;
+        .linha-nome {
+            font-size: 18px;
             font-weight: bold;
             color: #ffffff;
-            line-height: 1.15;
-            margin-bottom: 5px;
+            line-height: 1.2;
+            margin-bottom: 8px;
             word-break: break-word;
         }
 
-        .cliente-numero {
-            font-size: 13px;
-            color: rgba(255,255,255,0.74);
-        }
-
-        .chips {
+        .linha-rota-icons {
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 14px 0 12px;
-        }
-
-        .chip {
-            border-radius: 999px;
-            padding: 6px 11px;
-            font-size: 12px;
-            font-weight: bold;
-            letter-spacing: 0.2px;
-        }
-
-        .chip-tipo {
-            background: #ffeb3b;
-            color: #0f2a66;
-        }
-
-        .chip-dias {
-            border: 1px solid rgba(255,255,255,0.18);
-            background: rgba(255,255,255,0.1);
-            color: white;
-        }
-
-        .chip-dias.baixa {
-            background: rgba(76,175,80,0.14);
-            color: #bbf4c1;
-            border-color: rgba(76,175,80,0.28);
-        }
-
-        .chip-dias.media {
-            background: rgba(255,179,0,0.16);
-            color: #ffe398;
-            border-color: rgba(255,179,0,0.3);
-        }
-
-        .chip-dias.alta {
-            background: rgba(255,82,82,0.16);
-            color: #ffb2b2;
-            border-color: rgba(255,82,82,0.26);
-        }
-
-        .grid-info {
-            display: grid;
-            gap: 8px;
-        }
-
-        .linha-info {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 9px 11px;
+            justify-content: space-between;
+            align-items: center;
             font-size: 14px;
-            line-height: 1.35;
+            margin-bottom: 8px;
+            color: rgba(255,255,255,0.9);
         }
 
-        .linha-info b {
+        .linha-rota-icons b {
+            color: #ff9800;
+        }
+
+        .icones-acao {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .icone-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .icone-btn:active {
+            transform: scale(0.92);
+            background: rgba(255,255,255,0.2);
+        }
+
+        .icone-btn img {
+            width: 22px;
+            height: 22px;
+        }
+
+        .icone-ok svg {
+            width: 20px;
+            height: 20px;
+            stroke: #4caf50;
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .linha-cidade {
+            font-size: 14px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 8px;
+        }
+
+        .linha-cidade b {
+            color: #ff9800;
+        }
+
+        .linha-solicitado {
+            font-size: 13px;
+            color: rgba(255,255,255,0.76);
+        }
+
+        .linha-solicitado b {
             color: #ff9800;
         }
 
@@ -262,7 +311,7 @@
         }
 
         .bloco-acao-titulo {
-            font-size: 12px;
+            font-size: 18px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -324,15 +373,18 @@
     </div>
 
     <div id="resumoGrid" class="resumo-grid" style="display:none;">
-        <div class="resumo-card">
-            <div class="resumo-titulo">Pendentes</div>
-            <div id="resumoPendentes" class="resumo-valor">0</div>
-            <div class="resumo-texto">Solicitacoes em aberto no momento.</div>
+        <div class="resumo-pendentes">
+            <span class="resumo-label">Pendentes</span>
+            <span id="resumoPendentes" class="resumo-valor">0</span>
         </div>
-        <div class="resumo-card">
-            <div class="resumo-titulo">Mais Antiga</div>
-            <div id="resumoMaisAntiga" class="resumo-valor">0</div>
-            <div id="resumoMaisAntigaTexto" class="resumo-texto">Sem solicitacoes pendentes.</div>
+        <div class="resumo-divider"></div>
+        <div class="search-wrap">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"/>
+                <line x1="16.5" y1="16.5" x2="22" y2="22"/>
+            </svg>
+            <input id="campoPesquisa" type="search" placeholder="Pesquisar..." autocomplete="off">
+            <button class="search-clear" id="btnLimparPesquisa" aria-label="Limpar">&#x2715;</button>
         </div>
     </div>
 
@@ -341,10 +393,36 @@
 </div>
 
 <script type="module">
-    import { dbEscutarClientes, dbEscutarManutencoes } from './database.js';
+    import { dbEscutarClientes, dbEscutarManutencoes, dbSalvarManutencao } from './database.js';
 
     let clientes = [];
     let manutencoes = [];
+    let termoPesquisa = "";
+
+    function normalizar(texto) {
+        return String(texto || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    function itemBatePesquisa(item, termo) {
+        if (!termo) return true;
+        const palavras = termo.split(" ").filter(Boolean);
+        const haystack = normalizar([
+            item.clienteNome,
+            item.clienteNumero,
+            item.clienteCidade,
+            item.clienteRota,
+            item.clienteEndereco,
+            item.solicitante,
+            item.tipoAcao,
+            item.observacoes
+        ].join(" "));
+        return palavras.every(p => haystack.includes(p));
+    }
 
     function escaparHtml(valor) {
         return String(valor || "")
@@ -415,6 +493,7 @@
                     clienteNumero: manutencao?.clienteNumero || cliente?.numero || "",
                     clienteCidade: manutencao?.clienteCidade || cliente?.cidade || "Nao informada",
                     clienteRota: manutencao?.clienteRota || cliente?.rota || "Nao informada",
+                    clienteEndereco: manutencao?.clienteEndereco || cliente?.endereco || "",
                     solicitante: manutencao?.cadastradoPor || "Nao informado",
                     diasEmAberto,
                     classeUrgencia: obterClasseUrgencia(diasEmAberto),
@@ -431,23 +510,32 @@
     function renderizarResumo(lista) {
         const resumoGrid = document.getElementById('resumoGrid');
         const pendentesEl = document.getElementById('resumoPendentes');
-        const maisAntigaEl = document.getElementById('resumoMaisAntiga');
-        const maisAntigaTextoEl = document.getElementById('resumoMaisAntigaTexto');
 
-        resumoGrid.style.display = 'grid';
+        resumoGrid.style.display = 'flex';
         pendentesEl.textContent = String(lista.length);
+    }
 
-        if (lista.length === 0) {
-            maisAntigaEl.textContent = "0";
-            maisAntigaTextoEl.textContent = "Sem solicitacoes pendentes.";
-            return;
+    window.abrirLocalizacao = function abrirLocalizacao(endereco) {
+        const query = encodeURIComponent(endereco || "");
+        if (!query) return;
+        window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+    }
+
+    window.confirmarConclusao = async function confirmarConclusao(id) {
+        if (!id) return;
+        const ok = confirm("Confirmar conclusao do servico?");
+        if (!ok) return;
+
+        const item = manutencoes.find(m => m.firebaseUrl === id);
+        if (!item) return;
+
+        try {
+            const atualizado = { ...item, status: "concluida", dataConclusao: new Date().toISOString() };
+            delete atualizado.firebaseUrl;
+            await dbSalvarManutencao(atualizado, id);
+        } catch (e) {
+            alert(e?.message || "Erro ao concluir manutencao.");
         }
-
-        const maiorDias = Math.max(...lista.map(item => item.diasEmAberto));
-        maisAntigaEl.textContent = String(maiorDias);
-        maisAntigaTextoEl.textContent = maiorDias <= 0
-            ? "A mais antiga foi aberta hoje."
-            : `A mais antiga esta aberta ha ${formatarDiasEmAberto(maiorDias).toLowerCase()}.`;
     }
 
     function renderizarLista() {
@@ -466,31 +554,42 @@
 
         estado.style.display = 'none';
 
-        lista.forEach(item => {
+        const listaFiltrada = termoPesquisa
+            ? lista.filter(item => itemBatePesquisa(item, normalizar(termoPesquisa)))
+            : lista;
+
+        if (listaFiltrada.length === 0) {
+            estado.style.display = 'block';
+            estado.textContent = termoPesquisa ? "Nenhum resultado encontrado." : "Nenhuma manutencao pendente no momento.";
+            return;
+        }
+
+        listaFiltrada.forEach(item => {
             const card = document.createElement('div');
             card.className = `card-manutencao urgencia-${item.classeUrgencia}`;
             card.innerHTML = `
-                <div class="cliente-topo">
-                    <div class="cliente-identidade">
-                        <div class="cliente-nome">${escaparHtml(item.clienteNome)}</div>
-                        <div class="cliente-numero">Cliente ${escaparHtml(item.clienteNumero || "Sem numero")} • Solicitado em ${escaparHtml(item.dataFormatada)}</div>
+                <div class="card-info-linhas">
+                    <div class="linha-nome">${item.clienteNumero ? 'N. ' + escaparHtml(item.clienteNumero) + ' - ' : ''}${escaparHtml(item.clienteNome)}</div>
+                    <div class="linha-rota-icons">
+                        <span><b>Rota:</b> ${escaparHtml(item.clienteRota)}</span>
+                        <div class="icones-acao">
+                            <div class="icone-btn" onclick="abrirLocalizacao('${escaparHtml(item.clienteEndereco || item.clienteCidade)}')">
+                                <img src="assets/img/Localizacao.png" alt="Localização">
+                            </div>
+                            <div class="icone-btn icone-ok" onclick="confirmarConclusao('${escaparHtml(item.firebaseUrl)}')">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M20 6L9 17l-5-5"/>
+                                </svg>
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                <div class="chips">
-                    <span class="chip chip-tipo">${escaparHtml(item.tipoAcao || "Manutencao")}</span>
-                    <span class="chip chip-dias ${escaparHtml(item.classeUrgencia)}">Em aberto ha ${escaparHtml(formatarDiasEmAberto(item.diasEmAberto).toLowerCase())}</span>
-                </div>
-
-                <div class="grid-info">
-                    <div class="linha-info"><b>Rota:</b> ${escaparHtml(item.clienteRota)}</div>
-                    <div class="linha-info"><b>Cidade:</b> ${escaparHtml(item.clienteCidade)}</div>
-                    <div class="linha-info"><b>Solicitado por:</b> ${escaparHtml(item.solicitante)}</div>
+                    <div class="linha-cidade"><b>Cidade:</b> ${escaparHtml(item.clienteCidade)}</div>
+                    <div class="linha-solicitado"><b>Solicitado:</b> ${escaparHtml(item.solicitante)} &nbsp;&nbsp; solicitação feita há ${escaparHtml(formatarDiasEmAberto(item.diasEmAberto).toLowerCase())}</div>
                 </div>
 
                 <div class="bloco-acao">
-                    <div class="bloco-acao-titulo">O que deve ser feito</div>
-                    <div class="bloco-acao-texto">${escaparHtml(item.observacoes || "Sem observacoes.")}</div>
+                    <div class="bloco-acao-titulo" style="text-align:center;">${escaparHtml(item.tipoAcao || "Manutencao")}</div>
+                    <div class="bloco-acao-texto" style="text-align:center;">${escaparHtml(item.observacoes || "Sem observacoes.")}</div>
                 </div>
 
                 ${item.fotoSolicitacao ? `
@@ -504,6 +603,23 @@
             container.appendChild(card);
         });
     }
+
+    const inputPesquisa = document.getElementById('campoPesquisa');
+    const btnLimpar = document.getElementById('btnLimparPesquisa');
+
+    inputPesquisa.addEventListener('input', () => {
+        termoPesquisa = inputPesquisa.value;
+        btnLimpar.style.display = termoPesquisa ? 'block' : 'none';
+        renderizarLista();
+    });
+
+    btnLimpar.addEventListener('click', () => {
+        inputPesquisa.value = "";
+        termoPesquisa = "";
+        btnLimpar.style.display = 'none';
+        inputPesquisa.focus();
+        renderizarLista();
+    });
 
     dbEscutarClientes((lista) => {
         clientes = lista;
