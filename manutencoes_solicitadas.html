@@ -392,6 +392,7 @@
     <div id="listaManutencoes" class="lista-manutencoes"></div>
 </div>
 
+<script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { dbEscutarClientes, dbEscutarManutencoes, dbSalvarManutencao } from './database.js';
 
@@ -523,7 +524,13 @@
 
     window.confirmarConclusao = async function confirmarConclusao(id) {
         if (!id) return;
-        const ok = confirm("Confirmar conclusao do servico?");
+        const ok = await window.playConfirm("Confirmar conclusao do servico?", {
+            secondaryLabel: "Sim",
+            secondaryResult: true,
+            primaryLabel: "Nao",
+            primaryResult: false,
+            overlayResult: false
+        });
         if (!ok) return;
 
         const item = manutencoes.find(m => m.firebaseUrl === id);
@@ -534,7 +541,7 @@
             delete atualizado.firebaseUrl;
             await dbSalvarManutencao(atualizado, id);
         } catch (e) {
-            alert(e?.message || "Erro ao concluir manutencao.");
+            await window.playAlert(e?.message || "Erro ao concluir manutencao.");
         }
     }
 
@@ -571,7 +578,7 @@
                 <div class="card-info-linhas">
                     <div class="linha-nome">${item.clienteNumero ? 'N. ' + escaparHtml(item.clienteNumero) + ' - ' : ''}${escaparHtml(item.clienteNome)}</div>
                     <div class="linha-rota-icons">
-                        <span><b>Rota:</b> ${escaparHtml(item.clienteRota)}</span>
+                        <div style="display:inline-block; border:1px solid rgba(255,255,255,0.3); border-radius:6px; padding:3px 8px;"><b style="color:#ff9800;">Rota: </b>${escaparHtml(item.clienteRota)}</div>
                         <div class="icones-acao">
                             <div class="icone-btn" onclick="abrirLocalizacao('${escaparHtml(item.clienteEndereco || item.clienteCidade)}')">
                                 <img src="assets/img/Localizacao.png" alt="Localização">

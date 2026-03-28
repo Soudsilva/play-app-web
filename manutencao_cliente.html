@@ -263,7 +263,7 @@
         <div class="card">
             <div class="card-titulo">Solicitacao</div>
 
-            <label for="tipoManutencao">Tipo da acao</label>
+            <label for="tipoManutencao">Tipo da ação</label>
             <select id="tipoManutencao">
                 <option value="">Selecione...</option>
                 <option value="Manutencao">Manutencao</option>
@@ -272,10 +272,10 @@
                 <option value="Repor">Repor</option>
             </select>
 
-            <label for="observacoesManutencao">Observacoes do que deve ser feito</label>
+            <label for="observacoesManutencao">Observações do que deve ser feito</label>
             <textarea id="observacoesManutencao" placeholder="Descreva o que precisa ser feito"></textarea>
 
-            <label>Foto da solicitacao</label>
+            <label>Foto da solicitação</label>
             <div class="area-foto" onclick="abrirModalFoto('inputFotoManutencao')">
                 <span id="textoFotoManutencao" style="font-size:14px; opacity:0.82;">Toque para adicionar</span>
                 <img id="imgPreviewManutencao" class="preview-img" alt="Preview da foto da manutencao">
@@ -407,14 +407,34 @@
 
         const blocos = [
             { titulo: 'Cliente', valor: [cliente.numero, cliente.nome].filter(Boolean).join(' - ') },
+            { titulo: 'Rota', valor: cliente.rota || '' },
             { titulo: 'Cidade', valor: cliente.cidade || '' },
             { titulo: 'Endereco', valor: cliente.endereco || '' },
-            { titulo: 'Equip.', valor: cliente.equip || '' }
+            { titulo: 'Equip.', valor: (function() {
+                if (!cliente.equip) return '';
+                const equipsToShow = [];
+                cliente.equip.split(', ').forEach(function(item) {
+                    if (!item) return;
+                    let nome = item, qtd = '1', pix = '';
+                    const mQtd = nome.match(/\s*\(([^)]+)\)$/);
+                    if (mQtd) { qtd = mQtd[1]; nome = nome.replace(/\s*\(([^)]+)\)$/, '').trim(); }
+                    const mPix = nome.match(/\s*\[Pix:\s*([^\]]+)\]$/);
+                    if (mPix) { pix = mPix[1]; nome = nome.replace(/\s*\[Pix:\s*([^\]]+)\]$/, '').trim(); }
+                    if (nome) equipsToShow.push(nome + ' ' + qtd + (pix ? ' Pix ' + pix : ''));
+                });
+                return equipsToShow.join(', ');
+            })() }
         ].filter(item => item.valor);
 
-        resumo.innerHTML = blocos
-            .map(item => `<div class="dado"><b>${escaparHtml(item.titulo)}:</b> ${escaparHtml(item.valor)}</div>`)
-            .join('');
+        const clienteBloco = blocos.find(b => b.titulo === 'Cliente');
+        const demais = blocos.filter(b => b.titulo !== 'Cliente');
+
+        resumo.innerHTML =
+            (clienteBloco ? `<div style="background:rgba(255,235,59,0.12); border:2px solid #ffeb3b; border-radius:10px; padding:10px 14px; margin-bottom:10px; text-align:center;">
+                <div style="font-size:11px; color:#ffeb3b; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px;">Cliente</div>
+                <div style="font-size:20px; font-weight:bold; color:#fff; line-height:1.3;">${escaparHtml(clienteBloco.valor)}</div>
+            </div>` : '') +
+            demais.map(item => `<div class="dado"><b>${escaparHtml(item.titulo)}:</b> ${escaparHtml(item.valor)}</div>`).join('');
     }
 
     function renderizarFotosCliente(cliente, atendimentos = []) {
@@ -568,20 +588,20 @@
         const img = document.getElementById('imgPreviewManutencao');
 
         if (!String(tipo.value || "").trim()) {
-            await window.playAlert("Selecione o tipo da acao.");
+            await window.playAlert("Selecione o tipo da ação.");
             tipo.focus();
             return false;
         }
 
         if (!String(observacoes.value || "").trim()) {
-            await window.playAlert("Preencha as observacoes do que deve ser feito.");
+            await window.playAlert("Preencha as observações do que deve ser feito.");
             observacoes.focus();
             return false;
         }
 
         const fotoOk = img && img.style.display === 'block' && !!img.src;
         if (!fotoOk) {
-            await window.playAlert("Adicione a foto da solicitacao.");
+            await window.playAlert("Adicione a foto da solicitação.");
             return false;
         }
 
@@ -595,6 +615,15 @@
         const img = document.getElementById('imgPreviewManutencao');
 
         if (!(await validarFormulario())) return;
+
+        const confirmado = await window.playConfirm("Deseja confirmar o registro desta manutencao?", {
+            secondaryLabel: "Sim",
+            secondaryResult: true,
+            primaryLabel: "Nao",
+            primaryResult: false,
+            overlayResult: false
+        });
+        if (!confirmado) return;
 
         btn.innerText = "Salvando...";
         btn.style.pointerEvents = "none";
@@ -647,6 +676,29 @@
             e.preventDefault();
             window.location.href = 'index.html';
         }
+    });
+
+    // Trava o botão voltar do navegador
+    function travarVoltar() {
+        history.pushState(null, null, window.location.href);
+    }
+
+    window.addEventListener('load', travarVoltar);
+    window.addEventListener('click', function _trava() {
+        travarVoltar();
+        window.removeEventListener('click', _trava);
+    });
+
+    window.addEventListener('popstate', function() {
+        travarVoltar();
+
+        const dialogRoot = document.getElementById('play-dialogs-root');
+        if (dialogRoot && dialogRoot.style.display === 'flex') {
+            dialogRoot.click();
+            return;
+        }
+
+        voltarParaClientes();
     });
 
     carregarCliente();
