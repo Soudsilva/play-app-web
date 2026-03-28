@@ -842,7 +842,7 @@
         pendentesEl.textContent = String(lista.length);
     }
 
-    document.getElementById('btnNavegarRota').addEventListener('click', () => {
+    document.getElementById('btnNavegarRota').addEventListener('click', async () => {
         const usuarioLogado = localStorage.getItem('usuarioLogado') || "";
         const selecionados = manutencoes.filter(m => {
             const status = String(m?.status || "pendente").toLowerCase();
@@ -854,12 +854,56 @@
             .filter(Boolean);
 
         if (enderecos.length === 0) {
-            window.playAlert("Nenhum endereço encontrado nas suas seleções.");
+            await window.playAlert("Nenhum endereço encontrado nas suas seleções.");
             return;
         }
 
-        const paradas = enderecos.map(e => encodeURIComponent(e)).join('/');
-        window.open(`https://www.google.com/maps/dir/${paradas}`, '_blank');
+        if (!navigator.geolocation) {
+            const paradas = enderecos.map(e => encodeURIComponent(e)).join('/');
+            window.open(`https://www.google.com/maps/dir/${paradas}`, '_blank');
+            return;
+        }
+
+        const btn = document.getElementById('btnNavegarRota');
+        const labelOriginal = btn.querySelector('.btn-navegar-label').textContent;
+        btn.querySelector('.btn-navegar-label').textContent = 'Obtendo GPS...';
+        btn.style.pointerEvents = 'none';
+
+        function abrirConfiguracaoGPS() {
+            // Tenta abrir as configurações de localização do dispositivo
+            const tentativas = [
+                'intent://settings#Intent;action=android.settings.LOCATION_SOURCE_SETTINGS;scheme=android-app;end',
+                'App-Prefs:root=Privacy&path=LOCATION'  // iOS
+            ];
+            const link = document.createElement('a');
+            link.href = tentativas[0];
+            link.click();
+        }
+
+        function gerarRotaComOrigem(origem, enderecos) {
+            const paradas = enderecos.map(e => encodeURIComponent(e)).join('/');
+            const base = origem
+                ? `https://www.google.com/maps/dir/${encodeURIComponent(origem)}/${paradas}`
+                : `https://www.google.com/maps/dir/${paradas}`;
+            window.open(base, '_blank');
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                btn.querySelector('.btn-navegar-label').textContent = labelOriginal;
+                btn.style.pointerEvents = 'auto';
+                gerarRotaComOrigem(`${pos.coords.latitude},${pos.coords.longitude}`, enderecos);
+            },
+            async (err) => {
+                btn.querySelector('.btn-navegar-label').textContent = labelOriginal;
+                btn.style.pointerEvents = 'auto';
+
+                if (err.code === 1 || err.code === 2 || err.code === 3) {
+                    await window.playAlert("Ative o GPS e depois aperte novamente em Gerar rota.");
+                }
+            },
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        );
     });
 
     document.getElementById('btnMinhasSelecoes').addEventListener('click', () => {
@@ -947,6 +991,22 @@
 
     window.confirmarConclusao = async function confirmarConclusao(id) {
         if (!id) return;
+
+        const item = manutencoes.find(m => m.firebaseUrl === id);
+        if (!item) return;
+
+        const usuarioLogado = localStorage.getItem('usuarioLogado') || "";
+
+        if (item.selecionadoPor && item.selecionadoPor !== usuarioLogado) {
+            await window.playAlert(`Apenas ${escaparHtml(item.selecionadoPor)} pode confirmar a realização deste serviço.`);
+            return;
+        }
+
+        if (!item.selecionadoPor) {
+            await window.playAlert("Selecione este serviço antes de confirmar a realização.");
+            return;
+        }
+
         const ok = await window.playConfirm("Confirmar conclusao do servico?", {
             secondaryLabel: "Sim",
             secondaryResult: true,
@@ -955,9 +1015,6 @@
             overlayResult: false
         });
         if (!ok) return;
-
-        const item = manutencoes.find(m => m.firebaseUrl === id);
-        if (!item) return;
 
         try {
             const atualizado = { ...item, status: "concluida", dataConclusao: new Date().toISOString() };
@@ -1102,8 +1159,30 @@
         renderizarLista();
     });
 
+    async function limparSelecesExpiradas(lista) {
+        const agora = Date.now();
+        const DOIS_DIAS_MS = 2 * 24 * 60 * 60 * 1000;
+
+        const expirados = lista.filter(m => {
+            if (!m.selecionadoPor || !m.dataSelecionado) return false;
+            const ts = Date.parse(m.dataSelecionado);
+            return !Number.isNaN(ts) && (agora - ts) > DOIS_DIAS_MS;
+        });
+
+        for (const m of expirados) {
+            const atualizado = { ...m };
+            delete atualizado.firebaseUrl;
+            delete atualizado.selecionadoPor;
+            delete atualizado.dataSelecionado;
+            try {
+                await dbSalvarManutencao(atualizado, m.firebaseUrl);
+            } catch (_) {}
+        }
+    }
+
     dbEscutarManutencoes((lista) => {
         manutencoes = lista;
+        limparSelecesExpiradas(lista);
         renderizarLista();
     });
 
