@@ -167,6 +167,12 @@
             transition:background 0.15s;
         }
         .ficha-foto-wrap:active .ficha-foto-overlay { background:rgba(0,0,0,0.4); }
+        .ficha-foto-data {
+            position:absolute; bottom:4px; right:5px;
+            font-size:8px; font-weight:bold; color:#fff;
+            text-shadow:0 1px 3px rgba(0,0,0,0.9);
+            letter-spacing:0.3px; line-height:1;
+        }
         .ficha-sem-foto {
             display:flex; align-items:center; justify-content:center;
             font-size:10px; color:rgba(255,255,255,0.2); text-align:center; padding:4px;
@@ -583,12 +589,14 @@
                     const saldo = Number(f.saldoFinal ?? (Number(f.totalGeral || 0) - Number(f.comissaoValor || 0)));
                     const depositar = saldo - totalPix;
                     const fotoUrl = a.fotos?.ficha || '';
+                    const dataFicha = new Date(a.data || a.dataHora || 0).toLocaleDateString('pt-BR');
                     return `
                 <div class="ficha-card">
                     ${fotoUrl ? `
                     <div class="ficha-foto-wrap" onclick="abrirFoto('${fotoUrl}')">
                         <img src="${fotoUrl}" class="ficha-foto" alt="Ficha">
                         <div class="ficha-foto-overlay">🔍</div>
+                        <div class="ficha-foto-data">${dataFicha}</div>
                     </div>` : `<div class="ficha-foto-wrap ficha-sem-foto">Sem<br>foto</div>`}
                     <div class="ficha-info">
                         <div class="ficha-numero">Nº ${a.cliente?.numero || i+1} — ${a.cliente?.nome || 'Cliente'}</div>
