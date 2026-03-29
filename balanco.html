@@ -484,33 +484,31 @@
                 return `
             <div class="card-resumo">
 
-                <!-- Cobrados na mesma linha -->
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
-                    <div style="text-align:center;">
-                        <div style="font-size:10px; color:#ffeb3b; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">${labelPeriodo}</div>
-                        <div style="font-size:22px; font-weight:bold; color:#ffeb3b;">${moeda(finPeriodo.liquido)}</div>
-                        <div style="font-size:10px; color:rgba(255,255,255,0.3); text-transform:uppercase; margin-top:2px;">Cobrado líquido</div>
-                    </div>
-                    <div style="text-align:center;">
-                        <div style="font-size:10px; color:#fff; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">Total do mês</div>
-                        <div style="font-size:22px; font-weight:bold; color:rgba(255,255,255,0.45);">${moeda(fin.liquido)}</div>
-                        <div style="font-size:10px; color:rgba(255,255,255,0.2); text-transform:uppercase; margin-top:2px;">Cobrado líquido</div>
-                    </div>
+                <!-- Cobrado no período -->
+                <div style="text-align:center; margin-bottom:16px;">
+                    <div style="font-size:10px; color:#ffeb3b; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">${labelPeriodo}</div>
+                    <div style="font-size:22px; font-weight:bold; color:#ffeb3b;">${moeda(finPeriodo.liquido)}</div>
+                    <div style="font-size:10px; color:rgba(255,255,255,0.3); text-transform:uppercase; margin-top:2px;">Cobrado líquido</div>
                 </div>
 
-                <!-- Comissão + Depósito -->
-                <div style="border-top:1px dashed rgba(255,255,255,0.1); padding-top:4px;">
+                <!-- Total do mês + Comissão + Depósito -->
+                <div style="border-top:1px dashed rgba(255,255,255,0.1); padding-top:14px;">
                     <div class="resumo-titulo" style="margin-bottom:10px;">💰 ${nomeMes}</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                    <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:14px 8px; text-align:center;">
+                        <div style="font-size:11px; color:rgba(255,255,255,0.6); font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Total do mês</div>
+                        <div style="font-size:20px; font-weight:bold; color:rgba(255,255,255,0.7); line-height:1;">${moeda(fin.liquido)}</div>
+                        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:5px;">líquido</div>
+                    </div>
                     ${comissaoUsuario > 0 ? `
-                    <div style="background:rgba(76,175,80,0.15); border:1px solid rgba(76,175,80,0.35); border-radius:14px; padding:14px 10px; text-align:center;">
+                    <div style="background:rgba(76,175,80,0.15); border:1px solid rgba(76,175,80,0.35); border-radius:14px; padding:14px 8px; text-align:center;">
                         <div style="font-size:11px; color:#81c784; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Sua comissão</div>
-                        <div style="font-size:26px; font-weight:bold; color:#a5d6a7; line-height:1;">${moeda(valorComissao)}</div>
+                        <div style="font-size:20px; font-weight:bold; color:#a5d6a7; line-height:1;">${moeda(valorComissao)}</div>
                         <div style="font-size:10px; color:rgba(165,214,167,0.6); margin-top:5px;">${comissaoUsuario}% do mês</div>
                     </div>` : `<div></div>`}
-                    <div style="background:rgba(255,152,0,0.15); border:1px solid rgba(255,152,0,0.4); border-radius:14px; padding:14px 10px; text-align:center;">
+                    <div style="background:rgba(255,152,0,0.15); border:1px solid rgba(255,152,0,0.4); border-radius:14px; padding:14px 8px; text-align:center;">
                         <div style="font-size:11px; color:#ffb74d; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Deposite</div>
-                        <div style="font-size:26px; font-weight:bold; color:#ffcc80; line-height:1;">${moeda(valorDepositar)}</div>
+                        <div style="font-size:20px; font-weight:bold; color:#ffcc80; line-height:1;">${moeda(valorDepositar)}</div>
                         <div style="font-size:10px; color:rgba(255,204,128,0.6); margin-top:5px;">líquido − pix</div>
                     </div>
                 </div>
