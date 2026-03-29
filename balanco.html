@@ -483,7 +483,6 @@
                 const labelPeriodo = (!dataAte || dataAte === dataDe) ? formatarDataBR(dataDe) : 'Período';
                 return `
             <div class="card-resumo">
-                <div class="resumo-titulo">💰 ${nomeMes}</div>
 
                 <!-- Cobrados na mesma linha -->
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
@@ -500,10 +499,11 @@
                 </div>
 
                 <!-- Comissão + Depósito -->
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:14px;">
+                <div style="border-top:1px dashed rgba(255,255,255,0.1); padding-top:4px;">
+                    <div class="resumo-titulo" style="margin-bottom:10px;">💰 ${nomeMes}</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                     ${comissaoUsuario > 0 ? `
                     <div style="background:rgba(76,175,80,0.15); border:1px solid rgba(76,175,80,0.35); border-radius:14px; padding:14px 10px; text-align:center;">
-                        <div style="font-size:10px; color:rgba(255,255,255,0.35); font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px;">${nomeMes}</div>
                         <div style="font-size:11px; color:#81c784; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Sua comissão</div>
                         <div style="font-size:26px; font-weight:bold; color:#a5d6a7; line-height:1;">${moeda(valorComissao)}</div>
                         <div style="font-size:10px; color:rgba(165,214,167,0.6); margin-top:5px;">${comissaoUsuario}% do mês</div>
@@ -513,6 +513,7 @@
                         <div style="font-size:26px; font-weight:bold; color:#ffcc80; line-height:1;">${moeda(valorDepositar)}</div>
                         <div style="font-size:10px; color:rgba(255,204,128,0.6); margin-top:5px;">líquido − pix</div>
                     </div>
+                </div>
                 </div>
             </div>`;
             })() : ''}
