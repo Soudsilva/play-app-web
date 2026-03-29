@@ -189,6 +189,13 @@ export function dbEscutarColaboradores(callback) {
     });
 }
 
+export async function dbListarColaboradores() {
+    const snapshot = await get(ref(db, 'colaboradores'));
+    const data = snapshot.val();
+    if (!data) return [];
+    return Object.keys(data).map(key => ({ ...data[key], firebaseUrl: key }));
+}
+
 // FUNÇÃO: SALVAR COLABORADOR
 // O que faz: Salva dados do funcionário.
 // Truque especial: Usa um número negativo (-Date.now()) para que novos cadastros

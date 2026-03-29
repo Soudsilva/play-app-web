@@ -105,10 +105,13 @@
 <script type="module">
   import { dbEscutarColaboradores, dbSalvarColaborador, dbExcluirColaborador, dbAtualizarOrdemColaborador } from './database.js';
 
+  let listaColaboradores = [];
+
   // CARREGAR LISTA
   function carregarGaleria() {
       const container = document.getElementById('containerColaboradores');
       dbEscutarColaboradores((lista) => {
+          listaColaboradores = lista;
           container.innerHTML = ""; 
           if (lista.length === 0) {
               container.innerHTML = "<p style='text-align:center; opacity:0.5; font-size:12px;'>Nenhum colaborador cadastrado.</p>";
@@ -190,10 +193,24 @@
           dataAtualizacao: new Date().toISOString()
       };
 
+      // Mantém histórico de comissão por mês
+      const mesAtual = new Date().toISOString().slice(0, 7); // "2025-03"
+      if (!idEdicao) {
+          dados.comissaoHistorico = [{ valor: dados.comissao, inicio: mesAtual }];
+      } else {
+          const existente = listaColaboradores.find(c => c.firebaseUrl === idEdicao);
+          const historico = Array.isArray(existente?.comissaoHistorico) ? [...existente.comissaoHistorico] : [];
+          if (existente?.comissao !== dados.comissao) {
+              const idx = historico.findIndex(h => h.inicio === mesAtual);
+              if (idx >= 0) historico[idx].valor = dados.comissao;
+              else historico.push({ valor: dados.comissao, inicio: mesAtual });
+          }
+          dados.comissaoHistorico = historico;
+      }
+
       try {
           if (!idEdicao) {
               dados.dataCadastro = new Date().toISOString();
-              // A nova lógica de ordem -Date.now() no database.js jogará este novo para o topo
               await dbSalvarColaborador(dados, null);
           } else {
               await dbSalvarColaborador(dados, idEdicao);

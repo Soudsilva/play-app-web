@@ -70,6 +70,8 @@
             cursor:pointer; display:flex; align-items:center; justify-content:center;
         }
         .cal-nav:active { background:rgba(255,255,255,0.25); }
+        .cal-nav:disabled { opacity:0.2; cursor:default; }
+        .cal-nav:disabled:active { background:rgba(255,255,255,0.1); }
         .cal-semana { display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:4px; }
         .cal-semana span { text-align:center; font-size:11px; color:rgba(255,255,255,0.4); font-weight:bold; padding:4px 0; }
         .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); }
@@ -105,7 +107,7 @@
             border:1px solid rgba(255,235,59,0.3);
             border-radius:16px; padding:18px; margin-bottom:18px;
         }
-        .resumo-titulo { font-size:11px; font-weight:bold; color:#ffeb3b; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
+        .resumo-titulo { font-size:11px; font-weight:bold; color:#ffeb3b; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; text-align:center; }
         .resumo-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
         .resumo-item { text-align:center; }
         .resumo-valor { font-size:22px; font-weight:bold; color:#fff; }
@@ -182,11 +184,13 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
-    import { dbListarAtendimentos, dbLerPosseAcumulada } from './database.js';
+    import { dbListarAtendimentos, dbLerPosseAcumulada, dbListarColaboradores } from './database.js';
 
     const usuarioLogado = localStorage.getItem('usuarioLogado') || '';
     let todosAtendimentos = [];
     let datasComAtendimento = new Set();
+    let comissaoUsuario = 0; // % de comissão do colaborador logado (calculado por mês)
+    let colaboradorObj  = null;
 
     // Estado do calendário
     // etapa: 0 = nenhum selecionado, 1 = aguardando Até
@@ -221,6 +225,7 @@
     };
 
     window.calNavegar = function(delta) {
+        if (calEtapa === 1 || calEtapa === 2) return; // bloqueado enquanto datas estão selecionadas
         calMesAtual = new Date(calMesAtual.getFullYear(), calMesAtual.getMonth() + delta, 1);
         renderizarCalendario();
     };
@@ -268,6 +273,10 @@
         const ano = calMesAtual.getFullYear();
         const mes = calMesAtual.getMonth();
         document.getElementById('calMesAno').textContent = `${MESES[mes]} ${ano}`;
+
+        // Bloqueia navegação de mês quando aguardando seleção do "Até"
+        const navBloqueado = calEtapa === 1 || calEtapa === 2;
+        document.querySelectorAll('.cal-nav').forEach(btn => btn.disabled = navBloqueado);
 
         const grid = document.getElementById('calGrid');
         grid.innerHTML = '';
@@ -334,13 +343,27 @@
     }
 
     function somarFinanceiro(atendimentos) {
-        let total = 0, dinheiro = 0, pix = 0;
+        let bruto = 0, comissao = 0, liquido = 0, dinheiro = 0, pix = 0;
         atendimentos.forEach(a => {
-            total    += Number(a.financeiro?.totalGeral || 0);
-            dinheiro += Number(a.financeiro?.dinheiro   || 0);
-            (a.financeiro?.pix || []).forEach(p => { pix += Number(p.valor || 0); });
+            const f = a.financeiro || {};
+            bruto    += Number(f.totalGeral    || 0);
+            comissao += Number(f.comissaoValor || 0);
+            // saldoFinal já é totalGeral - comissaoValor, salvo pelo atendimento
+            liquido  += Number(f.saldoFinal ?? (Number(f.totalGeral || 0) - Number(f.comissaoValor || 0)));
+            dinheiro += Number(f.dinheiro || 0);
+            (f.pix || []).forEach(p => { pix += Number(p.valor || 0); });
         });
-        return { total, dinheiro, pix };
+        return { bruto, comissao, liquido, dinheiro, pix };
+    }
+
+    function filtrarMesCompleto(atendimentos, dataRef) {
+        if (!dataRef) return [];
+        const ref = new Date(dataRef + 'T00:00:00');
+        const ano = ref.getFullYear(), mes = ref.getMonth();
+        return atendimentos.filter(a => {
+            const d = new Date(a.data || a.dataHora || a.timestamp || 0);
+            return d.getFullYear() === ano && d.getMonth() === mes;
+        });
     }
 
     function somarMaquinas(atendimentos, acumulado = {}) {
@@ -371,15 +394,32 @@
         return Number(v).toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:0, maximumFractionDigits:0 });
     }
 
+    function getComissaoParaMes(colab, mesAno) {
+        // mesAno = "2025-03"
+        const historico = colab?.comissaoHistorico;
+        if (!historico || historico.length === 0) {
+            return parseFloat(colab?.comissao || 0);
+        }
+        const sorted = [...historico].sort((a, b) => a.inicio.localeCompare(b.inicio));
+        let taxa = parseFloat(sorted[0].valor || 0);
+        for (const h of sorted) {
+            if (h.inicio <= mesAno) taxa = parseFloat(h.valor || 0);
+            else break;
+        }
+        return taxa;
+    }
+
     // ── Render principal ──────────────────────────────────────────
     function renderizar() {
-        const filtrados = filtrarPorDatas(todosAtendimentos, dataDe, dataAte);
-        const conteudo  = document.getElementById('conteudo');
+        const filtrados  = filtrarPorDatas(todosAtendimentos, dataDe, dataAte || dataDe);
+        const doMes      = filtrarMesCompleto(todosAtendimentos, dataDe);
+        const conteudo   = document.getElementById('conteudo');
 
         const produtosPosse = somarProdutos(todosAtendimentos, window._posseAcumuladaProdutos || {});
         const maquinasPosse = somarMaquinas(todosAtendimentos, window._posseAcumuladaMaquinas || {});
-        const fin     = somarFinanceiro(filtrados);
-        const maquinas = somarMaquinas(filtrados);
+        const fin        = somarFinanceiro(doMes);
+        const finPeriodo = somarFinanceiro(filtrados);
+        const maquinas   = somarMaquinas(filtrados);
         const porDia  = atendimentosPorDia(filtrados);
         const maxProd = produtosPosse[0]?.[1] || 1;
         const maxMaqPosse = maquinasPosse[0]?.[1] || 1;
@@ -433,16 +473,49 @@
             </div>
 
             <!-- Resumo financeiro -->
-            ${dataDe || dataAte ? `
+            ${dataDe ? (() => {
+                const ref = new Date(dataDe + 'T00:00:00');
+                const nomeMes = MESES[ref.getMonth()] + ' ' + ref.getFullYear();
+                const mesAno = dataDe.slice(0, 7);
+                comissaoUsuario = getComissaoParaMes(colaboradorObj, mesAno);
+                const valorComissao  = fin.liquido * comissaoUsuario / 100;
+                const valorDepositar = fin.liquido - fin.pix;
+                const labelPeriodo = (!dataAte || dataAte === dataDe) ? formatarDataBR(dataDe) : 'Período';
+                return `
             <div class="card-resumo">
-                <div class="resumo-titulo">💰 Resumo Financeiro</div>
-                <div class="resumo-grid">
-                    <div class="resumo-item"><div class="resumo-valor">${moeda(fin.total)}</div><div class="resumo-label">Total coletado</div></div>
-                    <div class="resumo-item"><div class="resumo-valor">${filtrados.length}</div><div class="resumo-label">Atendimentos</div></div>
-                    <div class="resumo-item"><div class="resumo-valor">${moeda(fin.dinheiro)}</div><div class="resumo-label">Dinheiro</div></div>
-                    <div class="resumo-item"><div class="resumo-valor">${moeda(fin.pix)}</div><div class="resumo-label">Pix</div></div>
+                <div class="resumo-titulo">💰 ${nomeMes}</div>
+
+                <!-- Cobrados na mesma linha -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
+                    <div style="text-align:center;">
+                        <div style="font-size:10px; color:#ffeb3b; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">${labelPeriodo}</div>
+                        <div style="font-size:22px; font-weight:bold; color:#ffeb3b;">${moeda(finPeriodo.liquido)}</div>
+                        <div style="font-size:10px; color:rgba(255,255,255,0.3); text-transform:uppercase; margin-top:2px;">Cobrado líquido</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:10px; color:#fff; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">Total do mês</div>
+                        <div style="font-size:22px; font-weight:bold; color:rgba(255,255,255,0.45);">${moeda(fin.liquido)}</div>
+                        <div style="font-size:10px; color:rgba(255,255,255,0.2); text-transform:uppercase; margin-top:2px;">Cobrado líquido</div>
+                    </div>
                 </div>
-            </div>` : ''}
+
+                <!-- Comissão + Depósito -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:14px;">
+                    ${comissaoUsuario > 0 ? `
+                    <div style="background:rgba(76,175,80,0.15); border:1px solid rgba(76,175,80,0.35); border-radius:14px; padding:14px 10px; text-align:center;">
+                        <div style="font-size:10px; color:rgba(255,255,255,0.35); font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px;">${nomeMes}</div>
+                        <div style="font-size:11px; color:#81c784; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Sua comissão</div>
+                        <div style="font-size:26px; font-weight:bold; color:#a5d6a7; line-height:1;">${moeda(valorComissao)}</div>
+                        <div style="font-size:10px; color:rgba(165,214,167,0.6); margin-top:5px;">${comissaoUsuario}% do mês</div>
+                    </div>` : `<div></div>`}
+                    <div style="background:rgba(255,152,0,0.15); border:1px solid rgba(255,152,0,0.4); border-radius:14px; padding:14px 10px; text-align:center;">
+                        <div style="font-size:11px; color:#ffb74d; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Deposite</div>
+                        <div style="font-size:26px; font-weight:bold; color:#ffcc80; line-height:1;">${moeda(valorDepositar)}</div>
+                        <div style="font-size:10px; color:rgba(255,204,128,0.6); margin-top:5px;">líquido − pix</div>
+                    </div>
+                </div>
+            </div>`;
+            })() : ''}
 
             <!-- Máquinas atendidas no período -->
             ${maquinas.length > 0 && (dataDe || dataAte) ? `
@@ -475,10 +548,12 @@
     window._renderizar = renderizar;
 
     // ── Inicialização ─────────────────────────────────────────────
-    const [todos, posseAcumulada] = await Promise.all([
+    const [todos, posseAcumulada, colaboradores] = await Promise.all([
         dbListarAtendimentos(),
-        dbLerPosseAcumulada(usuarioLogado)
+        dbLerPosseAcumulada(usuarioLogado),
+        dbListarColaboradores()
     ]);
+    colaboradorObj  = colaboradores.find(c => c.nome === usuarioLogado) || null;
     todosAtendimentos = todos.filter(a => a.atendente === usuarioLogado);
     datasComAtendimento = new Set(
         todosAtendimentos.map(a => new Date(a.data || a.dataHora || 0).toISOString().slice(0,10))
