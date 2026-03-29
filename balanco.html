@@ -9,7 +9,7 @@
         .app { width:100%; max-width:600px; padding:15px; box-sizing:border-box; min-height:100vh; padding-bottom:50px; }
 
         /* Topo */
-        .topo { display:flex; align-items:center; justify-content:center; margin-bottom:20px; position:relative; width:100%; min-height:45px; }
+        .topo { display:flex; align-items:center; justify-content:center; margin-bottom:20px; position:sticky; top:0; z-index:100; width:100%; min-height:45px; background:#0b2256; padding:8px 0 4px; }
         .titulo { font-size:24px; font-weight:bold; text-align:center; }
         .btn-home { background:rgba(255,255,255,0.1); padding:8px; border-radius:50%; cursor:pointer; display:flex; position:absolute; right:0; }
         .btn-home img { width:20px; height:20px; filter:brightness(0) invert(1); }
@@ -17,8 +17,9 @@
         /* Seletor de período */
         .seletor-periodo {
             display:flex; align-items:center; gap:8px; margin-bottom:18px;
-            background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15);
+            background:#0f2a66; border:1px solid rgba(255,255,255,0.15);
             border-radius:14px; padding:12px 14px;
+            position:sticky; top:57px; z-index:99;
         }
         .data-btn {
             flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
@@ -135,6 +136,47 @@
         .dia-data { font-size:13px; color:rgba(255,255,255,0.6); }
         .dia-count { font-size:14px; font-weight:bold; color:#fff; }
         .loading { text-align:center; padding:40px; opacity:0.6; }
+
+        /* Card de fichas do período */
+        .ficha-card {
+            display:flex; gap:12px; align-items:flex-start;
+            background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+            border-radius:14px; padding:14px; margin-bottom:10px;
+        }
+        .ficha-card:last-child { margin-bottom:0; }
+        .ficha-info { flex:1; min-width:0; }
+        .ficha-numero { font-size:13px; font-weight:bold; color:#ffeb3b; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .ficha-linha { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; gap:8px; }
+        .ficha-chave { font-size:11px; color:#fff; text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; }
+        .ficha-val { font-size:13px; font-weight:bold; color:#fff; }
+        .ficha-val.pix { color:#64b5f6; }
+        .ficha-val.dep { color:#ffcc80; }
+        .ficha-val.saldo { color:#a5d6a7; }
+        .ficha-val.dinheiro { color:#f48fb1; }
+        .ficha-foto-wrap {
+            flex-shrink:0; width:80px; height:100px; border-radius:10px; overflow:hidden;
+            border:1px solid rgba(255,255,255,0.15); cursor:pointer; position:relative;
+            background:rgba(0,0,0,0.3);
+        }
+        .ficha-foto { width:100%; height:100%; object-fit:cover; display:block; }
+        .ficha-foto-overlay {
+            position:absolute; inset:0; background:rgba(0,0,0,0); display:flex;
+            align-items:center; justify-content:center; font-size:20px;
+            transition:background 0.15s;
+        }
+        .ficha-foto-wrap:active .ficha-foto-overlay { background:rgba(0,0,0,0.4); }
+        .ficha-sem-foto {
+            display:flex; align-items:center; justify-content:center;
+            font-size:10px; color:rgba(255,255,255,0.2); text-align:center; padding:4px;
+        }
+        /* Lightbox */
+        .lb-overlay {
+            display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92);
+            z-index:3000; align-items:center; justify-content:center;
+        }
+        .lb-overlay.aberto { display:flex; }
+        .lb-img { max-width:96vw; max-height:90vh; border-radius:10px; object-fit:contain; }
+        .lb-fechar { position:absolute; top:16px; right:16px; font-size:28px; color:#fff; cursor:pointer; background:rgba(255,255,255,0.1); border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; }
     </style>
 </head>
 <body>
@@ -151,6 +193,12 @@
         <div class="loading">Carregando...</div>
     </div>
 
+</div>
+
+<!-- Lightbox foto ficha -->
+<div class="lb-overlay" id="lbOverlay" onclick="fecharLightbox()">
+    <div class="lb-fechar" onclick="fecharLightbox()">✕</div>
+    <img class="lb-img" id="lbImg" src="" alt="Ficha">
 </div>
 
 <!-- Calendário customizado -->
@@ -441,7 +489,7 @@
                             <div class="item-badge${i===0?' destaque':''}">-${qtd}</div>
                         </div>`).join('')}
                 </div>
-                <div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:right;margin-top:6px;padding-right:4px;">Saldo real disponível quando integrado ao estoque</div>
+                <div style="font-size:12px;font-weight:bold;color:#ffeb3b;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-top:8px;">Balanço Financeiro</div>
             </div>` : ''}
 
             <!-- Máquinas em posse -->
@@ -456,7 +504,7 @@
                             <div class="item-badge${i===0?' destaque':''}" style="${i===0?'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;':''}">-${qtd}</div>
                         </div>`).join('')}
                 </div>
-                <div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:right;margin-top:6px;padding-right:4px;">Saldo real disponível quando integrado ao estoque</div>
+                <div style="font-size:12px;font-weight:bold;color:#ffeb3b;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-top:8px;">Balanço Financeiro</div>
             </div>` : ''}
 
             <!-- Seletor de período -->
@@ -516,6 +564,51 @@
             </div>`;
             })() : ''}
 
+            <!-- Fichas do período -->
+            ${filtrados.length > 0 && dataDe ? `
+            <div class="secao">
+                <div class="secao-titulo">📋 Fichas do Período</div>
+                ${filtrados.map((a, i) => {
+                    const f = a.financeiro || {};
+                    const totalPix = (f.pix || []).reduce((s, p) => s + Number(p.valor || 0), 0);
+                    const saldo = Number(f.saldoFinal ?? (Number(f.totalGeral || 0) - Number(f.comissaoValor || 0)));
+                    const depositar = saldo - totalPix;
+                    const fotoUrl = a.fotos?.ficha || '';
+                    return `
+                <div class="ficha-card">
+                    ${fotoUrl ? `
+                    <div class="ficha-foto-wrap" onclick="abrirFoto('${fotoUrl}')">
+                        <img src="${fotoUrl}" class="ficha-foto" alt="Ficha">
+                        <div class="ficha-foto-overlay">🔍</div>
+                    </div>` : `<div class="ficha-foto-wrap ficha-sem-foto">Sem<br>foto</div>`}
+                    <div class="ficha-info">
+                        <div class="ficha-numero">Nº ${a.cliente?.numero || i+1} — ${a.cliente?.nome || 'Cliente'}</div>
+                        <div class="ficha-linha">
+                            <span class="ficha-chave">Total Geral</span>
+                            <span class="ficha-val">${moeda(f.totalGeral || 0)}</span>
+                        </div>
+                        <div class="ficha-linha">
+                            <span class="ficha-chave">Valor em Espécie</span>
+                            <span class="ficha-val dinheiro">${moeda(f.dinheiro || 0)}</span>
+                        </div>
+                        ${totalPix > 0 ? `
+                        <div class="ficha-linha">
+                            <span class="ficha-chave">Valor em Pix</span>
+                            <span class="ficha-val pix">${moeda(totalPix)}</span>
+                        </div>` : ''}
+                        <div class="ficha-linha">
+                            <span class="ficha-chave">Saldo</span>
+                            <span class="ficha-val saldo">${moeda(saldo)}</span>
+                        </div>
+                        <div class="ficha-linha">
+                            <span class="ficha-chave">A depositar</span>
+                            <span class="ficha-val dep">${moeda(depositar)}</span>
+                        </div>
+                    </div>
+                </div>`;
+                }).join('')}
+            </div>` : ''}
+
             <!-- Máquinas atendidas no período -->
             ${maquinas.length > 0 && (dataDe || dataAte) ? `
             <div class="secao">
@@ -545,6 +638,23 @@
     }
 
     window._renderizar = renderizar;
+
+    window.abrirFoto = function(url) {
+        document.getElementById('lbImg').src = url;
+        document.getElementById('lbOverlay').classList.add('aberto');
+        history.pushState({ lightbox: true }, '');
+    };
+    window.fecharLightbox = function() {
+        document.getElementById('lbOverlay').classList.remove('aberto');
+        document.getElementById('lbImg').src = '';
+        if (history.state?.lightbox) history.back();
+    };
+    window.addEventListener('popstate', function(e) {
+        if (document.getElementById('lbOverlay').classList.contains('aberto')) {
+            document.getElementById('lbOverlay').classList.remove('aberto');
+            document.getElementById('lbImg').src = '';
+        }
+    });
 
     // ── Inicialização ─────────────────────────────────────────────
     const [todos, posseAcumulada, colaboradores] = await Promise.all([
