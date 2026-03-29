@@ -11,9 +11,7 @@
     body {
         margin: 0;
         font-family: Arial, Helvetica, sans-serif;
-        background:
-            radial-gradient(circle at top, rgba(54,105,214,0.55), transparent 34%),
-            linear-gradient(180deg, #11317a 0%, #0b2256 42%, #071634 100%);
+        background: #11317a;
         min-height: 100vh;
         display: flex;
         justify-content: center;
@@ -409,30 +407,56 @@
         background: rgba(255,255,255,0.07);
         border: 1px solid rgba(255,255,255,0.13);
         border-radius: 12px;
-        padding: 10px 14px;
+        padding: 6px 0;
         display: flex;
         flex-direction: column;
-        gap: 7px;
     }
 
     .abast-linha {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 14px;
-        color: #fff;
         gap: 8px;
+        padding: 8px 14px;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .abast-linha:last-child {
+        border-bottom: none;
+    }
+
+    .abast-linha-atendente {
+        border-bottom: 1px solid rgba(255,235,59,0.25) !important;
+        padding-bottom: 10px;
+        margin-bottom: 2px;
     }
 
     .abast-label {
-        color: rgba(255,255,255,0.65);
-        font-size: 13px;
+        color: rgba(255,255,255,0.85);
+        font-size: 14px;
+    }
+
+    .abast-label-atendente {
+        color: rgba(255,235,59,0.7);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .abast-val {
         font-weight: bold;
+        font-size: 14px;
         color: #fff;
-        text-align: right;
+        white-space: nowrap;
+    }
+
+    .abast-val-atendente {
+        background: none;
+        border: none;
+        padding: 0;
+        font-weight: bold;
+        font-size: 14px;
+        color: #ffeb3b;
     }
 
 .fotos-vazio {
@@ -825,12 +849,15 @@
 
             const secoes = [];
 
-            // Foto da ficha
-            const fotosficha = [];
-            const fichaInstalacao = cliente.fotoFichaInstalacao || cliente.fotosInstalacao?.ficha || "";
-            if (fichaInstalacao) fotosficha.push({ titulo: 'Ficha (instalação)', url: fichaInstalacao });
-            if (ultimoAtendimento?.fotos?.ficha) fotosficha.push({ titulo: 'Ficha (último atend.)', url: ultimoAtendimento.fotos.ficha });
-            if (fotosficha.length > 0) secoes.push({ nome: 'Foto da Ficha', fotos: fotosficha });
+            // Foto da ficha — apenas atendimento nível 2 ou gestão
+            const podeVerFicha = perfilUsuarioLogado.startsWith('gestao') || perfilUsuarioLogado === 'atendimento_2';
+            if (podeVerFicha) {
+                const fotosficha = [];
+                const fichaInstalacao = cliente.fotoFichaInstalacao || cliente.fotosInstalacao?.ficha || "";
+                if (fichaInstalacao) fotosficha.push({ titulo: 'Ficha (instalação)', url: fichaInstalacao });
+                if (ultimoAtendimento?.fotos?.ficha) fotosficha.push({ titulo: 'Ficha (último atend.)', url: ultimoAtendimento.fotos.ficha });
+                if (fotosficha.length > 0) secoes.push({ nome: 'Foto da Ficha', fotos: fotosficha });
+            }
 
             // Fotos de máquinas
             const fotosMaquinas = [];
@@ -857,6 +884,7 @@
                     produtos.forEach(p => {
                         if (p.nome) linhas.push(`<div class="abast-linha"><span class="abast-label">${p.nome}</span><span class="abast-val">${p.quantidade ?? ''}</span></div>`);
                     });
+
                 }
 
                 if (linhas.length > 0) {
@@ -866,7 +894,7 @@
                         <div>
                             <div class="fotos-secao-titulo">Reposição${dataAtend ? ` — ${dataAtend}` : ''}</div>
                             <div class="abast-card">
-                                ${atendente ? `<div class="abast-linha"><span class="abast-label">Atendente</span><span class="abast-val">${atendente}</span></div>` : ''}
+                                ${atendente ? `<div class="abast-linha abast-linha-atendente"><span class="abast-label abast-label-atendente">Atendente</span><span class="abast-val abast-val-atendente">${atendente}</span></div>` : ''}
                                 ${linhas.join('')}
                             </div>
                         </div>`;

@@ -440,6 +440,45 @@ export async function dbSalvarManutencao(manutencao, idExistente = null) {
     }
 }
 
+/* --- FUNÇÕES PARA ACUMULADOR DE POSSE --- */
+
+// Lê o acumulador de posse de um usuário (produtos e máquinas de atendimentos excluídos com +7 dias)
+export async function dbLerPosseAcumulada(nomeUsuario) {
+    try {
+        const chave = nomeUsuario.replace(/[.#$/[\]]/g, '_');
+        const snap = await get(ref(db, `posse_acumulada/${chave}`));
+        return snap.val() || { produtos: {}, maquinas: {} };
+    } catch (error) {
+        console.error("ERRO AO LER POSSE ACUMULADA:", error);
+        return { produtos: {}, maquinas: {} };
+    }
+}
+
+// Incrementa o acumulador de posse com os dados de um atendimento excluído
+export async function dbAcumularPosse(nomeUsuario, atendimento) {
+    try {
+        const chave = nomeUsuario.replace(/[.#$/[\]]/g, '_');
+        const posseRef = ref(db, `posse_acumulada/${chave}`);
+        const snap = await get(posseRef);
+        const atual = snap.val() || { produtos: {}, maquinas: {} };
+
+        (atendimento.produtos || []).forEach(p => {
+            if (!p.nome) return;
+            atual.produtos[p.nome] = (atual.produtos[p.nome] || 0) + Number(p.quantidade || 0);
+        });
+
+        (atendimento.fotos?.maquinas || []).forEach(m => {
+            if (!m.nome) return;
+            atual.maquinas[m.nome] = (atual.maquinas[m.nome] || 0) + 1;
+        });
+
+        await set(posseRef, atual);
+    } catch (error) {
+        console.error("ERRO AO ACUMULAR POSSE:", error);
+        throw error;
+    }
+}
+
 export function dbEscutarManutencoes(callback) {
     const manutencoesRef = ref(db, 'manutencoes');
     onValue(manutencoesRef, (snapshot) => {

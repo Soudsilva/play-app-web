@@ -88,6 +88,42 @@
         .botao:hover { background: #3c5f9f; }
         .botao:active { transform: translateY(2px); background: #355792; transition: 0.05s; }
 
+        /* Submenu Gestão */
+        .submenu {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            padding: 4px 0 0 0;
+        }
+        .submenu.aberto { display: flex; }
+        .botao-sub {
+            background: rgba(255,255,255,0.08);
+            border: 2px solid rgba(255,255,255,0.18);
+            border-radius: 35px;
+            padding: 10px;
+            min-height: 35px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: 0.15s;
+        }
+        .botao-sub:active { transform: translateY(2px); background: rgba(255,255,255,0.14); }
+        .botao-sub .icone { position: absolute; left: 20px; font-size: 20px; }
+        .botao-sub span:last-child { color: white; font-size: 18px; font-weight: bold; text-align: center; width: 100%; }
+        .seta-gestao {
+            position: absolute;
+            right: 20px;
+            font-size: 16px;
+            font-weight: normal;
+            width: auto !important;
+            transition: transform 0.2s;
+        }
+        .seta-gestao.girada { transform: rotate(180deg); }
+
     </style>
 </head>
 
@@ -133,9 +169,34 @@
             <span>Manutenção</span>
         </div>
 
-        <div class="botao" id="btnGestao" onclick="window.location.href='verificar_envios.html'">
-            <span class="icone">📊</span>
-            <span>Gestão</span>
+        <div>
+            <div class="botao" id="btnGestao" onclick="toggleSubmenuGestao()">
+                <span class="icone">📊</span>
+                <span style="color:white; font-size:25px; font-weight:bold; text-align:center; width:100%;">Gestão</span>
+                <span class="seta-gestao" id="setaGestao">▼</span>
+            </div>
+            <div class="submenu" id="submenuGestao">
+                <div class="botao-sub" onclick="window.location.href='verificar_envios.html'">
+                    <span class="icone">📤</span>
+                    <span>Verificar Envios</span>
+                </div>
+                <div class="botao-sub" onclick="window.location.href='balanco.html'">
+                    <span class="icone">📈</span>
+                    <span>Balanço</span>
+                </div>
+                <div class="botao-sub" onclick="abrirTela('checkin')">
+                    <span class="icone">📍</span>
+                    <span>Check in de Rotas</span>
+                </div>
+                <div class="botao-sub" onclick="abrirTela('financeiro')">
+                    <span class="icone">💰</span>
+                    <span>Financeiro</span>
+                </div>
+                <div class="botao-sub" onclick="abrirTela('depositos')">
+                    <span class="icone">🏦</span>
+                    <span>Depósitos</span>
+                </div>
+            </div>
         </div>
 
         <div class="botao" id="btnRotas" onclick="abrirTela('rotas')">
@@ -189,6 +250,49 @@
     </div>
 
 </div>
+
+<script>
+    function toggleSubmenuGestao() {
+        const submenu = document.getElementById('submenuGestao');
+        const seta = document.getElementById('setaGestao');
+        const abrindo = !submenu.classList.contains('aberto');
+        submenu.classList.toggle('aberto');
+        seta.classList.toggle('girada');
+        // Empurra estado para o histórico ao abrir, para o botão voltar poder fechar
+        if (abrindo) history.pushState({ submenu: true }, '');
+    }
+
+    function fecharSubmenus() {
+        const submenu = document.getElementById('submenuGestao');
+        const seta = document.getElementById('setaGestao');
+        if (submenu && submenu.classList.contains('aberto')) {
+            submenu.classList.remove('aberto');
+            seta.classList.remove('girada');
+        }
+    }
+
+    // Trava o index como primeira página
+    function travarIndex() {
+        history.pushState(null, '', window.location.href);
+    }
+
+    // Empurra imediatamente (síncrono) + nas primeiras interações (mobile)
+    travarIndex();
+    window.addEventListener('load', travarIndex);
+    window.addEventListener('touchstart', function _t() {
+        travarIndex();
+        window.removeEventListener('touchstart', _t);
+    });
+    window.addEventListener('click', function _c() {
+        travarIndex();
+        window.removeEventListener('click', _c);
+    });
+
+    window.addEventListener('popstate', function() {
+        travarIndex();
+        fecharSubmenus();
+    });
+</script>
 
 <script type="module">
     import { dbEscutarColaboradores } from './database.js';

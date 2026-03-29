@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balanço</title>
+    <style>
+        body { margin:0; font-family:Arial, sans-serif; background:#0b2256; display:flex; justify-content:center; color:white; }
+        .app { width:100%; max-width:600px; padding:15px; box-sizing:border-box; min-height:100vh; padding-bottom:50px; }
+
+        /* Topo */
+        .topo { display:flex; align-items:center; justify-content:center; margin-bottom:20px; position:relative; width:100%; min-height:45px; }
+        .titulo { font-size:24px; font-weight:bold; text-align:center; }
+        .btn-home { background:rgba(255,255,255,0.1); padding:8px; border-radius:50%; cursor:pointer; display:flex; position:absolute; right:0; }
+        .btn-home img { width:20px; height:20px; filter:brightness(0) invert(1); }
+
+        /* Seletor de período */
+        .seletor-periodo {
+            display:flex; align-items:center; gap:8px; margin-bottom:18px;
+            background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15);
+            border-radius:14px; padding:12px 14px;
+        }
+        .data-btn {
+            flex:1; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+            border-radius:10px; padding:8px 12px; cursor:pointer; text-align:center;
+            transition:background 0.15s;
+        }
+        .data-btn:active { background:rgba(255,255,255,0.2); }
+        .data-btn.ativo { border-color:#ffeb3b; background:rgba(255,235,59,0.1); }
+        .data-label { font-size:10px; color:rgba(255,235,59,0.8); font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:2px; }
+        .data-valor { font-size:14px; font-weight:bold; color:#fff; }
+        .data-valor.vazio { color:rgba(255,255,255,0.35); font-weight:normal; font-size:13px; }
+        .sep-seta { color:rgba(255,255,255,0.35); font-size:18px; flex-shrink:0; }
+
+        /* Overlay do calendário */
+        .cal-overlay {
+            display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,0.7); z-index:2000;
+            align-items:flex-end; justify-content:center;
+        }
+        .cal-overlay.aberto { display:flex; }
+        .cal-modal {
+            background:linear-gradient(180deg, #173d8f 0%, #0f2a66 100%);
+            border:1px solid rgba(255,255,255,0.2);
+            border-radius:20px 20px 0 0;
+            padding:20px 16px 30px;
+            width:100%; max-width:600px;
+            box-sizing:border-box;
+        }
+        .cal-status {
+            display:flex; gap:8px; margin-bottom:14px;
+        }
+        .cal-status-item {
+            flex:1; text-align:center; padding:8px;
+            border-radius:10px; background:rgba(255,255,255,0.07);
+            border:1px solid rgba(255,255,255,0.12);
+        }
+        .cal-status-item.ativo { border-color:#ffeb3b; background:rgba(255,235,59,0.1); }
+        .cal-status-label { font-size:10px; color:rgba(255,235,59,0.7); font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; }
+        .cal-status-valor { font-size:14px; font-weight:bold; color:#fff; margin-top:2px; }
+        .cal-status-valor.vazio { color:rgba(255,255,255,0.3); font-weight:normal; font-size:12px; }
+        .cal-header {
+            display:flex; align-items:center; justify-content:space-between;
+            margin-bottom:12px;
+        }
+        .cal-mes-ano { font-size:16px; font-weight:bold; color:#ffeb3b; text-align:center; flex:1; }
+        .cal-nav {
+            background:rgba(255,255,255,0.1); border:none; color:white;
+            font-size:20px; width:36px; height:36px; border-radius:50%;
+            cursor:pointer; display:flex; align-items:center; justify-content:center;
+        }
+        .cal-nav:active { background:rgba(255,255,255,0.25); }
+        .cal-semana { display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:4px; }
+        .cal-semana span { text-align:center; font-size:11px; color:rgba(255,255,255,0.4); font-weight:bold; padding:4px 0; }
+        .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); }
+        .cal-dia {
+            aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+            font-size:14px; font-weight:bold; position:relative; border-radius:50%;
+        }
+        .cal-dia.disponivel { color:#fff; cursor:pointer; }
+        .cal-dia.disponivel:active { opacity:0.7; }
+        .cal-dia.disponivel::after {
+            content:''; position:absolute; bottom:3px; left:50%; transform:translateX(-50%);
+            width:3px; height:3px; border-radius:50%; background:#ffeb3b;
+        }
+        .cal-dia.indisponivel { color:rgba(255,255,255,0.13); cursor:default; }
+        .cal-dia.selecionado { background:#ffeb3b !important; color:#0b2256 !important; border-radius:50% !important; z-index:1; }
+        .cal-dia.selecionado::after { background:#0b2256; }
+        .cal-dia.no-intervalo { background:rgba(255,235,59,0.15); border-radius:0; }
+        .cal-dia.inicio-intervalo { border-radius:50% 0 0 50% !important; }
+        .cal-dia.fim-intervalo   { border-radius:0 50% 50% 0 !important; }
+        .cal-dia.unico-selecionado { border-radius:50% !important; }
+        .cal-acoes { display:flex; gap:8px; margin-top:14px; }
+        .cal-btn {
+            flex:1; padding:12px; border-radius:12px; border:none;
+            font-size:14px; font-weight:bold; cursor:pointer;
+        }
+        .cal-btn-ok { background:#ffeb3b; color:#0b2256; }
+        .cal-btn-limpar { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.6); }
+        .cal-btn-ok:disabled { opacity:0.35; cursor:default; }
+
+        /* Card de resumo financeiro */
+        .card-resumo {
+            background:linear-gradient(135deg, rgba(68,103,168,0.5), rgba(15,42,102,0.7));
+            border:1px solid rgba(255,235,59,0.3);
+            border-radius:16px; padding:18px; margin-bottom:18px;
+        }
+        .resumo-titulo { font-size:11px; font-weight:bold; color:#ffeb3b; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
+        .resumo-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .resumo-item { text-align:center; }
+        .resumo-valor { font-size:22px; font-weight:bold; color:#fff; }
+        .resumo-label { font-size:11px; color:rgba(255,255,255,0.55); margin-top:2px; text-transform:uppercase; letter-spacing:0.5px; }
+
+        /* Seção */
+        .secao { margin-bottom:20px; }
+        .secao-titulo {
+            font-size:12px; font-weight:bold; color:#ffeb3b; text-transform:uppercase;
+            letter-spacing:1px; margin-bottom:10px; padding-bottom:5px;
+            border-bottom:1px dashed rgba(255,235,59,0.3);
+            display:flex; align-items:center; gap:6px;
+        }
+        .lista-card { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:14px; overflow:hidden; }
+        .lista-item { display:flex; align-items:center; justify-content:space-between; padding:11px 16px; border-bottom:1px solid rgba(255,255,255,0.07); }
+        .lista-item:last-child { border-bottom:none; }
+        .item-nome { font-size:14px; color:rgba(255,255,255,0.88); }
+        .item-badge { font-size:14px; font-weight:bold; color:#fff; background:rgba(68,103,168,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 14px; min-width:40px; text-align:center; }
+        .item-badge.destaque { background:rgba(255,235,59,0.2); border-color:rgba(255,235,59,0.4); color:#ffeb3b; }
+        .item-barra-wrap { flex:1; margin:0 12px; }
+        .item-barra-bg { background:rgba(255,255,255,0.1); border-radius:10px; height:5px; overflow:hidden; }
+        .item-barra { background:#ffeb3b; height:100%; border-radius:10px; transition:width 0.5s ease; }
+        .dia-item { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-bottom:1px solid rgba(255,255,255,0.07); }
+        .dia-item:last-child { border-bottom:none; }
+        .dia-data { font-size:13px; color:rgba(255,255,255,0.6); }
+        .dia-count { font-size:14px; font-weight:bold; color:#fff; }
+        .loading { text-align:center; padding:40px; opacity:0.6; }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <div class="topo">
+        <div class="titulo">📊 Balanço</div>
+        <div class="btn-home" onclick="window.location.href='index.html'">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
+        </div>
+    </div>
+
+    <div id="conteudo">
+        <div class="loading">Carregando...</div>
+    </div>
+
+</div>
+
+<!-- Calendário customizado -->
+<div class="cal-overlay" id="calOverlay" onclick="fecharCalendarioOverlay(event)">
+    <div class="cal-modal">
+        <div class="cal-status">
+            <div class="cal-status-item" id="calStatusDe">
+                <div class="cal-status-label">De</div>
+                <div class="cal-status-valor vazio" id="calValorDe">Toque para selecionar</div>
+            </div>
+            <div class="cal-status-item" id="calStatusAte">
+                <div class="cal-status-label">Até</div>
+                <div class="cal-status-valor vazio" id="calValorAte">Toque para selecionar</div>
+            </div>
+        </div>
+        <div class="cal-header">
+            <button class="cal-nav" onclick="calNavegar(-1)">‹</button>
+            <div class="cal-mes-ano" id="calMesAno"></div>
+            <button class="cal-nav" onclick="calNavegar(1)">›</button>
+        </div>
+        <div class="cal-semana">
+            <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-acoes">
+            <button class="cal-btn cal-btn-limpar" onclick="calLimpar()">Limpar</button>
+            <button class="cal-btn cal-btn-ok" id="calBtnOk" onclick="fecharCalendario()">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<script src="assets/js/play-dialogs.js"></script>
+<script type="module">
+    import { dbListarAtendimentos, dbLerPosseAcumulada } from './database.js';
+
+    const usuarioLogado = localStorage.getItem('usuarioLogado') || '';
+    let todosAtendimentos = [];
+    let datasComAtendimento = new Set();
+
+    // Estado do calendário
+    // etapa: 0 = nenhum selecionado, 1 = aguardando Até
+    let calEtapa = 0;
+    let calMesAtual = new Date();
+    let dataDe  = '';
+    let dataAte = '';
+
+    const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+    // ── Calendário ────────────────────────────────────────────────
+    window.abrirCalendario = function() {
+        // Navega para o mês mais recente com atendimento (ou mês atual)
+        if (!dataDe) {
+            const datas = [...datasComAtendimento].sort();
+            calMesAtual = datas.length ? new Date(datas[datas.length-1] + 'T00:00:00') : new Date();
+        } else {
+            calMesAtual = new Date(dataDe + 'T00:00:00');
+        }
+        atualizarStatusCal();
+        renderizarCalendario();
+        document.getElementById('calOverlay').classList.add('aberto');
+    };
+
+    window.fecharCalendario = function() {
+        document.getElementById('calOverlay').classList.remove('aberto');
+        renderizar();
+    };
+
+    window.fecharCalendarioOverlay = function(e) {
+        if (e.target === document.getElementById('calOverlay')) fecharCalendario();
+    };
+
+    window.calNavegar = function(delta) {
+        calMesAtual = new Date(calMesAtual.getFullYear(), calMesAtual.getMonth() + delta, 1);
+        renderizarCalendario();
+    };
+
+    window.calLimpar = function() {
+        dataDe = ''; dataAte = ''; calEtapa = 0;
+        atualizarStatusCal();
+        renderizarCalendario();
+    };
+
+    window.calSelecionarData = function(dataStr) {
+        if (calEtapa === 0 || calEtapa === 2) {
+            // Primeiro toque: define De, limpa Até
+            dataDe = dataStr; dataAte = ''; calEtapa = 1;
+        } else {
+            // Segundo toque: define Até (garante ordem)
+            if (dataStr < dataDe) { dataAte = dataDe; dataDe = dataStr; }
+            else { dataAte = dataStr; }
+            calEtapa = 2;
+        }
+        atualizarStatusCal();
+        renderizarCalendario();
+    };
+
+    function atualizarStatusCal() {
+        const elDe  = document.getElementById('calValorDe');
+        const elAte = document.getElementById('calValorAte');
+        const stDe  = document.getElementById('calStatusDe');
+        const stAte = document.getElementById('calStatusAte');
+        const btnOk = document.getElementById('calBtnOk');
+        if (!elDe) return;
+
+        elDe.textContent  = formatarDataBR(dataDe)  || 'Toque para selecionar';
+        elAte.textContent = formatarDataBR(dataAte) || 'Toque para selecionar';
+        elDe.classList.toggle('vazio', !dataDe);
+        elAte.classList.toggle('vazio', !dataAte);
+
+        stDe.classList.toggle('ativo', calEtapa === 1);
+        stAte.classList.toggle('ativo', calEtapa === 2);
+
+        if (btnOk) btnOk.disabled = !dataDe;
+    }
+
+    function renderizarCalendario() {
+        const ano = calMesAtual.getFullYear();
+        const mes = calMesAtual.getMonth();
+        document.getElementById('calMesAno').textContent = `${MESES[mes]} ${ano}`;
+
+        const grid = document.getElementById('calGrid');
+        grid.innerHTML = '';
+
+        const primeiroDia = new Date(ano, mes, 1).getDay();
+        const diasNoMes   = new Date(ano, mes+1, 0).getDate();
+
+        for (let i = 0; i < primeiroDia; i++) grid.innerHTML += '<div></div>';
+
+        for (let d = 1; d <= diasNoMes; d++) {
+            const dataStr = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const temAtend = datasComAtendimento.has(dataStr);
+            // Na etapa 1 (escolhendo Até), só permite datas >= De com atendimento
+            const disponivel = temAtend && (calEtapa !== 1 || dataStr >= dataDe);
+
+            const ehDe  = dataStr === dataDe;
+            const ehAte = dataStr === dataAte;
+            const noIntervalo = dataDe && dataAte && dataStr > dataDe && dataStr < dataAte;
+            const unico = ehDe && !dataAte;
+
+            let cls = 'cal-dia';
+            cls += disponivel ? ' disponivel' : ' indisponivel';
+            if (unico) cls += ' selecionado unico-selecionado';
+            else if (ehDe)  cls += ' selecionado inicio-intervalo';
+            else if (ehAte) cls += ' selecionado fim-intervalo';
+            if (noIntervalo) cls += ' no-intervalo';
+
+            grid.innerHTML += `<div class="${cls}" ${disponivel ? `onclick="calSelecionarData('${dataStr}')"` : ''}>${d}</div>`;
+        }
+    }
+
+    // ── Seletor visual ────────────────────────────────────────────
+    function formatarDataBR(iso) {
+        if (!iso) return null;
+        const [y, m, d] = iso.split('-');
+        return `${d}/${m}/${y}`;
+    }
+
+    function renderizarSeletor() {
+        // não necessário — o seletor agora é gerado dentro do renderizar()
+    }
+
+    // ── Dados ─────────────────────────────────────────────────────
+    function filtrarPorDatas(atendimentos, de, ate) {
+        const inicio = de  ? new Date(de  + 'T00:00:00') : null;
+        const fim    = ate ? new Date(ate + 'T23:59:59') : null;
+        return atendimentos.filter(a => {
+            const data = new Date(a.data || a.dataHora || a.timestamp || 0);
+            if (inicio && data < inicio) return false;
+            if (fim    && data > fim)    return false;
+            return true;
+        });
+    }
+
+    function somarProdutos(atendimentos, acumulado = {}) {
+        const mapa = { ...acumulado };
+        atendimentos.forEach(a => {
+            (a.produtos || []).forEach(p => {
+                if (!p.nome) return;
+                mapa[p.nome] = (mapa[p.nome] || 0) + Number(p.quantidade || 0);
+            });
+        });
+        return Object.entries(mapa).sort((a, b) => b[1] - a[1]);
+    }
+
+    function somarFinanceiro(atendimentos) {
+        let total = 0, dinheiro = 0, pix = 0;
+        atendimentos.forEach(a => {
+            total    += Number(a.financeiro?.totalGeral || 0);
+            dinheiro += Number(a.financeiro?.dinheiro   || 0);
+            (a.financeiro?.pix || []).forEach(p => { pix += Number(p.valor || 0); });
+        });
+        return { total, dinheiro, pix };
+    }
+
+    function somarMaquinas(atendimentos, acumulado = {}) {
+        const mapa = { ...acumulado };
+        atendimentos.forEach(a => {
+            (a.fotos?.maquinas || []).forEach(m => {
+                if (!m.nome) return;
+                mapa[m.nome] = (mapa[m.nome] || 0) + 1;
+            });
+        });
+        return Object.entries(mapa).sort((a, b) => b[1] - a[1]);
+    }
+
+    function atendimentosPorDia(atendimentos) {
+        const mapa = {};
+        atendimentos.forEach(a => {
+            const chave = new Date(a.data || a.dataHora || 0).toLocaleDateString('pt-BR');
+            mapa[chave] = (mapa[chave] || 0) + 1;
+        });
+        return Object.entries(mapa).sort((a, b) => {
+            const [da,ma,ya] = a[0].split('/').map(Number);
+            const [db,mb,yb] = b[0].split('/').map(Number);
+            return new Date(yb,mb-1,db) - new Date(ya,ma-1,da);
+        });
+    }
+
+    function moeda(v) {
+        return Number(v).toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:0, maximumFractionDigits:0 });
+    }
+
+    // ── Render principal ──────────────────────────────────────────
+    function renderizar() {
+        const filtrados = filtrarPorDatas(todosAtendimentos, dataDe, dataAte);
+        const conteudo  = document.getElementById('conteudo');
+
+        const produtosPosse = somarProdutos(todosAtendimentos, window._posseAcumuladaProdutos || {});
+        const maquinasPosse = somarMaquinas(todosAtendimentos, window._posseAcumuladaMaquinas || {});
+        const fin     = somarFinanceiro(filtrados);
+        const maquinas = somarMaquinas(filtrados);
+        const porDia  = atendimentosPorDia(filtrados);
+        const maxProd = produtosPosse[0]?.[1] || 1;
+        const maxMaqPosse = maquinasPosse[0]?.[1] || 1;
+
+        const labelDe  = formatarDataBR(dataDe)  || 'Selecione';
+        const labelAte = formatarDataBR(dataAte) || 'Selecione';
+
+        conteudo.innerHTML = `
+
+            <!-- Produtos em posse -->
+            ${produtosPosse.length > 0 ? `
+            <div class="secao">
+                <div class="secao-titulo">🧃 Produtos em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
+                <div class="lista-card">
+                    ${produtosPosse.map(([nome,qtd],i) => `
+                        <div class="lista-item">
+                            <div class="item-nome">${nome}</div>
+                            <div class="item-barra-wrap"><div class="item-barra-bg"><div class="item-barra" style="width:${Math.round((qtd/maxProd)*100)}%"></div></div></div>
+                            <div class="item-badge${i===0?' destaque':''}">-${qtd}</div>
+                        </div>`).join('')}
+                </div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:right;margin-top:6px;padding-right:4px;">Saldo real disponível quando integrado ao estoque</div>
+            </div>` : ''}
+
+            <!-- Máquinas em posse -->
+            ${maquinasPosse.length > 0 ? `
+            <div class="secao">
+                <div class="secao-titulo">🎰 Máquinas em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
+                <div class="lista-card">
+                    ${maquinasPosse.map(([nome,qtd],i) => `
+                        <div class="lista-item">
+                            <div class="item-nome">${nome}</div>
+                            <div class="item-barra-wrap"><div class="item-barra-bg"><div class="item-barra" style="width:${Math.round((qtd/maxMaqPosse)*100)}%;background:${i===0?'#4caf50':'rgba(76,175,80,0.6)'}"></div></div></div>
+                            <div class="item-badge${i===0?' destaque':''}" style="${i===0?'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;':''}">-${qtd}</div>
+                        </div>`).join('')}
+                </div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:right;margin-top:6px;padding-right:4px;">Saldo real disponível quando integrado ao estoque</div>
+            </div>` : ''}
+
+            <!-- Seletor de período -->
+            <div class="seletor-periodo" onclick="abrirCalendario()" style="cursor:pointer;">
+                <div class="data-btn${dataDe ? ' ativo' : ''}" style="pointer-events:none;">
+                    <span class="data-label">De</span>
+                    <span class="data-valor${!dataDe ? ' vazio' : ''}">${labelDe}</span>
+                </div>
+                <span class="sep-seta">→</span>
+                <div class="data-btn${dataAte ? ' ativo' : ''}" style="pointer-events:none;">
+                    <span class="data-label">Até</span>
+                    <span class="data-valor${!dataAte ? ' vazio' : ''}">${labelAte}</span>
+                </div>
+            </div>
+
+            <!-- Resumo financeiro -->
+            ${dataDe || dataAte ? `
+            <div class="card-resumo">
+                <div class="resumo-titulo">💰 Resumo Financeiro</div>
+                <div class="resumo-grid">
+                    <div class="resumo-item"><div class="resumo-valor">${moeda(fin.total)}</div><div class="resumo-label">Total coletado</div></div>
+                    <div class="resumo-item"><div class="resumo-valor">${filtrados.length}</div><div class="resumo-label">Atendimentos</div></div>
+                    <div class="resumo-item"><div class="resumo-valor">${moeda(fin.dinheiro)}</div><div class="resumo-label">Dinheiro</div></div>
+                    <div class="resumo-item"><div class="resumo-valor">${moeda(fin.pix)}</div><div class="resumo-label">Pix</div></div>
+                </div>
+            </div>` : ''}
+
+            <!-- Máquinas atendidas no período -->
+            ${maquinas.length > 0 && (dataDe || dataAte) ? `
+            <div class="secao">
+                <div class="secao-titulo">🎰 Máquinas Atendidas</div>
+                <div class="lista-card">
+                    ${maquinas.map(([nome,qtd]) => `
+                        <div class="lista-item">
+                            <div class="item-nome">${nome}</div>
+                            <div class="dia-count">${qtd}</div>
+                        </div>`).join('')}
+                </div>
+            </div>` : ''}
+
+            <!-- Por dia -->
+            ${porDia.length > 1 && (dataDe || dataAte) ? `
+            <div class="secao">
+                <div class="secao-titulo">📅 Atendimentos por Dia</div>
+                <div class="lista-card">
+                    ${porDia.map(([data,count]) => `
+                        <div class="dia-item">
+                            <div class="dia-data">${data}</div>
+                            <div class="dia-count">${count} atendimento${count!==1?'s':''}</div>
+                        </div>`).join('')}
+                </div>
+            </div>` : ''}
+        `;
+    }
+
+    window._renderizar = renderizar;
+
+    // ── Inicialização ─────────────────────────────────────────────
+    const [todos, posseAcumulada] = await Promise.all([
+        dbListarAtendimentos(),
+        dbLerPosseAcumulada(usuarioLogado)
+    ]);
+    todosAtendimentos = todos.filter(a => a.atendente === usuarioLogado);
+    datasComAtendimento = new Set(
+        todosAtendimentos.map(a => new Date(a.data || a.dataHora || 0).toISOString().slice(0,10))
+    );
+
+    window._posseAcumuladaProdutos = posseAcumulada.produtos || {};
+    window._posseAcumuladaMaquinas = posseAcumulada.maquinas || {};
+
+    renderizar();
+</script>
+</body>
+</html>
