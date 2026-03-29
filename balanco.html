@@ -47,6 +47,8 @@
             padding:20px 16px 30px;
             width:100%; max-width:600px;
             box-sizing:border-box;
+            user-select:none;
+            -webkit-user-select:none;
         }
         .cal-status {
             display:flex; gap:8px; margin-bottom:14px;
@@ -149,10 +151,10 @@
         .ficha-linha { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; gap:8px; }
         .ficha-chave { font-size:11px; color:#fff; text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; }
         .ficha-val { font-size:13px; font-weight:bold; color:#fff; }
-        .ficha-val.pix { color:#64b5f6; }
+        .ficha-val.pix { color:#a5d6a7; }
         .ficha-val.dep { color:#ffcc80; }
-        .ficha-val.saldo { color:#a5d6a7; }
-        .ficha-val.dinheiro { color:#f48fb1; }
+        .ficha-val.saldo { color:#64b5f6; }
+        .ficha-val.dinheiro { color:#a5d6a7; }
         .ficha-foto-wrap {
             flex-shrink:0; width:80px; height:100px; border-radius:10px; overflow:hidden;
             border:1px solid rgba(255,255,255,0.15); cursor:pointer; position:relative;
@@ -261,12 +263,19 @@
         atualizarStatusCal();
         renderizarCalendario();
         document.getElementById('calOverlay').classList.add('aberto');
+        history.pushState({ calendarioAberto: true }, '');
     };
 
     window.fecharCalendario = function() {
         document.getElementById('calOverlay').classList.remove('aberto');
         renderizar();
     };
+
+    window.addEventListener('popstate', function(e) {
+        if (document.getElementById('calOverlay').classList.contains('aberto')) {
+            fecharCalendario();
+        }
+    });
 
     window.fecharCalendarioOverlay = function(e) {
         if (e.target === document.getElementById('calOverlay')) fecharCalendario();
