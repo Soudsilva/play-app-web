@@ -106,6 +106,19 @@
         .pix-data { font-size: 11px; color: rgba(255,255,255,0.4); margin: 0 10px; }
         .pix-valor { font-size: 13px; font-weight: bold; color: #90caf9; flex-shrink: 0; }
 
+        /* Clientes pix no dia */
+        .dia-clientes-pix {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            margin-bottom: 8px;
+        }
+        .dia-cli-pix {
+            font-size: 11px; color: rgba(255,255,255,0.65);
+            background: rgba(144,202,249,0.12);
+            border: 1px solid rgba(144,202,249,0.25);
+            border-radius: 6px; padding: 3px 7px;
+        }
+        .dia-cli-pix b { color: #90caf9; }
+
         /* Vazio */
         .vazio-msg {
             text-align: center; padding: 40px 20px;
@@ -143,7 +156,7 @@
 
     function moeda(v) {
         const n = Number(v || 0);
-        return 'R$ ' + (n / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
     }
 
     function dataLocalStr(date) {
@@ -199,8 +212,7 @@
         }
 
         // Totais do mês
-        let totalPixMes = 0;
-        let totalDinMes = 0;
+        let totalSaldoMes = 0;
 
         // Agrupar por dia
         const porDia = {};
@@ -214,52 +226,65 @@
             const pixArr = a.financeiro?.pix || [];
             const dinheiro = Number(a.financeiro?.dinheiro || 0);
             const pixTotal = pixArr.reduce((s, p) => s + Number(p.valor || 0), 0);
+            const comissao = Number(a.financeiro?.comissaoValor || 0);
 
-            totalPixMes += pixTotal;
-            totalDinMes += dinheiro;
+            // Saldo a depositar = dinheiro - comissão (pix já está na conta)
+            const saldo = dinheiro - comissao;
+            totalSaldoMes += saldo;
 
-            if (!porDia[dataStr]) porDia[dataStr] = { pix: 0, dinheiro: 0 };
-            porDia[dataStr].pix += pixTotal;
+            if (!porDia[dataStr]) porDia[dataStr] = { saldo: 0, dinheiro: 0, pix: 0, clientesPix: [] };
+            porDia[dataStr].saldo += saldo;
             porDia[dataStr].dinheiro += dinheiro;
+            porDia[dataStr].pix += pixTotal;
 
             if (pixTotal > 0) {
+                const nomeCli = a.cliente?.nome || a.cliente?.numero || 'Cliente';
+                porDia[dataStr].clientesPix.push({ nome: nomeCli, valor: pixTotal });
                 clientesPix.push({
-                    nome: a.cliente?.nome || a.cliente?.numero || 'Cliente',
+                    nome: nomeCli,
                     data: dataStr,
                     valor: pixTotal
                 });
             }
         });
 
-        const diasOrdenados = Object.entries(porDia).sort((a, b) => b[0].localeCompare(a[0]));
+        const diasOrdenados = Object.entries(porDia).sort((a, b) => a[0].localeCompare(b[0]));
         clientesPix.sort((a, b) => b.data.localeCompare(a.data));
 
         // Card total a depositar
         const htmlTotal = `
             <div class="card-total">
                 <div class="card-total-label">Total a depositar — ${MESES[mes-1]} ${ano}</div>
-                <div class="card-total-valor">${moeda(totalPixMes)}</div>
-                <div class="card-total-sub">💳 Total em Pix recebido no mês</div>
+                <div class="card-total-valor">${moeda(totalSaldoMes)}</div>
+                <div class="card-total-sub">💵 Dinheiro recebido menos comissão (Pix já está na conta)</div>
             </div>
         `;
 
         // Seção por dia
         const htmlDias = diasOrdenados.map(([data, vals]) => {
-            const totalDia = vals.pix + vals.dinheiro;
+            const totalDia = vals.dinheiro + vals.pix;
+            const htmlClientesPix = vals.clientesPix.length > 0
+                ? vals.clientesPix.map(c => `<span class="dia-cli-pix">${c.nome} <b>${moeda(c.valor)}</b></span>`).join('')
+                : '';
             return `
             <div class="dia-row">
+                ${htmlClientesPix ? `<div class="dia-clientes-pix">${htmlClientesPix}</div>` : ''}
                 <div class="dia-header">
                     <span class="dia-data">${formatarDataBR(data)}</span>
                     <span class="dia-total">${moeda(totalDia)}</span>
                 </div>
                 <div class="dia-detalhes">
                     <div class="dia-detalhe">
+                        <span class="dia-detalhe-label">Dinheiro</span>
+                        <span class="dia-detalhe-val val-din">${moeda(vals.dinheiro)}</span>
+                    </div>
+                    <div class="dia-detalhe">
                         <span class="dia-detalhe-label">Pix</span>
                         <span class="dia-detalhe-val val-pix">${moeda(vals.pix)}</span>
                     </div>
                     <div class="dia-detalhe">
-                        <span class="dia-detalhe-label">Dinheiro</span>
-                        <span class="dia-detalhe-val val-din">${moeda(vals.dinheiro)}</span>
+                        <span class="dia-detalhe-label">A depositar</span>
+                        <span class="dia-detalhe-val val-total">${moeda(vals.saldo)}</span>
                     </div>
                 </div>
             </div>`;
@@ -278,7 +303,7 @@
         conteudo.innerHTML = `
             ${htmlTotal}
             <div class="secao">
-                <div class="secao-titulo">📅 Total por Dia</div>
+                <div class="secao-titulo">📅 Saldo por Dia</div>
                 <div class="lista-card">${htmlDias}</div>
             </div>
             <div class="secao">
