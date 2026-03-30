@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Balanço</title>
     <style>
-        body { margin:0; font-family:Arial, sans-serif; background:#0b2256; display:flex; justify-content:center; color:white; }
+        body { margin:0; font-family:Arial, sans-serif; background:#0b2256; display:flex; justify-content:center; color:white; user-select:none; -webkit-user-select:none; }
         .app { width:100%; max-width:600px; padding:15px; box-sizing:border-box; min-height:100vh; padding-bottom:50px; }
 
         /* Topo */
@@ -13,6 +13,11 @@
         .titulo { font-size:24px; font-weight:bold; text-align:center; }
         .btn-home { background:rgba(255,255,255,0.1); padding:8px; border-radius:50%; cursor:pointer; display:flex; position:absolute; right:0; }
         .btn-home img { width:20px; height:20px; filter:brightness(0) invert(1); }
+        .topo-fin { display:none; flex-direction:column; align-items:center; gap:4px; width:100%; }
+        .topo-fin.visivel { display:flex; }
+        .topo-fin-titulo { font-size:18px; font-weight:bold; color:#fff; }
+        .topo-fin-datas { display:flex; align-items:center; gap:6px; font-size:12px; color:rgba(255,235,59,0.85); cursor:pointer; padding:3px 10px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:20px; }
+        .topo-fin-datas:active { background:rgba(255,255,255,0.14); }
 
         /* Seletor de período */
         .seletor-periodo {
@@ -30,7 +35,7 @@
         .data-btn.ativo { border-color:#ffeb3b; background:rgba(255,235,59,0.1); }
         .data-label { font-size:10px; color:rgba(255,235,59,0.8); font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:2px; }
         .data-valor { font-size:14px; font-weight:bold; color:#fff; }
-        .data-valor.vazio { color:rgba(255,255,255,0.35); font-weight:normal; font-size:13px; }
+        .data-valor.vazio { color:rgba(255,255,255,0.75); font-weight:normal; font-size:13px; }
         .sep-seta { color:rgba(255,255,255,0.35); font-size:18px; flex-shrink:0; }
 
         /* Overlay do calendário */
@@ -135,7 +140,7 @@
         .item-barra { background:#ffeb3b; height:100%; border-radius:10px; transition:width 0.5s ease; }
         .dia-item { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-bottom:1px solid rgba(255,255,255,0.07); }
         .dia-item:last-child { border-bottom:none; }
-        .dia-data { font-size:13px; color:rgba(255,255,255,0.6); }
+        .dia-data { font-size:15px; color:rgba(255,255,255,0.6); }
         .dia-count { font-size:14px; font-weight:bold; color:#fff; }
         .loading { text-align:center; padding:40px; opacity:0.6; }
 
@@ -155,8 +160,9 @@
         .ficha-val.dep { color:#ffcc80; }
         .ficha-val.saldo { color:#64b5f6; }
         .ficha-val.dinheiro { color:#a5d6a7; }
+        .ficha-foto-col { flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:4px; }
         .ficha-foto-wrap {
-            flex-shrink:0; width:80px; height:100px; border-radius:10px; overflow:hidden;
+            width:80px; height:100px; border-radius:10px; overflow:hidden;
             border:1px solid rgba(255,255,255,0.15); cursor:pointer; position:relative;
             background:rgba(0,0,0,0.3);
         }
@@ -168,10 +174,8 @@
         }
         .ficha-foto-wrap:active .ficha-foto-overlay { background:rgba(0,0,0,0.4); }
         .ficha-foto-data {
-            position:absolute; bottom:4px; right:5px;
-            font-size:8px; font-weight:bold; color:#fff;
-            text-shadow:0 1px 3px rgba(0,0,0,0.9);
-            letter-spacing:0.3px; line-height:1;
+            font-size:10px; font-weight:bold; color:#ffeb3b;
+            text-align:center; letter-spacing:0.3px;
         }
         .ficha-sem-foto {
             display:flex; align-items:center; justify-content:center;
@@ -191,8 +195,12 @@
 <div class="app">
 
     <div class="topo">
-        <div class="titulo">📊 Balanço</div>
-        <div class="btn-home" onclick="window.location.href='index.html'">
+        <div class="titulo" id="tituloPrincipal">📦 Balanço</div>
+        <div class="topo-fin" id="topoFin" onclick="abrirCalendario()">
+            <div class="topo-fin-titulo">💰 Balanço Financeiro</div>
+            <div class="topo-fin-datas" id="topoFinDatas">Selecione um período</div>
+        </div>
+        <div class="btn-home" onclick="event.stopPropagation(); window.location.href='index.html'">
             <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
         </div>
     </div>
@@ -240,13 +248,19 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
-    import { dbListarAtendimentos, dbLerPosseAcumulada, dbListarColaboradores } from './database.js';
+    import { dbListarAtendimentos, dbLerPosseAcumulada, dbListarColaboradores, dbListarClientes } from './database.js';
 
     const usuarioLogado = localStorage.getItem('usuarioLogado') || '';
     let todosAtendimentos = [];
     let datasComAtendimento = new Set();
     let comissaoUsuario = 0; // % de comissão do colaborador logado (calculado por mês)
     let colaboradorObj  = null;
+    function dataLocalStr(date) {
+        const d = (date instanceof Date) ? date : new Date(date || 0);
+        if (isNaN(d)) return null;
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+    const hoje = dataLocalStr(new Date());
 
     // Estado do calendário
     // etapa: 0 = nenhum selecionado, 1 = aguardando Até
@@ -352,8 +366,8 @@
         for (let d = 1; d <= diasNoMes; d++) {
             const dataStr = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
             const temAtend = datasComAtendimento.has(dataStr);
-            // Na etapa 1 (escolhendo Até), só permite datas >= De com atendimento
-            const disponivel = temAtend && (calEtapa !== 1 || dataStr >= dataDe);
+            // Na etapa 1 (escolhendo Até), só permite datas >= De com atendimento; nunca permite data futura
+            const disponivel = temAtend && dataStr <= hoje && (calEtapa !== 1 || dataStr >= dataDe);
 
             const ehDe  = dataStr === dataDe;
             const ehAte = dataStr === dataAte;
@@ -444,7 +458,15 @@
         const mapa = {};
         atendimentos.forEach(a => {
             const chave = new Date(a.data || a.dataHora || 0).toLocaleDateString('pt-BR');
-            mapa[chave] = (mapa[chave] || 0) + 1;
+            if (!mapa[chave]) mapa[chave] = { count: 0, rotas: new Set(), saldo: 0 };
+            mapa[chave].count++;
+            const f = a.financeiro || {};
+            mapa[chave].saldo += Number(f.saldoFinal ?? (Number(f.totalGeral || 0) - Number(f.comissaoValor || 0)));
+            const rota = a.cliente?.rota
+                || mapaRotas[a.cliente?.id]
+                || mapaRotas[String(a.cliente?.numero || '')]
+                || a.rota;
+            if (rota) mapa[chave].rotas.add(rota);
         });
         return Object.entries(mapa).sort((a, b) => {
             const [da,ma,ya] = a[0].split('/').map(Number);
@@ -504,7 +526,6 @@
                             <div class="item-badge${i===0?' destaque':''}">-${qtd}</div>
                         </div>`).join('')}
                 </div>
-                <div style="font-size:12px;font-weight:bold;color:#ffeb3b;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-top:8px;">Balanço Financeiro</div>
             </div>` : ''}
 
             <!-- Máquinas em posse -->
@@ -519,8 +540,13 @@
                             <div class="item-badge${i===0?' destaque':''}" style="${i===0?'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;':''}">-${qtd}</div>
                         </div>`).join('')}
                 </div>
-                <div style="font-size:12px;font-weight:bold;color:#ffeb3b;text-transform:uppercase;letter-spacing:1px;text-align:center;margin-top:8px;">Balanço Financeiro</div>
             </div>` : ''}
+
+            <!-- Rótulo Balanço Financeiro -->
+            <div id="tituloFinanceiro" style="text-align:center; font-size:22px; font-weight:bold; color:#fff; margin:24px 0 14px; position:relative;">
+                💰 Balanço Financeiro
+                <div style="height:1px; background:linear-gradient(to right, transparent, rgba(255,235,59,0.4), transparent); margin-top:10px;"></div>
+            </div>
 
             <!-- Seletor de período -->
             <div class="seletor-periodo" onclick="abrirCalendario()" style="cursor:pointer;">
@@ -592,12 +618,14 @@
                     const dataFicha = new Date(a.data || a.dataHora || 0).toLocaleDateString('pt-BR');
                     return `
                 <div class="ficha-card">
-                    ${fotoUrl ? `
-                    <div class="ficha-foto-wrap" onclick="abrirFoto('${fotoUrl}')">
-                        <img src="${fotoUrl}" class="ficha-foto" alt="Ficha">
-                        <div class="ficha-foto-overlay">🔍</div>
+                    <div class="ficha-foto-col">
+                        ${fotoUrl ? `
+                        <div class="ficha-foto-wrap" onclick="abrirFoto('${fotoUrl}')">
+                            <img src="${fotoUrl}" class="ficha-foto" alt="Ficha">
+                            <div class="ficha-foto-overlay">🔍</div>
+                        </div>` : `<div class="ficha-foto-wrap ficha-sem-foto">Sem<br>foto</div>`}
                         <div class="ficha-foto-data">${dataFicha}</div>
-                    </div>` : `<div class="ficha-foto-wrap ficha-sem-foto">Sem<br>foto</div>`}
+                    </div>
                     <div class="ficha-info">
                         <div class="ficha-numero">Nº ${a.cliente?.numero || i+1} — ${a.cliente?.nome || 'Cliente'}</div>
                         <div class="ficha-linha">
@@ -629,7 +657,7 @@
             <!-- Máquinas atendidas no período -->
             ${maquinas.length > 0 && (dataDe || dataAte) ? `
             <div class="secao">
-                <div class="secao-titulo">🎰 Máquinas Atendidas</div>
+                <div class="secao-titulo" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10px;">🎰 Máquinas Atendidas no Período Selecionado</div>
                 <div class="lista-card">
                     ${maquinas.map(([nome,qtd]) => `
                         <div class="lista-item">
@@ -640,21 +668,58 @@
             </div>` : ''}
 
             <!-- Por dia -->
-            ${porDia.length > 1 && (dataDe || dataAte) ? `
+            ${porDia.length > 0 && (dataDe || dataAte) ? `
             <div class="secao">
-                <div class="secao-titulo">📅 Atendimentos por Dia</div>
+                <div class="secao-titulo">📅 Total por Dia</div>
                 <div class="lista-card">
-                    ${porDia.map(([data,count]) => `
-                        <div class="dia-item">
-                            <div class="dia-data">${data}</div>
-                            <div class="dia-count">${count} atendimento${count!==1?'s':''}</div>
-                        </div>`).join('')}
+                    ${porDia.map(([data,{count,rotas,saldo}]) => {
+                        const nums = [...rotas].map(r => r.replace(/^rota\s*/i, '').replace(/^r\.\s*/i, '').trim());
+                        const rotasStr = nums.length > 0 ? `Rota ${nums.join(' / ')}` : '';
+                        return `
+                        <div class="dia-item" style="gap:6px;">
+                            <span class="dia-data" style="flex-shrink:0;">${data}</span>
+                            <span style="font-size:13px; color:rgba(255,255,255,0.5); flex-shrink:0;">Qtd ${count}</span>
+                            <span style="font-size:13px; color:#ffeb3b; flex:1; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${rotasStr}</span>
+                            <span style="font-size:13px; font-weight:bold; color:#a5d6a7; flex-shrink:0;">${moeda(saldo)}</span>
+                        </div>`;
+                    }).join('')}
                 </div>
             </div>` : ''}
         `;
+        setupTopoObserver();
     }
 
     window._renderizar = renderizar;
+
+    function atualizarTopoFinDatas() {
+        const el = document.getElementById('topoFinDatas');
+        if (!el) return;
+        const de  = formatarDataBR(dataDe)  || 'Selecione';
+        const ate = formatarDataBR(dataAte) || '';
+        el.textContent = (ate && ate !== de) ? `${de} → ${ate}` : de;
+    }
+
+    function setupTopoObserver() {
+        if (window._topoScrollHandler) {
+            window.removeEventListener('scroll', window._topoScrollHandler);
+        }
+
+        window._topoScrollHandler = function() {
+            const tituloFin       = document.getElementById('tituloFinanceiro');
+            const topoFin         = document.getElementById('topoFin');
+            const tituloPrincipal = document.getElementById('tituloPrincipal');
+            if (!topoFin || !tituloPrincipal) return;
+
+            const rolou  = window.scrollY > 10;
+            const passou = tituloFin ? tituloFin.getBoundingClientRect().top < 0 : false;
+
+            tituloPrincipal.style.display = rolou ? 'none' : '';
+            topoFin.classList.toggle('visivel', passou);
+            if (passou) atualizarTopoFinDatas();
+        };
+
+        window.addEventListener('scroll', window._topoScrollHandler, { passive: true });
+    }
 
     window.abrirFoto = function(url) {
         document.getElementById('lbImg').src = url;
@@ -674,15 +739,31 @@
     });
 
     // ── Inicialização ─────────────────────────────────────────────
-    const [todos, posseAcumulada, colaboradores] = await Promise.all([
+    const [todos, posseAcumulada, colaboradores, clientes] = await Promise.all([
         dbListarAtendimentos(),
         dbLerPosseAcumulada(usuarioLogado),
-        dbListarColaboradores()
+        dbListarColaboradores(),
+        dbListarClientes()
     ]);
     colaboradorObj  = colaboradores.find(c => c.nome === usuarioLogado) || null;
+
+    // Mapa para cruzar cliente do atendimento → rota atual
+    const mapaRotas = {};
+    clientes.forEach(c => {
+        if (!c.rota) return;
+        if (c.firebaseUrl) mapaRotas[c.firebaseUrl] = c.rota;
+        if (c.numero)      mapaRotas[String(c.numero)] = c.rota;
+    });
     todosAtendimentos = todos.filter(a => a.atendente === usuarioLogado);
     datasComAtendimento = new Set(
-        todosAtendimentos.map(a => new Date(a.data || a.dataHora || 0).toISOString().slice(0,10))
+        todosAtendimentos
+            .filter(a => {
+                const dataStr = dataLocalStr(a.data || a.dataHora || 0);
+                if (!dataStr) return false;
+                const saldo = Number(a.financeiro?.saldoFinal ?? (Number(a.financeiro?.totalGeral || 0) - Number(a.financeiro?.comissaoValor || 0)));
+                return dataStr <= hoje && saldo > 0;
+            })
+            .map(a => dataLocalStr(a.data || a.dataHora || 0))
     );
 
     window._posseAcumuladaProdutos = posseAcumulada.produtos || {};

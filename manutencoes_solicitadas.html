@@ -859,8 +859,11 @@
         }
 
         if (!navigator.geolocation) {
-            const paradas = enderecos.map(e => encodeURIComponent(e)).join('/');
-            window.open(`https://www.google.com/maps/dir/${paradas}`, '_blank');
+            const destino = encodeURIComponent(enderecos[enderecos.length - 1]);
+            const waypoints = enderecos.slice(0, -1).map(e => encodeURIComponent(e)).join('|');
+            let url = `https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=${destino}&travelmode=driving`;
+            if (waypoints) url += `&waypoints=${waypoints}`;
+            window.open(url, '_blank');
             return;
         }
 
@@ -870,10 +873,9 @@
         btn.style.pointerEvents = 'none';
 
         function abrirConfiguracaoGPS() {
-            // Tenta abrir as configurações de localização do dispositivo
             const tentativas = [
                 'intent://settings#Intent;action=android.settings.LOCATION_SOURCE_SETTINGS;scheme=android-app;end',
-                'App-Prefs:root=Privacy&path=LOCATION'  // iOS
+                'App-Prefs:root=Privacy&path=LOCATION'
             ];
             const link = document.createElement('a');
             link.href = tentativas[0];
@@ -881,11 +883,11 @@
         }
 
         function gerarRotaComOrigem(origem, enderecos) {
-            const paradas = enderecos.map(e => encodeURIComponent(e)).join('/');
-            const base = origem
-                ? `https://www.google.com/maps/dir/${encodeURIComponent(origem)}/${paradas}`
-                : `https://www.google.com/maps/dir/${paradas}`;
-            window.open(base, '_blank');
+            const destino = encodeURIComponent(enderecos[enderecos.length - 1]);
+            const waypoints = enderecos.slice(0, -1).map(e => encodeURIComponent(e)).join('|');
+            let url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${destino}&travelmode=driving`;
+            if (waypoints) url += `&waypoints=${waypoints}`;
+            window.open(url, '_blank');
         }
 
         navigator.geolocation.getCurrentPosition(
@@ -1164,7 +1166,8 @@
         const DOIS_DIAS_MS = 2 * 24 * 60 * 60 * 1000;
 
         const expirados = lista.filter(m => {
-            if (!m.selecionadoPor || !m.dataSelecionado) return false;
+            if (!m.selecionadoPor) return false;
+            if (!m.dataSelecionado) return true; // sem timestamp = registro antigo, desmarcar
             const ts = Date.parse(m.dataSelecionado);
             return !Number.isNaN(ts) && (agora - ts) > DOIS_DIAS_MS;
         });

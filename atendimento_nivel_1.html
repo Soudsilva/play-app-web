@@ -1120,10 +1120,21 @@
             }
 
             // --- 3. Montagem do Objeto Final ---
+            const clienteCompleto = listaClientes.find(c => c.firebaseUrl === idCliente) || {};
             const dadosAtendimento = {
                 atendente,
                 data: atendimentoEmEdicaoId && dataOriginalEdicao ? dataOriginalEdicao : new Date().toISOString(),
-                cliente: { id: idCliente, nome: clienteNome, numero: clienteNumero },
+                cliente: {
+                    id:              idCliente,
+                    nome:            clienteCompleto.nome            || clienteNome,
+                    numero:          clienteCompleto.numero          || clienteNumero,
+                    rota:            clienteCompleto.rota            || '',
+                    comissao:        clienteCompleto.comissao        || '',
+                    endereco:        clienteCompleto.endereco        || '',
+                    numero_endereco: clienteCompleto.numero_endereco || '',
+                    cidade:          clienteCompleto.cidade          || '',
+                    ponto_aberto:    clienteCompleto.ponto_aberto    || '',
+                },
                 produtos, financeiro, fotos
             };
 
