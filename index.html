@@ -188,10 +188,6 @@
                     <span class="icone">📍</span>
                     <span>Check in de Rotas</span>
                 </div>
-                <div class="botao-sub" onclick="abrirTela('financeiro')">
-                    <span class="icone">💰</span>
-                    <span>Financeiro</span>
-                </div>
                 <div class="botao-sub" onclick="abrirTela('depositos')">
                     <span class="icone">🏦</span>
                     <span>Depósitos</span>
@@ -334,6 +330,10 @@
     window.abrirTela = function(tela){
         if (tela === 'manutencao') {
             window.location.href = 'manutencoes_solicitadas.html';
+            return;
+        }
+        if (tela === 'depositos') {
+            window.location.href = 'depositos.html';
             return;
         }
         console.log("Abrindo tela genérica: " + tela);
