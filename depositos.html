@@ -278,6 +278,51 @@
         if (!mesesDoAno.includes(mesAtual)) selMes.value = mesesDoAno[mesesDoAno.length - 1];
     }
 
+    function buildDiaCardHTML(data, vals) {
+        const totalDia = vals.dinheiro + vals.pix;
+        return `
+        <div class="dia-row">
+            <div class="dia-linha1">
+                <span class="dia-data">${formatarDataBR(data)}</span>
+            </div>
+            ${vals.clientesPix.length > 0 ? `
+            <div class="dia-pix-section">
+                <div class="dia-pix-titulo">💳 Pix</div>
+                ${vals.clientesPix.map(c => `
+                <div class="dia-pix-item">
+                    <span class="dia-pix-nome">${c.nome}</span>
+                    <span class="dia-pix-val">${moeda(c.valor)}</span>
+                </div>`).join('')}
+            </div>` : ''}
+            <div class="dia-linha3">
+                <div class="dia-resumo">
+                    <div class="dia-resumo-item">
+                        <span class="dia-resumo-label">Total do dia</span>
+                        <span class="dia-resumo-val">${moeda(totalDia)}</span>
+                    </div>
+                    ${vals.pix > 0 ? `
+                    <div class="dia-resumo-item">
+                        <span class="dia-resumo-label">Total em Pix</span>
+                        <span class="dia-resumo-val pix">${moeda(vals.pix)}</span>
+                    </div>` : ''}
+                    ${vals.comissao > 0 ? `
+                    <div class="dia-resumo-item">
+                        <span class="dia-resumo-label">Comissões</span>
+                        <span class="dia-resumo-val com">${moeda(vals.comissao)}</span>
+                    </div>` : ''}
+                    <div class="dia-resumo-item">
+                        <span class="dia-resumo-label">Dinheiro</span>
+                        <span class="dia-resumo-val din">${moeda(vals.dinheiro)}</span>
+                    </div>
+                </div>
+                <div class="dia-depositar-wrap">
+                    <span class="dia-depositar-label">Saldo</span>
+                    <span class="dia-depositar-val">${moeda(vals.saldo)}</span>
+                </div>
+            </div>
+        </div>`;
+    }
+
     function renderizarDias() {
         const mes = parseInt(selMes.value);
         const ano = parseInt(selAno.value);
@@ -312,50 +357,7 @@
             return;
         }
 
-        const htmlDias = diasOrdenados.map(([data, vals]) => {
-            const totalDia = vals.dinheiro + vals.pix;
-            return `
-            <div class="dia-row">
-                <div class="dia-linha1">
-                    <span class="dia-data">${formatarDataBR(data)}</span>
-                </div>
-                ${vals.clientesPix.length > 0 ? `
-                <div class="dia-pix-section">
-                    <div class="dia-pix-titulo">💳 Pix</div>
-                    ${vals.clientesPix.map(c => `
-                    <div class="dia-pix-item">
-                        <span class="dia-pix-nome">${c.nome}</span>
-                        <span class="dia-pix-val">${moeda(c.valor)}</span>
-                    </div>`).join('')}
-                </div>` : ''}
-                <div class="dia-linha3">
-                    <div class="dia-resumo">
-                        <div class="dia-resumo-item">
-                            <span class="dia-resumo-label">Total do dia</span>
-                            <span class="dia-resumo-val">${moeda(totalDia)}</span>
-                        </div>
-                        ${vals.pix > 0 ? `
-                        <div class="dia-resumo-item">
-                            <span class="dia-resumo-label">Total em Pix</span>
-                            <span class="dia-resumo-val pix">${moeda(vals.pix)}</span>
-                        </div>` : ''}
-                        ${vals.comissao > 0 ? `
-                        <div class="dia-resumo-item">
-                            <span class="dia-resumo-label">Comissões</span>
-                            <span class="dia-resumo-val com">${moeda(vals.comissao)}</span>
-                        </div>` : ''}
-                        <div class="dia-resumo-item">
-                            <span class="dia-resumo-label">Dinheiro</span>
-                            <span class="dia-resumo-val din">${moeda(vals.dinheiro)}</span>
-                        </div>
-                    </div>
-                    <div class="dia-depositar-wrap">
-                        <span class="dia-depositar-label">Saldo</span>
-                        <span class="dia-depositar-val">${moeda(vals.saldo)}</span>
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
+        const htmlDias = diasOrdenados.map(([data, vals]) => buildDiaCardHTML(data, vals)).join('');
 
         secaoDias.innerHTML = `
             <div class="secao">
@@ -364,36 +366,40 @@
             </div>`;
     }
 
-    function renderizarFaltaEDepositos() {
-        const meusAtendimentos = todosAtendimentos.filter(a => a.atendente === usuarioLogado);
-
-        // Total acumulado de todos os atendimentos (dinheiro - comissão)
-        const totalAtendimentos = meusAtendimentos
-            .reduce((s, a) => s + (Number(a.financeiro?.dinheiro || 0) - Number(a.financeiro?.comissaoValor || 0)), 0);
-
-        // Último dia com atendimento
-        const ultimaData = meusAtendimentos
-            .map(a => dataLocalStr(a.data || a.dataHora || 0))
-            .filter(Boolean)
-            .sort()
-            .at(-1);
-        const labelUltimaData = ultimaData ? formatarDataBR(ultimaData) : '';
-
-        const totalDepositado = todosDepositos.reduce((s, d) => s + Number(d.valor || 0), 0);
-        const falta = totalAtendimentos - totalDepositado;
-
-        const pct = totalAtendimentos > 0 ? Math.min(100, Math.round(totalDepositado / totalAtendimentos * 100)) : 0;
-        document.getElementById('secaoFalta').innerHTML = `
-            <div class="card-falta" style="flex-direction:column; gap:14px;">
-
+    function buildGreenCard(totalCobr, totalDep, dataLabel, deposito) {
+        const falta = totalCobr - totalDep;
+        const pct = totalCobr > 0 ? Math.min(100, Math.round(totalDep / totalCobr * 100)) : 0;
+        const depHoje = deposito && ehHoje(deposito.data);
+        const depHTML = deposito ? `
+            <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:14px;">
+                <div style="font-size:11px; font-weight:bold; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">📬 Depósito Realizado</div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="flex-shrink:0; width:56px; height:70px; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.3); cursor:${deposito.foto ? 'pointer' : 'default'};"
+                        ${deposito.foto ? `onclick="abrirFoto('${deposito.foto}')"` : ''}>
+                        ${deposito.foto
+                            ? `<img src="${deposito.foto}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="Envelope">`
+                            : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,0.3);text-align:center;padding:4px;box-sizing:border-box;">Sem foto</div>`}
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:3px;">${formatarDataBR(dataLocalStr(deposito.data) || '')}${deposito.obs ? ` · <span style="color:#ffeb3b;font-weight:bold;">${deposito.obs}</span>` : ''}</div>
+                        <div style="font-size:22px; font-weight:bold; color:#a5d6a7;">${moeda(deposito.valor)}</div>
+                        <div style="font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; color:${deposito.conferido ? '#a5d6a7' : '#ffb74d'};">${deposito.conferido ? 'Envelope conferido' : 'Aguardando conferência'}</div>
+                    </div>
+                    ${depHoje ? `
+                    <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+                        <button onclick="abrirEdicaoDeposito('${deposito.firebaseUrl}')" style="background:rgba(255,235,59,0.12);border:1px solid rgba(255,235,59,0.35);border-radius:10px;color:#ffeb3b;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">✏️</button>
+                        <button onclick="excluirDeposito('${deposito.firebaseUrl}')" style="background:rgba(244,67,54,0.12);border:1px solid rgba(244,67,54,0.35);border-radius:10px;color:#ef9a9a;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">🗑️</button>
+                    </div>` : ''}
+                </div>
+            </div>` : '';
+        return `
+            <div class="card-falta" style="flex-direction:column; gap:14px; margin-bottom:18px;">
                 <div style="font-size:11px; font-weight:bold; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:1px; text-align:center;">
-                    Soma dos Saldos até <span style="color:#ffeb3b; font-size:13px;">${labelUltimaData}</span>
+                    Soma dos Saldos até <span style="color:#ffeb3b; font-size:13px;">${dataLabel}</span>
                 </div>
-
                 <div style="text-align:center;">
-                    <div style="font-size:36px; font-weight:bold; color:#fff; line-height:1;">${moeda(totalAtendimentos)}</div>
+                    <div style="font-size:36px; font-weight:bold; color:#fff; line-height:1;">${moeda(totalCobr)}</div>
                 </div>
-
                 <div>
                     <div style="display:flex; justify-content:space-between; font-size:10px; color:rgba(255,255,255,0.4); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">
                         <span>Depositado ${pct}%</span>
@@ -403,7 +409,6 @@
                         <div style="width:${pct}%; background:linear-gradient(90deg,#1976d2,#42a5f5); height:100%; border-radius:10px; transition:width 0.6s ease;"></div>
                     </div>
                 </div>
-
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:14px;">
                     ${falta <= 0
                         ? `<div class="card-ate-ok" style="text-align:center; background:rgba(76,175,80,0.18); border:2px solid rgba(76,175,80,0.7); border-radius:12px; padding:12px 8px;">
@@ -416,40 +421,88 @@
                     }
                     <div style="text-align:center; background:rgba(33,150,243,0.12); border:1px solid rgba(33,150,243,0.35); border-radius:12px; padding:12px 8px;">
                         <div style="font-size:11px; font-weight:bold; color:#64b5f6; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">Depositado</div>
-                        <div style="font-size:22px; font-weight:bold; color:#90caf9;">${moeda(totalDepositado)}</div>
+                        <div style="font-size:22px; font-weight:bold; color:#90caf9;">${moeda(totalDep)}</div>
                     </div>
                 </div>
-
+                ${depHTML}
             </div>`;
+    }
 
+    function renderizarFaltaEDepositos() {
+        const meusAtendimentos = todosAtendimentos.filter(a => a.atendente === usuarioLogado);
+
+        // Saldo por dia (all-time) com dados completos para o card detalhado
+        const porDiaAllTime = {};
+        meusAtendimentos.forEach(a => {
+            const dataStr = dataLocalStr(a.data || a.dataHora || 0);
+            if (!dataStr) return;
+            const pixArr = a.financeiro?.pix || [];
+            const dinheiro = Number(a.financeiro?.dinheiro || 0);
+            const pixTotal = pixArr.reduce((s, p) => s + Number(p.valor || 0), 0);
+            const comissao = Number(a.financeiro?.comissaoValor || 0);
+            const saldo = dinheiro - comissao;
+            if (!porDiaAllTime[dataStr]) porDiaAllTime[dataStr] = { saldo:0, dinheiro:0, pix:0, comissao:0, clientesPix:[] };
+            porDiaAllTime[dataStr].saldo    += saldo;
+            porDiaAllTime[dataStr].dinheiro += dinheiro;
+            porDiaAllTime[dataStr].pix      += pixTotal;
+            porDiaAllTime[dataStr].comissao += comissao;
+            if (pixTotal > 0) porDiaAllTime[dataStr].clientesPix.push({ nome: a.cliente?.nome || 'Cliente', valor: pixTotal });
+        });
+
+        const cobDias = Object.entries(porDiaAllTime).sort((a, b) => a[0].localeCompare(b[0]));
         const depositosOrdenados = [...todosDepositos].sort((a, b) => (a.data || '').localeCompare(b.data || ''));
-        const htmlDeps = depositosOrdenados.length > 0
-            ? depositosOrdenados.map(d => `
-                <div class="dep-item">
-                    <div class="dep-foto-wrap" ${d.foto ? `onclick="abrirFoto('${d.foto}')"` : ''}>
-                        ${d.foto ? `<img src="${d.foto}" class="dep-foto" alt="Envelope">` : `<div class="dep-sem-foto">Sem foto</div>`}
-                    </div>
-                    <div class="dep-info" style="display:flex; align-items:center; gap:10px;">
-                        <div style="flex-shrink:0; font-size:26px; line-height:1; opacity:${d.conferido ? '1' : '0.7'};">${d.conferido ? '✅' : '⏳'}</div>
-                        <div>
-                            <div class="dep-data">${formatarDataBR(d.data?.slice(0,10) || '')}${d.obs ? ` · <span style="color:#ffeb3b;font-weight:bold;">${d.obs}</span>` : ''}</div>
-                            <div class="dep-valor">${moeda(d.valor)}</div>
-                            <div style="font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; color:${d.conferido ? '#a5d6a7' : '#ffb74d'};">${d.conferido ? 'Envelope conferido' : 'Aguardando conferência'}</div>
-                        </div>
-                    </div>
-                    ${ehHoje(d.data) ? `
-                    <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
-                        <button onclick="abrirEdicaoDeposito('${d.firebaseUrl}')" style="background:rgba(255,235,59,0.12);border:1px solid rgba(255,235,59,0.35);border-radius:10px;color:#ffeb3b;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">✏️</button>
-                        <button onclick="excluirDeposito('${d.firebaseUrl}')" style="background:rgba(244,67,54,0.12);border:1px solid rgba(244,67,54,0.35);border-radius:10px;color:#ef9a9a;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">🗑️</button>
-                    </div>` : ''}
-                </div>`).join('')
-            : `<div class="vazio-msg">Nenhum depósito registrado ainda.</div>`;
 
-        document.getElementById('secaoDepositos').innerHTML = `
-            <div class="secao">
-                <div class="secao-titulo">📬 Depósitos Realizados</div>
-                ${depositosOrdenados.length > 0 ? `<div class="lista-card" style="padding:8px;">${htmlDeps}</div>` : htmlDeps}
-            </div>`;
+        // Divide em segmentos: cada depósito fecha um segmento
+        // Segmento = cobranças entre o depósito anterior e este depósito
+        const segmentos = [];
+        let prevDepDate = '';
+        for (const dep of depositosOrdenados) {
+            const depDate = dataLocalStr(dep.data) || '';
+            const cobsDoSeg = cobDias.filter(([d]) => (!prevDepDate || d > prevDepDate) && d <= depDate);
+            segmentos.push({ cobs: cobsDoSeg, deposito: dep });
+            prevDepDate = depDate;
+        }
+        // Segmento aberto (cobranças após último depósito)
+        const cobsAberto = cobDias.filter(([d]) => !prevDepDate || d > prevDepDate);
+        if (cobsAberto.length > 0) {
+            segmentos.push({ cobs: cobsAberto, deposito: null });
+        }
+
+        document.getElementById('secaoFalta').innerHTML = '';
+
+        if (segmentos.length === 0) {
+            document.getElementById('secaoDepositos').innerHTML = `<div class="vazio-msg">Nenhuma movimentação registrada ainda.</div>`;
+            return;
+        }
+
+        const htmlItems = [];
+        let residual = 0; // saldo não quitado de segmentos anteriores
+        for (const seg of segmentos) {
+            // Cards detalhados do segmento
+            for (const [data, vals] of seg.cobs) {
+                htmlItems.push(buildDiaCardHTML(data, vals));
+            }
+
+            const segTotal = residual + seg.cobs.reduce((s, [, v]) => s + v.saldo, 0);
+            if (segTotal > 0) {
+                if (seg.deposito) {
+                    // Segmento fechado: card verde completo com depósito dentro
+                    const ultimaDataSeg = seg.cobs[seg.cobs.length - 1][0];
+                    const valorDep = Number(seg.deposito.valor || 0);
+                    residual = Math.max(0, segTotal - valorDep);
+                    htmlItems.push(buildGreenCard(segTotal, valorDep, formatarDataBR(ultimaDataSeg), seg.deposito));
+                } else {
+                    // Segmento aberto: card verde pequeno só com faltou depositar
+                    htmlItems.push(`
+                        <div class="card-falta" style="flex-direction:column; align-items:center; gap:6px; padding:16px 20px; margin-bottom:18px;">
+                            <div style="font-size:11px; font-weight:bold; color:#ff9800; text-transform:uppercase; letter-spacing:0.5px;">⚠ Faltou depositar</div>
+                            <div style="font-size:32px; font-weight:bold; color:#ffb74d;">${moeda(segTotal)}</div>
+                        </div>`);
+                }
+            }
+        }
+
+        document.getElementById('secaoDepositos').innerHTML = `<div class="secao">${htmlItems.join('')}</div>`;
     }
 
     window.previewFotoEnv = function(e) {

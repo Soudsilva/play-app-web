@@ -63,6 +63,20 @@
             opacity: 0.45;
             cursor: not-allowed;
         }
+
+        /* ===================== MODO TESTE ===================== */
+        /* PROVISÓRIO — remover junto com o bloco JS marcado      */
+        .tag-teste {
+            display: inline-block; background: #ff9800; color: white;
+            font-size: 11px; font-weight: bold; padding: 2px 8px;
+            border-radius: 20px; margin-left: 8px; vertical-align: middle;
+        }
+        .btn-excluir-teste {
+            flex: 1; border: 2px dashed #ff9800; border-radius: 10px;
+            padding: 11px 12px; background: rgba(255,152,0,0.12);
+            color: #ff9800; font-weight: bold; cursor: pointer; font-size: 14px;
+        }
+        /* =================== FIM MODO TESTE =================== */
     </style>
 </head>
 <body>
@@ -192,6 +206,8 @@
             const dataFormatada = new Date(envio.data).toLocaleString('pt-BR');
             const clienteNome = envio.cliente?.nome || 'Cliente Desconhecido';
             const clienteNumero = envio.cliente?.numero || 'S/N';
+            // MODO TESTE — tag visual nos cards de teste (PROVISÓRIO)
+            const tagTeste = envio._teste ? `<span class="tag-teste">🧪 TESTE</span>` : '';
 
             // --- 1. PRODUTOS ---
             let htmlProdutos = '';
@@ -205,23 +221,33 @@
             // --- 2. FINANCEIRO ---
             let htmlFin = `<div class="secao-titulo">Financeiro</div>`;
             const fin = envio.financeiro || {};
-            
+
             // Área Pix do Card
             if (fin.pix && fin.pix.length > 0) {
                 fin.pix.forEach(p => {
                     htmlFin += `
                         <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-bottom: 5px; font-size: 13px;">
-                            <strong style="color: #ffeb3b;">Pix ${p.numero}:</strong> Cont: ${p.contAnt} ➔ ${p.contAtual} <br>
-                            <div style="margin-top: 3px;">Valor apurado: <span style="color:#4caf50; font-weight:bold;">${formatarMoeda(p.valor)}</span></div>
+                            <strong style="color: #ffeb3b;">💠 Pix ${p.numero}:</strong>
+                            Cont: <strong>${p.contAnt}</strong> ➔ <strong>${p.contAtual}</strong>
+                            &nbsp;|&nbsp; Valor: <span style="color:#4caf50; font-weight:bold; font-size:15px;">${formatarMoeda(p.valor)}</span>
                         </div>
                     `;
                 });
             }
-            
+
+            // Dinheiro em espécie — destacado
+            if ((fin.dinheiro ?? '') !== '') {
+                htmlFin += `
+                    <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-bottom: 5px; font-size: 13px;">
+                        <strong style="color: #ffeb3b;">💵 Dinheiro em Espécie:</strong>
+                        &nbsp;<span style="color:white; font-weight:bold; font-size:15px;">${formatarMoeda(fin.dinheiro)}</span>
+                    </div>
+                `;
+            }
+
             // Totais
             htmlFin += `
-                <div class="info-linha" style="margin-top: 10px;"><span>Dinheiro em Espécie</span> <strong>${formatarMoeda(fin.dinheiro)}</strong></div>
-                <div class="info-linha"><span>Total Geral</span> <strong>${formatarMoeda(fin.totalGeral)}</strong></div>
+                <div class="info-linha" style="margin-top: 10px;"><span>Total Geral</span> <strong>${formatarMoeda(fin.totalGeral)}</strong></div>
                 <div class="info-linha"><span>Comissão (${fin.comissaoPorcentagem || 0}%)</span> <strong style="color:#f44336;">- ${formatarMoeda(fin.comissaoValor)}</strong></div>
                 <div class="info-linha"><span>Saldo Final (Acerto)</span> <strong style="color:#4caf50; font-size:18px;">${formatarMoeda(fin.saldoFinal)}</strong></div>
             `;
@@ -262,11 +288,30 @@
                 </div>
             ` : '';
 
-            card.innerHTML = `<div class="envio-header"><div class="envio-data">📅 Recebido em ${dataFormatada}</div><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}`;
+            // ================================================================
+            // MODO TESTE — BOTÃO DE EXCLUSÃO PROVISÓRIO
+            // Aparece em todos os envios do usuário logado (ignora restrição de data)
+            // REMOVER este bloco e o CSS marcado "MODO TESTE" para desativar
+            // ================================================================
+            const ehMeuEnvio = (envio.atendente === usuarioLogado);
+            const htmlExcluirTeste = (!liberado && ehMeuEnvio) ? `
+                <div class="envio-acoes" style="border-top: 1px dashed rgba(255,152,0,0.4);">
+                    <div class="acoes-linha">
+                        <button class="btn-excluir-teste btn-excluir-teste-envio">🧪 Excluir (Modo Teste)</button>
+                    </div>
+                </div>
+            ` : '';
+            // ================================================================
+            // FIM MODO TESTE
+            // ================================================================
+
+            card.innerHTML = `<div class="envio-header"><div class="envio-data">📅 Recebido em ${dataFormatada}${tagTeste}</div><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}${htmlExcluirTeste}`;
             if (liberado) {
                 card.querySelector('.btn-editar-envio')?.addEventListener('click', () => window.editarEnvio(envio));
                 card.querySelector('.btn-excluir-envio')?.addEventListener('click', () => window.excluirEnvio(envio.firebaseUrl));
             }
+            // MODO TESTE — listener do botão de exclusão (PROVISÓRIO)
+            card.querySelector('.btn-excluir-teste-envio')?.addEventListener('click', () => window.excluirRegistroTeste(envio.firebaseUrl));
             container.appendChild(card);
         });
     }
@@ -314,6 +359,22 @@
             await dbExcluirAtendimento(id);
         }
     };
+
+    // ================================================================
+    // MODO TESTE — FUNÇÃO DE EXCLUSÃO PROVISÓRIA
+    // Permite excluir registros _teste:true independente de data/usuário
+    // REMOVER esta função e os elementos HTML/CSS marcados "MODO TESTE"
+    // ================================================================
+    window.excluirRegistroTeste = async function(id) {
+        const envio = atendimentosSalvos.find(item => item.firebaseUrl === id);
+        if (!envio || envio.atendente !== usuarioLogado) return;
+        if (await window.playConfirm("Excluir este envio?\nEsta ação não pode ser desfeita.")) {
+            await dbExcluirAtendimento(id);
+        }
+    };
+    // ================================================================
+    // FIM MODO TESTE
+    // ================================================================
 </script>
 </body>
 </html>
