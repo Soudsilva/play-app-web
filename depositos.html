@@ -89,6 +89,45 @@
         .lb-fechar { position:absolute; top:16px; right:16px; font-size:28px; color:#fff; cursor:pointer; background:rgba(255,255,255,0.1); border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; }
 
         .vazio-msg { text-align:center; padding:24px 20px; color:rgba(255,255,255,0.35); font-size:15px; }
+
+        @keyframes sealPulse {
+            0%   { box-shadow: 0 0 0 0 rgba(76,175,80,0.5); }
+            70%  { box-shadow: 0 0 0 6px rgba(76,175,80,0); }
+            100% { box-shadow: 0 0 0 0 rgba(76,175,80,0); }
+        }
+        @keyframes pendingBlink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.45; }
+        }
+        .badge-conferido {
+            display:inline-flex; align-items:center; gap:5px;
+            background:rgba(76,175,80,0.15); border:1px solid rgba(76,175,80,0.5);
+            border-radius:20px; padding:4px 10px; font-size:11px; font-weight:bold;
+            color:#a5d6a7; letter-spacing:0.4px; text-transform:uppercase;
+            animation: sealPulse 2.5s ease-out infinite;
+        }
+        .badge-pendente {
+            display:inline-flex; align-items:center; gap:5px;
+            background:rgba(255,152,0,0.12); border:1px dashed rgba(255,152,0,0.5);
+            border-radius:20px; padding:4px 10px; font-size:11px; font-weight:bold;
+            color:#ffb74d; letter-spacing:0.4px; text-transform:uppercase;
+        }
+        @keyframes pulseOk {
+            0%   { box-shadow: 0 0 10px rgba(76,175,80,0.3); border-color: rgba(76,175,80,0.7); }
+            50%  { box-shadow: 0 0 26px rgba(76,175,80,0.7); border-color: rgba(129,199,132,1); }
+            100% { box-shadow: 0 0 10px rgba(76,175,80,0.3); border-color: rgba(76,175,80,0.7); }
+        }
+        @keyframes shimmerOk {
+            0%   { opacity: 1; }
+            50%  { opacity: 0.65; }
+            100% { opacity: 1; }
+        }
+        .card-ate-ok {
+            animation: pulseOk 2s ease-in-out infinite;
+        }
+        .card-ate-ok-texto {
+            animation: shimmerOk 2s ease-in-out infinite;
+        }
     </style>
 </head>
 <body>
@@ -366,10 +405,15 @@
                 </div>
 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:14px;">
-                    <div style="text-align:center; background:rgba(255,111,0,0.15); border:2px solid rgba(255,111,0,0.6); border-radius:12px; padding:12px 8px; box-shadow:0 0 12px rgba(255,111,0,0.2);">
-                        <div style="font-size:11px; font-weight:bold; color:#ff9800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">⚠ Faltou depositar</div>
-                        <div style="font-size:22px; font-weight:bold; color:#ffb74d;">${moeda(falta)}</div>
-                    </div>
+                    ${falta <= 0
+                        ? `<div class="card-ate-ok" style="text-align:center; background:rgba(76,175,80,0.18); border:2px solid rgba(76,175,80,0.7); border-radius:12px; padding:12px 8px;">
+                                <div class="card-ate-ok-texto" style="font-size:13px; font-weight:bold; color:#a5d6a7; letter-spacing:0.5px; line-height:1.4;">✅ Até essa<br>data ok</div>
+                           </div>`
+                        : `<div style="text-align:center; background:rgba(255,111,0,0.15); border:2px solid rgba(255,111,0,0.6); border-radius:12px; padding:12px 8px; box-shadow:0 0 12px rgba(255,111,0,0.2);">
+                                <div style="font-size:11px; font-weight:bold; color:#ff9800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">⚠ Faltou depositar</div>
+                                <div style="font-size:22px; font-weight:bold; color:#ffb74d;">${moeda(falta)}</div>
+                           </div>`
+                    }
                     <div style="text-align:center; background:rgba(33,150,243,0.12); border:1px solid rgba(33,150,243,0.35); border-radius:12px; padding:12px 8px;">
                         <div style="font-size:11px; font-weight:bold; color:#64b5f6; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">Depositado</div>
                         <div style="font-size:22px; font-weight:bold; color:#90caf9;">${moeda(totalDepositado)}</div>
@@ -378,16 +422,20 @@
 
             </div>`;
 
-        const depositosOrdenados = [...todosDepositos].sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+        const depositosOrdenados = [...todosDepositos].sort((a, b) => (a.data || '').localeCompare(b.data || ''));
         const htmlDeps = depositosOrdenados.length > 0
             ? depositosOrdenados.map(d => `
                 <div class="dep-item">
                     <div class="dep-foto-wrap" ${d.foto ? `onclick="abrirFoto('${d.foto}')"` : ''}>
                         ${d.foto ? `<img src="${d.foto}" class="dep-foto" alt="Envelope">` : `<div class="dep-sem-foto">Sem foto</div>`}
                     </div>
-                    <div class="dep-info">
-                        <div class="dep-data">${formatarDataBR(d.data?.slice(0,10) || '')}${d.obs ? ` · <span style="color:#ffeb3b;font-weight:bold;">${d.obs}</span>` : ''}</div>
-                        <div class="dep-valor">${moeda(d.valor)}</div>
+                    <div class="dep-info" style="display:flex; align-items:center; gap:10px;">
+                        <div style="flex-shrink:0; font-size:26px; line-height:1; opacity:${d.conferido ? '1' : '0.7'};">${d.conferido ? '✅' : '⏳'}</div>
+                        <div>
+                            <div class="dep-data">${formatarDataBR(d.data?.slice(0,10) || '')}${d.obs ? ` · <span style="color:#ffeb3b;font-weight:bold;">${d.obs}</span>` : ''}</div>
+                            <div class="dep-valor">${moeda(d.valor)}</div>
+                            <div style="font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; color:${d.conferido ? '#a5d6a7' : '#ffb74d'};">${d.conferido ? 'Envelope conferido' : 'Aguardando conferência'}</div>
+                        </div>
                     </div>
                     ${ehHoje(d.data) ? `
                     <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
@@ -428,7 +476,6 @@
         if (!fotoEnvelopeBase64) return window.playAlert('Tire uma foto do envelope antes de confirmar.');
         const btn = document.getElementById('btnConfirmarDep');
         btn.disabled = true;
-        btn.textContent = 'Salvando...';
         try {
             let fotoUrl = null;
             if (fotoEnvelopeBase64) {
@@ -437,6 +484,15 @@
             const obs = document.getElementById('inputObsDep')?.value?.trim() || '';
             await dbSalvarDeposito({ usuario: usuarioLogado, valor, obs, foto: fotoUrl, data: new Date().toISOString() });
             fotoEnvelopeBase64 = null;
+            valorInput.value = '';
+            const obsInput = document.getElementById('inputObsDep');
+            if (obsInput) obsInput.value = '';
+            const fotoInput = document.getElementById('inputFotoEnv');
+            if (fotoInput) fotoInput.value = '';
+            const btnFoto = document.getElementById('btnFotoEnv');
+            btnFoto.classList.remove('tem-foto');
+            document.getElementById('iconeFotoEnv').style.display = '';
+            btnFoto.querySelectorAll('img').forEach(img => img.remove());
             todosDepositos = await dbListarDepositos(usuarioLogado);
             renderizarFaltaEDepositos();
         } catch(e) {
@@ -444,7 +500,6 @@
             window.playAlert('Erro ao salvar depósito.');
         } finally {
             btn.disabled = false;
-            btn.textContent = 'Confirmar Depósito';
         }
     };
 

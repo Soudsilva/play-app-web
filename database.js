@@ -17,7 +17,8 @@ import {
     onValue,
     update,
     query,
-    limitToLast
+    limitToLast,
+    runTransaction
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
@@ -544,4 +545,92 @@ export function dbEscutarManutencoes(callback) {
         }
         callback(lista);
     });
+}
+
+/* --- FUNÇÕES PARA SELEÇÃO DE ROTAS --- */
+
+// Cria ou sobrescreve a sessão ativa de seleção de rotas
+export async function dbCriarSessaoRotas(sessao) {
+    try {
+        await set(ref(db, 'selecao_rotas/ativa'), sessao);
+    } catch (error) {
+        console.error("ERRO AO CRIAR SESSÃO DE ROTAS:", error);
+        throw error;
+    }
+}
+
+// Escuta em tempo real a sessão ativa de seleção de rotas
+export function dbEscutarSessaoRotas(callback) {
+    onValue(ref(db, 'selecao_rotas/ativa'), (snapshot) => {
+        callback(snapshot.val());
+    });
+}
+
+// Lê uma vez a sessão ativa
+export async function dbObterSessaoRotas() {
+    const snapshot = await get(ref(db, 'selecao_rotas/ativa'));
+    return snapshot.val();
+}
+
+// Encerra a sessão ativa de seleção de rotas
+export async function dbEncerrarSessaoRotas() {
+    try {
+        await remove(ref(db, 'selecao_rotas/ativa'));
+    } catch (error) {
+        console.error("ERRO AO ENCERRAR SESSÃO:", error);
+        throw error;
+    }
+}
+
+// Tenta atomicamente reivindicar a rota de maior valor disponível para o usuário.
+// Retorna { numeroRota, ...dadosRota } se conseguir, ou null se não houver rotas disponíveis.
+export async function dbSelecionarRota(nomeUsuario) {
+    const sessionRef = ref(db, 'selecao_rotas/ativa');
+    const snapshot = await get(sessionRef);
+    const sessao = snapshot.val();
+    if (!sessao || !sessao.rotas) return null;
+
+    const rotas = sessao.rotas;
+
+    // Ordena as disponíveis pelo maior valor estimado
+    const disponiveis = Object.entries(rotas)
+        .filter(([_, r]) => !r.selecionada_por)
+        .sort(([_, a], [__, b]) => (b.valor_estimado || 0) - (a.valor_estimado || 0));
+
+    if (disponiveis.length === 0) return null;
+
+    const [numeroRota] = disponiveis[0];
+    const rotaRef = ref(db, `selecao_rotas/ativa/rotas/${numeroRota}`);
+
+    let rotaClaimada = null;
+
+    await runTransaction(rotaRef, (dadosAtuais) => {
+        if (dadosAtuais && !dadosAtuais.selecionada_por) {
+            rotaClaimada = { ...dadosAtuais, numeroRota };
+            return {
+                ...dadosAtuais,
+                selecionada_por: nomeUsuario,
+                timestamp_selecao: new Date().toISOString()
+            };
+        }
+        // Aborta se já foi pega por outra pessoa
+        return undefined;
+    });
+
+    if (rotaClaimada) {
+        return { ...rotaClaimada, selecionada_por: nomeUsuario };
+    }
+
+    // Rota foi pega por outra pessoa no mesmo instante: tenta a próxima
+    return dbSelecionarRota(nomeUsuario);
+}
+
+// Limpa todas as seleções da sessão ativa (apenas para testes)
+export async function dbLimparSelecoes(numerosRota) {
+    const updates = {};
+    numerosRota.forEach(n => {
+        updates[`selecao_rotas/ativa/rotas/${n}/selecionada_por`] = null;
+        updates[`selecao_rotas/ativa/rotas/${n}/timestamp_selecao`] = null;
+    });
+    await update(ref(db, '/'), updates);
 }
