@@ -6,318 +6,560 @@
     <title>Depósitos</title>
     <style>
         * { user-select: none; -webkit-user-select: none; }
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: radial-gradient(circle at top, rgba(54,105,214,0.55), transparent 34%),
-                        linear-gradient(180deg, #11317a 0%, #0b2256 42%, #071634 100%);
-            display: flex;
-            justify-content: center;
-            color: white;
-            min-height: 100vh;
-        }
-        .app { width: 100%; max-width: 600px; padding: 15px; box-sizing: border-box; padding-bottom: 50px; }
+        body { margin:0; font-family:Arial,sans-serif; background:#0e2d72; display:flex; justify-content:center; color:white; min-height:100vh; }
+        .app { width:100%; max-width:600px; padding:15px; box-sizing:border-box; padding-bottom:200px; }
 
         /* Topo */
-        .topo {
-            display: flex; align-items: center; justify-content: center;
-            position: sticky; top: 0; z-index: 100;
-            width: 100%; min-height: 45px;
-            background: #0b2256; padding: 8px 0 4px;
-            margin-bottom: 18px;
-        }
-        .titulo { font-size: 22px; font-weight: bold; text-align: center; }
-        .btn-home {
-            background: rgba(255,255,255,0.1); padding: 8px; border-radius: 50%;
-            cursor: pointer; display: flex; position: absolute; right: 0;
-        }
-        .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
-
-        /* Filtros */
-        .filtros {
-            display: flex; gap: 10px; margin-bottom: 18px;
-        }
-        .filtros select {
-            flex: 1; padding: 10px 12px; border-radius: 12px;
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            color: white; font-size: 14px; font-weight: bold; cursor: pointer;
-            appearance: none; -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='white' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 12px center;
-            background-size: 12px;
-            padding-right: 32px;
-        }
-        .filtros select option { background: #0b2256; color: white; }
-
-        /* Card total */
-        .card-total {
-            background: linear-gradient(135deg, rgba(76,175,80,0.25), rgba(76,175,80,0.1));
-            border: 1px solid rgba(76,175,80,0.4);
-            border-radius: 18px; padding: 18px 20px; margin-bottom: 14px;
-            display: flex; flex-direction: column; gap: 6px;
-        }
-        .card-total-label { font-size: 11px; font-weight: bold; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; }
-        .card-total-valor { font-size: 32px; font-weight: bold; color: #a5d6a7; }
-        .card-total-sub { font-size: 12px; color: rgba(255,255,255,0.45); }
+        .topo { display:flex; align-items:center; justify-content:center; min-height:40px; margin-bottom:16px; }
+        .titulo { font-size:22px; font-weight:bold; text-align:center; }
 
         /* Seção */
-        .secao { margin-bottom: 18px; }
-        .secao-titulo {
-            font-size: 12px; font-weight: bold; color: #ffeb3b;
-            text-transform: uppercase; letter-spacing: 1px;
-            margin-bottom: 10px; padding-bottom: 5px;
-            border-bottom: 1px dashed rgba(255,235,59,0.3);
-        }
-        .lista-card {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 14px; overflow: hidden;
-        }
+        .secao { margin-bottom:18px; }
+        .secao-titulo { font-size:16px; font-weight:bold; color:#ffeb3b; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; padding-bottom:5px; border-bottom:1px dashed rgba(255,235,59,0.3); text-align:center; display:block; }
+        .lista-card { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:14px; overflow:hidden; padding:8px; }
 
-        /* Linha de dia */
-        .dia-row {
-            padding: 12px 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.07);
-        }
-        .dia-row:last-child { border-bottom: none; }
-        .dia-header {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 6px;
-        }
-        .dia-data { font-size: 14px; font-weight: bold; color: rgba(255,255,255,0.85); }
-        .dia-total { font-size: 14px; font-weight: bold; color: #a5d6a7; }
-        .dia-detalhes { display: flex; gap: 14px; }
-        .dia-detalhe {
-            display: flex; flex-direction: column; gap: 2px;
-        }
-        .dia-detalhe-label { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.5px; }
-        .dia-detalhe-val { font-size: 12px; font-weight: bold; }
-        .val-pix { color: #90caf9; }
-        .val-din { color: #ffcc80; }
-        .val-total { color: #a5d6a7; }
+        /* Card dia */
+        .dia-row { padding:14px 16px; border:1px solid rgba(255,255,255,0.13); border-radius:12px; margin-bottom:8px; background:rgba(255,255,255,0.03); }
+        .dia-row:last-child { margin-bottom:0; }
+        .dia-linha1 { display:flex; align-items:center; justify-content:center; margin-bottom:10px; padding-bottom:8px; border-bottom:1px dashed rgba(255,255,255,0.12); }
+        .dia-data { font-size:17px; font-weight:bold; color:#fff; }
+        .dia-pix-section { background:rgba(144,202,249,0.08); border:1px solid rgba(144,202,249,0.2); border-radius:10px; padding:8px 10px; margin-bottom:10px; }
+        .dia-pix-titulo { font-size:13px; font-weight:bold; color:#90caf9; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
+        .dia-pix-item { display:flex; justify-content:space-between; align-items:center; padding:3px 0; }
+        .dia-pix-nome { font-size:14px; color:rgba(255,255,255,0.85); }
+        .dia-pix-val { font-size:15px; font-weight:bold; color:#90caf9; }
+        .dia-linha3 { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        .dia-resumo { display:flex; flex-direction:column; gap:4px; }
+        .dia-resumo-item { display:flex; gap:8px; align-items:baseline; }
+        .dia-resumo-label { font-size:12px; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; }
+        .dia-resumo-val { font-size:15px; font-weight:bold; color:#fff; }
+        .dia-resumo-val.pix { color:#90caf9; }
+        .dia-resumo-val.com { color:#ef9a9a; }
+        .dia-resumo-val.din { color:#ffcc80; }
+        .dia-depositar-wrap { display:flex; flex-direction:column; align-items:center; gap:2px; flex-shrink:0; }
+        .dia-depositar-label { font-size:11px; color:#a5d6a7; text-transform:uppercase; letter-spacing:0.5px; font-weight:bold; text-align:center; max-width:50px; word-break:break-word; }
+        .dia-depositar-val { font-size:24px; font-weight:bold; color:#a5d6a7; }
 
-        /* Lista clientes pix */
-        .pix-row {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 11px 16px; border-bottom: 1px solid rgba(255,255,255,0.07);
+        /* Card falta depositar */
+        .card-falta {
+            background:linear-gradient(135deg,#1a4a2e,#0f3020);
+            border:1px solid rgba(76,175,80,0.4);
+            border-radius:18px; padding:18px 22px; margin-bottom:18px;
+            display:flex; align-items:center; justify-content:space-between;
         }
-        .pix-row:last-child { border-bottom: none; }
-        .pix-nome { font-size: 13px; color: rgba(255,255,255,0.85); flex: 1; }
-        .pix-data { font-size: 11px; color: rgba(255,255,255,0.4); margin: 0 10px; }
-        .pix-valor { font-size: 13px; font-weight: bold; color: #90caf9; flex-shrink: 0; }
+        .card-falta-label { font-size:12px; font-weight:bold; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+        .card-falta-valor { font-size:34px; font-weight:bold; color:#a5d6a7; line-height:1.1; }
 
-        /* Clientes pix no dia */
-        .dia-clientes-pix {
-            display: flex; flex-wrap: wrap; gap: 6px;
-            margin-bottom: 8px;
-        }
-        .dia-cli-pix {
-            font-size: 11px; color: rgba(255,255,255,0.65);
-            background: rgba(144,202,249,0.12);
-            border: 1px solid rgba(144,202,249,0.25);
-            border-radius: 6px; padding: 3px 7px;
-        }
-        .dia-cli-pix b { color: #90caf9; }
+        /* Form depósito */
+        .form-deposito { background:rgba(76,175,80,0.08); border:1px solid rgba(76,175,80,0.3); border-radius:16px; padding:16px; margin-bottom:14px; }
+        .form-deposito-titulo { font-size:13px; font-weight:bold; color:#81c784; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; text-align:center; }
+        .form-row { display:flex; gap:10px; align-items:flex-end; }
+        .form-input-wrap { flex:1; }
+        .form-label { font-size:11px; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; display:block; }
+        .form-input { width:100%; padding:12px 14px; border-radius:12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; font-size:18px; font-weight:bold; box-sizing:border-box; outline:none; }
+        .form-input::placeholder { color:rgba(255,255,255,0.3); font-size:14px; font-weight:normal; }
+        .btn-foto-env { flex-shrink:0; width:56px; height:50px; border-radius:12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:22px; position:relative; overflow:hidden; align-self:stretch; height:auto; }
+        .btn-foto-env.tem-foto { border-color:rgba(76,175,80,0.6); background:rgba(76,175,80,0.15); }
+        .btn-foto-env input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+        .btn-confirmar { width:100%; margin-top:12px; padding:14px; border-radius:12px; background:#ffeb3b; color:#0b2256; font-size:16px; font-weight:bold; border:none; cursor:pointer; }
+        .btn-confirmar:disabled { opacity:0.4; cursor:default; }
 
-        /* Vazio */
-        .vazio-msg {
-            text-align: center; padding: 40px 20px;
-            color: rgba(255,255,255,0.35); font-size: 14px;
-        }
+        /* Depósitos realizados */
+        .dep-item { display:flex; align-items:center; gap:12px; padding:12px 14px; border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-bottom:8px; background:rgba(255,255,255,0.04); }
+        .dep-item:last-child { margin-bottom:0; }
+        .dep-foto-wrap { flex-shrink:0; width:60px; height:75px; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.15); cursor:pointer; background:rgba(0,0,0,0.3); }
+        .dep-foto { width:100%; height:100%; object-fit:cover; display:block; }
+        .dep-sem-foto { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:10px; color:rgba(255,255,255,0.3); text-align:center; padding:4px; box-sizing:border-box; }
+        .dep-info { flex:1; }
+        .dep-data { font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:4px; }
+        .dep-valor { font-size:22px; font-weight:bold; color:#a5d6a7; }
+
+        /* Formulário fixo */
+        .form-fixo { position:fixed; bottom:65px; left:50%; transform:translateX(-50%); width:100%; max-width:600px; background:#0e2d72; padding:10px 15px; box-sizing:border-box; z-index:199; border-top:1px solid rgba(255,255,255,0.1); }
+
+        /* Barra filtros bottom */
+        .barra-filtros { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:600px; background:#0b2256; padding:8px 15px 14px; box-sizing:border-box; display:flex; gap:10px; z-index:200; border-top:1px solid rgba(255,255,255,0.1); border-radius:16px 16px 0 0; }
+        .barra-filtros select { flex:1; padding:10px 14px; border-radius:12px; background:#0d2560; border:1px solid rgba(255,255,255,0.2); color:white; font-size:16px; font-weight:bold; cursor:pointer; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='white' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; background-size:12px; padding-right:32px; }
+        .barra-filtros select option { background:#0b2256; color:white; }
+
+        /* Lightbox */
+        .lb-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:3000; align-items:center; justify-content:center; }
+        .lb-overlay.aberto { display:flex; }
+        .lb-img { max-width:96vw; max-height:90vh; border-radius:10px; object-fit:contain; }
+        .lb-fechar { position:absolute; top:16px; right:16px; font-size:28px; color:#fff; cursor:pointer; background:rgba(255,255,255,0.1); border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; }
+
+        .vazio-msg { text-align:center; padding:24px 20px; color:rgba(255,255,255,0.35); font-size:15px; }
     </style>
 </head>
 <body>
 <div class="app">
-
     <div class="topo">
         <div class="titulo">🏦 Depósitos</div>
-        <div class="btn-home" onclick="history.back()">
-            <img src="assets/icons/home.png" alt="Home">
-        </div>
     </div>
 
-    <div class="filtros">
-        <select id="selMes"></select>
-        <select id="selAno"></select>
-    </div>
-
-    <div id="conteudo"></div>
-
+    <div id="secaoDias"></div>
+    <div id="secaoFalta"></div>
+    <div id="secaoDepositos"></div>
 </div>
 
+<!-- Modal editar depósito -->
+<div id="modalEditDep" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:4000;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;">
+    <div style="background:#0e2d72;border:1px solid rgba(255,235,59,0.4);border-radius:18px;padding:22px;width:100%;max-width:340px;box-sizing:border-box;">
+        <div style="font-size:15px;font-weight:bold;color:#ffeb3b;text-align:center;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">✏️ Editar Depósito</div>
+        <input type="hidden" id="editDepKey">
+        <label style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Valor</label>
+        <input class="form-input" type="text" inputmode="numeric" id="editDepValor" placeholder="Valor" oninput="formatarValorDep(this)" style="margin-bottom:12px;">
+        <label style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Obs.</label>
+        <input class="form-input" type="text" id="editDepObs" placeholder="Obs." style="font-size:14px;margin-bottom:14px;">
+        <label style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Foto do envelope</label>
+        <label id="editBtnFoto" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:10px 14px;cursor:pointer;margin-bottom:18px;position:relative;overflow:hidden;">
+            <span id="editIconeFoto" style="font-size:22px;">📷</span>
+            <span id="editLabelFoto" style="font-size:13px;color:rgba(255,255,255,0.6);">Trocar foto</span>
+            <img id="editPreviewFoto" src="" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.2);">
+            <input type="file" accept="image/*" capture="environment" id="editInputFoto" onchange="previewFotoEdicao(event)" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+        </label>
+        <div style="display:flex;gap:10px;">
+            <button onclick="fecharEdicaoDep()" style="flex:1;padding:13px;border-radius:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:white;font-size:15px;cursor:pointer;">Cancelar</button>
+            <button id="btnSalvarEdicao" onclick="salvarEdicaoDep()" style="flex:1;padding:13px;border-radius:12px;background:#ffeb3b;border:none;color:#0b2256;font-size:15px;font-weight:bold;cursor:pointer;">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lb-overlay" id="lbOverlay" onclick="fecharLightbox()">
+    <div class="lb-fechar" onclick="fecharLightbox()">✕</div>
+    <img class="lb-img" id="lbImg" src="" alt="Envelope">
+</div>
+
+<!-- Formulário fixo acima da barra -->
+<div class="form-fixo">
+    <div class="form-row">
+        <input class="form-input" type="text" maxlength="5" placeholder="Obs." id="inputObsDep" style="width:110px; flex-shrink:0; font-size:14px; padding:14px 8px;">
+        <div class="form-input-wrap" style="max-width:110px; flex-shrink:0;">
+            <input class="form-input" type="text" inputmode="numeric" placeholder="Valor" id="inputValorDep" oninput="formatarValorDep(this)">
+        </div>
+        <label class="btn-foto-env" id="btnFotoEnv">
+            <span id="iconeFotoEnv">📷</span>
+            <input type="file" accept="image/*" capture="environment" id="inputFotoEnv" onchange="previewFotoEnv(event)">
+        </label>
+        <button class="btn-confirmar" id="btnConfirmarDep" onclick="registrarDeposito()" style="margin-top:0; width:auto; padding:14px 18px;">✓</button>
+    </div>
+</div>
+
+<!-- Barra filtros fixo no rodapé -->
+<div class="barra-filtros">
+    <select id="selAno"></select>
+    <select id="selMes"></select>
+</div>
+
+<script>
+    function formatarValorDep(input) {
+        let v = input.value.replace(/\D/g, '');
+        if (v.length > 5) v = v.slice(0, 5);
+        input.value = v ? Number(v).toLocaleString('pt-BR') : '';
+    }
+</script>
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
-    import { dbListarAtendimentos } from './database.js';
+    import { dbListarAtendimentos, storageSalvarFoto } from './database.js';
+    import { dbSalvarDeposito, dbListarDepositos, dbAtualizarDeposito, dbExcluirDeposito } from './database.js';
 
     const usuarioLogado = localStorage.getItem('usuarioLogado') || '';
-
     const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-    function moeda(v) {
-        const n = Number(v || 0);
-        return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    function ehHoje(isoStr) {
+        if (!isoStr) return false;
+        const d = new Date(isoStr);
+        const hoje = new Date();
+        return d.getFullYear() === hoje.getFullYear() &&
+               d.getMonth() === hoje.getMonth() &&
+               d.getDate() === hoje.getDate();
     }
 
+    function moeda(v) {
+        return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits:0, maximumFractionDigits:0 });
+    }
     function dataLocalStr(date) {
         const d = (date instanceof Date) ? date : new Date(date || 0);
         if (isNaN(d)) return null;
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
-
     function formatarDataBR(str) {
         if (!str) return '';
-        const [y, m, d] = str.split('-');
+        const [y,m,d] = str.split('-');
         return `${d}/${m}/${y}`;
     }
 
-    // Preenche dropdowns
-    const agora = new Date();
+    window.abrirFoto = function(url) {
+        document.getElementById('lbImg').src = url;
+        document.getElementById('lbOverlay').classList.add('aberto');
+        history.pushState({ lightbox: true }, '');
+    };
+    window.fecharLightbox = function() {
+        document.getElementById('lbOverlay').classList.remove('aberto');
+        document.getElementById('lbImg').src = '';
+        if (history.state?.lightbox) history.back();
+    };
+    window.addEventListener('popstate', (e) => {
+        if (document.getElementById('modalEditDep').style.display === 'flex') {
+            document.getElementById('modalEditDep').style.display = 'none';
+            return;
+        }
+        if (document.getElementById('lbOverlay').classList.contains('aberto')) {
+            document.getElementById('lbOverlay').classList.remove('aberto');
+            document.getElementById('lbImg').src = '';
+        }
+    });
+
     const selMes = document.getElementById('selMes');
     const selAno = document.getElementById('selAno');
 
-    MESES.forEach((nome, i) => {
-        const opt = document.createElement('option');
-        opt.value = i + 1;
-        opt.textContent = nome;
-        if (i + 1 === agora.getMonth() + 1) opt.selected = true;
-        selMes.appendChild(opt);
-    });
+    let todosAtendimentos = [];
+    let todosDepositos = [];
+    let fotoEnvelopeBase64 = null;
 
-    for (let a = agora.getFullYear(); a >= agora.getFullYear() - 3; a--) {
-        const opt = document.createElement('option');
-        opt.value = a;
-        opt.textContent = a;
-        if (a === agora.getFullYear()) opt.selected = true;
-        selAno.appendChild(opt);
+    function preencherMeses(ano) {
+        const mesAtual = parseInt(selMes.value) || new Date().getMonth() + 1;
+        selMes.innerHTML = '';
+        const mesesDoAno = [...new Set(
+            todosAtendimentos
+                .filter(a => a.atendente === usuarioLogado)
+                .map(a => new Date(a.data || a.dataHora || 0))
+                .filter(d => !isNaN(d) && d.getFullYear() === ano)
+                .map(d => d.getMonth() + 1)
+        )].sort((a, b) => a - b);
+        if (mesesDoAno.length === 0) mesesDoAno.push(new Date().getMonth() + 1);
+        mesesDoAno.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m; opt.textContent = MESES[m - 1];
+            if (m === mesAtual) opt.selected = true;
+            selMes.appendChild(opt);
+        });
+        if (!mesesDoAno.includes(mesAtual)) selMes.value = mesesDoAno[mesesDoAno.length - 1];
     }
 
-    let todosAtendimentos = [];
-
-    function renderizar() {
+    function renderizarDias() {
         const mes = parseInt(selMes.value);
         const ano = parseInt(selAno.value);
-        const conteudo = document.getElementById('conteudo');
-
         const filtrados = todosAtendimentos.filter(a => {
             if (a.atendente !== usuarioLogado) return false;
             const d = new Date(a.data || a.dataHora || 0);
-            if (isNaN(d)) return false;
-            return d.getMonth() + 1 === mes && d.getFullYear() === ano;
+            return !isNaN(d) && d.getMonth() + 1 === mes && d.getFullYear() === ano;
         });
 
-        if (filtrados.length === 0) {
-            conteudo.innerHTML = `<div class="vazio-msg">Nenhum atendimento encontrado<br>para ${MESES[mes-1]} de ${ano}.</div>`;
-            return;
-        }
-
-        // Totais do mês
-        let totalSaldoMes = 0;
-
-        // Agrupar por dia
         const porDia = {};
-        // Lista de clientes com pix
-        const clientesPix = [];
-
         filtrados.forEach(a => {
             const dataStr = dataLocalStr(a.data || a.dataHora || 0);
             if (!dataStr) return;
-
             const pixArr = a.financeiro?.pix || [];
             const dinheiro = Number(a.financeiro?.dinheiro || 0);
             const pixTotal = pixArr.reduce((s, p) => s + Number(p.valor || 0), 0);
             const comissao = Number(a.financeiro?.comissaoValor || 0);
-
-            // Saldo a depositar = dinheiro - comissão (pix já está na conta)
             const saldo = dinheiro - comissao;
-            totalSaldoMes += saldo;
-
-            if (!porDia[dataStr]) porDia[dataStr] = { saldo: 0, dinheiro: 0, pix: 0, clientesPix: [] };
-            porDia[dataStr].saldo += saldo;
+            if (!porDia[dataStr]) porDia[dataStr] = { saldo:0, dinheiro:0, pix:0, comissao:0, clientesPix:[] };
+            porDia[dataStr].saldo    += saldo;
             porDia[dataStr].dinheiro += dinheiro;
-            porDia[dataStr].pix += pixTotal;
-
-            if (pixTotal > 0) {
-                const nomeCli = a.cliente?.nome || a.cliente?.numero || 'Cliente';
-                porDia[dataStr].clientesPix.push({ nome: nomeCli, valor: pixTotal });
-                clientesPix.push({
-                    nome: nomeCli,
-                    data: dataStr,
-                    valor: pixTotal
-                });
-            }
+            porDia[dataStr].pix      += pixTotal;
+            porDia[dataStr].comissao += comissao;
+            if (pixTotal > 0) porDia[dataStr].clientesPix.push({ nome: a.cliente?.nome || 'Cliente', valor: pixTotal });
         });
 
         const diasOrdenados = Object.entries(porDia).sort((a, b) => a[0].localeCompare(b[0]));
-        clientesPix.sort((a, b) => b.data.localeCompare(a.data));
+        const secaoDias = document.getElementById('secaoDias');
 
-        // Card total a depositar
-        const htmlTotal = `
-            <div class="card-total">
-                <div class="card-total-label">Total a depositar — ${MESES[mes-1]} ${ano}</div>
-                <div class="card-total-valor">${moeda(totalSaldoMes)}</div>
-                <div class="card-total-sub">💵 Dinheiro recebido menos comissão (Pix já está na conta)</div>
-            </div>
-        `;
+        if (diasOrdenados.length === 0) {
+            secaoDias.innerHTML = `<div class="vazio-msg">Nenhum atendimento em ${MESES[mes-1]} de ${ano}.</div>`;
+            return;
+        }
 
-        // Seção por dia
         const htmlDias = diasOrdenados.map(([data, vals]) => {
             const totalDia = vals.dinheiro + vals.pix;
-            const htmlClientesPix = vals.clientesPix.length > 0
-                ? vals.clientesPix.map(c => `<span class="dia-cli-pix">${c.nome} <b>${moeda(c.valor)}</b></span>`).join('')
-                : '';
             return `
             <div class="dia-row">
-                ${htmlClientesPix ? `<div class="dia-clientes-pix">${htmlClientesPix}</div>` : ''}
-                <div class="dia-header">
+                <div class="dia-linha1">
                     <span class="dia-data">${formatarDataBR(data)}</span>
-                    <span class="dia-total">${moeda(totalDia)}</span>
                 </div>
-                <div class="dia-detalhes">
-                    <div class="dia-detalhe">
-                        <span class="dia-detalhe-label">Dinheiro</span>
-                        <span class="dia-detalhe-val val-din">${moeda(vals.dinheiro)}</span>
+                ${vals.clientesPix.length > 0 ? `
+                <div class="dia-pix-section">
+                    <div class="dia-pix-titulo">💳 Pix</div>
+                    ${vals.clientesPix.map(c => `
+                    <div class="dia-pix-item">
+                        <span class="dia-pix-nome">${c.nome}</span>
+                        <span class="dia-pix-val">${moeda(c.valor)}</span>
+                    </div>`).join('')}
+                </div>` : ''}
+                <div class="dia-linha3">
+                    <div class="dia-resumo">
+                        <div class="dia-resumo-item">
+                            <span class="dia-resumo-label">Total do dia</span>
+                            <span class="dia-resumo-val">${moeda(totalDia)}</span>
+                        </div>
+                        ${vals.pix > 0 ? `
+                        <div class="dia-resumo-item">
+                            <span class="dia-resumo-label">Total em Pix</span>
+                            <span class="dia-resumo-val pix">${moeda(vals.pix)}</span>
+                        </div>` : ''}
+                        ${vals.comissao > 0 ? `
+                        <div class="dia-resumo-item">
+                            <span class="dia-resumo-label">Comissões</span>
+                            <span class="dia-resumo-val com">${moeda(vals.comissao)}</span>
+                        </div>` : ''}
+                        <div class="dia-resumo-item">
+                            <span class="dia-resumo-label">Dinheiro</span>
+                            <span class="dia-resumo-val din">${moeda(vals.dinheiro)}</span>
+                        </div>
                     </div>
-                    <div class="dia-detalhe">
-                        <span class="dia-detalhe-label">Pix</span>
-                        <span class="dia-detalhe-val val-pix">${moeda(vals.pix)}</span>
-                    </div>
-                    <div class="dia-detalhe">
-                        <span class="dia-detalhe-label">A depositar</span>
-                        <span class="dia-detalhe-val val-total">${moeda(vals.saldo)}</span>
+                    <div class="dia-depositar-wrap">
+                        <span class="dia-depositar-label">Saldo</span>
+                        <span class="dia-depositar-val">${moeda(vals.saldo)}</span>
                     </div>
                 </div>
             </div>`;
         }).join('');
 
-        // Seção clientes com pix
-        const htmlPix = clientesPix.length > 0
-            ? clientesPix.map(c => `
-            <div class="pix-row">
-                <span class="pix-nome">${c.nome}</span>
-                <span class="pix-data">${formatarDataBR(c.data)}</span>
-                <span class="pix-valor">${moeda(c.valor)}</span>
-            </div>`).join('')
-            : `<div class="vazio-msg" style="padding:16px;">Nenhum Pix no período.</div>`;
-
-        conteudo.innerHTML = `
-            ${htmlTotal}
+        secaoDias.innerHTML = `
             <div class="secao">
                 <div class="secao-titulo">📅 Saldo por Dia</div>
                 <div class="lista-card">${htmlDias}</div>
-            </div>
-            <div class="secao">
-                <div class="secao-titulo">💳 Clientes com Pix</div>
-                <div class="lista-card">${htmlPix}</div>
-            </div>
-        `;
+            </div>`;
     }
 
-    selMes.addEventListener('change', renderizar);
-    selAno.addEventListener('change', renderizar);
+    function renderizarFaltaEDepositos() {
+        const meusAtendimentos = todosAtendimentos.filter(a => a.atendente === usuarioLogado);
 
-    todosAtendimentos = await dbListarAtendimentos();
-    renderizar();
+        // Total acumulado de todos os atendimentos (dinheiro - comissão)
+        const totalAtendimentos = meusAtendimentos
+            .reduce((s, a) => s + (Number(a.financeiro?.dinheiro || 0) - Number(a.financeiro?.comissaoValor || 0)), 0);
+
+        // Último dia com atendimento
+        const ultimaData = meusAtendimentos
+            .map(a => dataLocalStr(a.data || a.dataHora || 0))
+            .filter(Boolean)
+            .sort()
+            .at(-1);
+        const labelUltimaData = ultimaData ? formatarDataBR(ultimaData) : '';
+
+        const totalDepositado = todosDepositos.reduce((s, d) => s + Number(d.valor || 0), 0);
+        const falta = totalAtendimentos - totalDepositado;
+
+        const pct = totalAtendimentos > 0 ? Math.min(100, Math.round(totalDepositado / totalAtendimentos * 100)) : 0;
+        document.getElementById('secaoFalta').innerHTML = `
+            <div class="card-falta" style="flex-direction:column; gap:14px;">
+
+                <div style="font-size:11px; font-weight:bold; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:1px; text-align:center;">
+                    Soma dos Saldos até <span style="color:#ffeb3b; font-size:13px;">${labelUltimaData}</span>
+                </div>
+
+                <div style="text-align:center;">
+                    <div style="font-size:36px; font-weight:bold; color:#fff; line-height:1;">${moeda(totalAtendimentos)}</div>
+                </div>
+
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:10px; color:rgba(255,255,255,0.4); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">
+                        <span>Depositado ${pct}%</span>
+                        <span>Falta ${100 - pct}%</span>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.1); border-radius:10px; height:8px; overflow:hidden;">
+                        <div style="width:${pct}%; background:linear-gradient(90deg,#1976d2,#42a5f5); height:100%; border-radius:10px; transition:width 0.6s ease;"></div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:14px;">
+                    <div style="text-align:center; background:rgba(255,111,0,0.15); border:2px solid rgba(255,111,0,0.6); border-radius:12px; padding:12px 8px; box-shadow:0 0 12px rgba(255,111,0,0.2);">
+                        <div style="font-size:11px; font-weight:bold; color:#ff9800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">⚠ Faltou depositar</div>
+                        <div style="font-size:22px; font-weight:bold; color:#ffb74d;">${moeda(falta)}</div>
+                    </div>
+                    <div style="text-align:center; background:rgba(33,150,243,0.12); border:1px solid rgba(33,150,243,0.35); border-radius:12px; padding:12px 8px;">
+                        <div style="font-size:11px; font-weight:bold; color:#64b5f6; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">Depositado</div>
+                        <div style="font-size:22px; font-weight:bold; color:#90caf9;">${moeda(totalDepositado)}</div>
+                    </div>
+                </div>
+
+            </div>`;
+
+        const depositosOrdenados = [...todosDepositos].sort((a, b) => (b.data || '').localeCompare(a.data || ''));
+        const htmlDeps = depositosOrdenados.length > 0
+            ? depositosOrdenados.map(d => `
+                <div class="dep-item">
+                    <div class="dep-foto-wrap" ${d.foto ? `onclick="abrirFoto('${d.foto}')"` : ''}>
+                        ${d.foto ? `<img src="${d.foto}" class="dep-foto" alt="Envelope">` : `<div class="dep-sem-foto">Sem foto</div>`}
+                    </div>
+                    <div class="dep-info">
+                        <div class="dep-data">${formatarDataBR(d.data?.slice(0,10) || '')}${d.obs ? ` · <span style="color:#ffeb3b;font-weight:bold;">${d.obs}</span>` : ''}</div>
+                        <div class="dep-valor">${moeda(d.valor)}</div>
+                    </div>
+                    ${ehHoje(d.data) ? `
+                    <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+                        <button onclick="abrirEdicaoDeposito('${d.firebaseUrl}')" style="background:rgba(255,235,59,0.12);border:1px solid rgba(255,235,59,0.35);border-radius:10px;color:#ffeb3b;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">✏️</button>
+                        <button onclick="excluirDeposito('${d.firebaseUrl}')" style="background:rgba(244,67,54,0.12);border:1px solid rgba(244,67,54,0.35);border-radius:10px;color:#ef9a9a;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">🗑️</button>
+                    </div>` : ''}
+                </div>`).join('')
+            : `<div class="vazio-msg">Nenhum depósito registrado ainda.</div>`;
+
+        document.getElementById('secaoDepositos').innerHTML = `
+            <div class="secao">
+                <div class="secao-titulo">📬 Depósitos Realizados</div>
+                ${depositosOrdenados.length > 0 ? `<div class="lista-card" style="padding:8px;">${htmlDeps}</div>` : htmlDeps}
+            </div>`;
+    }
+
+    window.previewFotoEnv = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            fotoEnvelopeBase64 = ev.target.result;
+            const btn = document.getElementById('btnFotoEnv');
+            btn.classList.add('tem-foto');
+            document.getElementById('iconeFotoEnv').style.display = 'none';
+            const img = document.createElement('img');
+            img.src = fotoEnvelopeBase64;
+            img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px;pointer-events:none;';
+            btn.insertBefore(img, btn.querySelector('input'));
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.registrarDeposito = async function() {
+        const valorInput = document.getElementById('inputValorDep');
+        const valor = parseFloat(valorInput.value.replace(/\./g, '').replace(',', '.'));
+        if (!valor || valor <= 0) return window.playAlert('Informe o valor do depósito.');
+        if (!fotoEnvelopeBase64) return window.playAlert('Tire uma foto do envelope antes de confirmar.');
+        const btn = document.getElementById('btnConfirmarDep');
+        btn.disabled = true;
+        btn.textContent = 'Salvando...';
+        try {
+            let fotoUrl = null;
+            if (fotoEnvelopeBase64) {
+                fotoUrl = await storageSalvarFoto(fotoEnvelopeBase64, 'depositos');
+            }
+            const obs = document.getElementById('inputObsDep')?.value?.trim() || '';
+            await dbSalvarDeposito({ usuario: usuarioLogado, valor, obs, foto: fotoUrl, data: new Date().toISOString() });
+            fotoEnvelopeBase64 = null;
+            todosDepositos = await dbListarDepositos(usuarioLogado);
+            renderizarFaltaEDepositos();
+        } catch(e) {
+            console.error(e);
+            window.playAlert('Erro ao salvar depósito.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Confirmar Depósito';
+        }
+    };
+
+    let editFotoBase64 = null;
+
+    window.previewFotoEdicao = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            editFotoBase64 = ev.target.result;
+            const preview = document.getElementById('editPreviewFoto');
+            preview.src = editFotoBase64;
+            preview.style.display = 'block';
+            document.getElementById('editLabelFoto').textContent = 'Nova foto selecionada';
+            document.getElementById('editBtnFoto').style.borderColor = 'rgba(76,175,80,0.6)';
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.abrirEdicaoDeposito = function(firebaseKey) {
+        const dep = todosDepositos.find(d => d.firebaseUrl === firebaseKey);
+        if (!dep || !ehHoje(dep.data)) return;
+        editFotoBase64 = null;
+        document.getElementById('editDepKey').value = firebaseKey;
+        document.getElementById('editDepValor').value = Number(dep.valor).toLocaleString('pt-BR');
+        document.getElementById('editDepObs').value = dep.obs || '';
+        document.getElementById('editInputFoto').value = '';
+        document.getElementById('editPreviewFoto').style.display = 'none';
+        document.getElementById('editLabelFoto').textContent = 'Trocar foto';
+        document.getElementById('editBtnFoto').style.borderColor = 'rgba(255,255,255,0.2)';
+        document.getElementById('modalEditDep').style.display = 'flex';
+        history.pushState({ editDep: true }, '');
+    };
+
+    window.excluirDeposito = async function(firebaseKey) {
+        const dep = todosDepositos.find(d => d.firebaseUrl === firebaseKey);
+        if (!dep || !ehHoje(dep.data)) return;
+        const confirmado = await window.playConfirm('Excluir este depósito?');
+        if (!confirmado) return;
+        try {
+            await dbExcluirDeposito(usuarioLogado, firebaseKey);
+            todosDepositos = await dbListarDepositos(usuarioLogado);
+            renderizarFaltaEDepositos();
+        } catch(e) {
+            console.error(e);
+            window.playAlert('Erro ao excluir depósito.');
+        }
+    };
+
+    window.fecharEdicaoDep = function() {
+        document.getElementById('modalEditDep').style.display = 'none';
+        if (history.state?.editDep) history.back();
+    };
+
+    window.salvarEdicaoDep = async function() {
+        const firebaseKey = document.getElementById('editDepKey').value;
+        const novoValor = parseFloat(document.getElementById('editDepValor').value.replace(/\./g, '').replace(',', '.'));
+        if (!novoValor || novoValor <= 0) return window.playAlert('Informe um valor válido.');
+        const dep = todosDepositos.find(d => d.firebaseUrl === firebaseKey);
+        if (!dep || !ehHoje(dep.data)) return;
+        const btn = document.getElementById('btnSalvarEdicao');
+        btn.disabled = true;
+        btn.textContent = 'Salvando...';
+        try {
+            let fotoUrl = dep.foto || null;
+            if (editFotoBase64) {
+                fotoUrl = await storageSalvarFoto(editFotoBase64, 'depositos');
+            }
+            const atualizado = { ...dep, valor: novoValor, obs: document.getElementById('editDepObs').value.trim(), foto: fotoUrl };
+            delete atualizado.firebaseUrl;
+            await dbAtualizarDeposito(usuarioLogado, firebaseKey, atualizado);
+            editFotoBase64 = null;
+            todosDepositos = await dbListarDepositos(usuarioLogado);
+            renderizarFaltaEDepositos();
+            fecharEdicaoDep();
+        } catch(e) {
+            console.error(e);
+            window.playAlert('Erro ao atualizar depósito.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Salvar';
+        }
+    };
+
+    selMes.addEventListener('change', renderizarDias);
+    selAno.addEventListener('change', () => {
+        preencherMeses(parseInt(selAno.value));
+        renderizarDias();
+    });
+
+    const agora = new Date();
+    [todosAtendimentos, todosDepositos] = await Promise.all([
+        dbListarAtendimentos(),
+        dbListarDepositos(usuarioLogado)
+    ]);
+
+    const anosComAtendimento = [...new Set(
+        todosAtendimentos
+            .filter(a => a.atendente === usuarioLogado)
+            .map(a => new Date(a.data || a.dataHora || 0).getFullYear())
+            .filter(a => !isNaN(a))
+    )].sort((a, b) => b - a);
+    if (!anosComAtendimento.includes(agora.getFullYear())) anosComAtendimento.unshift(agora.getFullYear());
+
+    anosComAtendimento.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a; opt.textContent = a;
+        if (a === agora.getFullYear()) opt.selected = true;
+        selAno.appendChild(opt);
+    });
+
+    preencherMeses(parseInt(selAno.value));
+    renderizarDias();
+    renderizarFaltaEDepositos();
 </script>
 </body>
 </html>

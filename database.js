@@ -486,6 +486,52 @@ export async function dbAcumularPosse(nomeUsuario, atendimento) {
     }
 }
 
+/* --- FUNÇÕES PARA DEPÓSITOS --- */
+
+export async function dbSalvarDeposito(deposito) {
+    try {
+        const chave = deposito.usuario.replace(/[.#$/[\]]/g, '_');
+        await push(ref(db, `depositos/${chave}`), deposito);
+    } catch (error) {
+        console.error("ERRO AO SALVAR DEPOSITO:", error);
+        throw error;
+    }
+}
+
+export async function dbExcluirDeposito(nomeUsuario, firebaseKey) {
+    try {
+        const chave = nomeUsuario.replace(/[.#$/[\]]/g, '_');
+        await remove(ref(db, `depositos/${chave}/${firebaseKey}`));
+    } catch (error) {
+        console.error("ERRO AO EXCLUIR DEPOSITO:", error);
+        throw error;
+    }
+}
+
+export async function dbAtualizarDeposito(nomeUsuario, firebaseKey, dados) {
+    try {
+        const chave = nomeUsuario.replace(/[.#$/[\]]/g, '_');
+        await set(ref(db, `depositos/${chave}/${firebaseKey}`), dados);
+    } catch (error) {
+        console.error("ERRO AO ATUALIZAR DEPOSITO:", error);
+        throw error;
+    }
+}
+
+export async function dbListarDepositos(nomeUsuario) {
+    try {
+        const chave = nomeUsuario.replace(/[.#$/[\]]/g, '_');
+        const snapshot = await get(ref(db, `depositos/${chave}`));
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            return Object.keys(data).map(key => ({ ...data[key], firebaseUrl: key }));
+        }
+    } catch (error) {
+        console.error("ERRO AO LISTAR DEPOSITOS:", error);
+    }
+    return [];
+}
+
 export function dbEscutarManutencoes(callback) {
     const manutencoesRef = ref(db, 'manutencoes');
     onValue(manutencoesRef, (snapshot) => {
