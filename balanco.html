@@ -249,9 +249,11 @@
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { dbListarAtendimentos, dbLerPosseAcumulada, dbListarColaboradores, dbListarClientes } from './database.js';
+    import { dbListarDepositos } from './database.js';
 
     const usuarioLogado = localStorage.getItem('usuarioLogado') || '';
     let todosAtendimentos = [];
+    let todosDepositos = [];
     let datasComAtendimento = new Set();
     let comissaoUsuario = 0; // % de comissão do colaborador logado (calculado por mês)
     let colaboradorObj  = null;
@@ -568,7 +570,16 @@
                 const mesAno = dataDe.slice(0, 7);
                 comissaoUsuario = getComissaoParaMes(colaboradorObj, mesAno);
                 const valorComissao  = fin.liquido * comissaoUsuario / 100;
-                const valorDepositar = fin.liquido - fin.pix;
+                const totalDeveDepositar = fin.liquido - fin.pix;
+                const totalJaDepositado = todosDepositos
+                    .filter(d => {
+                        if (!d.data) return false;
+                        const bsb = new Date(new Date(d.data).toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+                        const mm = String(bsb.getMonth() + 1).padStart(2, '0');
+                        return `${bsb.getFullYear()}-${mm}` === mesAno;
+                    })
+                    .reduce((s, d) => s + Number(d.valor || 0), 0);
+                const valorDepositar = Math.max(0, totalDeveDepositar - totalJaDepositado);
                 const labelPeriodo = (!dataAte || dataAte === dataDe) ? formatarDataBR(dataDe) : 'Período';
                 return `
             <div class="card-resumo">
@@ -598,7 +609,7 @@
                     <div style="background:rgba(255,152,0,0.15); border:1px solid rgba(255,152,0,0.4); border-radius:14px; padding:14px 8px; text-align:center;">
                         <div style="font-size:11px; color:#ffb74d; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Deposite</div>
                         <div style="font-size:20px; font-weight:bold; color:#ffcc80; line-height:1;">${moeda(valorDepositar)}</div>
-                        <div style="font-size:10px; color:rgba(255,204,128,0.6); margin-top:5px;">líquido − pix</div>
+                        <div style="font-size:10px; color:rgba(255,204,128,0.6); margin-top:5px;">falta depositar</div>
                     </div>
                 </div>
                 </div>
@@ -739,12 +750,14 @@
     });
 
     // ── Inicialização ─────────────────────────────────────────────
-    const [todos, posseAcumulada, colaboradores, clientes] = await Promise.all([
+    const [todos, posseAcumulada, colaboradores, clientes, depositos] = await Promise.all([
         dbListarAtendimentos(),
         dbLerPosseAcumulada(usuarioLogado),
         dbListarColaboradores(),
-        dbListarClientes()
+        dbListarClientes(),
+        dbListarDepositos(usuarioLogado)
     ]);
+    todosDepositos = depositos;
     colaboradorObj  = colaboradores.find(c => c.nome === usuarioLogado) || null;
 
     // Mapa para cruzar cliente do atendimento → rota atual

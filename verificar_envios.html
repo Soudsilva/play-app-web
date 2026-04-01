@@ -46,6 +46,16 @@
         .foto-legenda { font-size: 10px; color: #ccc; font-weight: bold; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .sem-envios { text-align: center; opacity: 0.6; margin-top: 50px; font-size: 16px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px;}
+
+        /* Barra de busca */
+        .barra-busca { position: sticky; top: 0; z-index: 100; background: #042d86; padding: 10px 0 12px; margin-bottom: 14px; }
+        .busca-wrap { display: flex; align-items: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.22); border-radius: 14px; padding: 0 14px; gap: 10px; }
+        .busca-wrap:focus-within { border-color: rgba(255,235,59,0.6); background: rgba(255,255,255,0.13); }
+        .busca-icone { font-size: 17px; flex-shrink: 0; opacity: 0.7; }
+        .busca-input { flex: 1; background: transparent; border: none; outline: none; color: white; font-size: 16px; padding: 13px 0; }
+        .busca-input::placeholder { color: rgba(255,255,255,0.4); font-size: 15px; }
+        .busca-limpar { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 18px; cursor: pointer; padding: 0; line-height: 1; display: none; }
+        .busca-limpar.visivel { display: block; }
         .envio-acoes { margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.2); }
         .acoes-linha { display: flex; gap: 10px; }
         .btn-acao {
@@ -89,6 +99,14 @@
         </div>
     </div>
 
+    <div class="barra-busca">
+        <div class="busca-wrap">
+            <span class="busca-icone">🔍</span>
+            <input class="busca-input" id="inputBusca" type="search" placeholder="Buscar cliente, produto..." autocomplete="off">
+            <button class="busca-limpar" id="btnLimparBusca" onclick="limparBusca()">✕</button>
+        </div>
+    </div>
+
     <div id="listaEnvios">
         <p class="sem-envios">Carregando seus envios...</p>
     </div>
@@ -103,6 +121,24 @@
     let atendimentosSalvos = [];
     let colaboradoresSalvos = [];
     let colaboradoresCarregados = false;
+    let termoBusca = '';
+
+    function normalizarTexto(txt) {
+        return String(txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
+
+    window.limparBusca = function() {
+        document.getElementById('inputBusca').value = '';
+        termoBusca = '';
+        document.getElementById('btnLimparBusca').classList.remove('visivel');
+        renderizarEnvios();
+    };
+
+    document.getElementById('inputBusca').addEventListener('input', function() {
+        termoBusca = normalizarTexto(this.value);
+        document.getElementById('btnLimparBusca').classList.toggle('visivel', this.value.length > 0);
+        renderizarEnvios();
+    });
 
     function formatarMoeda(valor) {
         return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -190,11 +226,27 @@
 
         // Filtra só os que foram enviados por ele e ordena da data mais recente (maior) para a mais velha (menor)
         const meusEnvios = atendimentosSalvos
-            .filter(a => a.atendente === usuarioLogado)
+            .filter(a => {
+                if (a.atendente !== usuarioLogado) return false;
+                if (!termoBusca) return true;
+                const fotos = a.fotos || {};
+                const campos = [
+                    a.cliente?.nome,
+                    a.cliente?.numero,
+                    ...(a.produtos || []).map(p => p.nome),
+                    new Date(a.data).toLocaleString('pt-BR'),
+                    fotos.ficha ? 'ficha' : '',
+                    ...(fotos.maquinas || []).map(m => m.nome),
+                    ...(fotos.pix || []).map(p => `pix ${p.numero}`)
+                ];
+                return campos.some(c => normalizarTexto(c).includes(termoBusca));
+            })
             .sort((a, b) => new Date(b.data) - new Date(a.data));
 
         if (meusEnvios.length === 0) {
-            container.innerHTML = '<p class="sem-envios">Você ainda não tem nenhum atendimento salvo no sistema.</p>';
+            container.innerHTML = termoBusca
+                ? `<p class="sem-envios">Nenhum envio encontrado para "<strong>${document.getElementById('inputBusca').value}</strong>".</p>`
+                : '<p class="sem-envios">Você ainda não tem nenhum atendimento salvo no sistema.</p>';
             return;
         }
 

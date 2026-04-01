@@ -5,598 +5,98 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seleção de Rotas</title>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+        * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; }
 
-        body {
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: #080e24;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            color: white;
-            overflow-x: hidden;
-        }
+        body { margin:0; font-family:Arial,sans-serif; background:#0b2256; min-height:100vh; display:flex; justify-content:center; color:white; }
+        .app { width:100%; max-width:600px; padding:15px 15px 60px; box-sizing:border-box; }
 
-        .app {
-            width: 100%;
-            max-width: 440px;
-            padding: 0 16px 40px;
-            position: relative;
-        }
+        /* TOPO */
+        .topo { display:flex; align-items:center; justify-content:center; min-height:40px; margin-bottom:20px; position:relative; }
+        .titulo { font-size:22px; font-weight:bold; text-align:center; }
+        .btn-home { background:rgba(255,255,255,0.1); padding:8px; border-radius:50%; cursor:pointer; display:flex; position:absolute; left:0; border:none; }
+        .btn-home:active { background:rgba(255,255,255,0.2); }
 
-        /* ---- TOPO ---- */
-        .topo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 18px 0 12px;
-            position: relative;
-        }
-        .btn-home {
-            position: absolute;
-            left: 0;
-            background: rgba(255,255,255,0.1);
-            width: 42px; height: 42px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
-            border: 1px solid rgba(255,255,255,0.2);
-            transition: 0.15s;
-        }
-        .btn-home:active { background: rgba(255,255,255,0.25); transform: scale(0.92); }
-        .titulo-topo { font-size: 22px; font-weight: bold; letter-spacing: 1px; text-align: center; }
-        .subtitulo-topo { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #7b9ed9; text-align: center; margin-top: 2px; }
+        /* TELAS */
+        .tela { display:none; flex-direction:column; align-items:center; width:100%; }
+        .tela.ativa { display:flex; }
 
-        /* ---- TELAS ---- */
-        .tela { display: none; flex-direction: column; align-items: center; }
-        .tela.ativa { display: flex; }
+        /* CARREGANDO */
+        .spinner { width:46px; height:46px; border:4px solid rgba(255,255,255,0.1); border-top-color:#ffeb3b; border-radius:50%; animation:girar 0.8s linear infinite; margin:50px auto 14px; }
+        @keyframes girar { to { transform:rotate(360deg); } }
+        .txt-carregando { color:rgba(255,255,255,0.45); font-size:14px; letter-spacing:1px; }
 
-        /* ---- TELA: CARREGANDO ---- */
-        .spinner {
-            width: 56px; height: 56px;
-            border: 5px solid rgba(255,255,255,0.1);
-            border-top-color: #4e8aff;
-            border-radius: 50%;
-            animation: girar 0.8s linear infinite;
-            margin: 60px auto 20px;
-        }
-        @keyframes girar { to { transform: rotate(360deg); } }
-        .txt-carregando { color: #7b9ed9; font-size: 15px; letter-spacing: 1px; }
+        /* TÍTULO DE SEÇÃO — padrão do app */
+        .secao-titulo { font-size:13px; font-weight:bold; color:#ffeb3b; text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; padding-bottom:5px; border-bottom:1px dashed rgba(255,235,59,0.3); text-align:center; display:block; width:100%; }
 
-        /* ---- TELA: SEM SESSÃO (admin) ---- */
-        .card-admin {
-            background: linear-gradient(135deg, #0d1f4a, #162d6b);
-            border: 1px solid rgba(78,138,255,0.3);
-            border-radius: 20px;
-            padding: 24px 20px;
-            width: 100%;
-            margin-top: 10px;
-        }
-        .card-admin h2 {
-            margin: 0 0 6px;
-            font-size: 18px;
-            color: #ffeb3b;
-            text-align: center;
-        }
-        .card-admin p {
-            margin: 0 0 20px;
-            font-size: 13px;
-            color: #a0b4d6;
-            text-align: center;
-            line-height: 1.5;
-        }
 
-        /* Tabela de rotas calculadas */
-        .tabela-rotas {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-            margin-bottom: 20px;
-        }
-        .tabela-rotas th {
-            background: rgba(78,138,255,0.15);
-            padding: 8px 6px;
-            color: #7b9ed9;
-            font-weight: bold;
-            text-transform: uppercase;
-            font-size: 10px;
-            letter-spacing: 1px;
-        }
-        .tabela-rotas td {
-            padding: 9px 6px;
-            border-bottom: 1px solid rgba(255,255,255,0.07);
-            text-align: center;
-        }
-        .tabela-rotas tr:last-child td { border-bottom: none; }
-        .valor-estimado { color: #4cff91; font-weight: bold; font-size: 15px; }
-        .badge-rota {
-            background: rgba(78,138,255,0.2);
-            border: 1px solid rgba(78,138,255,0.4);
-            border-radius: 8px;
-            padding: 3px 10px;
-            font-weight: bold;
-            font-size: 13px;
-        }
+        /* LISTA QUEM JÁ SELECIONOU */
+        .lista-selecoes { width:100%; display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+        .item-selecao { display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px 16px; font-size:14px; animation:entrar 0.25s ease; }
+        @keyframes entrar { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+        .item-selecao .nome-usuario { font-weight:bold; }
+        .item-selecao .status-check { font-size:15px; color:rgba(255,255,255,0.45); }
 
-        .btn-iniciar {
-            background: linear-gradient(135deg, #ffeb3b, #ff9800);
-            color: #0d1f4a;
-            font-weight: bold;
-            font-size: 18px;
-            padding: 16px;
-            border-radius: 50px;
-            cursor: pointer;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 6px 24px rgba(255,200,0,0.35);
-            transition: 0.15s;
-        }
-        .btn-iniciar:active { transform: scale(0.97); }
+        /* CARD COM NÚMERO GIRANDO */
+        .slot-wrapper { width:100%; display:flex; justify-content:center; margin:6px 0 18px; }
+        .slot-machine { position:relative; width:180px; height:110px; background:rgba(255,255,255,0.04); border-radius:16px; border:1px solid rgba(255,235,59,0.2); display:flex; align-items:center; justify-content:center; box-shadow:inset 0 0 24px rgba(0,0,0,0.3); }
+        .luzes { position:absolute; inset:-1px; border-radius:16px; border:2px solid rgba(255,235,59,0.25); animation:brilhoSlot 2s ease-in-out infinite; pointer-events:none; }
+        @keyframes brilhoSlot { 0%,100% { border-color:rgba(255,235,59,0.15); } 50% { border-color:rgba(255,235,59,0.6); box-shadow:0 0 14px rgba(255,235,59,0.15); } }
+        .luzes.pausado { animation:none; border-color:rgba(255,255,255,0.08); }
+        .slot-janela { text-align:center; position:relative; z-index:1; }
+        .slot-label { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,0.35); margin-bottom:2px; }
+        .slot-numero { font-size:64px; font-weight:900; color:#ffeb3b; line-height:1; min-width:100px; display:block; font-family:'Courier New',monospace; text-shadow:0 0 16px rgba(255,235,59,0.35); }
+        .slot-numero.girando { animation:piscarNumero 0.09s steps(1) infinite; }
+        @keyframes piscarNumero { 50% { filter:blur(2px); opacity:0.65; } }
 
-        /* ---- TELA: SELEÇÃO ATIVA ---- */
-        .contador-rotas {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 50px;
-            padding: 8px 20px;
-            font-size: 13px;
-            color: #a0b4d6;
-            margin: 10px 0 20px;
-            text-align: center;
-        }
-        .contador-rotas span { color: #ffeb3b; font-weight: bold; }
+        /* BOTÃO SELECIONAR — padrão amarelo do app */
+        .btn-sortear { background:#ffeb3b; border:none; color:#0b2256; font-weight:bold; font-size:17px; padding:15px; border-radius:12px; cursor:pointer; width:100%; text-align:center; transition:0.15s; }
+        .btn-sortear:active { transform:scale(0.98); background:#ffe100; }
+        .btn-sortear[disabled] { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.25); cursor:not-allowed; }
 
-        /* Lista de quem já selecionou */
-        .lista-selecoes {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 24px;
-        }
-        .item-selecao {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(76,255,145,0.08);
-            border: 1px solid rgba(76,255,145,0.2);
-            border-radius: 12px;
-            padding: 10px 16px;
-            font-size: 14px;
-            animation: entrar 0.3s ease;
-        }
-        @keyframes entrar { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform: translateY(0); } }
-        .item-selecao .nome-usuario { font-weight: bold; color: #4cff91; }
-        .item-selecao .status-check { font-size: 18px; }
+        /* CARD DE ROTA SELECIONADA */
+        .card-rota { padding:16px; border:1px solid rgba(255,255,255,0.13); border-radius:12px; margin-bottom:8px; background:rgba(255,255,255,0.03); width:100%; }
+        .card-rota-numero { font-size:20px; font-weight:bold; margin-bottom:10px; }
+        .card-rota-numero span { color:rgba(255,255,255,0.4); font-weight:normal; font-size:14px; margin-left:4px; }
+        .card-rota-dias { display:flex; align-items:center; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+        .card-rota-dias-label { font-size:11px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.5px; }
+        .dia-badge { font-size:11px; color:#ffeb3b; background:rgba(255,235,59,0.1); border-radius:20px; padding:3px 9px; }
+        .card-rota-acoes { display:flex; gap:8px; margin-top:4px; }
+        .btn-ver-clientes { flex:1; padding:10px; border-radius:10px; background:#ffeb3b; color:#0b2256; font-size:13px; font-weight:bold; text-align:center; cursor:pointer; border:none; }
+        .btn-ver-clientes:active { background:#ffe100; transform:scale(0.98); }
 
-        /* Máquina slot */
-        .slot-wrapper {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 10px 0 28px;
-        }
+        /* LIGHTBOX */
+        .lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:1000; justify-content:center; align-items:center; }
+        .lightbox.ativo { display:flex; }
+        .lightbox img { max-width:95vw; max-height:90vh; border-radius:10px; object-fit:contain; }
 
-        .slot-machine {
-            position: relative;
-            width: 220px;
-            height: 140px;
-            background: linear-gradient(180deg, #1a0a3e, #0d1230);
-            border-radius: 24px;
-            border: 3px solid #4e3a8a;
-            box-shadow: 0 0 40px rgba(120,60,255,0.4), inset 0 0 20px rgba(0,0,0,0.5);
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        /* BOTÃO ADMIN FLUTUANTE */
+        .btn-admin-float { position:fixed; bottom:20px; right:20px; background:rgba(11,34,86,0.92); border:1px solid rgba(255,255,255,0.13); border-radius:50px; padding:10px 18px; font-size:13px; color:rgba(255,255,255,0.45); cursor:pointer; z-index:100; backdrop-filter:blur(6px); display:none; gap:6px; align-items:center; }
+        .btn-admin-float.visivel { display:flex; }
+        .btn-admin-float:active { color:rgba(255,255,255,0.75); }
 
-        /* Luzes piscando nos cantos */
-        .slot-machine::before, .slot-machine::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            border-radius: 20px;
-            pointer-events: none;
-        }
-        .luzes {
-            position: absolute;
-            top: -3px; left: -3px; right: -3px; bottom: -3px;
-            border-radius: 26px;
-            border: 3px solid transparent;
-            animation: luzesPiscar 1.2s steps(1) infinite;
-        }
-        @keyframes luzesPiscar {
-            0%   { border-color: #ff5252; box-shadow: 0 0 12px #ff5252; }
-            25%  { border-color: #ffeb3b; box-shadow: 0 0 12px #ffeb3b; }
-            50%  { border-color: #4cff91; box-shadow: 0 0 12px #4cff91; }
-            75%  { border-color: #4e8aff; box-shadow: 0 0 12px #4e8aff; }
-            100% { border-color: #ff5252; box-shadow: 0 0 12px #ff5252; }
-        }
-        .luzes.pausado { animation: none; border-color: rgba(255,255,255,0.1); box-shadow: none; }
+        /* MODAL */
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; justify-content:center; align-items:flex-end; }
+        .modal-overlay.ativo { display:flex; }
+        .modal-content { background:linear-gradient(180deg,#173d8f,#0f2a66); border:1px solid rgba(255,255,255,0.15); border-radius:20px 20px 0 0; padding:22px 16px 36px; width:100%; max-width:600px; box-sizing:border-box; animation:subirModal 0.25s ease; }
+        @keyframes subirModal { from { transform:translateY(100%); } to { transform:translateY(0); } }
+        .modal-titulo { font-size:17px; font-weight:bold; color:#ffeb3b; text-align:center; margin-bottom:4px; }
+        .modal-subtitulo { font-size:12px; color:rgba(255,255,255,0.4); text-align:center; margin-bottom:18px; }
+        .btn-modal-acao { padding:14px; border-radius:12px; font-size:15px; font-weight:bold; cursor:pointer; text-align:center; transition:0.15s; margin-bottom:10px; }
+        .btn-modal-acao:active { transform:scale(0.97); }
+        .btn-calcular { background:#ffeb3b; color:#0b2256; border:none; }
+        .btn-encerrar { background:rgba(255,80,80,0.08); border:1px solid rgba(255,80,80,0.22); color:rgba(255,130,130,0.85); }
+        .btn-encerrar-teste { background:rgba(255,150,50,0.08); border:1px solid rgba(255,150,50,0.22); color:rgba(255,175,100,0.85); }
+        .btn-fechar-modal { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.35); }
 
-        .slot-janela {
-            position: relative;
-            z-index: 2;
-            text-align: center;
-        }
-        .slot-label {
-            font-size: 11px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.4);
-            margin-bottom: 4px;
-        }
-        .slot-numero {
-            font-size: 72px;
-            font-weight: 900;
-            color: #ffeb3b;
-            text-shadow: 0 0 20px rgba(255,235,59,0.7);
-            line-height: 1;
-            min-width: 120px;
-            display: block;
-            transition: none;
-            font-family: 'Courier New', monospace;
-        }
-        .slot-numero.girando {
-            animation: piscarNumero 0.08s steps(1) infinite;
-        }
-        @keyframes piscarNumero {
-            0%   { filter: blur(0px); }
-            50%  { filter: blur(2px); opacity: 0.7; }
-            100% { filter: blur(0px); }
-        }
+        /* TOAST */
+        .toast { position:fixed; bottom:70px; left:50%; transform:translateX(-50%) translateY(12px); background:#0f2a66; border:1px solid rgba(255,255,255,0.13); border-radius:50px; padding:11px 22px; font-size:14px; color:white; z-index:500; opacity:0; transition:opacity 0.25s, transform 0.25s; white-space:nowrap; pointer-events:none; }
+        .toast.visivel { opacity:1; transform:translateX(-50%) translateY(0); }
 
-        /* Braço do slot (decorativo) */
-        .slot-braco {
-            position: absolute;
-            right: -28px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 26px;
-            height: 90px;
-            background: linear-gradient(180deg, #8a6aff, #4e3a8a);
-            border-radius: 13px;
-            box-shadow: 3px 0 10px rgba(0,0,0,0.4);
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-            padding-top: 6px;
-        }
-        .slot-braco-bola {
-            width: 18px; height: 18px;
-            background: radial-gradient(circle at 30% 30%, #ff9800, #e65100);
-            border-radius: 50%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-        }
+        /* CONFETTI */
+        .confetti-piece { position:fixed; width:9px; height:9px; border-radius:2px; top:-10px; animation:cair linear forwards; z-index:999; pointer-events:none; }
+        @keyframes cair { to { transform:translateY(110vh) rotate(720deg); opacity:0; } }
 
-        .slot-decoracao {
-            display: flex;
-            gap: 12px;
-            margin-top: 14px;
-        }
-        .luz-decorativa {
-            width: 12px; height: 12px;
-            border-radius: 50%;
-            animation: luzesDec 0.6s steps(1) infinite;
-        }
-        .luz-decorativa:nth-child(1) { background: #ff5252; animation-delay: 0s; }
-        .luz-decorativa:nth-child(2) { background: #ffeb3b; animation-delay: 0.2s; }
-        .luz-decorativa:nth-child(3) { background: #4cff91; animation-delay: 0.4s; }
-        .luz-decorativa:nth-child(4) { background: #4e8aff; animation-delay: 0.2s; }
-        .luz-decorativa:nth-child(5) { background: #ff5252; animation-delay: 0s; }
-        .luz-decorativa.pausado { animation: none; background: rgba(255,255,255,0.15); }
-
-        @keyframes luzesDec {
-            0%, 49% { opacity: 1; }
-            50%, 100% { opacity: 0.2; }
-        }
-
-        /* Botão sortear */
-        .btn-sortear {
-            background: linear-gradient(135deg, #6a3de8, #3d1fa8);
-            border: 3px solid #8a6aff;
-            color: white;
-            font-weight: 900;
-            font-size: 20px;
-            letter-spacing: 2px;
-            padding: 18px 40px;
-            border-radius: 50px;
-            cursor: pointer;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 8px 30px rgba(106,61,232,0.5);
-            transition: 0.15s;
-            position: relative;
-            overflow: hidden;
-        }
-        .btn-sortear::before {
-            content: '';
-            position: absolute;
-            top: -50%; left: -50%;
-            width: 200%; height: 200%;
-            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%);
-            transform: translateX(-100%) rotate(45deg);
-            animation: brilhoBtn 2.5s ease infinite;
-        }
-        @keyframes brilhoBtn {
-            0% { transform: translateX(-100%) rotate(45deg); }
-            100% { transform: translateX(100%) rotate(45deg); }
-        }
-        .btn-sortear:active { transform: scale(0.97); box-shadow: 0 4px 12px rgba(106,61,232,0.4); }
-        .btn-sortear:disabled {
-            background: #2a2a4a;
-            border-color: #3a3a5a;
-            color: #555;
-            cursor: not-allowed;
-            box-shadow: none;
-            animation: none;
-        }
-        .btn-sortear:disabled::before { display: none; }
-
-        /* ---- TELA: JÁ SELECIONOU ---- */
-        .card-minha-rota {
-            width: 100%;
-            background: linear-gradient(135deg, #0a2a0a, #0d3d1a);
-            border: 2px solid #4cff91;
-            border-radius: 24px;
-            padding: 28px 20px 24px;
-            text-align: center;
-            box-shadow: 0 0 40px rgba(76,255,145,0.2);
-            margin: 10px 0 20px;
-            animation: revelarCard 0.5s ease;
-        }
-        @keyframes revelarCard {
-            from { opacity: 0; transform: scale(0.85); }
-            to   { opacity: 1; transform: scale(1); }
-        }
-        .minha-rota-label {
-            font-size: 11px;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            color: #4cff91;
-            opacity: 0.7;
-            margin-bottom: 4px;
-        }
-        .minha-rota-numero {
-            font-size: 96px;
-            font-weight: 900;
-            color: #ffeb3b;
-            text-shadow: 0 0 30px rgba(255,235,59,0.5);
-            line-height: 1;
-            font-family: 'Courier New', monospace;
-        }
-        .minha-rota-subtitulo {
-            font-size: 13px;
-            color: rgba(255,255,255,0.5);
-            margin-top: 6px;
-        }
-
-        /* Seção de detalhes da rota */
-        .secao-detalhes { width: 100%; }
-        .secao-titulo {
-            font-size: 12px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #7b9ed9;
-            margin: 20px 0 10px;
-            text-align: center;
-        }
-
-        .card-cliente {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 14px 16px;
-            margin-bottom: 10px;
-            width: 100%;
-        }
-        .card-cliente-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-        }
-        .card-cliente-nome {
-            font-weight: bold;
-            font-size: 16px;
-            flex: 1;
-        }
-        .card-cliente-dias {
-            font-size: 11px;
-            color: #ffeb3b;
-            background: rgba(255,235,59,0.1);
-            border-radius: 8px;
-            padding: 3px 8px;
-            margin-left: 8px;
-            white-space: nowrap;
-        }
-        .card-cliente-end {
-            font-size: 12px;
-            color: rgba(255,255,255,0.5);
-            margin-bottom: 8px;
-        }
-
-        /* Fotos das máquinas */
-        .fotos-maquinas {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 6px;
-        }
-        .foto-maquina-wrap {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-        }
-        .foto-maquina {
-            width: 80px;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.15);
-            cursor: pointer;
-        }
-        .foto-maquina-nome {
-            font-size: 10px;
-            color: rgba(255,255,255,0.5);
-            text-align: center;
-            max-width: 80px;
-            word-break: break-word;
-        }
-
-        /* Foto ampliada */
-        .lightbox {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.9);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        .lightbox.ativo { display: flex; }
-        .lightbox img {
-            max-width: 95vw;
-            max-height: 90vh;
-            border-radius: 12px;
-            object-fit: contain;
-        }
-
-        /* ---- BOTÃO ADMIN FLUTUANTE ---- */
-        .btn-admin-float {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(20,40,100,0.85);
-            border: 1px solid rgba(78,138,255,0.4);
-            border-radius: 50px;
-            padding: 10px 18px;
-            font-size: 13px;
-            color: #7b9ed9;
-            cursor: pointer;
-            z-index: 100;
-            backdrop-filter: blur(6px);
-            display: none;
-            gap: 6px;
-            align-items: center;
-        }
-        .btn-admin-float.visivel { display: flex; }
-        .btn-admin-float:active { background: rgba(40,70,160,0.85); }
-
-        /* ---- MODAL ADMIN ---- */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.75);
-            z-index: 200;
-            justify-content: center;
-            align-items: flex-end;
-        }
-        .modal-overlay.ativo { display: flex; }
-        .modal-content {
-            background: #0d1a3d;
-            border: 1px solid rgba(78,138,255,0.3);
-            border-radius: 24px 24px 0 0;
-            padding: 24px 20px 40px;
-            width: 100%;
-            max-width: 440px;
-            max-height: 85vh;
-            overflow-y: auto;
-            animation: subirModal 0.3s ease;
-        }
-        @keyframes subirModal {
-            from { transform: translateY(100%); }
-            to   { transform: translateY(0); }
-        }
-        .modal-titulo {
-            font-size: 18px;
-            font-weight: bold;
-            color: #ffeb3b;
-            text-align: center;
-            margin-bottom: 6px;
-        }
-        .modal-subtitulo {
-            font-size: 12px;
-            color: #7b9ed9;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .btn-modal-acao {
-            padding: 13px;
-            border-radius: 14px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            text-align: center;
-            transition: 0.15s;
-            margin-bottom: 10px;
-        }
-        .btn-modal-acao:active { transform: scale(0.97); }
-        .btn-calcular {
-            background: linear-gradient(135deg, #1e6b2e, #2ecc71);
-            color: white;
-            border: none;
-            box-shadow: 0 4px 16px rgba(46,204,113,0.3);
-        }
-        .btn-encerrar {
-            background: rgba(255,80,80,0.1);
-            border: 1px solid rgba(255,80,80,0.3);
-            color: #ff8080;
-        }
-        .btn-fechar-modal {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.5);
-        }
-
-        /* Toast notification */
-        .toast {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: rgba(20,40,100,0.95);
-            border: 1px solid rgba(78,138,255,0.4);
-            border-radius: 50px;
-            padding: 12px 24px;
-            font-size: 14px;
-            color: white;
-            z-index: 500;
-            opacity: 0;
-            transition: opacity 0.3s, transform 0.3s;
-            white-space: nowrap;
-            pointer-events: none;
-        }
-        .toast.visivel {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* Confetti */
-        .confetti-piece {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            border-radius: 2px;
-            top: -10px;
-            animation: cair linear forwards;
-            z-index: 999;
-            pointer-events: none;
-        }
-        @keyframes cair {
-            to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-        }
-
-        /* Utilitários */
-        .mt-8 { margin-top: 8px; }
-        .mt-16 { margin-top: 16px; }
-        .texto-centro { text-align: center; }
-        .cor-aviso { color: #ff9800; font-size: 13px; text-align: center; }
+        .cor-aviso { color:rgba(255,152,0,0.75); font-size:13px; text-align:center; }
     </style>
 </head>
 <body>
@@ -608,10 +108,7 @@
                 <polyline points="15 18 9 12 15 6"/>
             </svg>
         </div>
-        <div>
-            <div class="titulo-topo">Seleção de Rotas</div>
-            <div class="subtitulo-topo">Play Diversões</div>
-        </div>
+        <div class="titulo">Seleção de Rotas</div>
     </div>
 
     <!-- TELA: CARREGANDO -->
@@ -628,14 +125,11 @@
 
     <!-- TELA: SESSÃO ATIVA -->
     <div id="telaSessaoAtiva" class="tela">
-        <div id="contadorRotas" class="contador-rotas">
-            <span id="numDisponiveis">–</span> rotas disponíveis &nbsp;·&nbsp; <span id="numSelecionadas">0</span> já selecionadas
-        </div>
 
         <!-- Lista de quem já selecionou -->
         <div id="listaSelecoes" class="lista-selecoes"></div>
 
-        <!-- Slot machine -->
+        <!-- Card com número -->
         <div class="slot-wrapper">
             <div class="slot-machine">
                 <div class="luzes" id="luzesMaquina"></div>
@@ -643,16 +137,6 @@
                     <div class="slot-label">ROTA</div>
                     <span class="slot-numero" id="slotNumero">?</span>
                 </div>
-                <div class="slot-braco">
-                    <div class="slot-braco-bola"></div>
-                </div>
-            </div>
-            <div class="slot-decoracao">
-                <div class="luz-decorativa" id="luz0"></div>
-                <div class="luz-decorativa" id="luz1"></div>
-                <div class="luz-decorativa" id="luz2"></div>
-                <div class="luz-decorativa" id="luz3"></div>
-                <div class="luz-decorativa" id="luz4"></div>
             </div>
         </div>
 
@@ -681,7 +165,7 @@
         <div class="modal-subtitulo">Gerencie a sessão de seleção de rotas</div>
         <div class="btn-modal-acao btn-calcular" onclick="recalcularESessao()">🔄 Recalcular e Reiniciar Sessão</div>
         <div class="btn-modal-acao btn-encerrar" onclick="encerrarSessao()">🛑 Encerrar Sessão Atual</div>
-        <div class="btn-modal-acao btn-encerrar" onclick="limparSelecoes()" style="border-color:rgba(255,150,50,0.4);color:#ffaa60">🧹 Limpar Seleções (Teste)</div>
+        <div class="btn-modal-acao btn-encerrar-teste" onclick="limparSelecoes()">🧹 Limpar Seleções (Teste)</div>
         <div class="btn-modal-acao btn-fechar-modal" onclick="fecharModalAdmin()">Fechar</div>
     </div>
 </div>
@@ -784,8 +268,6 @@ function mostrarTelaSessaoAtiva(sessao) {
     const selecionadas = todasRotas.filter(([_, r]) => r.selecionada_por);
     const disponiveis = todasRotas.filter(([_, r]) => !r.selecionada_por);
 
-    document.getElementById('numDisponiveis').textContent = disponiveis.length;
-    document.getElementById('numSelecionadas').textContent = selecionadas.length;
 
     numerosDeRota = todasRotas.map(([n]) => n);
     clientesPorRota = sessao.clientes_por_rota || {};
@@ -848,46 +330,47 @@ function pausarAnimacao(ultimoNumero) {
     document.getElementById('slotNumero').textContent = ultimoNumero || '–';
     document.getElementById('slotNumero').classList.remove('girando');
     document.getElementById('luzesMaquina').classList.add('pausado');
-    [0,1,2,3,4].forEach(i => document.getElementById('luz' + i).classList.add('pausado'));
+}
+
+const ORDEM_DIAS = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+
+function diasEmComum(clientes) {
+    if (!clientes.length) return [];
+    const sets = clientes.map(c =>
+        new Set((c.aberto || '').split(',').map(d => d.trim()).filter(Boolean))
+    );
+    return ORDEM_DIAS.filter(d => sets.every(s => s.has(d)));
 }
 
 function mostrarMinhasRotas(numerosRota, sessao) {
-    const maquinas = sessao.maquinas_por_cliente || {};
     const wrap = document.getElementById('detalhesMinhaRota');
-    let html = '';
+    let html = `<div class="secao-titulo">Rotas Selecionadas</div>`;
 
-    numerosRota.forEach((numeroRota, idx) => {
+    numerosRota.forEach(numeroRota => {
         const clientes = (sessao.clientes_por_rota || {})[numeroRota] || [];
-        const ordinal = idx === 0 ? '1ª' : idx === 1 ? '2ª' : '3ª';
-        if (clientes.length) {
-            html += `<div class="secao-titulo">${ordinal} Rota — ${numeroRota}</div>`;
-            clientes.forEach(c => {
-                const fotosCliente = maquinas[c.id] || [];
-                const diasStr = c.aberto || '–';
-                const endStr = [c.endereco, c.numero_endereco, c.cidade].filter(Boolean).join(', ');
-                let fotoHtml = '';
-                if (fotosCliente.length > 0) {
-                    fotoHtml = '<div class="fotos-maquinas">';
-                    fotosCliente.forEach(f => {
-                        fotoHtml += `
-                            <div class="foto-maquina-wrap">
-                                <img class="foto-maquina" src="${f.url}" alt="${f.nome}" onclick="abrirLightbox('${f.url}')">
-                                <div class="foto-maquina-nome">${f.nome}</div>
-                            </div>`;
-                    });
-                    fotoHtml += '</div>';
-                }
-                html += `
-                <div class="card-cliente">
-                    <div class="card-cliente-header">
-                        <div class="card-cliente-nome">${c.nome}</div>
-                        <div class="card-cliente-dias">${diasStr}</div>
-                    </div>
-                    ${endStr ? `<div class="card-cliente-end">📍 ${endStr}</div>` : ''}
-                    ${fotoHtml}
-                </div>`;
-            });
-        }
+        const comuns = diasEmComum(clientes);
+        const diasHtml = comuns.length
+            ? comuns.map(d => `<span class="dia-badge">${d}</span>`).join('')
+            : `<span style="font-size:12px;color:rgba(255,255,255,0.3)">Dias variados</span>`;
+
+        // Monta query de endereços para o mapa (primeiro cliente com endereço)
+        const primeiroEnd = clientes.find(c => c.endereco);
+        const queryMapa = primeiroEnd
+            ? encodeURIComponent([primeiroEnd.endereco, primeiroEnd.numero_endereco, primeiroEnd.cidade].filter(Boolean).join(', '))
+            : '';
+
+        html += `
+        <div class="card-rota">
+            <div class="card-rota-numero">Rota ${numeroRota} <span>(${clientes.length} cliente${clientes.length !== 1 ? 's' : ''})</span></div>
+            <div class="card-rota-dias">
+                <span class="card-rota-dias-label">Dias em comum:</span>
+                ${diasHtml}
+            </div>
+            <div class="card-rota-acoes">
+                ${queryMapa ? `<div onclick="window.open('https://www.google.com/maps/search/?api=1&query=${queryMapa}','_blank')" style="padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);cursor:pointer;font-size:16px;">📍</div>` : ''}
+                <div class="btn-ver-clientes" onclick="window.location.href='clientes.html'">Ver clientes</div>
+            </div>
+        </div>`;
     });
 
     wrap.innerHTML = html;

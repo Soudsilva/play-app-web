@@ -26,12 +26,12 @@
         .dia-pix-section { background:rgba(144,202,249,0.08); border:1px solid rgba(144,202,249,0.2); border-radius:10px; padding:8px 10px; margin-bottom:10px; }
         .dia-pix-titulo { font-size:13px; font-weight:bold; color:#90caf9; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
         .dia-pix-item { display:flex; justify-content:space-between; align-items:center; padding:3px 0; }
-        .dia-pix-nome { font-size:14px; color:rgba(255,255,255,0.85); }
+        .dia-pix-nome { font-size:14px; color:#fff; }
         .dia-pix-val { font-size:15px; font-weight:bold; color:#90caf9; }
         .dia-linha3 { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-        .dia-resumo { display:flex; flex-direction:column; gap:4px; }
-        .dia-resumo-item { display:flex; gap:8px; align-items:baseline; }
-        .dia-resumo-label { font-size:12px; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; }
+        .dia-resumo { display:grid; grid-template-columns:max-content auto; gap:4px 10px; flex:1; align-content:start; }
+        .dia-resumo-item { display:contents; }
+        .dia-resumo-label { font-size:12px; color:#fff; text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; }
         .dia-resumo-val { font-size:15px; font-weight:bold; color:#fff; }
         .dia-resumo-val.pix { color:#90caf9; }
         .dia-resumo-val.com { color:#ef9a9a; }
@@ -47,7 +47,7 @@
             border-radius:18px; padding:18px 22px; margin-bottom:18px;
             display:flex; align-items:center; justify-content:space-between;
         }
-        .card-falta-label { font-size:12px; font-weight:bold; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+        .card-falta-label { font-size:12px; font-weight:bold; color:#fff; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
         .card-falta-valor { font-size:34px; font-weight:bold; color:#a5d6a7; line-height:1.1; }
 
         /* Form depósito */
@@ -55,7 +55,7 @@
         .form-deposito-titulo { font-size:13px; font-weight:bold; color:#81c784; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; text-align:center; }
         .form-row { display:flex; gap:10px; align-items:flex-end; }
         .form-input-wrap { flex:1; }
-        .form-label { font-size:11px; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; display:block; }
+        .form-label { font-size:11px; color:#fff; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; display:block; }
         .form-input { width:100%; padding:12px 14px; border-radius:12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; font-size:18px; font-weight:bold; box-sizing:border-box; outline:none; }
         .form-input::placeholder { color:rgba(255,255,255,0.3); font-size:14px; font-weight:normal; }
         .btn-foto-env { flex-shrink:0; width:56px; height:50px; border-radius:12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:22px; position:relative; overflow:hidden; align-self:stretch; height:auto; }
@@ -71,7 +71,7 @@
         .dep-foto { width:100%; height:100%; object-fit:cover; display:block; }
         .dep-sem-foto { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:10px; color:rgba(255,255,255,0.3); text-align:center; padding:4px; box-sizing:border-box; }
         .dep-info { flex:1; }
-        .dep-data { font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:4px; }
+        .dep-data { font-size:12px; color:#fff; margin-bottom:4px; }
         .dep-valor { font-size:22px; font-weight:bold; color:#a5d6a7; }
 
         /* Formulário fixo */
@@ -88,7 +88,7 @@
         .lb-img { max-width:96vw; max-height:90vh; border-radius:10px; object-fit:contain; }
         .lb-fechar { position:absolute; top:16px; right:16px; font-size:28px; color:#fff; cursor:pointer; background:rgba(255,255,255,0.1); border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; }
 
-        .vazio-msg { text-align:center; padding:24px 20px; color:rgba(255,255,255,0.35); font-size:15px; }
+        .vazio-msg { text-align:center; padding:24px 20px; color:#fff; font-size:15px; }
 
         @keyframes sealPulse {
             0%   { box-shadow: 0 0 0 0 rgba(76,175,80,0.5); }
@@ -111,6 +111,24 @@
             background:rgba(255,152,0,0.12); border:1px dashed rgba(255,152,0,0.5);
             border-radius:20px; padding:4px 10px; font-size:11px; font-weight:bold;
             color:#ffb74d; letter-spacing:0.4px; text-transform:uppercase;
+        }
+        @keyframes pulseYellow {
+            0%   { box-shadow: 0 0 8px rgba(255,235,59,0.3); border-color: rgba(255,235,59,0.5); }
+            50%  { box-shadow: 0 0 22px rgba(255,235,59,0.7); border-color: rgba(255,235,59,1); }
+            100% { box-shadow: 0 0 8px rgba(255,235,59,0.3); border-color: rgba(255,235,59,0.5); }
+        }
+        .card-falta-yellow {
+            border-color: rgba(255,235,59,0.7) !important;
+        }
+        @keyframes pulseBlue {
+            0%   { box-shadow: 0 0 10px rgba(33,150,243,0.4); border-color: rgba(33,150,243,0.6); }
+            50%  { box-shadow: 0 0 28px rgba(33,150,243,0.85); border-color: rgba(100,181,246,1); }
+            100% { box-shadow: 0 0 10px rgba(33,150,243,0.4); border-color: rgba(33,150,243,0.6); }
+        }
+        .card-falta-blue {
+            background: linear-gradient(135deg, #0d2e5a, #0a1e3d, #0d3a6e) !important;
+            border-color: rgba(33,150,243,0.6) !important;
+            animation: pulseBlue 2.5s ease-in-out infinite;
         }
         @keyframes pulseOk {
             0%   { box-shadow: 0 0 10px rgba(76,175,80,0.3); border-color: rgba(76,175,80,0.7); }
@@ -146,14 +164,14 @@
     <div style="background:#0e2d72;border:1px solid rgba(255,235,59,0.4);border-radius:18px;padding:22px;width:100%;max-width:340px;box-sizing:border-box;">
         <div style="font-size:15px;font-weight:bold;color:#ffeb3b;text-align:center;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">✏️ Editar Depósito</div>
         <input type="hidden" id="editDepKey">
-        <label style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Valor</label>
+        <label style="font-size:11px;color:#fff;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Valor</label>
         <input class="form-input" type="text" inputmode="numeric" id="editDepValor" placeholder="Valor" oninput="formatarValorDep(this)" style="margin-bottom:12px;">
-        <label style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Obs.</label>
+        <label style="font-size:11px;color:#fff;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Obs.</label>
         <input class="form-input" type="text" id="editDepObs" placeholder="Obs." style="font-size:14px;margin-bottom:14px;">
-        <label style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Foto do envelope</label>
+        <label style="font-size:11px;color:#fff;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Foto do envelope</label>
         <label id="editBtnFoto" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:10px 14px;cursor:pointer;margin-bottom:18px;position:relative;overflow:hidden;">
             <span id="editIconeFoto" style="font-size:22px;">📷</span>
-            <span id="editLabelFoto" style="font-size:13px;color:rgba(255,255,255,0.6);">Trocar foto</span>
+            <span id="editLabelFoto" style="font-size:13px;color:#fff;">Trocar foto</span>
             <img id="editPreviewFoto" src="" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.2);">
             <input type="file" accept="image/*" capture="environment" id="editInputFoto" onchange="previewFotoEdicao(event)" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
         </label>
@@ -207,20 +225,23 @@
     const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
+    function bsbDate(isoStr) {
+        return new Date(new Date(isoStr || 0).toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+    }
+
     function ehHoje(isoStr) {
         if (!isoStr) return false;
-        const d = new Date(isoStr);
-        const hoje = new Date();
-        return d.getFullYear() === hoje.getFullYear() &&
-               d.getMonth() === hoje.getMonth() &&
-               d.getDate() === hoje.getDate();
+        const opts = { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' };
+        const depDate = new Date(isoStr).toLocaleDateString('pt-BR', opts);
+        const hoje = new Date().toLocaleDateString('pt-BR', opts);
+        return depDate === hoje;
     }
 
     function moeda(v) {
         return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits:0, maximumFractionDigits:0 });
     }
     function dataLocalStr(date) {
-        const d = (date instanceof Date) ? date : new Date(date || 0);
+        const d = bsbDate(date instanceof Date ? date.toISOString() : (date || 0));
         if (isNaN(d)) return null;
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
@@ -328,7 +349,7 @@
         const ano = parseInt(selAno.value);
         const filtrados = todosAtendimentos.filter(a => {
             if (a.atendente !== usuarioLogado) return false;
-            const d = new Date(a.data || a.dataHora || 0);
+            const d = bsbDate(a.data || a.dataHora || 0);
             return !isNaN(d) && d.getMonth() + 1 === mes && d.getFullYear() === ano;
         });
 
@@ -366,14 +387,14 @@
             </div>`;
     }
 
-    function buildGreenCard(totalCobr, totalDep, dataLabel, deposito) {
+    function buildGreenCard(totalCobr, totalDep, dataLabel, depositos) {
         const falta = totalCobr - totalDep;
         const pct = totalCobr > 0 ? Math.min(100, Math.round(totalDep / totalCobr * 100)) : 0;
-        const depHoje = deposito && ehHoje(deposito.data);
-        const depHTML = deposito ? `
-            <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:14px;">
-                <div style="font-size:11px; font-weight:bold; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">📬 Depósito Realizado</div>
-                <div style="display:flex; align-items:center; gap:12px;">
+        const depHTML = depositos && depositos.length > 0 ? `
+            <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:14px; width:100%; box-sizing:border-box;">
+                <div style="font-size:11px; font-weight:bold; color:#fff; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">🏦 ${depositos.length > 1 ? 'Depósitos Realizados' : 'Depósito Realizado'}</div>
+                ${depositos.map((deposito, idx) => `
+                <div style="display:flex; align-items:center; gap:12px;${idx < depositos.length - 1 ? ' margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.08);' : ''}">
                     <div style="flex-shrink:0; width:56px; height:70px; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.3); cursor:${deposito.foto ? 'pointer' : 'default'};"
                         ${deposito.foto ? `onclick="abrirFoto('${deposito.foto}')"` : ''}>
                         ${deposito.foto
@@ -381,27 +402,32 @@
                             : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,0.3);text-align:center;padding:4px;box-sizing:border-box;">Sem foto</div>`}
                     </div>
                     <div style="flex:1;">
-                        <div style="font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:3px;">${formatarDataBR(dataLocalStr(deposito.data) || '')}${deposito.obs ? ` · <span style="color:#ffeb3b;font-weight:bold;">${deposito.obs}</span>` : ''}</div>
+                        <div style="font-size:12px; color:#fff; margin-bottom:3px;">${formatarDataBR(dataLocalStr(deposito.data) || '')}${deposito.obs ? ` · <span style="color:#ffeb3b;font-weight:bold;">${deposito.obs}</span>` : ''}</div>
                         <div style="font-size:22px; font-weight:bold; color:#a5d6a7;">${moeda(deposito.valor)}</div>
                         <div style="font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; color:${deposito.conferido ? '#a5d6a7' : '#ffb74d'};">${deposito.conferido ? 'Envelope conferido' : 'Aguardando conferência'}</div>
                     </div>
-                    ${depHoje ? `
-                    <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
-                        <button onclick="abrirEdicaoDeposito('${deposito.firebaseUrl}')" style="background:rgba(255,235,59,0.12);border:1px solid rgba(255,235,59,0.35);border-radius:10px;color:#ffeb3b;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">✏️</button>
+                    ${ehHoje(deposito.data) ? `
+                    <div style="flex-shrink:0; display:flex; flex-direction:column; gap:6px;">
+                        <button onclick="abrirEdicaoDeposito('${deposito.firebaseUrl}')" style="background:rgba(255,235,59,0.1);border:1px solid rgba(255,235,59,0.4);border-radius:10px;color:#fff176;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">✏️</button>
                         <button onclick="excluirDeposito('${deposito.firebaseUrl}')" style="background:rgba(244,67,54,0.12);border:1px solid rgba(244,67,54,0.35);border-radius:10px;color:#ef9a9a;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">🗑️</button>
                     </div>` : ''}
-                </div>
+                </div>`).join('')}
             </div>` : '';
         return `
-            <div class="card-falta" style="flex-direction:column; gap:14px; margin-bottom:18px;">
-                <div style="font-size:11px; font-weight:bold; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:1px; text-align:center;">
+            <div class="card-falta${falta <= 0 ? ' card-falta-blue' : ' card-falta-yellow'}" style="flex-direction:column; gap:14px; margin-bottom:18px;">
+                ${falta <= 0 ? `
+                <div style="display:flex; align-items:center; justify-content:center; gap:8px; background:rgba(33,150,243,0.15); border:1px solid rgba(100,181,246,0.4); border-radius:12px; padding:8px 14px;">
+                    <span style="font-size:18px;">✅</span>
+                    <span style="font-size:12px; font-weight:bold; color:#90caf9; text-transform:uppercase; letter-spacing:1px;">Em dia até ${dataLabel}</span>
+                </div>` : ''}
+                <div style="font-size:11px; font-weight:bold; color:#fff; text-transform:uppercase; letter-spacing:1px; text-align:center;">
                     Soma dos Saldos até <span style="color:#ffeb3b; font-size:13px;">${dataLabel}</span>
                 </div>
                 <div style="text-align:center;">
                     <div style="font-size:36px; font-weight:bold; color:#fff; line-height:1;">${moeda(totalCobr)}</div>
                 </div>
                 <div>
-                    <div style="display:flex; justify-content:space-between; font-size:10px; color:rgba(255,255,255,0.4); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">
+                    <div style="display:flex; justify-content:space-between; font-size:10px; color:#fff; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px;">
                         <span>Depositado ${pct}%</span>
                         <span>Falta ${100 - pct}%</span>
                     </div>
@@ -415,7 +441,7 @@
                                 <div class="card-ate-ok-texto" style="font-size:13px; font-weight:bold; color:#a5d6a7; letter-spacing:0.5px; line-height:1.4;">✅ Até essa<br>data ok</div>
                            </div>`
                         : `<div style="text-align:center; background:rgba(255,111,0,0.15); border:2px solid rgba(255,111,0,0.6); border-radius:12px; padding:12px 8px; box-shadow:0 0 12px rgba(255,111,0,0.2);">
-                                <div style="font-size:11px; font-weight:bold; color:#ff9800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">⚠ Faltou depositar</div>
+                                <div style="font-size:11px; font-weight:bold; color:#ff9800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">⚠ DEPOSITE</div>
                                 <div style="font-size:22px; font-weight:bold; color:#ffb74d;">${moeda(falta)}</div>
                            </div>`
                     }
@@ -429,7 +455,13 @@
     }
 
     function renderizarFaltaEDepositos() {
-        const meusAtendimentos = todosAtendimentos.filter(a => a.atendente === usuarioLogado);
+        const mes = parseInt(selMes.value);
+        const ano = parseInt(selAno.value);
+        const meusAtendimentos = todosAtendimentos.filter(a => {
+            if (a.atendente !== usuarioLogado) return false;
+            const d = bsbDate(a.data || a.dataHora || 0);
+            return !isNaN(d) && d.getMonth() + 1 === mes && d.getFullYear() === ano;
+        });
 
         // Saldo por dia (all-time) com dados completos para o card detalhado
         const porDiaAllTime = {};
@@ -450,14 +482,29 @@
         });
 
         const cobDias = Object.entries(porDiaAllTime).sort((a, b) => a[0].localeCompare(b[0]));
-        const depositosOrdenados = [...todosDepositos].sort((a, b) => (a.data || '').localeCompare(b.data || ''));
+        const depositosPorDia = {};
+        todosDepositos
+            .filter(d => { const dt = bsbDate(d.data || 0); return dt.getMonth() + 1 === mes && dt.getFullYear() === ano; })
+            .forEach(d => {
+                const key = dataLocalStr(d.data) || '';
+                if (!depositosPorDia[key]) depositosPorDia[key] = [];
+                depositosPorDia[key].push(d);
+            });
+        const depositosOrdenados = Object.entries(depositosPorDia)
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([dataKey, deps]) => ({
+                dataKey,
+                data: deps[0].data,
+                deps,
+                valor: deps.reduce((s, d) => s + Number(d.valor || 0), 0)
+            }));
 
         // Divide em segmentos: cada depósito fecha um segmento
         // Segmento = cobranças entre o depósito anterior e este depósito
         const segmentos = [];
         let prevDepDate = '';
         for (const dep of depositosOrdenados) {
-            const depDate = dataLocalStr(dep.data) || '';
+            const depDate = dep.dataKey;
             const cobsDoSeg = cobDias.filter(([d]) => (!prevDepDate || d > prevDepDate) && d <= depDate);
             segmentos.push({ cobs: cobsDoSeg, deposito: dep });
             prevDepDate = depDate;
@@ -476,6 +523,8 @@
         }
 
         const htmlItems = [];
+
+
         let residual = 0; // saldo não quitado de segmentos anteriores
         for (const seg of segmentos) {
             // Cards detalhados do segmento
@@ -484,21 +533,23 @@
             }
 
             const segTotal = residual + seg.cobs.reduce((s, [, v]) => s + v.saldo, 0);
-            if (segTotal > 0) {
-                if (seg.deposito) {
-                    // Segmento fechado: card verde completo com depósito dentro
-                    const ultimaDataSeg = seg.cobs[seg.cobs.length - 1][0];
-                    const valorDep = Number(seg.deposito.valor || 0);
-                    residual = Math.max(0, segTotal - valorDep);
-                    htmlItems.push(buildGreenCard(segTotal, valorDep, formatarDataBR(ultimaDataSeg), seg.deposito));
-                } else {
-                    // Segmento aberto: card verde pequeno só com faltou depositar
-                    htmlItems.push(`
-                        <div class="card-falta" style="flex-direction:column; align-items:center; gap:6px; padding:16px 20px; margin-bottom:18px;">
-                            <div style="font-size:11px; font-weight:bold; color:#ff9800; text-transform:uppercase; letter-spacing:0.5px;">⚠ Faltou depositar</div>
-                            <div style="font-size:32px; font-weight:bold; color:#ffb74d;">${moeda(segTotal)}</div>
-                        </div>`);
+            if (seg.deposito) {
+                // Segmento fechado: atualiza residual sempre (pode ser negativo = excesso abate próximo período)
+                const ultimaDataSeg = seg.cobs.length > 0
+                    ? seg.cobs[seg.cobs.length - 1][0]
+                    : dataLocalStr(seg.deposito.data) || '';
+                const valorDep = Number(seg.deposito.valor || 0);
+                residual = segTotal - valorDep; // negativo = excesso que abate o próximo período
+                if (segTotal > 0 || valorDep > 0) {
+                    htmlItems.push(buildGreenCard(Math.max(0, segTotal), valorDep, formatarDataBR(ultimaDataSeg), seg.deposito.deps));
                 }
+            } else if (segTotal > 0) {
+                // Segmento aberto: só mostra se ainda há saldo a depositar
+                htmlItems.push(`
+                    <div class="card-falta" style="flex-direction:column; align-items:center; gap:6px; padding:16px 20px; margin-bottom:18px;">
+                        <div style="font-size:11px; font-weight:bold; color:#ff9800; text-transform:uppercase; letter-spacing:0.5px;">⚠ DEPOSITE</div>
+                        <div style="font-size:32px; font-weight:bold; color:#ffb74d;">${moeda(segTotal)}</div>
+                    </div>`);
             }
         }
 
@@ -535,7 +586,8 @@
                 fotoUrl = await storageSalvarFoto(fotoEnvelopeBase64, 'depositos');
             }
             const obs = document.getElementById('inputObsDep')?.value?.trim() || '';
-            await dbSalvarDeposito({ usuario: usuarioLogado, valor, obs, foto: fotoUrl, data: new Date().toISOString() });
+            const dataFinal = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' })).toISOString();
+            await dbSalvarDeposito({ usuario: usuarioLogado, valor, obs, foto: fotoUrl, data: dataFinal });
             fotoEnvelopeBase64 = null;
             valorInput.value = '';
             const obsInput = document.getElementById('inputObsDep');
@@ -547,13 +599,14 @@
             document.getElementById('iconeFotoEnv').style.display = '';
             btnFoto.querySelectorAll('img').forEach(img => img.remove());
             todosDepositos = await dbListarDepositos(usuarioLogado);
-            renderizarFaltaEDepositos();
         } catch(e) {
             console.error(e);
             window.playAlert('Erro ao salvar depósito.');
+            return;
         } finally {
             btn.disabled = false;
         }
+        renderizarFaltaEDepositos();
     };
 
     let editFotoBase64 = null;
@@ -590,7 +643,7 @@
 
     window.excluirDeposito = async function(firebaseKey) {
         const dep = todosDepositos.find(d => d.firebaseUrl === firebaseKey);
-        if (!dep || !ehHoje(dep.data)) return;
+        if (!dep) return;
         const confirmado = await window.playConfirm('Excluir este depósito?');
         if (!confirmado) return;
         try {
@@ -638,10 +691,10 @@
         }
     };
 
-    selMes.addEventListener('change', renderizarDias);
+    selMes.addEventListener('change', renderizarFaltaEDepositos);
     selAno.addEventListener('change', () => {
         preencherMeses(parseInt(selAno.value));
-        renderizarDias();
+        renderizarFaltaEDepositos();
     });
 
     const agora = new Date();
@@ -666,7 +719,6 @@
     });
 
     preencherMeses(parseInt(selAno.value));
-    renderizarDias();
     renderizarFaltaEDepositos();
 </script>
 </body>
