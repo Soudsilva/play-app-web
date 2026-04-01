@@ -264,6 +264,7 @@
             font-weight: bold;
         }
 
+
         .card-info-linhas {
             margin-bottom: 12px;
         }
@@ -1162,14 +1163,17 @@
     });
 
     async function limparSelecesExpiradas(lista) {
-        const agora = Date.now();
-        const DOIS_DIAS_MS = 2 * 24 * 60 * 60 * 1000;
+        const hoje = new Date();
+        const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).getTime();
 
         const expirados = lista.filter(m => {
             if (!m.selecionadoPor) return false;
             if (!m.dataSelecionado) return true; // sem timestamp = registro antigo, desmarcar
             const ts = Date.parse(m.dataSelecionado);
-            return !Number.isNaN(ts) && (agora - ts) > DOIS_DIAS_MS;
+            if (Number.isNaN(ts)) return true;
+            const d = new Date(ts);
+            const inicioDiaSel = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+            return Math.floor((inicioHoje - inicioDiaSel) / 86400000) >= 2;
         });
 
         for (const m of expirados) {
