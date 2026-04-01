@@ -501,6 +501,28 @@
         border: 1px solid rgba(255,255,255,0.25);
     }
     .lightbox-overlay .lb-fechar svg { width: 16px; height: 16px; stroke: white; fill: none; stroke-width: 2.5; stroke-linecap: round; }
+
+    .filtro-rota-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255,235,59,0.1);
+        border: 1px solid rgba(255,235,59,0.35);
+        border-radius: 50px;
+        padding: 9px 16px;
+        margin-bottom: 12px;
+        font-size: 13px;
+        font-weight: bold;
+        color: #ffeb3b;
+    }
+    .filtro-rota-fechar {
+        margin-left: auto;
+        cursor: pointer;
+        font-size: 20px;
+        line-height: 1;
+        color: rgba(255,235,59,0.55);
+    }
+    .filtro-rota-fechar:active { opacity: 0.5; }
 </style>
 </head>
 <body>
@@ -525,6 +547,11 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
             <input type="text" id="campoPesquisa" placeholder="Buscar...">
         </div>
+    </div>
+
+    <div id="filtroRotaBadge" class="filtro-rota-badge" style="display:none;">
+        <span id="filtroRotaTexto"></span>
+        <span class="filtro-rota-fechar" onclick="limparFiltroRota()">×</span>
     </div>
 
     <div id="listaClientes">
@@ -684,6 +711,7 @@
             // 3. Montar o card final
             const card = document.createElement('div');
             card.className = 'cliente';
+            card.dataset.rota = c.rota || '';
             card.innerHTML = `
                 <div class="cliente-accent"></div>
                 <div class="cliente-corpo">
@@ -724,6 +752,8 @@
             `;
             listaHTML.appendChild(card);
         });
+
+        if (rotaFiltroAtivo) filtrarPorRota(rotaFiltroAtivo);
     }
 
     dbEscutarColaboradores((colaboradores) => {
@@ -745,6 +775,40 @@
             card.style.display = textoCard.includes(normalizado) ? "block" : "none";
         });
     }
+
+    let rotaFiltroAtivo = null;
+
+    function normalizarRota(v) {
+        return String(v || '').replace(/^(\d)$/, '0$1').trim();
+    }
+
+    function filtrarPorRota(numero) {
+        rotaFiltroAtivo = numero;
+        const normalizado = normalizarRota(numero);
+        let total = 0;
+        document.querySelectorAll('.cliente').forEach(card => {
+            const rotaCard = normalizarRota(card.dataset.rota);
+            const visivel = rotaCard === normalizado;
+            card.style.display = visivel ? 'block' : 'none';
+            if (visivel) total++;
+        });
+        document.getElementById('filtroRotaTexto').textContent = `Rota: ${normalizado} — ${total} cliente${total !== 1 ? 's' : ''}`;
+        document.getElementById('filtroRotaBadge').style.display = 'flex';
+    }
+
+    window.limparFiltroRota = function() {
+        rotaFiltroAtivo = null;
+        document.getElementById('filtroRotaBadge').style.display = 'none';
+        const termo = document.getElementById('campoPesquisa').value;
+        if (termo) {
+            aplicarBusca(termo);
+        } else {
+            document.querySelectorAll('.cliente').forEach(card => card.style.display = 'block');
+        }
+    };
+
+    const rotaParam = new URLSearchParams(window.location.search).get('rota');
+    if (rotaParam) filtrarPorRota(rotaParam);
 
     document.getElementById('campoPesquisa').oninput = (e) => {
         aplicarBusca(e.target.value);

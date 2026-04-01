@@ -1909,7 +1909,7 @@
                 nome: document.getElementById("nome").value,
                 cidade: document.getElementById("cidade").value,
                 comissao: comissaoFinal,
-                rota: document.getElementById("rota").value.replace(/^R\./, ""),
+                rota: document.getElementById("rota").value.replace(/^R\./, "").replace(/^(\d)$/, "0$1"),
                 endereco: enderecoCompletoFinal,
                 endereco_base: enderecoBaseFinal,
                 numero_endereco: numeroEnderecoFinal,

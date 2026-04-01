@@ -140,6 +140,8 @@
             </div>
         </div>
 
+        <div id="contadorRotas" style="text-align:center; font-size:13px; color:white; margin-bottom:12px; letter-spacing:0.5px;"></div>
+
         <div id="btnSortearWrap" style="width:100%">
             <div class="btn-sortear" id="btnSortear" onclick="selecionarRota()">
                 ✅ &nbsp;SELECIONAR MINHA ROTA
@@ -226,10 +228,21 @@ let criandoSessao = false;
 // ─────────────────────────────────────────────
 async function onSessaoAtualizada(sessao) {
     sessaoAtual = sessao;
+
+    if (estaAnimando) {
+        if (sessao && sessao.rotas) {
+            const qtdDisp = Object.values(sessao.rotas).filter(r => !r.selecionada_por).length;
+            document.getElementById('contadorRotas').textContent =
+                qtdDisp > 0
+                    ? `${qtdDisp} rota${qtdDisp !== 1 ? 's' : ''} disponíve${qtdDisp !== 1 ? 'is' : 'l'}`
+                    : 'Nenhuma rota disponível';
+        }
+        return;
+    }
+
     ocultarTodas();
 
     if (!sessao) {
-        // Cria automaticamente a sessão para qualquer usuário
         await criarSessaoAutomatica();
     } else {
         mostrarTelaSessaoAtiva(sessao);
@@ -268,32 +281,17 @@ function mostrarTelaSessaoAtiva(sessao) {
     const selecionadas = todasRotas.filter(([_, r]) => r.selecionada_por);
     const disponiveis = todasRotas.filter(([_, r]) => !r.selecionada_por);
 
+    const qtdDisp = disponiveis.length;
+    document.getElementById('contadorRotas').textContent =
+        qtdDisp > 0
+            ? `${qtdDisp} rota${qtdDisp !== 1 ? 's' : ''} disponíve${qtdDisp !== 1 ? 'is' : 'l'}`
+            : 'Nenhuma rota disponível';
+
 
     numerosDeRota = todasRotas.map(([n]) => n);
     clientesPorRota = sessao.clientes_por_rota || {};
     maquinasPorCliente = sessao.maquinas_por_cliente || {};
 
-    // Lista de quem já selecionou — não atualiza enquanto a animação estiver rodando
-    if (!estaAnimando) {
-        const listaEl = document.getElementById('listaSelecoes');
-        listaEl.innerHTML = '';
-        const porUsuario = {};
-        selecionadas.forEach(([_, r]) => {
-            if (!porUsuario[r.selecionada_por]) {
-                porUsuario[r.selecionada_por] = { qtd: 0, primeiro: r.timestamp_selecao };
-            }
-            porUsuario[r.selecionada_por].qtd++;
-        });
-        Object.entries(porUsuario)
-            .sort((a, b) => new Date(a[1].primeiro) - new Date(b[1].primeiro))
-            .forEach(([nome, info]) => {
-                const div = document.createElement('div');
-                div.className = 'item-selecao';
-                const badges = Array.from({ length: info.qtd }, () => '🗺️').join(' ');
-                div.innerHTML = `<span class="nome-usuario">✅ ${nome}</span><span class="status-check">${badges}</span>`;
-                listaEl.appendChild(div);
-            });
-    }
 
     // Rotas já selecionadas pelo usuário atual
     const minhasRotas = todasRotas
@@ -367,8 +365,8 @@ function mostrarMinhasRotas(numerosRota, sessao) {
                 ${diasHtml}
             </div>
             <div class="card-rota-acoes">
-                ${queryMapa ? `<div onclick="window.open('https://www.google.com/maps/search/?api=1&query=${queryMapa}','_blank')" style="padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);cursor:pointer;font-size:16px;">📍</div>` : ''}
-                <div class="btn-ver-clientes" onclick="window.location.href='clientes.html'">Ver clientes</div>
+                ${queryMapa ? `<div onclick="window.open('https://www.google.com/maps/search/?api=1&query=${queryMapa}','_blank')" style="padding:6px 10px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);cursor:pointer;"><img src="assets/img/Localizacao.png" style="width:28px;height:28px;display:block;"></div>` : ''}
+                <div class="btn-ver-clientes" onclick="window.location.href='clientes.html?rota=${numeroRota}'">Ver clientes</div>
             </div>
         </div>`;
     });
@@ -392,7 +390,7 @@ window.selecionarRota = async function() {
 
     const btn = document.getElementById('btnSortear');
     btn.setAttribute('disabled', true);
-    btn.innerHTML = 'Selecionando...';
+    btn.innerHTML = 'Buscando rota de maior valor disponível...';
 
     // Liga a flag ANTES de chamar o Firebase para que o listener
     // que dispara ao salvar já encontre estaAnimando = true
@@ -436,6 +434,16 @@ window.selecionarRota = async function() {
         }
         if (minhasRotas.length >= LIMITE_ROTAS) {
             document.getElementById('btnSortearWrap').style.display = 'none';
+        } else {
+            const disponiveis = Object.values(rotas).filter(r => !r.selecionada_por);
+            if (disponiveis.length === 0) {
+                btn.setAttribute('disabled', true);
+                btn.innerHTML = '🔒 &nbsp;Nenhuma rota disponível';
+            } else {
+                const ordinal = minhasRotas.length === 1 ? '2ª' : '3ª';
+                btn.removeAttribute('disabled');
+                btn.innerHTML = `✅ &nbsp;SELECIONAR ${ordinal} ROTA`;
+            }
         }
     }
 };
@@ -458,10 +466,10 @@ function animarSlot(rotaFinal) {
             count++;
 
             let delay;
-            if (count < totalSpins * 0.5)      delay = 70;
-            else if (count < totalSpins * 0.75) delay = 160;
-            else if (count < totalSpins * 0.9)  delay = 300;
-            else if (count < totalSpins)         delay = 500;
+            if (count < totalSpins * 0.5)      delay = 55;
+            else if (count < totalSpins * 0.75) delay = 130;
+            else if (count < totalSpins * 0.9)  delay = 240;
+            else if (count < totalSpins)         delay = 400;
             else {
                 el.classList.remove('girando');
                 el.textContent = rotaFinal;

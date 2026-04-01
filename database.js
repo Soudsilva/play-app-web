@@ -602,23 +602,23 @@ export async function dbSelecionarRota(nomeUsuario) {
     const [numeroRota] = disponiveis[0];
     const rotaRef = ref(db, `selecao_rotas/ativa/rotas/${numeroRota}`);
 
-    let rotaClaimada = null;
+    let tentativa = null;
 
-    await runTransaction(rotaRef, (dadosAtuais) => {
+    const result = await runTransaction(rotaRef, (dadosAtuais) => {
+        tentativa = null; // reseta a cada invocação do callback (Firebase pode chamar várias vezes)
         if (dadosAtuais && !dadosAtuais.selecionada_por) {
-            rotaClaimada = { ...dadosAtuais, numeroRota };
+            tentativa = { ...dadosAtuais, numeroRota };
             return {
                 ...dadosAtuais,
                 selecionada_por: nomeUsuario,
                 timestamp_selecao: new Date().toISOString()
             };
         }
-        // Aborta se já foi pega por outra pessoa
-        return undefined;
+        return undefined; // aborta: rota já foi pega
     });
 
-    if (rotaClaimada) {
-        return { ...rotaClaimada, selecionada_por: nomeUsuario };
+    if (result.committed && tentativa) {
+        return { ...tentativa, selecionada_por: nomeUsuario };
     }
 
     // Rota foi pega por outra pessoa no mesmo instante: tenta a próxima
