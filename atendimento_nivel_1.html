@@ -248,6 +248,54 @@
             border-radius: 8px; padding: 10px; width: 100%; font-size: 15px; cursor: pointer; margin-top: 8px;
         }
         /* =================== FIM MODO TESTE =================== */
+
+        /* === BLOCO SATURNO === */
+        .card-saturno {
+            border: 3px solid #f44336;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 25px;
+            background: rgba(244, 67, 54, 0.12);
+        }
+        .titulo-saturno {
+            text-align: center;
+            font-weight: bold;
+            color: #ff5252;
+            font-size: 22px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        .aviso-saturno {
+            background: #b71c1c;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 17px;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+        .aviso-saturno-secundario {
+            background: rgba(255,82,82,0.15);
+            border: 1px solid #f44336;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+            color: #ff8a80;
+            text-align: center;
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+        #saturnoContagem {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            border: 2px solid #f44336;
+            background: rgba(244,67,54,0.1);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -279,6 +327,22 @@
         <div id="containerProdutos">
             <!-- As linhas serão inseridas aqui via JS -->
         </div>
+    </div>
+
+    <!-- MÁQUINA SATURNO: Contagem de bolinhas (mostrado apenas quando o cliente tem Saturno) -->
+    <div id="card-saturno" class="card-saturno" style="display:none;">
+        <div class="titulo-saturno">⚠️ MÁQUINA SATURNO ⚠️</div>
+        <div class="aviso-saturno">
+            CONTE as bolinhas que estão<br>DENTRO da máquina AGORA<br>
+            <span style="font-size:14px; font-weight:normal; opacity:0.9;">Faça isso ANTES de colocar mais produto</span>
+        </div>
+        <div class="aviso-saturno-secundario">
+            ⛔ NÃO é a quantidade que você vai abastecer<br>
+            É o que já está lá dentro da máquina!
+        </div>
+        <label style="text-align:center; color:#ffcdd2; font-size:16px; font-weight:bold; display:block;">Bolinhas encontradas dentro da máquina:</label>
+        <input type="number" id="saturnoContagem" inputmode="numeric" placeholder="0" min="0"
+               style="margin-top:8px;" oninput="salvarRascunho()">
     </div>
 
     <!-- 3. FINANCEIRO -->
@@ -793,6 +857,17 @@
                 });
             }
 
+            // Detecta máquina Saturno e exibe bloco de contagem
+            const temSaturno = (cliente.equip || '').split(', ').some(item => {
+                const nome = item.replace(/\s*\(([^)]+)\)$/, '').replace(/\s*\[Pix:\s*([^\]]+)\]$/i, '').trim();
+                return nome.toLowerCase().includes('saturno');
+            });
+            const cardSaturno = document.getElementById('card-saturno');
+            if (cardSaturno) {
+                cardSaturno.style.display = temSaturno ? 'block' : 'none';
+                if (!temSaturno) document.getElementById('saturnoContagem').value = '';
+            }
+
             if (pixValues.length > 0) {
                 areaPix.style.display = 'block';
                 pixValues.forEach((pix, index) => {
@@ -830,6 +905,8 @@
             document.getElementById('containerPix').innerHTML = '';
             document.getElementById('containerFotosPix').innerHTML = '';
             document.getElementById('containerFotosMaquinas').innerHTML = '';
+            const cardSaturnoErr = document.getElementById('card-saturno');
+            if (cardSaturnoErr) { cardSaturnoErr.style.display = 'none'; document.getElementById('saturnoContagem').value = ''; }
             criarLinhaPix();
         }
     }
@@ -1077,12 +1154,25 @@
         return null;
     }
 
+    function validarSaturno() {
+        const card = document.getElementById('card-saturno');
+        if (!card || card.style.display === 'none') return null;
+        const val = (document.getElementById('saturnoContagem').value || '').trim();
+        if (val === '') {
+            return 'MÁQUINA SATURNO: Preencha a contagem de bolinhas que estavam dentro da máquina antes de finalizar.';
+        }
+        return null;
+    }
+
     window.salvarAtendimento = async function() { // [ALTERADO] para async
         const btn = document.querySelector('.btn-finalizar');
         const idCliente = document.getElementById('idClienteSelecionado').value;
         const atendimentoEmEdicaoId = obterIdAtendimentoEmEdicao();
         const dataOriginalEdicao = obterDataAtendimentoEmEdicao();
         if (!idCliente) return alert("Selecione um cliente válido.");
+
+        const erroSaturno = validarSaturno();
+        if (erroSaturno) return alert(erroSaturno);
 
         const erroDinheiro = validarDinheiroInformado();
         if (erroDinheiro) return alert(erroDinheiro);
@@ -1206,7 +1296,13 @@
                     cidade:          clienteCompleto.cidade          || '',
                     ponto_aberto:    clienteCompleto.ponto_aberto    || '',
                 },
-                produtos, financeiro, fotos
+                produtos, financeiro, fotos,
+                saturno_contagem_bolinhas: (() => {
+                    const card = document.getElementById('card-saturno');
+                    if (!card || card.style.display === 'none') return null;
+                    const v = parseInt(document.getElementById('saturnoContagem').value, 10);
+                    return isNaN(v) ? null : v;
+                })()
             };
 
             if (atendimentoEmEdicaoId) {
@@ -1235,12 +1331,16 @@
     // --- SISTEMA DE RASCUNHO (Auto-Save) ---
     
     window.salvarRascunho = function() {
+        const cardSatRascunho = document.getElementById('card-saturno');
         const dados = {
             clienteBusca: document.getElementById('inputBuscaCliente').value || "",
             pixLinhas: [],
             valorDinheiro: document.getElementById('valorDinheiro').value || "",
             porcComissao: document.getElementById('porcComissao').value || "",
-            produtos: []
+            produtos: [],
+            saturnoContagem: (cardSatRascunho && cardSatRascunho.style.display !== 'none')
+                ? document.getElementById('saturnoContagem').value
+                : ""
         };
 
         document.querySelectorAll('#containerPix .linha-form').forEach(linha => {
@@ -1351,6 +1451,12 @@
                     });
                     // Adiciona uma linha vazia no final para continuar digitando
                     adicionarLinhaProduto();
+                }
+
+                // 3.5 Restaura contagem Saturno (buscarCliente já exibiu o bloco se necessário)
+                if (dados.saturnoContagem) {
+                    const elSat = document.getElementById('saturnoContagem');
+                    if (elSat) elSat.value = dados.saturnoContagem;
                 }
 
                 // 4. Restaura Foto da Ficha

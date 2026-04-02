@@ -53,8 +53,8 @@
         /* Form depósito */
         .form-deposito { background:rgba(76,175,80,0.08); border:1px solid rgba(76,175,80,0.3); border-radius:16px; padding:16px; margin-bottom:14px; }
         .form-deposito-titulo { font-size:13px; font-weight:bold; color:#81c784; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; text-align:center; }
-        .form-row { display:flex; gap:10px; align-items:flex-end; }
-        .form-input-wrap { flex:1; }
+        .form-row { display:flex; gap:10px; align-items:stretch; }
+        .form-input-wrap { flex:1; display:flex; }
         .form-label { font-size:11px; color:#fff; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; display:block; }
         .form-input { width:100%; padding:12px 14px; border-radius:12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; font-size:18px; font-weight:bold; box-sizing:border-box; outline:none; }
         .form-input::placeholder { color:rgba(255,255,255,0.3); font-size:14px; font-weight:normal; }
@@ -130,6 +130,11 @@
             border-color: rgba(33,150,243,0.6) !important;
             animation: pulseBlue 2.5s ease-in-out infinite;
         }
+        @keyframes pulseDeposite {
+            0%   { box-shadow: 0 0 20px rgba(255,120,0,0.3), inset 0 0 30px rgba(255,80,0,0.08); border-color: rgba(255,120,0,0.6); }
+            50%  { box-shadow: 0 0 55px rgba(255,120,0,0.7), inset 0 0 30px rgba(255,80,0,0.15); border-color: rgba(255,180,0,1); }
+            100% { box-shadow: 0 0 20px rgba(255,120,0,0.3), inset 0 0 30px rgba(255,80,0,0.08); border-color: rgba(255,120,0,0.6); }
+        }
         @keyframes pulseOk {
             0%   { box-shadow: 0 0 10px rgba(76,175,80,0.3); border-color: rgba(76,175,80,0.7); }
             50%  { box-shadow: 0 0 26px rgba(76,175,80,0.7); border-color: rgba(129,199,132,1); }
@@ -143,6 +148,11 @@
         .card-ate-ok {
             animation: pulseOk 2s ease-in-out infinite;
         }
+        .obs-overlay { max-height:0; overflow:hidden; transition:max-height 0.28s ease, padding 0.28s ease; padding:0; }
+        .obs-overlay.aberta { max-height:70px; padding-bottom:8px; }
+        .btn-obs { flex-shrink:0; width:46px; border-radius:12px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; font-size:20px; cursor:pointer; position:relative; display:flex; align-items:center; justify-content:center; padding:0; }
+        .btn-obs.tem-obs { border-color:rgba(255,235,59,0.5); background:rgba(255,235,59,0.08); }
+        .obs-badge { display:none; position:absolute; top:5px; right:5px; width:8px; height:8px; background:#ffeb3b; border-radius:50%; }
         .card-ate-ok-texto {
             animation: shimmerOk 2s ease-in-out infinite;
         }
@@ -169,12 +179,19 @@
         <label style="font-size:11px;color:#fff;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Obs.</label>
         <input class="form-input" type="text" id="editDepObs" placeholder="Obs." style="font-size:14px;margin-bottom:14px;">
         <label style="font-size:11px;color:#fff;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Foto do envelope</label>
-        <label id="editBtnFoto" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:10px 14px;cursor:pointer;margin-bottom:18px;position:relative;overflow:hidden;">
-            <span id="editIconeFoto" style="font-size:22px;">📷</span>
-            <span id="editLabelFoto" style="font-size:13px;color:#fff;">Trocar foto</span>
-            <img id="editPreviewFoto" src="" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.2);">
-            <input type="file" accept="image/*" capture="environment" id="editInputFoto" onchange="previewFotoEdicao(event)" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
-        </label>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <label id="editBtnCamera" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:12px 8px;cursor:pointer;position:relative;overflow:hidden;">
+                <span style="font-size:18px;">📷</span>
+                <span style="font-size:13px;color:#fff;font-weight:bold;">Câmera</span>
+                <input type="file" accept="image/*" capture="environment" id="editInputFotoCamera" onchange="previewFotoEdicao(event)" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+            </label>
+            <label id="editBtnGaleria" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:12px 8px;cursor:pointer;position:relative;overflow:hidden;">
+                <span style="font-size:18px;">🖼️</span>
+                <span style="font-size:13px;color:#fff;font-weight:bold;">Galeria</span>
+                <input type="file" accept="image/*" id="editInputFotoGaleria" onchange="previewFotoEdicao(event)" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+            </label>
+        </div>
+        <img id="editPreviewFoto" src="" style="display:none;width:100%;max-height:100px;object-fit:cover;border-radius:12px;border:1px solid rgba(76,175,80,0.4);margin-bottom:18px;">
         <div style="display:flex;gap:10px;">
             <button onclick="fecharEdicaoDep()" style="flex:1;padding:13px;border-radius:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);color:white;font-size:15px;cursor:pointer;">Cancelar</button>
             <button id="btnSalvarEdicao" onclick="salvarEdicaoDep()" style="flex:1;padding:13px;border-radius:12px;background:#ffeb3b;border:none;color:#0b2256;font-size:15px;font-weight:bold;cursor:pointer;">Salvar</button>
@@ -190,16 +207,39 @@
 
 <!-- Formulário fixo acima da barra -->
 <div class="form-fixo">
+    <div class="obs-overlay" id="obsOverlay">
+        <input class="form-input" type="text" maxlength="30" placeholder="Observação..." id="inputObsDep"
+            style="font-size:14px; padding:12px 14px; width:100%; box-sizing:border-box;"
+            oninput="atualizarBadgeObs(this.value)"
+            onblur="fecharObs()">
+    </div>
     <div class="form-row">
-        <input class="form-input" type="text" maxlength="5" placeholder="Obs." id="inputObsDep" style="width:110px; flex-shrink:0; font-size:14px; padding:14px 8px;">
-        <div class="form-input-wrap" style="max-width:110px; flex-shrink:0;">
+        <button class="btn-obs" id="btnObs" onclick="toggleObs()">
+            📝<span class="obs-badge" id="obsBadge"></span>
+        </button>
+        <div class="form-input-wrap" style="flex:1;">
             <input class="form-input" type="text" inputmode="numeric" placeholder="Valor" id="inputValorDep" oninput="formatarValorDep(this)">
         </div>
-        <label class="btn-foto-env" id="btnFotoEnv">
-            <span id="iconeFotoEnv">📷</span>
-            <input type="file" accept="image/*" capture="environment" id="inputFotoEnv" onchange="previewFotoEnv(event)">
-        </label>
-        <button class="btn-confirmar" id="btnConfirmarDep" onclick="registrarDeposito()" style="margin-top:0; width:auto; padding:14px 18px;">✓</button>
+        <div style="position:relative; flex-shrink:0; display:flex; align-self:stretch;">
+            <button class="btn-foto-env" id="btnFotoEnv" type="button" onclick="toggleMenuFoto()" style="flex:1;">
+                <span id="iconeFotoEnv">📷</span>
+            </button>
+            <div id="menuFoto" style="display:none; position:absolute; bottom:calc(100% + 8px); right:0; z-index:300;">
+                <div style="background:#0d2560; border:1px solid rgba(255,255,255,0.15); border-radius:14px; overflow:hidden; box-shadow:0 -4px 24px rgba(0,0,0,0.5);">
+                    <label style="display:flex;align-items:center;gap:10px;padding:13px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.08);position:relative;overflow:hidden;white-space:nowrap;">
+                        <span style="font-size:18px;">📷</span>
+                        <span style="font-size:14px;font-weight:bold;color:#fff;">Câmera</span>
+                        <input type="file" accept="image/*" capture="environment" id="inputFotoCamera" onchange="previewFotoEnv(event);fecharMenuFoto();" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+                    </label>
+                    <label style="display:flex;align-items:center;gap:10px;padding:13px 20px;cursor:pointer;position:relative;overflow:hidden;white-space:nowrap;">
+                        <span style="font-size:18px;">🖼️</span>
+                        <span style="font-size:14px;font-weight:bold;color:#fff;">Galeria</span>
+                        <input type="file" accept="image/*" id="inputFotoGaleria" onchange="previewFotoEnv(event);fecharMenuFoto();" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+                    </label>
+                </div>
+            </div>
+        </div>
+        <button class="btn-confirmar" id="btnConfirmarDep" onclick="registrarDeposito()" style="margin-top:0; width:auto; padding:0 18px;">✓</button>
     </div>
 </div>
 
@@ -214,6 +254,35 @@
         let v = input.value.replace(/\D/g, '');
         if (v.length > 5) v = v.slice(0, 5);
         input.value = v ? Number(v).toLocaleString('pt-BR') : '';
+    }
+    function toggleMenuFoto() {
+        const menu = document.getElementById('menuFoto');
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+    function fecharMenuFoto() {
+        document.getElementById('menuFoto').style.display = 'none';
+    }
+    document.addEventListener('click', function(e) {
+        const menu = document.getElementById('menuFoto');
+        const btn = document.getElementById('btnFotoEnv');
+        if (menu && !menu.contains(e.target) && btn && !btn.contains(e.target)) {
+            menu.style.display = 'none';
+        }
+    });
+    function toggleObs() {
+        const overlay = document.getElementById('obsOverlay');
+        const input = document.getElementById('inputObsDep');
+        const aberta = overlay.classList.toggle('aberta');
+        if (aberta) setTimeout(() => input.focus(), 50);
+    }
+    function fecharObs() {
+        setTimeout(() => document.getElementById('obsOverlay').classList.remove('aberta'), 150);
+    }
+    function atualizarBadgeObs(val) {
+        const badge = document.getElementById('obsBadge');
+        const btn = document.getElementById('btnObs');
+        badge.style.display = val ? '' : 'none';
+        btn.classList.toggle('tem-obs', !!val);
     }
 </script>
 <script src="assets/js/play-dialogs.js"></script>
@@ -435,20 +504,20 @@
                         <div style="width:${pct}%; background:linear-gradient(90deg,#1976d2,#42a5f5); height:100%; border-radius:10px; transition:width 0.6s ease;"></div>
                     </div>
                 </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:14px;">
+                <div style="display:flex; flex-direction:column; gap:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:14px;">
+                    <div style="text-align:center; background:rgba(33,150,243,0.12); border:1px solid rgba(33,150,243,0.35); border-radius:12px; padding:10px 8px;">
+                        <div style="font-size:10px; font-weight:bold; color:#64b5f6; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Depositado</div>
+                        <div style="font-size:16px; font-weight:bold; color:#90caf9;">${moeda(totalDep)}</div>
+                    </div>
                     ${falta <= 0
-                        ? `<div class="card-ate-ok" style="text-align:center; background:rgba(76,175,80,0.18); border:2px solid rgba(76,175,80,0.7); border-radius:12px; padding:12px 8px;">
-                                <div class="card-ate-ok-texto" style="font-size:13px; font-weight:bold; color:#a5d6a7; letter-spacing:0.5px; line-height:1.4;">✅ Até essa<br>data ok</div>
+                        ? `<div class="card-ate-ok" style="text-align:center; background:rgba(76,175,80,0.18); border:2px solid rgba(76,175,80,0.7); border-radius:14px; padding:20px 8px;">
+                                <div class="card-ate-ok-texto" style="font-size:22px; font-weight:bold; color:#a5d6a7; letter-spacing:0.5px; line-height:1.4;">✅ Até essa data, ok!</div>
                            </div>`
-                        : `<div style="text-align:center; background:rgba(255,111,0,0.15); border:2px solid rgba(255,111,0,0.6); border-radius:12px; padding:12px 8px; box-shadow:0 0 12px rgba(255,111,0,0.2);">
-                                <div style="font-size:11px; font-weight:bold; color:#ff9800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">⚠ DEPOSITE</div>
-                                <div style="font-size:22px; font-weight:bold; color:#ffb74d;">${moeda(falta)}</div>
+                        : `<div style="text-align:center; background:rgba(255,111,0,0.18); border:2px solid rgba(255,111,0,0.7); border-radius:14px; padding:20px 8px; box-shadow:0 0 20px rgba(255,111,0,0.3);">
+                                <div style="font-size:11px; font-weight:bold; color:#ff9800; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">⚠ DEPOSITE</div>
+                                <div style="font-size:42px; font-weight:bold; color:#ffb74d; line-height:1;">${moeda(falta)}</div>
                            </div>`
                     }
-                    <div style="text-align:center; background:rgba(33,150,243,0.12); border:1px solid rgba(33,150,243,0.35); border-radius:12px; padding:12px 8px;">
-                        <div style="font-size:11px; font-weight:bold; color:#64b5f6; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">Depositado</div>
-                        <div style="font-size:22px; font-weight:bold; color:#90caf9;">${moeda(totalDep)}</div>
-                    </div>
                 </div>
                 ${depHTML}
             </div>`;
@@ -515,17 +584,53 @@
             segmentos.push({ cobs: cobsAberto, deposito: null });
         }
 
+        // Carry-over de meses anteriores
+        let carryOver = 0;
+        {
+            const antAtend = todosAtendimentos.filter(a => {
+                if (a.atendente !== usuarioLogado) return false;
+                const d = bsbDate(a.data || a.dataHora || 0);
+                if (isNaN(d)) return false;
+                const ay = d.getFullYear(), am = d.getMonth() + 1;
+                return ay < ano || (ay === ano && am < mes);
+            });
+            let saldoAnt = 0;
+            antAtend.forEach(a => { saldoAnt += Number(a.financeiro?.dinheiro || 0) - Number(a.financeiro?.comissaoValor || 0); });
+            const depAntTotal = todosDepositos
+                .filter(d => { const dt = bsbDate(d.data || 0); const ay = dt.getFullYear(), am = dt.getMonth()+1; return ay < ano || (ay === ano && am < mes); })
+                .reduce((s, d) => s + Number(d.valor || 0), 0);
+            carryOver = saldoAnt - depAntTotal;
+        }
+
+        let carryOverHTML = '';
+        if (carryOver > 0) {
+            carryOverHTML = `<div style="background:rgba(255,152,0,0.08);border:1px dashed rgba(255,152,0,0.35);border-radius:12px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+                <span style="font-size:15px;">📋</span>
+                <div>
+                    <div style="font-size:10px;font-weight:bold;color:#ffb74d;text-transform:uppercase;letter-spacing:0.5px;">Pendente de meses anteriores</div>
+                    <div style="font-size:16px;font-weight:bold;color:#ffcc80;">${moeda(carryOver)}</div>
+                </div>
+            </div>`;
+        } else if (carryOver < 0) {
+            carryOverHTML = `<div style="background:rgba(76,175,80,0.07);border:1px dashed rgba(76,175,80,0.3);border-radius:12px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;overflow:hidden;">
+                <span style="font-size:18px;flex-shrink:0;">✅</span>
+                <span style="font-size:11px;font-weight:bold;color:#a5d6a7;text-transform:uppercase;letter-spacing:0.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Crédito de meses anteriores</span>
+                <span style="font-size:22px;font-weight:bold;color:#a5d6a7;white-space:nowrap;flex-shrink:0;">${moeda(-carryOver)}</span>
+            </div>`;
+        }
+
         document.getElementById('secaoFalta').innerHTML = '';
 
         if (segmentos.length === 0) {
-            document.getElementById('secaoDepositos').innerHTML = `<div class="vazio-msg">Nenhuma movimentação registrada ainda.</div>`;
+            document.getElementById('secaoDepositos').innerHTML = carryOver !== 0
+                ? `<div class="secao">${carryOverHTML}</div>`
+                : `<div class="vazio-msg">Nenhuma movimentação registrada ainda.</div>`;
             return;
         }
 
         const htmlItems = [];
 
-
-        let residual = 0; // saldo não quitado de segmentos anteriores
+        let residual = carryOver; // inclui saldo pendente/crédito de meses anteriores
         for (const seg of segmentos) {
             // Cards detalhados do segmento
             for (const [data, vals] of seg.cobs) {
@@ -546,14 +651,31 @@
             } else if (segTotal > 0) {
                 // Segmento aberto: só mostra se ainda há saldo a depositar
                 htmlItems.push(`
-                    <div class="card-falta" style="flex-direction:column; align-items:center; gap:6px; padding:16px 20px; margin-bottom:18px;">
-                        <div style="font-size:11px; font-weight:bold; color:#ff9800; text-transform:uppercase; letter-spacing:0.5px;">⚠ DEPOSITE</div>
-                        <div style="font-size:32px; font-weight:bold; color:#ffb74d;">${moeda(segTotal)}</div>
+                    <div class="card-falta" style="flex-direction:column; align-items:center; gap:14px; padding:36px 24px; margin-bottom:18px; border:2px solid rgba(255,120,0,0.8); background:linear-gradient(160deg,#4a1f00,#2e0e00,#3d1500); box-shadow:0 0 40px rgba(255,120,0,0.4), inset 0 0 30px rgba(255,80,0,0.08); animation:pulseDeposite 1.8s ease-in-out infinite;">
+                        <div style="font-size:11px; font-weight:bold; color:#ff6d00; text-transform:uppercase; letter-spacing:2px;">⚠ &nbsp;Falta Depositar&nbsp; ⚠</div>
+                        <div style="font-size:68px; font-weight:bold; color:#ffb74d; line-height:1; text-shadow:0 0 20px rgba(255,152,0,0.6);">${moeda(segTotal)}</div>
+                        <div style="width:80%; height:3px; background:linear-gradient(90deg,transparent,rgba(255,152,0,0.6),transparent); border-radius:2px;"></div>
+                        <div style="font-size:12px; color:rgba(255,183,77,0.55); font-weight:bold; text-transform:uppercase; letter-spacing:0.5px;">valor pendente do período</div>
                     </div>`);
             }
         }
 
-        document.getElementById('secaoDepositos').innerHTML = `<div class="secao">${htmlItems.join('')}</div>`;
+        document.getElementById('secaoDepositos').innerHTML = `<div class="secao">${carryOverHTML}${htmlItems.join('')}</div>`;
+    }
+
+    function mesPermitido() {
+        const mes = parseInt(selMes.value);
+        const ano = parseInt(selAno.value);
+        const agora = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+        const mesAtual = agora.getMonth() + 1, anoAtual = agora.getFullYear();
+        if (ano === anoAtual && mes === mesAtual) return true;
+        let mesPrev = mesAtual - 1, anoPrev = anoAtual;
+        if (mesPrev === 0) { mesPrev = 12; anoPrev--; }
+        return ano === anoPrev && mes === mesPrev;
+    }
+
+    function atualizarFormVisivel() {
+        document.querySelector('.form-fixo').style.display = mesPermitido() ? '' : 'none';
     }
 
     window.previewFotoEnv = function(e) {
@@ -568,12 +690,15 @@
             const img = document.createElement('img');
             img.src = fotoEnvelopeBase64;
             img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px;pointer-events:none;';
-            btn.insertBefore(img, btn.querySelector('input'));
+            btn.appendChild(img);
         };
         reader.readAsDataURL(file);
     };
 
     window.registrarDeposito = async function() {
+        if (!mesPermitido()) return;
+        const mes = parseInt(selMes.value);
+        const ano = parseInt(selAno.value);
         const valorInput = document.getElementById('inputValorDep');
         const valor = parseFloat(valorInput.value.replace(/\./g, '').replace(',', '.'));
         if (!valor || valor <= 0) return window.playAlert('Informe o valor do depósito.');
@@ -586,14 +711,19 @@
                 fotoUrl = await storageSalvarFoto(fotoEnvelopeBase64, 'depositos');
             }
             const obs = document.getElementById('inputObsDep')?.value?.trim() || '';
-            const dataFinal = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' })).toISOString();
+            const agora = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+            const mesAtual = agora.getMonth() + 1, anoAtual = agora.getFullYear();
+            const dataFinal = (ano === anoAtual && mes === mesAtual)
+                ? agora.toISOString()
+                : new Date(ano, mes, 0, 23, 59, 59).toISOString(); // último dia do mês selecionado
             await dbSalvarDeposito({ usuario: usuarioLogado, valor, obs, foto: fotoUrl, data: dataFinal });
             fotoEnvelopeBase64 = null;
             valorInput.value = '';
             const obsInput = document.getElementById('inputObsDep');
             if (obsInput) obsInput.value = '';
-            const fotoInput = document.getElementById('inputFotoEnv');
-            if (fotoInput) fotoInput.value = '';
+            document.getElementById('obsOverlay').classList.remove('aberta');
+            atualizarBadgeObs('');
+            ['inputFotoCamera','inputFotoGaleria'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
             const btnFoto = document.getElementById('btnFotoEnv');
             btnFoto.classList.remove('tem-foto');
             document.getElementById('iconeFotoEnv').style.display = '';
@@ -620,8 +750,10 @@
             const preview = document.getElementById('editPreviewFoto');
             preview.src = editFotoBase64;
             preview.style.display = 'block';
-            document.getElementById('editLabelFoto').textContent = 'Nova foto selecionada';
-            document.getElementById('editBtnFoto').style.borderColor = 'rgba(76,175,80,0.6)';
+            ['editBtnCamera','editBtnGaleria'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.style.borderColor = 'rgba(76,175,80,0.6)'; el.style.background = 'rgba(76,175,80,0.1)'; }
+            });
         };
         reader.readAsDataURL(file);
     };
@@ -633,10 +765,12 @@
         document.getElementById('editDepKey').value = firebaseKey;
         document.getElementById('editDepValor').value = Number(dep.valor).toLocaleString('pt-BR');
         document.getElementById('editDepObs').value = dep.obs || '';
-        document.getElementById('editInputFoto').value = '';
+        ['editInputFotoCamera','editInputFotoGaleria'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
         document.getElementById('editPreviewFoto').style.display = 'none';
-        document.getElementById('editLabelFoto').textContent = 'Trocar foto';
-        document.getElementById('editBtnFoto').style.borderColor = 'rgba(255,255,255,0.2)';
+        ['editBtnCamera','editBtnGaleria'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.style.borderColor = ''; el.style.background = ''; }
+        });
         document.getElementById('modalEditDep').style.display = 'flex';
         history.pushState({ editDep: true }, '');
     };
@@ -691,10 +825,11 @@
         }
     };
 
-    selMes.addEventListener('change', renderizarFaltaEDepositos);
+    selMes.addEventListener('change', () => { renderizarFaltaEDepositos(); atualizarFormVisivel(); });
     selAno.addEventListener('change', () => {
         preencherMeses(parseInt(selAno.value));
         renderizarFaltaEDepositos();
+        atualizarFormVisivel();
     });
 
     const agora = new Date();
@@ -720,6 +855,7 @@
 
     preencherMeses(parseInt(selAno.value));
     renderizarFaltaEDepositos();
+    atualizarFormVisivel();
 </script>
 </body>
 </html>

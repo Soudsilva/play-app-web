@@ -140,7 +140,7 @@
         .item-barra { background:#ffeb3b; height:100%; border-radius:10px; transition:width 0.5s ease; }
         .dia-item { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-bottom:1px solid rgba(255,255,255,0.07); }
         .dia-item:last-child { border-bottom:none; }
-        .dia-data { font-size:15px; color:rgba(255,255,255,0.6); }
+        .dia-data { font-size:16px; color:#fff; font-weight:bold; }
         .dia-count { font-size:14px; font-weight:bold; color:#fff; }
         .loading { text-align:center; padding:40px; opacity:0.6; }
 
@@ -152,11 +152,12 @@
         }
         .ficha-card:last-child { margin-bottom:0; }
         .ficha-info { flex:1; min-width:0; }
-        .ficha-numero { font-size:13px; font-weight:bold; color:#ffeb3b; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .ficha-numero { font-size:16px; font-weight:bold; color:#ffeb3b; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .ficha-linha { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; gap:8px; }
         .ficha-chave { font-size:11px; color:#fff; text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; }
         .ficha-val { font-size:13px; font-weight:bold; color:#fff; }
-        .ficha-val.pix { color:#a5d6a7; }
+        .ficha-val.pix { color:#ce93d8; }
+        .ficha-val.comissao { color:#f48fb1; }
         .ficha-val.dep { color:#ffcc80; }
         .ficha-val.saldo { color:#64b5f6; }
         .ficha-val.dinheiro { color:#a5d6a7; }
@@ -174,7 +175,7 @@
         }
         .ficha-foto-wrap:active .ficha-foto-overlay { background:rgba(0,0,0,0.4); }
         .ficha-foto-data {
-            font-size:10px; font-weight:bold; color:#ffeb3b;
+            font-size:14px; font-weight:bold; color:#ffeb3b;
             text-align:center; letter-spacing:0.3px;
         }
         .ficha-sem-foto {
@@ -570,13 +571,14 @@
                 const mesAno = dataDe.slice(0, 7);
                 comissaoUsuario = getComissaoParaMes(colaboradorObj, mesAno);
                 const valorComissao  = fin.liquido * comissaoUsuario / 100;
-                const totalDeveDepositar = fin.liquido - fin.pix;
+                const totalDeveDepositar = finPeriodo.liquido - finPeriodo.pix;
+                const ateRef = dataAte || dataDe;
                 const totalJaDepositado = todosDepositos
                     .filter(d => {
                         if (!d.data) return false;
                         const bsb = new Date(new Date(d.data).toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
-                        const mm = String(bsb.getMonth() + 1).padStart(2, '0');
-                        return `${bsb.getFullYear()}-${mm}` === mesAno;
+                        const dataDeposito = `${bsb.getFullYear()}-${String(bsb.getMonth() + 1).padStart(2, '0')}-${String(bsb.getDate()).padStart(2, '0')}`;
+                        return dataDeposito >= dataDe && dataDeposito <= ateRef;
                     })
                     .reduce((s, d) => s + Number(d.valor || 0), 0);
                 const valorDepositar = Math.max(0, totalDeveDepositar - totalJaDepositado);
@@ -584,17 +586,23 @@
                 return `
             <div class="card-resumo">
 
-                <!-- Cobrado no período -->
-                <div style="text-align:center; margin-bottom:16px;">
-                    <div style="font-size:10px; color:#ffeb3b; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;">${labelPeriodo}</div>
-                    <div style="font-size:22px; font-weight:bold; color:#ffeb3b;">${moeda(finPeriodo.liquido)}</div>
-                    <div style="font-size:10px; color:rgba(255,255,255,0.3); text-transform:uppercase; margin-top:2px;">Cobrado líquido</div>
+                <!-- Cobrado no período + Depositar na Loja -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+                    <div style="background:rgba(255,235,59,0.1); border:1px solid rgba(255,235,59,0.35); border-radius:14px; padding:14px 8px; text-align:center;">
+                        <div style="font-size:11px; color:#ffeb3b; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">${labelPeriodo}</div>
+                        <div style="font-size:20px; font-weight:bold; color:#ffeb3b; line-height:1;">${moeda(finPeriodo.liquido)}</div>
+                        <div style="font-size:10px; color:rgba(255,235,59,0.5); text-transform:uppercase; margin-top:5px;">Cobrado líquido</div>
+                    </div>
+                    <div style="background:rgba(255,152,0,0.15); border:1px solid rgba(255,152,0,0.4); border-radius:14px; padding:14px 8px; text-align:center;">
+                        <div style="font-size:11px; color:#ffb74d; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Depositar na Loja</div>
+                        <div style="font-size:20px; font-weight:bold; color:#ffcc80; line-height:1;">${moeda(valorDepositar)}</div>
+                    </div>
                 </div>
 
-                <!-- Total do mês + Comissão + Depósito -->
+                <!-- Total do mês + Comissão -->
                 <div style="border-top:1px dashed rgba(255,255,255,0.1); padding-top:14px;">
                     <div class="resumo-titulo" style="margin-bottom:10px;">💰 ${nomeMes}</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                     <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:14px 8px; text-align:center;">
                         <div style="font-size:11px; color:rgba(255,255,255,0.6); font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Total do mês</div>
                         <div style="font-size:20px; font-weight:bold; color:rgba(255,255,255,0.7); line-height:1;">${moeda(fin.liquido)}</div>
@@ -602,15 +610,10 @@
                     </div>
                     ${comissaoUsuario > 0 ? `
                     <div style="background:rgba(76,175,80,0.15); border:1px solid rgba(76,175,80,0.35); border-radius:14px; padding:14px 8px; text-align:center;">
-                        <div style="font-size:11px; color:#81c784; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Sua comissão</div>
+                        <div style="font-size:11px; color:#81c784; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Comissão do mês</div>
                         <div style="font-size:20px; font-weight:bold; color:#a5d6a7; line-height:1;">${moeda(valorComissao)}</div>
                         <div style="font-size:10px; color:rgba(165,214,167,0.6); margin-top:5px;">${comissaoUsuario}% do mês</div>
                     </div>` : `<div></div>`}
-                    <div style="background:rgba(255,152,0,0.15); border:1px solid rgba(255,152,0,0.4); border-radius:14px; padding:14px 8px; text-align:center;">
-                        <div style="font-size:11px; color:#ffb74d; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Deposite</div>
-                        <div style="font-size:20px; font-weight:bold; color:#ffcc80; line-height:1;">${moeda(valorDepositar)}</div>
-                        <div style="font-size:10px; color:rgba(255,204,128,0.6); margin-top:5px;">falta depositar</div>
-                    </div>
                 </div>
                 </div>
             </div>`;
@@ -651,6 +654,11 @@
                         <div class="ficha-linha">
                             <span class="ficha-chave">Valor em Pix</span>
                             <span class="ficha-val pix">${moeda(totalPix)}</span>
+                        </div>` : ''}
+                        ${Number(f.comissaoValor || 0) > 0 ? `
+                        <div class="ficha-linha">
+                            <span class="ficha-chave">Comissão Paga</span>
+                            <span class="ficha-val comissao">${moeda(f.comissaoValor)}</span>
                         </div>` : ''}
                         <div class="ficha-linha">
                             <span class="ficha-chave">Saldo</span>
