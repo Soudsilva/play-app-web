@@ -174,6 +174,34 @@
         width: 100%;
     }
 
+    .cliente.cliente-em-analise .cliente-accent {
+        background: linear-gradient(90deg, #ffeb3b, #ff9800);
+    }
+
+    .cliente-status-linha {
+        margin-top: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .cliente-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: rgba(255, 235, 59, 0.14);
+        border: 1px solid rgba(255, 235, 59, 0.35);
+        color: #ffeb3b;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        width: fit-content;
+    }
+
     .cliente-corpo {
         padding: 14px 16px 12px;
     }
@@ -523,6 +551,123 @@
         color: rgba(255,235,59,0.55);
     }
     .filtro-rota-fechar:active { opacity: 0.5; }
+
+    /* Modal escolha tipo de cadastro */
+    .escolha-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.65);
+        z-index: 2000;
+        align-items: flex-end;
+        justify-content: center;
+    }
+    .escolha-overlay.aberto { display: flex; }
+    .escolha-sheet {
+        width: 100%;
+        max-width: 440px;
+        background: linear-gradient(180deg, #11317a 0%, #0b2256 100%);
+        border-radius: 22px 22px 0 0;
+        padding: 22px 20px env(safe-area-inset-bottom, 20px);
+        box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+        border-top: 1px solid rgba(255,255,255,0.18);
+        animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .escolha-titulo {
+        font-size: 18px;
+        font-weight: bold;
+        text-align: center;
+        color: #ffeb3b;
+        margin-bottom: 4px;
+    }
+    .escolha-subtitulo {
+        font-size: 12px;
+        text-align: center;
+        color: rgba(255,255,255,0.55);
+        margin-bottom: 20px;
+        letter-spacing: 0.3px;
+    }
+    .escolha-opcoes { display: flex; flex-direction: column; gap: 10px; }
+    .escolha-card {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 14px;
+        padding: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .escolha-card:active { background: rgba(255,255,255,0.18); transform: scale(0.98); }
+    .escolha-card-icone {
+        width: 46px; height: 46px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .escolha-card-icone svg { width: 24px; height: 24px; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .escolha-card-icone.amarelo { background: rgba(255,235,59,0.15); border: 1px solid rgba(255,235,59,0.3); }
+    .escolha-card-icone.amarelo svg { stroke: #ffeb3b; }
+    .escolha-card-icone.verde { background: rgba(76,175,80,0.18); border: 1px solid rgba(76,175,80,0.35); }
+    .escolha-card-icone.verde svg { stroke: #66bb6a; }
+    .escolha-card-texto { flex: 1; min-width: 0; }
+    .escolha-card-nome { font-size: 15px; font-weight: bold; margin-bottom: 3px; }
+    .escolha-card-desc { font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.4; }
+    .escolha-cancelar {
+        text-align: center;
+        margin-top: 14px;
+        padding: 12px;
+        color: rgba(255,255,255,0.45);
+        font-size: 14px;
+        cursor: pointer;
+    }
+    .escolha-cancelar:active { opacity: 0.5; }
+
+    .escolha-sheet { max-height: 85vh; overflow-y: auto; }
+
+    .escolha-p2-topo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .escolha-voltar {
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.18);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .escolha-voltar:active { background: rgba(255,255,255,0.22); transform: scale(0.93); }
+    .escolha-voltar svg { width: 18px; height: 18px; stroke: white; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .escolha-select {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.1);
+        color: white;
+        font-size: 15px;
+        margin-bottom: 14px;
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+    .escolha-select option { background: #11317a; color: white; }
+    .escolha-lista-pontos { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
+    .ponto-card {
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 12px;
+        padding: 13px 14px;
+        cursor: pointer;
+    }
+    .ponto-card:active { background: rgba(255,255,255,0.17); transform: scale(0.98); }
+    .ponto-card-nome { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+    .ponto-card-info { font-size: 12px; color: rgba(255,255,255,0.52); line-height: 1.5; }
+    .escolha-lista-vazia { text-align: center; padding: 20px 0; font-size: 13px; color: rgba(255,255,255,0.38); }
 </style>
 </head>
 <body>
@@ -590,13 +735,66 @@
     </div>
 </div>
 
+<!-- Modal escolha tipo de cadastro -->
+<div class="escolha-overlay" id="escolhaOverlay" onclick="fecharEscolha(event)">
+    <div class="escolha-sheet">
+
+        <!-- Passo 1: tipo de registro -->
+        <div id="escolhaPasso1">
+            <div class="escolha-titulo">Novo Cliente</div>
+            <div class="escolha-subtitulo">Como deseja registrar?</div>
+            <div class="escolha-opcoes">
+                <div class="escolha-card" onclick="window.location.href='cadastrar_cliente.html?modo=solicitar'">
+                    <div class="escolha-card-icone amarelo">
+                        <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v6h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                    </div>
+                    <div class="escolha-card-texto">
+                        <div class="escolha-card-nome">Solicitar Entrega</div>
+                        <div class="escolha-card-desc">Fechar acordo — alguém levará as máquinas depois</div>
+                    </div>
+                </div>
+                <div class="escolha-card" id="btnIrCadastrar">
+                    <div class="escolha-card-icone verde">
+                        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
+                    </div>
+                    <div class="escolha-card-texto">
+                        <div class="escolha-card-nome">Cadastrar Cliente</div>
+                        <div class="escolha-card-desc">Equipamentos já instalados no ponto de venda</div>
+                    </div>
+                </div>
+            </div>
+            <div class="escolha-cancelar" onclick="fecharEscolhaBotao()">Cancelar</div>
+        </div>
+
+        <!-- Passo 2: selecionar representante e ponto novo -->
+        <div id="escolhaPasso2" style="display:none;">
+            <div class="escolha-p2-topo">
+                <div class="escolha-voltar" onclick="voltarEscolhaPasso1()">
+                    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                </div>
+                <div>
+                    <div class="escolha-titulo" style="margin-bottom:2px;">Cadastrar Cliente</div>
+                    <div class="escolha-subtitulo" style="margin-bottom:0;">Selecione o representante</div>
+                </div>
+            </div>
+            <select id="selectRepresentante" class="escolha-select">
+                <option value="">— Representante —</option>
+            </select>
+            <div id="listaPontosNovos" class="escolha-lista-pontos"></div>
+            <div class="escolha-cancelar" onclick="window.location.href='cadastrar_cliente.html'">Cadastrar sem vínculo</div>
+        </div>
+
+    </div>
+</div>
+
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
-    import { dbEscutarClientes, dbExcluirCliente, dbEscutarColaboradores, dbListarAtendimentos } from './database.js';
+    import { dbEscutarClientes, dbExcluirCliente, dbEscutarColaboradores, dbListarAtendimentos, dbEscutarManutencoes } from './database.js';
 
     let perfilUsuarioLogado = "";
     let nomeUsuarioLogado = "";
     let clientesSalvos = [];
+    let pontosNovos = [];
 
     function normalizarTexto(valor) {
         return String(valor || "")
@@ -640,6 +838,12 @@
         clientes.sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
 
         clientes.forEach(c => {
+            const statusCadastro = String(c?.statusCadastro || "")
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase().trim();
+            const clienteEmAnalise = statusCadastro === "em_analise" || statusCadastro === "em analise" || statusCadastro === "analise";
+            const statusBadgeHtml = clienteEmAnalise ? `<div class="cliente-status-badge">Em análise</div>` : "";
+
             // 1. Processar Equipamentos e Pix
             let equipString = "";
             if (c.equip) {
@@ -710,7 +914,7 @@
 
             // 3. Montar o card final
             const card = document.createElement('div');
-            card.className = 'cliente';
+            card.className = clienteEmAnalise ? 'cliente cliente-em-analise' : 'cliente';
             card.dataset.rota = c.rota || '';
             card.innerHTML = `
                 <div class="cliente-accent"></div>
@@ -720,6 +924,7 @@
                             <div class="cliente-numero-nome">
                                 <span class="num">N. ${c.numero}</span> — ${c.nome}
                             </div>
+                            ${statusBadgeHtml ? `<div class="cliente-status-linha">${statusBadgeHtml}</div>` : ''}
                             <div class="cliente-campos">
                                 <div class="campo-linha">
                                     ${campos.join('')}
@@ -765,7 +970,11 @@
 
     dbEscutarClientes((clientes) => { renderizarLista(clientes); });
 
-    document.getElementById('btnNovo').onclick = () => window.location.href="cadastrar_cliente.html";
+    document.getElementById('btnNovo').onclick = () => {
+        document.getElementById('escolhaOverlay').classList.add('aberto');
+        document.body.style.overflow = 'hidden';
+        history.pushState({ escolhaSheet: true }, '');
+    };
 
     function aplicarBusca(termo) {
         const normalizado = termo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -1022,11 +1231,92 @@
         if (history.state?.lightbox) history.back();
     };
 
+    dbEscutarManutencoes((lista) => {
+        pontosNovos = lista.filter(m => {
+            const status = String(m?.status || "pendente").toLowerCase();
+            return m.tipoAcao === "Ponto Novo" && status !== "concluida" && status !== "concluido";
+        });
+    });
+
+    function escaparHtmlLocal(valor) {
+        return String(valor || "")
+            .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    document.getElementById('btnIrCadastrar').addEventListener('click', () => {
+        const select = document.getElementById('selectRepresentante');
+        const representantes = [...new Set(pontosNovos.map(m => m.cadastradoPor).filter(Boolean))].sort();
+        select.innerHTML = '<option value="">— Representante —</option>';
+        representantes.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r;
+            opt.textContent = r;
+            select.appendChild(opt);
+        });
+        document.getElementById('listaPontosNovos').innerHTML = '';
+        document.getElementById('escolhaPasso1').style.display = 'none';
+        document.getElementById('escolhaPasso2').style.display = 'block';
+    });
+
+    window.voltarEscolhaPasso1 = function() {
+        document.getElementById('escolhaPasso2').style.display = 'none';
+        document.getElementById('escolhaPasso1').style.display = 'block';
+    };
+
+    document.getElementById('selectRepresentante').addEventListener('change', function() {
+        const rep = this.value;
+        const container = document.getElementById('listaPontosNovos');
+        if (!rep) { container.innerHTML = ''; return; }
+        const pontos = pontosNovos.filter(m => m.cadastradoPor === rep);
+        if (pontos.length === 0) {
+            container.innerHTML = '<div class="escolha-lista-vazia">Nenhum ponto novo pendente.</div>';
+            return;
+        }
+        container.innerHTML = pontos.map(m => {
+            const partes = [m.clienteCidade, m.clienteEquip,
+                m.dataRegistro ? new Date(m.dataRegistro).toLocaleDateString('pt-BR') : ''].filter(Boolean);
+            return `<div class="ponto-card" onclick="selecionarPontoNovo('${escaparHtmlLocal(m.firebaseUrl)}')">
+                <div class="ponto-card-nome">${escaparHtmlLocal(m.clienteNome || 'Sem nome')}</div>
+                <div class="ponto-card-info">${partes.map(escaparHtmlLocal).join(' · ')}</div>
+            </div>`;
+        }).join('');
+    });
+
+    window.selecionarPontoNovo = function(id) {
+        _fecharEscolhaSheet();
+        window.location.href = `cadastrar_cliente.html?from=${encodeURIComponent(id)}`;
+    };
+
+    function _fecharEscolhaSheet() {
+        const overlay = document.getElementById('escolhaOverlay');
+        if (!overlay.classList.contains('aberto')) return;
+        overlay.classList.remove('aberto');
+        document.body.style.overflow = '';
+        document.getElementById('escolhaPasso1').style.display = 'block';
+        document.getElementById('escolhaPasso2').style.display = 'none';
+    }
+
+    window.fecharEscolha = function(e) {
+        if (e && e.target !== document.getElementById('escolhaOverlay')) return;
+        _fecharEscolhaSheet();
+        if (history.state?.escolhaSheet) history.back();
+    };
+
+    window.fecharEscolhaBotao = function() {
+        _fecharEscolhaSheet();
+        if (history.state?.escolhaSheet) history.back();
+    };
+
     window.addEventListener('popstate', function(e) {
         const lb = document.getElementById('lightboxOverlay');
         if (lb.classList.contains('aberto')) {
             lb.classList.remove('aberto');
             document.getElementById('lightboxImg').src = '';
+            return;
+        }
+        if (document.getElementById('escolhaOverlay').classList.contains('aberto')) {
+            _fecharEscolhaSheet();
             return;
         }
         _fecharFotosSheet();

@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check-in de Rotas</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0b2256;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            color: white;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 600px;
+            padding: 0 0 80px;
+        }
+
+        /* ─── HEADER ─── */
+        .header {
+            background: linear-gradient(180deg, #0d2a6b 0%, #0b2256 100%);
+            padding: 16px 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            border-bottom: 1px solid rgba(255,235,59,0.15);
+        }
+
+        .header-topo {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .btn-voltar {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .btn-voltar:active { background: rgba(255,255,255,0.2); transform: scale(0.92); }
+
+        .header-titulo {
+            text-align: center;
+            flex: 1;
+        }
+        .header-titulo h1 { font-size: 20px; font-weight: bold; letter-spacing: 0.3px; }
+        .header-titulo p  { font-size: 12px; color: #b0bbd4; margin-top: 2px; letter-spacing: 0.5px; }
+
+        .chip-usuario {
+            background: rgba(255,235,59,0.12);
+            border: 1px solid rgba(255,235,59,0.3);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #ffeb3b;
+            white-space: nowrap;
+            max-width: 110px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Resumo geral */
+        .resumo-geral {
+            display: flex;
+            gap: 10px;
+        }
+        .resumo-item {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .resumo-icon { font-size: 18px; }
+        .resumo-label { font-size: 10px; color: #b0bbd4; text-transform: uppercase; letter-spacing: 0.5px; }
+        .resumo-valor { font-size: 18px; font-weight: bold; line-height: 1; }
+        .resumo-valor.amarelo { color: #ffeb3b; }
+        .resumo-valor.verde { color: #4caf50; }
+        .resumo-valor.vermelho { color: #ff5252; }
+
+        /* ─── CONTEÚDO ─── */
+        .conteudo { padding: 16px; }
+
+        /* ─── LOADING ─── */
+        .tela-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 60px 20px;
+            gap: 16px;
+        }
+        .spinner {
+            width: 44px; height: 44px;
+            border: 4px solid rgba(255,255,255,0.08);
+            border-top-color: #ffeb3b;
+            border-radius: 50%;
+            animation: girar 0.7s linear infinite;
+        }
+        @keyframes girar { to { transform: rotate(360deg); } }
+        .txt-loading { font-size: 14px; color: #b0bbd4; letter-spacing: 1px; }
+
+        /* ─── EMPTY STATE ─── */
+        .empty-state {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px 24px;
+            gap: 14px;
+            text-align: center;
+        }
+        .empty-icon { font-size: 60px; opacity: 0.5; }
+        .empty-titulo { font-size: 20px; font-weight: bold; color: white; }
+        .empty-desc { font-size: 14px; color: #b0bbd4; line-height: 1.6; }
+
+        /* ─── CARD DE ROTA ─── */
+        .lista-rotas { display: flex; flex-direction: column; gap: 16px; }
+
+        .card-rota {
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 18px;
+            overflow: hidden;
+            animation: entrar 0.3s ease;
+        }
+        @keyframes entrar { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card-rota-header {
+            padding: 16px 18px 14px;
+            background: rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        /* Anel de progresso */
+        .anel-wrap { position: relative; flex-shrink: 0; width: 64px; height: 64px; }
+        .anel-wrap svg { transform: rotate(-90deg); }
+        .anel-trilho { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 5; }
+        .anel-progresso { fill: none; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
+        .anel-progresso.verde  { stroke: #4caf50; }
+        .anel-progresso.amarelo { stroke: #ffeb3b; }
+        .anel-progresso.vermelho { stroke: #ff5252; }
+        .anel-texto {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .anel-pct { font-size: 15px; font-weight: bold; }
+        .anel-pct-label { font-size: 9px; color: #b0bbd4; letter-spacing: 0.5px; }
+
+        .card-rota-info { flex: 1; min-width: 0; }
+        .card-rota-numero {
+            font-size: 26px;
+            font-weight: 900;
+            color: #ffeb3b;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+            line-height: 1;
+        }
+        .card-rota-numero span { font-size: 13px; font-weight: normal; color: white; margin-left: 6px; font-family: Arial, sans-serif; }
+        .card-rota-status {
+            margin-top: 6px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            font-size: 11px;
+            border-radius: 20px;
+            padding: 3px 9px;
+            font-weight: bold;
+        }
+        .badge-verde   { background: rgba(76,175,80,0.15); color: #81c784; border: 1px solid rgba(76,175,80,0.25); }
+        .badge-amarelo { background: rgba(255,235,59,0.12); color: #ffee58; border: 1px solid rgba(255,235,59,0.2); }
+        .badge-vermelho{ background: rgba(255,82,82,0.12); color: #ff6e6e; border: 1px solid rgba(255,82,82,0.2); }
+        .badge-cinza   { background: rgba(255,255,255,0.06); color: #b0bbd4; border: 1px solid rgba(255,255,255,0.1); }
+
+        .card-rota-completa-banner {
+            background: linear-gradient(90deg, rgba(76,175,80,0.18), rgba(76,175,80,0.06));
+            border-top: 1px solid rgba(76,175,80,0.2);
+            padding: 8px 18px;
+            font-size: 12px;
+            color: #81c784;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ─── LISTA DE CLIENTES ─── */
+        .clientes-lista { padding: 4px 0 8px; }
+
+        .secao-label {
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #b0bbd4;
+            padding: 10px 18px 4px;
+        }
+
+        .item-cliente {
+            display: flex;
+            align-items: center;
+            padding: 11px 18px;
+            gap: 12px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            transition: background 0.15s;
+        }
+
+        .item-cliente-icone { font-size: 20px; flex-shrink: 0; width: 24px; text-align: center; }
+
+        .item-cliente-info { flex: 1; min-width: 0; }
+        .item-cliente-nome { font-size: 14px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .item-cliente-detalhe { font-size: 11px; color: #b0bbd4; margin-top: 1px; }
+        .item-cliente-detalhe.justif { color: #ffb74d; }
+        .item-cliente-detalhe.expirou { color: #ff5252; }
+
+        .btn-justificar {
+            background: rgba(255,82,82,0.1);
+            border: 1px solid rgba(255,82,82,0.25);
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #ff6e6e;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: 0.15s;
+        }
+        .btn-justificar:active { background: rgba(255,82,82,0.22); transform: scale(0.96); }
+
+        .btn-ver-justif {
+            background: rgba(255,183,77,0.08);
+            border: 1px solid rgba(255,183,77,0.2);
+            border-radius: 20px;
+            padding: 5px 10px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #ffb74d;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .btn-ver-justif:active { background: rgba(255,183,77,0.16); }
+
+        /* ─── MODAL DE JUSTIFICATIVA ─── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 200;
+            justify-content: center;
+            align-items: flex-end;
+        }
+        .modal-overlay.ativo { display: flex; }
+
+        .modal-box {
+            background: linear-gradient(180deg, #1a3d8f, #0f2a66);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 22px 22px 0 0;
+            padding: 6px 20px 40px;
+            width: 100%;
+            max-width: 600px;
+            animation: subirModal 0.25s cubic-bezier(.34,1.2,.64,1);
+        }
+        @keyframes subirModal { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .modal-handle {
+            width: 40px; height: 4px;
+            background: rgba(255,255,255,0.18);
+            border-radius: 2px;
+            margin: 12px auto 18px;
+        }
+
+        .modal-titulo {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffeb3b;
+            margin-bottom: 2px;
+        }
+        .modal-subtitulo {
+            font-size: 12px;
+            color: #b0bbd4;
+            margin-bottom: 20px;
+        }
+
+        .motivos-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .btn-motivo {
+            background: rgba(255,255,255,0.05);
+            border: 1.5px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            padding: 13px 10px;
+            font-size: 13px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.15s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-motivo .motivo-icon { font-size: 22px; }
+        .btn-motivo:active { transform: scale(0.96); }
+        .btn-motivo.selecionado {
+            background: rgba(255,235,59,0.12);
+            border-color: #ffeb3b;
+            color: #ffeb3b;
+        }
+
+        .obs-label {
+            font-size: 12px;
+            color: #b0bbd4;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .obs-input {
+            width: 100%;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 14px;
+            color: white;
+            outline: none;
+            resize: none;
+            font-family: Arial, sans-serif;
+            margin-bottom: 18px;
+        }
+        .obs-input::placeholder { color: #8896b3; }
+        .obs-input:focus { border-color: rgba(255,235,59,0.35); }
+
+        .modal-acoes { display: flex; gap: 10px; }
+        .btn-modal-cancelar {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-modal-cancelar:active { background: rgba(255,255,255,0.1); }
+        .btn-modal-confirmar {
+            flex: 2;
+            padding: 14px;
+            border-radius: 12px;
+            background: #ffeb3b;
+            border: none;
+            color: #0b2256;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .btn-modal-confirmar:active { transform: scale(0.97); background: #ffe100; }
+        .btn-modal-confirmar:disabled { background: rgba(255,255,255,0.1); color: #8896b3; cursor: not-allowed; }
+
+        /* ─── TOAST ─── */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(12px);
+            background: #0f2a66;
+            border: 1px solid rgba(255,255,255,0.13);
+            border-radius: 50px;
+            padding: 11px 22px;
+            font-size: 14px;
+            color: white;
+            z-index: 500;
+            opacity: 0;
+            transition: opacity 0.25s, transform 0.25s;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        .toast.visivel { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.verde { border-color: rgba(76,175,80,0.4); }
+        .toast.vermelho { border-color: rgba(255,82,82,0.4); }
+
+        /* ─── MODAL VER JUSTIFICATIVA ─── */
+        .modal-ver-box {
+            background: linear-gradient(180deg, #1a3d8f, #0f2a66);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 22px 22px 0 0;
+            padding: 6px 20px 40px;
+            width: 100%;
+            max-width: 600px;
+            animation: subirModal 0.25s ease;
+        }
+
+        .detalhe-justif {
+            background: rgba(255,183,77,0.08);
+            border: 1px solid rgba(255,183,77,0.2);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .detalhe-justif-linha { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; }
+        .detalhe-justif-label { color: #b0bbd4; font-size: 11px; }
+        .detalhe-justif-valor { color: white; font-weight: bold; }
+        .detalhe-justif-obs { font-size: 13px; color: white; font-style: italic; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); }
+
+        .chip-expiracao {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            border-radius: 20px;
+            padding: 3px 10px;
+            font-weight: bold;
+        }
+        .chip-exp-ativa { background: rgba(76,175,80,0.15); color: #81c784; border: 1px solid rgba(76,175,80,0.25); }
+        .chip-exp-expirada { background: rgba(255,82,82,0.12); color: #ff6e6e; border: 1px solid rgba(255,82,82,0.2); }
+
+        .btn-remover-justif {
+            width: 100%;
+            padding: 13px;
+            border-radius: 12px;
+            background: rgba(255,82,82,0.08);
+            border: 1px solid rgba(255,82,82,0.2);
+            color: #ff6e6e;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        .btn-remover-justif:active { background: rgba(255,82,82,0.16); }
+
+        .btn-fechar-ver {
+            width: 100%;
+            padding: 13px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-topo">
+            <button class="btn-voltar" onclick="window.location.href='index.html'">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+            </button>
+            <div class="header-titulo">
+                <h1>Check-in de Rotas</h1>
+                <p>ACOMPANHAMENTO DE ATENDIMENTOS</p>
+            </div>
+            <div class="chip-usuario" id="chipUsuario">...</div>
+        </div>
+        <div class="resumo-geral" id="resumoGeral" style="display:none;">
+            <div class="resumo-item">
+                <span class="resumo-icon">🗺️</span>
+                <div>
+                    <div class="resumo-label">Rotas</div>
+                    <div class="resumo-valor amarelo" id="totalRotas">0</div>
+                </div>
+            </div>
+            <div class="resumo-item">
+                <span class="resumo-icon">✅</span>
+                <div>
+                    <div class="resumo-label">Atendidos</div>
+                    <div class="resumo-valor verde" id="totalAtendidos">0</div>
+                </div>
+            </div>
+            <div class="resumo-item">
+                <span class="resumo-icon">🔴</span>
+                <div>
+                    <div class="resumo-label">Pendentes</div>
+                    <div class="resumo-valor vermelho" id="totalPendentes">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTEÚDO -->
+    <div class="conteudo">
+
+        <!-- Loading -->
+        <div class="tela-loading" id="telaLoading">
+            <div class="spinner"></div>
+            <div class="txt-loading">Carregando rotas...</div>
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state" id="telaEmpty">
+            <div class="empty-icon">🗺️</div>
+            <div class="empty-titulo">Nenhuma rota ativa</div>
+            <div class="empty-desc">Você não tem rotas em andamento no momento.<br>Acesse <strong>Seleção de Rotas</strong> para escolher suas rotas.</div>
+        </div>
+
+        <!-- Lista de rotas -->
+        <div class="lista-rotas" id="listaRotas" style="display:none;"></div>
+
+    </div>
+</div>
+
+<!-- MODAL: Adicionar Justificativa -->
+<div class="modal-overlay" id="modalJustif" onclick="fecharModalJustif(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-handle"></div>
+        <div class="modal-titulo" id="modalJustifTitulo">Justificar Cliente</div>
+        <div class="modal-subtitulo" id="modalJustifSubtitulo">Informe o motivo do não atendimento</div>
+
+        <div class="motivos-grid">
+            <button class="btn-motivo" data-motivo="fechado" onclick="selecionarMotivo(this)">
+                <span class="motivo-icon">🔒</span>Fechado
+            </button>
+            <button class="btn-motivo" data-motivo="ausente" onclick="selecionarMotivo(this)">
+                <span class="motivo-icon">🚪</span>Ausente
+            </button>
+            <button class="btn-motivo" data-motivo="recusou" onclick="selecionarMotivo(this)">
+                <span class="motivo-icon">🙅</span>Recusou
+            </button>
+            <button class="btn-motivo" data-motivo="acesso" onclick="selecionarMotivo(this)">
+                <span class="motivo-icon">🚧</span>Sem acesso
+            </button>
+            <button class="btn-motivo" data-motivo="endereço" onclick="selecionarMotivo(this)">
+                <span class="motivo-icon">📍</span>Não localizado
+            </button>
+            <button class="btn-motivo" data-motivo="outro" onclick="selecionarMotivo(this)">
+                <span class="motivo-icon">📝</span>Outro
+            </button>
+        </div>
+
+        <div class="obs-label">OBSERVAÇÃO (OPCIONAL)</div>
+        <textarea class="obs-input" id="obsInput" rows="3" placeholder="Descreva o que aconteceu..."></textarea>
+
+        <div class="modal-acoes">
+            <button class="btn-modal-cancelar" onclick="fecharModalJustif()">Cancelar</button>
+            <button class="btn-modal-confirmar" id="btnConfirmarJustif" onclick="confirmarJustificativa()" disabled>Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Ver Justificativa -->
+<div class="modal-overlay" id="modalVerJustif" onclick="fecharModalVerJustif(event)">
+    <div class="modal-ver-box" onclick="event.stopPropagation()">
+        <div class="modal-handle"></div>
+        <div class="modal-titulo" style="color:#ffeb3b; margin-bottom:2px;" id="verJustifTitulo">Justificativa</div>
+        <div class="modal-subtitulo" id="verJustifSubtitulo"></div>
+        <div class="detalhe-justif" id="verJustifDetalhe"></div>
+        <button class="btn-remover-justif" id="btnRemoverJustif" onclick="removerJustificativa()">Remover Justificativa</button>
+        <button class="btn-fechar-ver" onclick="fecharModalVerJustif()">Fechar</button>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import {
+    dbListarClientes,
+    dbListarAtendimentos,
+    dbObterSessaoRotas,
+    dbSalvarJustificativaCheckin,
+    dbListarJustificativasCheckin,
+    dbRemoverJustificativaCheckin
+} from './database.js';
+
+// ─────────────────────────────────────────────
+// Estado
+// ─────────────────────────────────────────────
+let usuarioAtual   = '';
+let sessao         = null;
+let todosClientes  = [];
+let todosAtendimentos = [];
+let justificativasPorRota = {}; // { routeNumber: { clienteKey: {...} } }
+let rotasDoUsuario = [];
+
+// Estado do modal de justificativa
+let modalRota      = null;
+let modalCliente   = null;
+let motivoSelecionado = null;
+
+// Estado do modal ver justificativa
+let verRota        = null;
+let verClienteKey  = null;
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+async function init() {
+    usuarioAtual = localStorage.getItem('usuario_selecionado') || '';
+    document.getElementById('chipUsuario').textContent = usuarioAtual || '?';
+
+    try {
+        [sessao, todosClientes, todosAtendimentos] = await Promise.all([
+            dbObterSessaoRotas(),
+            dbListarClientes(),
+            dbListarAtendimentos()
+        ]);
+
+        // Encontra rotas do usuário na sessão ativa
+        rotasDoUsuario = [];
+        if (sessao && sessao.rotas) {
+            rotasDoUsuario = Object.entries(sessao.rotas)
+                .filter(([_, r]) => r.selecionada_por === usuarioAtual)
+                .map(([num, dados]) => ({ numero: String(num), ...dados }))
+                .sort((a, b) => new Date(b.timestamp_selecao || 0) - new Date(a.timestamp_selecao || 0));
+        }
+
+        // Carrega justificativas de cada rota
+        await Promise.all(rotasDoUsuario.map(async (r) => {
+            justificativasPorRota[r.numero] = await dbListarJustificativasCheckin(r.numero);
+        }));
+
+        renderizar();
+    } catch (err) {
+        console.error(err);
+        mostrarToast('Erro ao carregar dados.', 'vermelho');
+        document.getElementById('telaLoading').style.display = 'none';
+        document.getElementById('telaEmpty').style.display   = 'flex';
+    }
+}
+
+// ─────────────────────────────────────────────
+// Renderização
+// ─────────────────────────────────────────────
+function renderizar() {
+    document.getElementById('telaLoading').style.display = 'none';
+
+    if (rotasDoUsuario.length === 0) {
+        document.getElementById('telaEmpty').style.display = 'flex';
+        return;
+    }
+
+    document.getElementById('telaEmpty').style.display   = 'none';
+    document.getElementById('listaRotas').style.display  = 'flex';
+    document.getElementById('resumoGeral').style.display = 'flex';
+
+    const container = document.getElementById('listaRotas');
+    container.innerHTML = '';
+
+    let totalAtend = 0, totalPend = 0;
+
+    rotasDoUsuario.forEach((rota) => {
+        const clientes = todosClientes.filter(c => String(c.rota || '') === rota.numero);
+        const { atendidos, justificados, pendentes } = classificarClientes(clientes, rota.numero);
+
+        totalAtend += atendidos.length + justificados.length;
+        totalPend  += pendentes.length;
+
+        container.appendChild(criarCardRota(rota, clientes, atendidos, justificados, pendentes));
+    });
+
+    document.getElementById('totalRotas').textContent    = rotasDoUsuario.length;
+    document.getElementById('totalAtendidos').textContent = totalAtend;
+    document.getElementById('totalPendentes').textContent = totalPend;
+}
+
+function classificarClientes(clientes, routeNumber) {
+    const justifs = justificativasPorRota[routeNumber] || {};
+    const agora = Date.now();
+    const UM_DIA = 24 * 60 * 60 * 1000;
+
+    const atendidos   = [];
+    const justificados = [];
+    const pendentes   = [];
+
+    clientes.forEach(c => {
+        const foiAtendido = todosAtendimentos.some(a =>
+            a.cliente && (a.cliente.id === c.firebaseUrl || a.cliente.nome === c.nome)
+        );
+        if (foiAtendido) {
+            atendidos.push(c);
+            return;
+        }
+        const justif = justifs[c.firebaseUrl];
+        if (justif && justif.timestamp) {
+            const expirou = (agora - justif.timestamp) >= UM_DIA;
+            justificados.push({ ...c, justif, expirou });
+            return;
+        }
+        pendentes.push(c);
+    });
+
+    return { atendidos, justificados, pendentes };
+}
+
+function criarCardRota(rota, clientes, atendidos, justificados, pendentes) {
+    const total      = clientes.length;
+    const resolvidos = atendidos.length + justificados.length;
+    const pct        = total > 0 ? Math.round((resolvidos / total) * 100) : 100;
+    const isCompleta = pendentes.length === 0;
+
+    const corAnel = pct === 100 ? 'verde' : pct >= 50 ? 'amarelo' : 'vermelho';
+    const raio    = 26;
+    const circ    = 2 * Math.PI * raio;
+    const offset  = circ - (pct / 100) * circ;
+
+    const card = document.createElement('div');
+    card.className = 'card-rota';
+    card.innerHTML = `
+        <div class="card-rota-header">
+            <div class="anel-wrap">
+                <svg width="64" height="64" viewBox="0 0 64 64">
+                    <circle class="anel-trilho" cx="32" cy="32" r="${raio}"/>
+                    <circle class="anel-progresso ${corAnel}" cx="32" cy="32" r="${raio}"
+                        stroke-dasharray="${circ.toFixed(1)}"
+                        stroke-dashoffset="${offset.toFixed(1)}"/>
+                </svg>
+                <div class="anel-texto">
+                    <span class="anel-pct">${pct}%</span>
+                    <span class="anel-pct-label">OK</span>
+                </div>
+            </div>
+            <div class="card-rota-info">
+                <div class="card-rota-numero">
+                    <span>Rota</span> ${rota.numero}
+                </div>
+                <div class="card-rota-status">
+                    <span class="badge badge-verde">✅ ${atendidos.length} atendido${atendidos.length !== 1 ? 's' : ''}</span>
+                    ${justificados.length > 0 ? `<span class="badge badge-amarelo">⚠️ ${justificados.length} justif.</span>` : ''}
+                    ${pendentes.length > 0 ? `<span class="badge badge-vermelho">🔴 ${pendentes.length} pendente${pendentes.length !== 1 ? 's' : ''}</span>` : ''}
+                </div>
+            </div>
+        </div>
+
+        ${isCompleta ? `
+        <div class="card-rota-completa-banner">
+            ✅ Todos os clientes resolvidos — rota liberada!
+        </div>
+        ` : ''}
+
+        <div class="clientes-lista">
+            ${pendentes.length > 0 ? `
+                <div class="secao-label">Pendentes de atendimento</div>
+                ${pendentes.map(c => `
+                    <div class="item-cliente">
+                        <span class="item-cliente-icone">🔴</span>
+                        <div class="item-cliente-info">
+                            <div class="item-cliente-nome">${c.nome || '—'}</div>
+                            <div class="item-cliente-detalhe">${c.endereco ? c.endereco + (c.numero_endereco ? ', ' + c.numero_endereco : '') : 'Sem endereço'}</div>
+                        </div>
+                        <button class="btn-justificar" onclick="abrirModalJustif('${rota.numero}', ${JSON.stringify(c).replace(/"/g, '&quot;')})">Justificar</button>
+                    </div>
+                `).join('')}
+            ` : ''}
+
+            ${justificados.length > 0 ? `
+                <div class="secao-label">Justificados</div>
+                ${justificados.map(c => {
+                    const expirou = c.expirou;
+                    const ts = c.justif?.timestamp ? new Date(c.justif.timestamp) : null;
+                    const expira = ts ? new Date(ts.getTime() + 24 * 60 * 60 * 1000) : null;
+                    const horasRestantes = expira ? Math.max(0, Math.ceil((expira - Date.now()) / 3600000)) : 0;
+                    return `
+                    <div class="item-cliente">
+                        <span class="item-cliente-icone">${expirou ? '🕐' : '⚠️'}</span>
+                        <div class="item-cliente-info">
+                            <div class="item-cliente-nome">${c.nome || '—'}</div>
+                            <div class="item-cliente-detalhe justif">
+                                ${c.justif?.motivo_label || c.justif?.motivo || 'Justificado'}
+                                ${expirou ? '<span class="item-cliente-detalhe expirou"> · Expirado</span>' : ` · Expira em ${horasRestantes}h`}
+                            </div>
+                        </div>
+                        <button class="btn-ver-justif" onclick="abrirModalVerJustif('${rota.numero}', '${c.firebaseUrl}')">Ver</button>
+                    </div>`;
+                }).join('')}
+            ` : ''}
+
+            ${atendidos.length > 0 ? `
+                <div class="secao-label">Atendidos</div>
+                ${atendidos.map(c => `
+                    <div class="item-cliente">
+                        <span class="item-cliente-icone">✅</span>
+                        <div class="item-cliente-info">
+                            <div class="item-cliente-nome">${c.nome || '—'}</div>
+                            <div class="item-cliente-detalhe">${c.cidade || ''}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            ` : ''}
+
+            ${total === 0 ? `
+                <div style="padding:20px 18px; font-size:13px; color:#b0bbd4; text-align:center;">
+                    Nenhum cliente cadastrado nesta rota.
+                </div>
+            ` : ''}
+        </div>
+    `;
+    return card;
+}
+
+// ─────────────────────────────────────────────
+// Modal Justificativa
+// ─────────────────────────────────────────────
+window.abrirModalJustif = function(routeNumber, cliente) {
+    modalRota    = routeNumber;
+    modalCliente = typeof cliente === 'string' ? JSON.parse(cliente.replace(/&quot;/g, '"')) : cliente;
+    motivoSelecionado = null;
+
+    document.getElementById('modalJustifTitulo').textContent   = modalCliente.nome || 'Cliente';
+    document.getElementById('modalJustifSubtitulo').textContent = `Rota ${routeNumber} · Informe o motivo`;
+    document.getElementById('obsInput').value = '';
+    document.getElementById('btnConfirmarJustif').disabled = true;
+
+    document.querySelectorAll('.btn-motivo').forEach(b => b.classList.remove('selecionado'));
+    document.getElementById('modalJustif').classList.add('ativo');
+};
+
+window.fecharModalJustif = function(e) {
+    if (e && e.target !== document.getElementById('modalJustif')) return;
+    document.getElementById('modalJustif').classList.remove('ativo');
+    motivoSelecionado = null;
+};
+
+window.selecionarMotivo = function(btn) {
+    document.querySelectorAll('.btn-motivo').forEach(b => b.classList.remove('selecionado'));
+    btn.classList.add('selecionado');
+    motivoSelecionado = btn.dataset.motivo;
+    document.getElementById('btnConfirmarJustif').disabled = false;
+};
+
+const motivoLabels = {
+    fechado: 'Estabelecimento fechado',
+    ausente: 'Responsável ausente',
+    recusou: 'Cliente recusou o atendimento',
+    acesso:  'Problema de acesso',
+    'endereço': 'Não localizado',
+    outro:   'Outro motivo'
+};
+
+window.confirmarJustificativa = async function() {
+    if (!motivoSelecionado || !modalRota || !modalCliente) return;
+
+    const btn = document.getElementById('btnConfirmarJustif');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    try {
+        const obs = document.getElementById('obsInput').value.trim();
+        const dados = {
+            usuario: usuarioAtual,
+            motivo: motivoSelecionado,
+            motivo_label: motivoLabels[motivoSelecionado] || motivoSelecionado,
+            observacao: obs,
+            timestamp: Date.now(),
+            data_iso: new Date().toISOString()
+        };
+
+        await dbSalvarJustificativaCheckin(modalRota, modalCliente.firebaseUrl, dados);
+
+        // Atualiza estado local
+        if (!justificativasPorRota[modalRota]) justificativasPorRota[modalRota] = {};
+        justificativasPorRota[modalRota][modalCliente.firebaseUrl] = dados;
+
+        document.getElementById('modalJustif').classList.remove('ativo');
+        mostrarToast('✅ Justificativa registrada!', 'verde');
+        renderizar();
+    } catch (err) {
+        console.error(err);
+        mostrarToast('Erro ao salvar. Tente novamente.', 'vermelho');
+        btn.disabled = false;
+        btn.textContent = 'Confirmar';
+    }
+};
+
+// ─────────────────────────────────────────────
+// Modal Ver Justificativa
+// ─────────────────────────────────────────────
+window.abrirModalVerJustif = function(routeNumber, clienteKey) {
+    verRota       = routeNumber;
+    verClienteKey = clienteKey;
+
+    const justif  = (justificativasPorRota[routeNumber] || {})[clienteKey];
+    const cliente = todosClientes.find(c => c.firebaseUrl === clienteKey);
+    if (!justif) return;
+
+    const agora      = Date.now();
+    const UM_DIA     = 24 * 60 * 60 * 1000;
+    const expirou    = (agora - justif.timestamp) >= UM_DIA;
+    const expira     = new Date(justif.timestamp + UM_DIA);
+    const horasRestantes = Math.max(0, Math.ceil((expira - agora) / 3600000));
+
+    document.getElementById('verJustifTitulo').textContent    = cliente?.nome || 'Cliente';
+    document.getElementById('verJustifSubtitulo').textContent = `Rota ${routeNumber}`;
+
+    document.getElementById('verJustifDetalhe').innerHTML = `
+        <div class="detalhe-justif-linha">
+            <span class="detalhe-justif-label">Motivo</span>
+            <span class="detalhe-justif-valor">${justif.motivo_label || justif.motivo}</span>
+        </div>
+        <div class="detalhe-justif-linha">
+            <span class="detalhe-justif-label">Registrado em</span>
+            <span class="detalhe-justif-valor">${new Date(justif.timestamp).toLocaleString('pt-BR')}</span>
+        </div>
+        <div class="detalhe-justif-linha">
+            <span class="detalhe-justif-label">Validade</span>
+            <span class="chip-expiracao ${expirou ? 'chip-exp-expirada' : 'chip-exp-ativa'}">
+                ${expirou ? '🕐 Expirado' : `⏳ Expira em ${horasRestantes}h`}
+            </span>
+        </div>
+        ${justif.observacao ? `<div class="detalhe-justif-obs">💬 "${justif.observacao}"</div>` : ''}
+    `;
+
+    document.getElementById('modalVerJustif').classList.add('ativo');
+};
+
+window.fecharModalVerJustif = function(e) {
+    if (e && e.target !== document.getElementById('modalVerJustif')) return;
+    document.getElementById('modalVerJustif').classList.remove('ativo');
+};
+
+window.removerJustificativa = async function() {
+    if (!verRota || !verClienteKey) return;
+    const btn = document.getElementById('btnRemoverJustif');
+    btn.disabled = true;
+    btn.textContent = 'Removendo...';
+    try {
+        await dbRemoverJustificativaCheckin(verRota, verClienteKey);
+        if (justificativasPorRota[verRota]) delete justificativasPorRota[verRota][verClienteKey];
+        document.getElementById('modalVerJustif').classList.remove('ativo');
+        mostrarToast('Justificativa removida.', '');
+        renderizar();
+    } catch (err) {
+        console.error(err);
+        mostrarToast('Erro ao remover.', 'vermelho');
+        btn.disabled = false;
+        btn.textContent = 'Remover Justificativa';
+    }
+};
+
+// ─────────────────────────────────────────────
+// Toast
+// ─────────────────────────────────────────────
+let toastTimer = null;
+window.mostrarToast = function(msg, tipo) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast visivel' + (tipo ? ' ' + tipo : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('visivel'), 3000);
+};
+
+// ─────────────────────────────────────────────
+// Start
+// ─────────────────────────────────────────────
+init();
+</script>
+
+</body>
+</html>

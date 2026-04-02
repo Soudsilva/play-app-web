@@ -336,6 +336,12 @@
             window.location.href = 'depositos.html';
             return;
         }
+        if (tela === 'checkin') {
+            const nome = document.getElementById('selectUsuario').value;
+            if (nome) localStorage.setItem('usuario_selecionado', nome);
+            window.location.href = 'checkin_rotas.html';
+            return;
+        }
         if (tela === 'rotas') {
             const nome = document.getElementById('selectUsuario').value;
             if (nome) localStorage.setItem('usuario_selecionado', nome);

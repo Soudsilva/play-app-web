@@ -463,7 +463,6 @@
 
       
     <div id="btnSalvar" class="botao">Salvar Cliente</div>
-    <div id="btnVoltar" class="botao" style="margin-top:5px; background: rgba(255,255,255,0.1);">Voltar</div>
 </div>
 
 <div id="modalFotoCliente" class="modal-overlay" style="display:none;">
@@ -505,7 +504,7 @@
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     // Importamos as ferramentas de banco de dados do seu arquivo externo
-    import { dbSalvarCliente, dbListarClientes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, storageSalvarFoto } from './database.js';
+    import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, storageSalvarFoto } from './database.js';
 
     let maquinasDisponiveis = [];
     let clientesCadastrados = [];
@@ -514,6 +513,8 @@
     let clienteEmEdicao = null;
     let perfilCarregado = false;
     let editId = "";
+    let representantePontoNovo = "";
+    let pontoNovoCarregado = null;
     let currentFileInputId = null;
     let proximoEquipamentoRowId = 0;
     let ultimoElementoFocadoAntesDoAlerta = null;
@@ -1615,6 +1616,8 @@
        Verifica se o link termina com "?edit=ID". Se sim, muda o título e carrega os dados. */
     const urlParams = new URLSearchParams(window.location.search);
     editId = urlParams.get('edit');
+    const modoSolicitar = urlParams.get('modo') === 'solicitar';
+    const fromPontoNovo = urlParams.get('from');
 
     if (editId) {
         document.querySelector('h2').innerText = "Editar Cliente";
@@ -1622,6 +1625,84 @@
     } else {
         adicionarLinhaEquipamento();
         renderizarFotosMaquinasInstalacao();
+        const campoPontoAberto = document.getElementById('ponto_aberto');
+        if (nomeUsuarioLogado) {
+            campoPontoAberto.value = nomeUsuarioLogado;
+            campoPontoAberto.readOnly = true;
+            campoPontoAberto.classList.add('campo-cidade');
+        }
+        if (fromPontoNovo) {
+            carregarDadosPontoNovo(fromPontoNovo);
+        }
+    }
+
+    if (modoSolicitar) {
+        // --- visual ---
+        const estiloSolicitar = document.createElement('style');
+        estiloSolicitar.textContent = `
+            body { background: linear-gradient(180deg, #0f2766 0%, #071e14 100%) !important; }
+            .solicitar-header {
+                display: flex; flex-direction: column; align-items: center;
+                padding: 4px 0 22px;
+            }
+            .solicitar-icone {
+                width: 62px; height: 62px;
+                background: linear-gradient(135deg, #f57c00, #bf360c);
+                border-radius: 18px;
+                display: flex; align-items: center; justify-content: center;
+                margin-bottom: 12px;
+                box-shadow: 0 6px 22px rgba(191,54,12,0.45);
+            }
+            .solicitar-icone svg { width: 34px; height: 34px; stroke: white; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+            .solicitar-titulo { font-size: 22px; font-weight: bold; color: #ff9800; margin-bottom: 4px; }
+            .solicitar-badge {
+                font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase;
+                color: rgba(255,152,0,0.6); font-weight: bold;
+            }
+            .solicitar-divider {
+                width: 100%; height: 1px;
+                background: linear-gradient(90deg, transparent, rgba(255,152,0,0.3), transparent);
+                margin-bottom: 16px;
+            }
+            #btnSalvar {
+                background: linear-gradient(135deg, #f57c00, #bf360c) !important;
+                box-shadow: 0 4px 16px rgba(191,54,12,0.4) !important;
+            }
+            input:not([disabled]):not([type="checkbox"]):focus,
+            textarea:focus {
+                outline: 2px solid rgba(255,152,0,0.55) !important;
+                outline-offset: -2px;
+            }
+            .pix-input, .contador-input { display: none !important; }
+        `;
+        document.head.appendChild(estiloSolicitar);
+
+        // substituir h2 por header visual
+        const h2 = document.querySelector('h2');
+        const header = document.createElement('div');
+        header.className = 'solicitar-header';
+        header.innerHTML = `
+            <div class="solicitar-icone">
+                <svg viewBox="0 0 24 24">
+                    <rect x="1" y="3" width="15" height="13" rx="1"/>
+                    <path d="M16 8h4l3 3v6h-7V8z"/>
+                    <circle cx="5.5" cy="18.5" r="2.5"/>
+                    <circle cx="18.5" cy="18.5" r="2.5"/>
+                </svg>
+            </div>
+            <div class="solicitar-titulo">Solicitar Entrega</div>
+            <div class="solicitar-badge">acordo para entrega futura</div>
+        `;
+        h2.replaceWith(header);
+        const divider = document.createElement('div');
+        divider.className = 'solicitar-divider';
+        header.after(divider);
+
+        // --- campos ---
+        document.getElementById('btnSalvar').innerText = "Solicitar Entrega";
+        const cardFotos = document.querySelector('.card-fotos-instalacao');
+        if (cardFotos) cardFotos.style.display = 'none';
+        document.getElementById('ponto_aberto').style.display = 'none';
     }
 
     atualizarEstadoCampoCidade();
@@ -1705,6 +1786,7 @@
                 atualizarEstadoCampoCidade();
                 document.getElementById("cidade").value = cliente.cidade || "";
                 document.getElementById("rota").value = cliente.rota || "";
+                adicionarRota(document.getElementById("rota"));
                 document.getElementById("obs").value = cliente.obs || "";
 
                 // Especial: Recria as linhas de equipamentos baseadas no texto salvo
@@ -1739,6 +1821,44 @@
                 }
             }
         } catch (e) { console.error("Erro ao carregar:", e); }
+    }
+
+    async function carregarDadosPontoNovo(id) {
+        try {
+            const manutencoes = await dbListarManutencoes();
+            const ponto = manutencoes.find(m => m.firebaseUrl === id);
+            if (!ponto) return;
+
+            representantePontoNovo = ponto.cadastradoPor || "";
+            pontoNovoCarregado = ponto;
+
+            const campoPontoAberto = document.getElementById('ponto_aberto');
+            campoPontoAberto.value = representantePontoNovo;
+
+            document.getElementById("nome").value = ponto.clienteNome || "";
+            document.getElementById("comissao").value = formatarComissaoParaExibicao(ponto.comissao || "");
+            atualizarVisualComissao(document.getElementById("comissao"));
+            document.getElementById("rota").value = ponto.clienteRota || "";
+            adicionarRota(document.getElementById("rota"));
+            document.getElementById("obs").value = "";
+
+            const container = document.getElementById('container-equipamentos');
+            container.innerHTML = "";
+            const equipDetalhes = Array.isArray(ponto.equipDetalhes) ? ponto.equipDetalhes : [];
+            equipDetalhes.forEach(item => {
+                adicionarLinhaEquipamento(item.nome, "", item.qtd, "", item.rowId);
+            });
+            adicionarLinhaEquipamento();
+
+            if (ponto.aberto) {
+                const diasSalvos = ponto.aberto.split(", ");
+                document.querySelectorAll(".dias").forEach(caixa => {
+                    if (diasSalvos.includes(caixa.value)) caixa.checked = true;
+                });
+            }
+
+            renderizarFotosMaquinasInstalacao([]);
+        } catch (e) { console.error("Erro ao carregar ponto novo:", e); }
     }
 
     /* --- PARTE C: EQUIPAMENTOS DINÂMICOS ---
@@ -1786,7 +1906,7 @@
             clientesCadastrados = clientes;
 
             if (!validarEnderecoSemLink(true)) {
-                btn.innerText = "Salvar Cliente";
+                btn.innerText = modoSolicitar ? "Solicitar Entrega" : "Salvar Cliente";
                 btn.style.pointerEvents = "auto";
                 return;
             }
@@ -1794,20 +1914,22 @@
             preencherCidadePeloEndereco(false);
             atualizarEstadoCampoCidade();
 
+            const textoBtn = modoSolicitar ? "Solicitar Entrega" : "Salvar Cliente";
+
             if (!validarCamposObrigatorios()) {
-                btn.innerText = "Salvar Cliente";
+                btn.innerText = textoBtn;
                 btn.style.pointerEvents = "auto";
                 return;
             }
 
             if (!validarTodosOsPixAntesDeSalvar()) {
-                btn.innerText = "Salvar Cliente";
+                btn.innerText = textoBtn;
                 btn.style.pointerEvents = "auto";
                 return;
             }
 
-            if (!validarFotosMaquinasInstalacaoObrigatorias()) {
-                btn.innerText = "Salvar Cliente";
+            if (!modoSolicitar && !validarFotosMaquinasInstalacaoObrigatorias()) {
+                btn.innerText = textoBtn;
                 btn.style.pointerEvents = "auto";
                 return;
             }
@@ -1897,45 +2019,77 @@
             const dataCadastro = clienteEmEdicao?.dataCadastro || new Date().toISOString();
             const dataCadastroDia = clienteEmEdicao?.dataCadastroDia || obterDataLocalIso();
             const cadastradoPor = clienteEmEdicao?.cadastradoPor || nomeUsuarioLogado || "N/A";
+            const estaEditando = Boolean(idParaSalvar);
+            const perfilCadastro = clienteEmEdicao?.cadastradoPorPerfil || (estaEditando ? "" : (perfilUsuarioLogado || ""));
+            const statusCadastro = clienteEmEdicao?.statusCadastro || (estaEditando ? "aprovado" : (perfilUsuarioLogado.includes('gestao') ? "aprovado" : "em_analise"));
             preencherCidadePeloEndereco(false);
             const comissaoFinal = formatarComissaoParaSalvar(document.getElementById("comissao").value);
             const enderecoBaseFinal = String(document.getElementById("endereco").value || "").trim();
             const numeroEnderecoFinal = String(document.getElementById("numero_endereco").value || "").trim();
             const enderecoCompletoFinal = montarEnderecoCompleto(enderecoBaseFinal, numeroEnderecoFinal);
 
-            const dadosFinal = {
-                numero: numeroFinal,
-                ponto_aberto: document.getElementById("ponto_aberto").value,
-                nome: document.getElementById("nome").value,
-                cidade: document.getElementById("cidade").value,
-                comissao: comissaoFinal,
-                rota: document.getElementById("rota").value.replace(/^R\./, "").replace(/^(\d)$/, "0$1"),
-                endereco: enderecoCompletoFinal,
-                endereco_base: enderecoBaseFinal,
-                numero_endereco: numeroEnderecoFinal,
-                aberto: dias.join(", "),
-                equip: listaEquipFinal.join(", "), 
-                equipDetalhes: equipamentosDetalhados,
-                fotoFichaInstalacao,
-                fotosMaquinasInstalacao,
-                obs: document.getElementById("obs").value,
-                cadastradoPor,
-                dataCadastro,
-                dataCadastroDia
-            };
+            if (modoSolicitar) {
+                const manutencao = {
+                    clienteId: "",
+                    clienteNumero: "",
+                    clienteNome: document.getElementById("nome").value,
+                    clienteCidade: document.getElementById("cidade").value,
+                    clienteRota: document.getElementById("rota").value.replace(/^R\./, "").replace(/^(\d)$/, "0$1"),
+                    clienteEndereco: enderecoCompletoFinal,
+                    clienteEquip: listaEquipFinal.join(", "),
+                    equipDetalhes: equipamentosDetalhados,
+                    comissao: comissaoFinal,
+                    aberto: dias.join(", "),
+                    tipoAcao: "Ponto Novo",
+                    observacoes: document.getElementById("obs").value,
+                    fotoSolicitacao: "",
+                    fotosClienteReferencia: [],
+                    status: "pendente",
+                    cadastradoPor: nomeUsuarioLogado || "N/A",
+                    dataRegistro: new Date().toISOString()
+                };
+                await dbSalvarManutencao(manutencao);
+            } else {
+                const dadosFinal = {
+                    numero: numeroFinal,
+                    ponto_aberto: document.getElementById("ponto_aberto").value,
+                    nome: document.getElementById("nome").value,
+                    cidade: document.getElementById("cidade").value,
+                    comissao: comissaoFinal,
+                    rota: document.getElementById("rota").value.replace(/^R\./, "").replace(/^(\d)$/, "0$1"),
+                    endereco: enderecoCompletoFinal,
+                    endereco_base: enderecoBaseFinal,
+                    numero_endereco: numeroEnderecoFinal,
+                    aberto: dias.join(", "),
+                    equip: listaEquipFinal.join(", "),
+                    equipDetalhes: equipamentosDetalhados,
+                    fotoFichaInstalacao,
+                    fotosMaquinasInstalacao,
+                    obs: document.getElementById("obs").value,
+                    cadastradoPor,
+                    cadastradoPorPerfil: perfilCadastro,
+                    dataCadastro,
+                    dataCadastroDia,
+                    statusCadastro,
+                    ...(representantePontoNovo ? { representante: representantePontoNovo } : {})
+                };
+                await dbSalvarCliente(dadosFinal, idParaSalvar);
 
-            await dbSalvarCliente(dadosFinal, idParaSalvar);
+                if (fromPontoNovo && pontoNovoCarregado) {
+                    await dbSalvarManutencao({ ...pontoNovoCarregado, status: "concluido" }, fromPontoNovo);
+                }
+            }
+
             window.liberarSaidaCadastro?.();
             window.location.href = "clientes.html";
 
         } catch (error) {
             alert("Erro: " + error.message);
-            btn.innerText = "Salvar Cliente";
+            btn.innerText = modoSolicitar ? "Solicitar Entrega" : "Salvar Cliente";
             btn.style.pointerEvents = "auto";
         }
     };
 
-    document.getElementById('btnVoltar').onclick = () => window.confirmarSaidaCadastro?.();
 </script>
 
 <script>

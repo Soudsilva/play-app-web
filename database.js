@@ -533,6 +533,19 @@ export async function dbListarDepositos(nomeUsuario) {
     return [];
 }
 
+export async function dbListarManutencoes() {
+    try {
+        const snapshot = await get(ref(db, 'manutencoes'));
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            return Object.keys(data).map(key => ({ ...data[key], firebaseUrl: key }));
+        }
+    } catch (error) {
+        console.error("ERRO AO LISTAR MANUTENCOES:", error);
+    }
+    return [];
+}
+
 export function dbEscutarManutencoes(callback) {
     const manutencoesRef = ref(db, 'manutencoes');
     onValue(manutencoesRef, (snapshot) => {
@@ -623,6 +636,46 @@ export async function dbSelecionarRota(nomeUsuario) {
 
     // Rota foi pega por outra pessoa no mesmo instante: tenta a próxima
     return dbSelecionarRota(nomeUsuario);
+}
+
+/* --- FUNÇÕES PARA CHECK-IN DE ROTAS / JUSTIFICATIVAS --- */
+
+// Salva (ou substitui) a justificativa de um cliente em uma rota
+export async function dbSalvarJustificativaCheckin(routeNumber, clienteKey, dados) {
+    try {
+        await set(ref(db, `justificativas_rotas/${routeNumber}/${clienteKey}`), dados);
+    } catch (error) {
+        console.error("ERRO AO SALVAR JUSTIFICATIVA:", error);
+        throw error;
+    }
+}
+
+// Lê todas as justificativas de uma rota (retorna objeto { clienteKey: {...} })
+export async function dbListarJustificativasCheckin(routeNumber) {
+    try {
+        const snap = await get(ref(db, `justificativas_rotas/${routeNumber}`));
+        return snap.val() || {};
+    } catch (error) {
+        console.error("ERRO AO LISTAR JUSTIFICATIVAS:", error);
+        return {};
+    }
+}
+
+// Remove a justificativa de um cliente em uma rota
+export async function dbRemoverJustificativaCheckin(routeNumber, clienteKey) {
+    try {
+        await remove(ref(db, `justificativas_rotas/${routeNumber}/${clienteKey}`));
+    } catch (error) {
+        console.error("ERRO AO REMOVER JUSTIFICATIVA:", error);
+        throw error;
+    }
+}
+
+// Escuta em tempo real todas as justificativas de uma rota
+export function dbEscutarJustificativasCheckin(routeNumber, callback) {
+    onValue(ref(db, `justificativas_rotas/${routeNumber}`), (snap) => {
+        callback(snap.val() || {});
+    });
 }
 
 // Limpa todas as seleções da sessão ativa (apenas para testes)
