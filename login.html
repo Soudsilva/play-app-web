@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Play Diversões - Login</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f2a66">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Play">
+    <link rel="apple-touch-icon" href="assets/img/logo.png">
     <style>
         body {
             margin: 0;
@@ -71,12 +78,17 @@
         <div class="logo">
             <img src="assets/img/logo.png" alt="Play Diversões">
         </div>
-        <input type="text" id="inputNome" class="campo" placeholder="Seu nome" autocomplete="username" autocapitalize="words">
+        <input type="text" id="inputNome" class="campo" placeholder="Seu nome" autocomplete="username" autocapitalize="words" autocorrect="off" spellcheck="false">
         <input type="password" id="inputSenha" class="campo" placeholder="Senha" autocomplete="current-password">
         <button class="btn-entrar" id="btnEntrar" onclick="entrar()">Entrar</button>
         <div class="erro" id="msgErro"></div>
     </div>
 
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+    </script>
     <script type="module">
         import { fazerLogin, auth } from './auth.js';
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
