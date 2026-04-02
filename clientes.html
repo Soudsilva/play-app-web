@@ -789,7 +789,42 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
-    import { dbEscutarClientes, dbExcluirCliente, dbEscutarColaboradores, dbListarAtendimentos, dbEscutarManutencoes } from './database.js';
+    import { dbListarClientes, dbEscutarVersaoClientes, dbExcluirCliente, dbEscutarColaboradores, dbListarAtendimentos, dbEscutarManutencoes } from './database.js';
+
+    // --- CACHE LOCAL DE CLIENTES ---
+    // Salva a lista e a versão no localStorage para acesso offline e economia de dados.
+    const _CACHE_CLIENTES_KEY = 'play_clientes_cache';
+    const _CACHE_VERSAO_KEY   = 'play_clientes_versao';
+
+    function _salvarCacheClientes(clientes, versao) {
+        try {
+            localStorage.setItem(_CACHE_CLIENTES_KEY, JSON.stringify(clientes));
+            localStorage.setItem(_CACHE_VERSAO_KEY, String(versao));
+        } catch (e) {
+            console.warn('Não foi possível salvar cache de clientes:', e);
+        }
+    }
+
+    function _carregarCacheClientes() {
+        try {
+            const json = localStorage.getItem(_CACHE_CLIENTES_KEY);
+            const versao = localStorage.getItem(_CACHE_VERSAO_KEY);
+            if (!json) return null;
+            return { clientes: JSON.parse(json), versao: Number(versao) };
+        } catch (e) {
+            return null;
+        }
+    }
+
+    async function _atualizarListaDoServidor(versaoRemota) {
+        try {
+            const clientes = await dbListarClientes();
+            renderizarLista(clientes);
+            _salvarCacheClientes(clientes, versaoRemota ?? 0);
+        } catch (e) {
+            console.warn('Sem conexão. Exibindo dados em cache.', e);
+        }
+    }
 
     let perfilUsuarioLogado = "";
     let nomeUsuarioLogado = "";
@@ -968,7 +1003,35 @@
         renderizarLista(clientesSalvos);
     });
 
-    dbEscutarClientes((clientes) => { renderizarLista(clientes); });
+    // Carrega cache imediatamente (funciona offline).
+    // O try/catch garante que um erro aqui não impeça o resto do módulo de executar.
+    try {
+        const _cacheInicial = _carregarCacheClientes();
+        if (_cacheInicial && Array.isArray(_cacheInicial.clientes)) {
+            renderizarLista(_cacheInicial.clientes);
+        }
+    } catch (e) {
+        console.warn('Erro ao renderizar cache de clientes:', e);
+        localStorage.removeItem(_CACHE_CLIENTES_KEY);
+        localStorage.removeItem(_CACHE_VERSAO_KEY);
+    }
+
+    // Escuta apenas o número de versão (pouquíssimos dados).
+    // Só baixa a lista completa quando a versão mudar — ou se não houver cache.
+    dbEscutarVersaoClientes(async (versaoRemota) => {
+        const cache = _carregarCacheClientes();
+
+        if (!versaoRemota) {
+            // Banco ainda não tem versão (deploy inicial). Baixar se não há cache.
+            if (!cache) await _atualizarListaDoServidor(0);
+            return;
+        }
+
+        if (cache && cache.versao === versaoRemota) return; // Já está atualizado.
+
+        // Versão mudou (alguém adicionou/editou/excluiu um cliente). Baixar lista fresca.
+        await _atualizarListaDoServidor(versaoRemota);
+    });
 
     document.getElementById('btnNovo').onclick = () => {
         document.getElementById('escolhaOverlay').classList.add('aberto');

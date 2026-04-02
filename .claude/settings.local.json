@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find /c/Users/souds/play-app-web -type f -name *deposit* -o -name *deposito*)"
+      "Bash(find /c/Users/souds/play-app-web -type f -name *deposit* -o -name *deposito*)",
+      "Bash(node --input-type=module)"
     ]
   }
 }

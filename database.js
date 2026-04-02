@@ -63,6 +63,27 @@ export function dbEscutarClientes(callback) {
     });
 }
 
+// FUNÇÃO INTERNA: Atualiza o timestamp de versão dos clientes no banco.
+// Usada após qualquer alteração na lista de clientes para avisar todos os dispositivos.
+async function _atualizarVersaoClientes() {
+    try {
+        await set(ref(db, 'metadata/clientes_versao'), Date.now());
+    } catch (e) {
+        // Não bloquear a operação principal se isso falhar
+        console.warn("Não foi possível atualizar versão dos clientes:", e);
+    }
+}
+
+// FUNÇÃO: ESCUTAR VERSÃO DOS CLIENTES
+// O que faz: Escuta APENAS um número (timestamp) no banco. Quando ele muda,
+// significa que alguém alterou a lista de clientes. Economiza dados pois não
+// baixa a lista inteira — só avisa que ela mudou.
+export function dbEscutarVersaoClientes(callback) {
+    onValue(ref(db, 'metadata/clientes_versao'), (snap) => {
+        callback(snap.val());
+    });
+}
+
 // FUNÇÃO: SALVAR CLIENTE (Criar ou Editar)
 // O que faz: Verifica se é um cliente novo ou antigo.
 // Se tiver ID (idExistente), ele atualiza os dados. Se não, cria um novo registro.
@@ -77,6 +98,8 @@ export async function dbSalvarCliente(cliente, idExistente = null) {
             const clientesRef = ref(db, 'clientes');
             await push(clientesRef, cliente);
         }
+        // Avisa todos os dispositivos que a lista mudou
+        await _atualizarVersaoClientes();
     } catch (error) {
         console.error("ERRO AO SALVAR CLIENTE:", error);
         throw error;
@@ -141,6 +164,8 @@ export async function dbExcluirCliente(id) {
     try {
         const clienteRef = ref(db, `clientes/${id}`);
         await remove(clienteRef);
+        // Avisa todos os dispositivos que a lista mudou
+        await _atualizarVersaoClientes();
     } catch (error) {
         console.error("ERRO AO EXCLUIR CLIENTE:", error);
         throw error;
