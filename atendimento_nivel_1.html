@@ -481,6 +481,8 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
     import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, storageSalvarFoto } from './database.js';
 
     let listaClientes = [];

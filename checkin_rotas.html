@@ -590,6 +590,8 @@
 <div class="toast" id="toast"></div>
 
 <script type="module">
+import { verificarAutenticacao } from './auth.js';
+verificarAutenticacao();
 import {
     dbListarClientes,
     dbListarAtendimentos,
@@ -675,8 +677,12 @@ function renderizar() {
 
     let totalAtend = 0, totalPend = 0;
 
+    // Normaliza número de rota para comparação (remove zeros à esquerda: "02" → "2")
+    const normRota = v => String(v || '').trim().replace(/^0+(\d)/, '$1');
+
     rotasDoUsuario.forEach((rota) => {
-        const clientes = todosClientes.filter(c => String(c.rota || '') === rota.numero);
+        const numNorm = normRota(rota.numero);
+        const clientes = todosClientes.filter(c => normRota(c.rota) === numNorm);
         const { atendidos, justificados, pendentes } = classificarClientes(clientes, rota.numero);
 
         totalAtend += atendidos.length + justificados.length;
@@ -693,16 +699,23 @@ function renderizar() {
 function classificarClientes(clientes, routeNumber) {
     const justifs = justificativasPorRota[routeNumber] || {};
     const agora = Date.now();
-    const UM_DIA = 24 * 60 * 60 * 1000;
+    const UM_DIA  = 24 * 60 * 60 * 1000;
+    const DOIS_DIAS = 2 * UM_DIA;
 
     const atendidos   = [];
     const justificados = [];
     const pendentes   = [];
 
     clientes.forEach(c => {
-        const foiAtendido = todosAtendimentos.some(a =>
-            a.cliente && (a.cliente.id === c.firebaseUrl || a.cliente.nome === c.nome)
-        );
+        // Atendido = este usuário atendeu este cliente nos últimos 2 dias
+        const foiAtendido = todosAtendimentos.some(a => {
+            if (!a.cliente) return false;
+            const mesmoCliente = a.cliente.id === c.firebaseUrl || a.cliente.nome === c.nome;
+            if (!mesmoCliente) return false;
+            const mesmoUsuario = (a.atendente || '').toLowerCase() === usuarioAtual.toLowerCase();
+            const dentroJanela = (agora - new Date(a.data).getTime()) <= DOIS_DIAS;
+            return mesmoUsuario && dentroJanela;
+        });
         if (foiAtendido) {
             atendidos.push(c);
             return;

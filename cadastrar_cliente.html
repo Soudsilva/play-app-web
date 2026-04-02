@@ -503,6 +503,8 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
     // Importamos as ferramentas de banco de dados do seu arquivo externo
     import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, storageSalvarFoto } from './database.js';
 

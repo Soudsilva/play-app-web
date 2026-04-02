@@ -249,7 +249,9 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
-    import { dbListarAtendimentos, dbLerPosseAcumulada, dbListarColaboradores, dbListarClientes } from './database.js';
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
+    import { dbListarAtendimentos, dbListarColaboradores, dbListarClientes } from './database.js';
     import { dbListarDepositos } from './database.js';
 
     const usuarioLogado = localStorage.getItem('usuarioLogado') || '';
@@ -411,8 +413,8 @@
         });
     }
 
-    function somarProdutos(atendimentos, acumulado = {}) {
-        const mapa = { ...acumulado };
+    function somarProdutos(atendimentos) {
+        const mapa = {};
         atendimentos.forEach(a => {
             (a.produtos || []).forEach(p => {
                 if (!p.nome) return;
@@ -446,8 +448,8 @@
         });
     }
 
-    function somarMaquinas(atendimentos, acumulado = {}) {
-        const mapa = { ...acumulado };
+    function somarMaquinas(atendimentos) {
+        const mapa = {};
         atendimentos.forEach(a => {
             (a.fotos?.maquinas || []).forEach(m => {
                 if (!m.nome) return;
@@ -503,47 +505,15 @@
         const doMes      = filtrarMesCompleto(todosAtendimentos, dataDe);
         const conteudo   = document.getElementById('conteudo');
 
-        const produtosPosse = somarProdutos(todosAtendimentos, window._posseAcumuladaProdutos || {});
-        const maquinasPosse = somarMaquinas(todosAtendimentos, window._posseAcumuladaMaquinas || {});
         const fin        = somarFinanceiro(doMes);
         const finPeriodo = somarFinanceiro(filtrados);
         const maquinas   = somarMaquinas(filtrados);
         const porDia  = atendimentosPorDia(filtrados);
-        const maxProd = produtosPosse[0]?.[1] || 1;
-        const maxMaqPosse = maquinasPosse[0]?.[1] || 1;
 
         const labelDe  = formatarDataBR(dataDe)  || 'Selecione';
         const labelAte = formatarDataBR(dataAte) || 'Selecione';
 
         conteudo.innerHTML = `
-
-            <!-- Produtos em posse -->
-            ${produtosPosse.length > 0 ? `
-            <div class="secao">
-                <div class="secao-titulo">🧃 Produtos em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
-                <div class="lista-card">
-                    ${produtosPosse.map(([nome,qtd],i) => `
-                        <div class="lista-item">
-                            <div class="item-nome">${nome}</div>
-                            <div class="item-barra-wrap"><div class="item-barra-bg"><div class="item-barra" style="width:${Math.round((qtd/maxProd)*100)}%"></div></div></div>
-                            <div class="item-badge${i===0?' destaque':''}">-${qtd}</div>
-                        </div>`).join('')}
-                </div>
-            </div>` : ''}
-
-            <!-- Máquinas em posse -->
-            ${maquinasPosse.length > 0 ? `
-            <div class="secao">
-                <div class="secao-titulo">🎰 Máquinas em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
-                <div class="lista-card">
-                    ${maquinasPosse.map(([nome,qtd],i) => `
-                        <div class="lista-item">
-                            <div class="item-nome">${nome}</div>
-                            <div class="item-barra-wrap"><div class="item-barra-bg"><div class="item-barra" style="width:${Math.round((qtd/maxMaqPosse)*100)}%;background:${i===0?'#4caf50':'rgba(76,175,80,0.6)'}"></div></div></div>
-                            <div class="item-badge${i===0?' destaque':''}" style="${i===0?'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;':''}">-${qtd}</div>
-                        </div>`).join('')}
-                </div>
-            </div>` : ''}
 
             <!-- Rótulo Balanço Financeiro -->
             <div id="tituloFinanceiro" style="text-align:center; font-size:22px; font-weight:bold; color:#fff; margin:24px 0 14px; position:relative;">
@@ -758,9 +728,8 @@
     });
 
     // ── Inicialização ─────────────────────────────────────────────
-    const [todos, posseAcumulada, colaboradores, clientes, depositos] = await Promise.all([
+    const [todos, colaboradores, clientes, depositos] = await Promise.all([
         dbListarAtendimentos(),
-        dbLerPosseAcumulada(usuarioLogado),
         dbListarColaboradores(),
         dbListarClientes(),
         dbListarDepositos(usuarioLogado)
@@ -786,9 +755,6 @@
             })
             .map(a => dataLocalStr(a.data || a.dataHora || 0))
     );
-
-    window._posseAcumuladaProdutos = posseAcumulada.produtos || {};
-    window._posseAcumuladaMaquinas = posseAcumulada.maquinas || {};
 
     renderizar();
 </script>

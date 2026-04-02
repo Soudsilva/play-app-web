@@ -181,6 +181,8 @@
 <div class="toast" id="toast"></div>
 
 <script type="module">
+import { verificarAutenticacao } from './auth.js';
+verificarAutenticacao();
 import {
     dbListarClientes,
     dbListarAtendimentos,

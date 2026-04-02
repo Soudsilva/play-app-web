@@ -103,6 +103,8 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
+  import { verificarAutenticacao, criarContaColaborador, atualizarSenhaColaborador } from './auth.js';
+  verificarAutenticacao();
   import { dbEscutarColaboradores, dbSalvarColaborador, dbExcluirColaborador, dbAtualizarOrdemColaborador } from './database.js';
 
   let listaColaboradores = [];
@@ -212,10 +214,31 @@
           if (!idEdicao) {
               dados.dataCadastro = new Date().toISOString();
               await dbSalvarColaborador(dados, null);
+              // Cria conta de login automaticamente para o novo colaborador
+              if (dados.senha) {
+                  try {
+                      await criarContaColaborador(dados.nome, dados.senha);
+                  } catch (authErr) {
+                      if (authErr.code !== 'auth/email-already-in-use') {
+                          console.warn('Conta de login não criada:', authErr.message);
+                      }
+                  }
+              }
           } else {
+              const existente = listaColaboradores.find(c => c.firebaseUrl === idEdicao);
+              const senhaAntiga = existente?.senha || '';
               await dbSalvarColaborador(dados, idEdicao);
+              // Atualiza senha no login se foi alterada
+              if (dados.senha && senhaAntiga !== dados.senha) {
+                  try {
+                      await atualizarSenhaColaborador(dados.nome, senhaAntiga, dados.senha);
+                  } catch (authErr) {
+                      console.warn('Senha de login não atualizada:', authErr.message);
+                      await window.playAlert('Dados salvos! Porém não foi possível atualizar a senha de login automaticamente. Use a página criar_contas.html para sincronizar.');
+                  }
+              }
           }
-          
+
           document.getElementById('formColaborador').reset();
           document.getElementById('idEdicao').value = "";
           document.getElementById('btnSalvar').innerText = "+ Salvar Dados";

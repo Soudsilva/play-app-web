@@ -114,7 +114,9 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
-    import { dbEscutarAtendimentos, dbEscutarColaboradores, dbExcluirAtendimento, dbAcumularPosse } from './database.js';
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
+    import { dbEscutarAtendimentos, dbEscutarColaboradores, dbExcluirAtendimento } from './database.js';
 
     // Pega quem está logado no celular no momento
     const usuarioLogado = localStorage.getItem('usuarioLogado');
@@ -403,11 +405,6 @@
         }
 
         if (await window.playConfirm("Excluir este envio? Esta ação não pode ser desfeita.")) {
-            const dataEnvio = new Date(envio.data || envio.dataHora || 0);
-            const diasAtras = (Date.now() - dataEnvio.getTime()) / (1000 * 60 * 60 * 24);
-            if (diasAtras > 7) {
-                await dbAcumularPosse(envio.atendente || usuarioLogado, envio);
-            }
             await dbExcluirAtendimento(id);
         }
     };

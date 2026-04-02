@@ -127,7 +127,7 @@
     </style>
 </head>
 
-<body>
+<body style="visibility: hidden;">
 
 <div class="app">
 
@@ -135,21 +135,9 @@
         <img src="assets/img/logo.png">
     </div>
 
-    <div class="ola" style="display: flex; justify-content: center; align-items: center; gap: 10px;">
-        Olá, 
-        <select id="selectUsuario" style="
-            background: transparent; 
-            border: none; 
-            border-bottom: 1px solid rgba(255,255,255,0.3); 
-            color: #ffeb3b; 
-            font-size: 24px; 
-            font-weight: bold; 
-            outline: none; 
-            cursor: pointer; 
-            max-width: 220px;
-        ">
-            <option value="" style="background: #0f2a66; color: white;">Carregando...</option>
-        </select>
+    <div class="ola" style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
+        Olá, <span id="nomeUsuario" style="color: #ffeb3b; font-size: 24px; font-weight: bold;"></span>
+        <button onclick="sair()" style="background: transparent; border: 1px solid rgba(255,255,255,0.25); border-radius: 20px; color: rgba(255,255,255,0.5); font-size: 13px; cursor: pointer; padding: 3px 10px; font-family: Arial, Helvetica, sans-serif; transition: 0.15s;" title="Sair">Sair</button>
     </div>
 
     <div class="menu">
@@ -292,12 +280,16 @@
 
 <script type="module">
     import { dbEscutarColaboradores } from './database.js';
+    import { verificarAutenticacao, fazerLogout } from './auth.js';
+
+    verificarAutenticacao();
+    window.sair = fazerLogout;
 
     let listaColaboradores = [];
 
-    // [NOVO] Redirecionamento inteligente do Estoque
+    // Redirecionamento inteligente do Estoque
     window.abrirEstoque = function() {
-        const nome = document.getElementById('selectUsuario').value;
+        const nome = localStorage.getItem('usuarioLogado') || '';
         const usuario = listaColaboradores.find(c => c.nome === nome);
 
         // Se for Gestor, vai para a tela avançada. Se for Estoque ou outro, vai para a padrão.
@@ -308,12 +300,11 @@
         }
     };
 
-    // [NOVO] Redirecionamento inteligente do Atendimento
+    // Redirecionamento inteligente do Atendimento
     window.abrirAtendimento = function() {
-        // [NOVO] Limpa o rascunho anterior para garantir que a tela abra zerada
         localStorage.removeItem('rascunho_atendimento');
 
-        const nome = document.getElementById('selectUsuario').value;
+        const nome = localStorage.getItem('usuarioLogado') || '';
         const usuario = listaColaboradores.find(c => c.nome === nome);
         const perfil = usuario ? (usuario.nivel_completo || "") : "";
 
@@ -337,14 +328,10 @@
             return;
         }
         if (tela === 'checkin') {
-            const nome = document.getElementById('selectUsuario').value;
-            if (nome) localStorage.setItem('usuario_selecionado', nome);
             window.location.href = 'checkin_rotas.html';
             return;
         }
         if (tela === 'rotas') {
-            const nome = document.getElementById('selectUsuario').value;
-            if (nome) localStorage.setItem('usuario_selecionado', nome);
             window.location.href = 'selecionar_rota.html';
             return;
         }
@@ -455,39 +442,15 @@
         }
     }
 
-    // Lógica do Dropdown de Usuários
-    const select = document.getElementById('selectUsuario');
-
     dbEscutarColaboradores((lista) => {
-        listaColaboradores = lista; // Guarda a lista completa para consultar depois
-        const selecionadoAnterior = localStorage.getItem('usuarioLogado') || "";
-        
-        select.innerHTML = '<option value="" style="background: #0f2a66; color: #ccc;">Selecione...</option>';
-        
-        lista.forEach(c => {
-            const option = document.createElement('option');
-            option.value = c.nome; 
-            option.innerText = c.nome;
-            option.style.background = "#0f2a66"; // Fundo azul escuro para as opções
-            option.style.color = "white";
-            select.appendChild(option);
-        });
+        listaColaboradores = lista;
+        const nome = localStorage.getItem('usuarioLogado') || '';
 
-        // Restaura a seleção anterior se existir
-        if (selecionadoAnterior) {
-            select.value = selecionadoAnterior;
-            verificarPermissoes(selecionadoAnterior);
-        }
+        document.getElementById('nomeUsuario').textContent = nome;
 
-        // Exibe o menu somente após as permissões serem aplicadas, evitando o "piscar"
+        if (nome) verificarPermissoes(nome);
+
         document.querySelector('.menu').style.display = 'flex';
-    });
-
-    // Salva a escolha no navegador para não perder ao recarregar
-    select.addEventListener('change', (e) => {
-        const nome = e.target.value;
-        localStorage.setItem('usuarioLogado', nome);
-        verificarPermissoes(nome);
     });
 </script>
 

@@ -84,6 +84,8 @@
 </div>
 
 <script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
     import { dbEscutarEstoque } from './database.js';
 
     // [NOVO] LÓGICA DE FILTRAGEM UNIFICADA (Pesquisa + Checkboxes)

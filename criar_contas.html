@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Contas Firebase - Admin</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0f2a66;
+            display: flex;
+            justify-content: center;
+            padding: 30px 16px;
+            box-sizing: border-box;
+        }
+        .container {
+            width: 100%;
+            max-width: 480px;
+        }
+        h2 { color: #ffeb3b; margin-bottom: 6px; }
+        p { color: #cfd6e3; font-size: 15px; margin-top: 0; }
+        .aviso {
+            background: rgba(255, 200, 0, 0.1);
+            border: 2px solid #ffeb3b;
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: #ffeb3b;
+            font-size: 14px;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        .btn {
+            width: 100%;
+            background: #4467a8;
+            border: 3px solid #d7dce3;
+            border-radius: 45px;
+            padding: 14px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-family: Arial, Helvetica, sans-serif;
+            transition: 0.15s;
+        }
+        .btn:hover { background: #3c5f9f; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .log {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+        .ok   { color: #69f0ae; }
+        .erro { color: #ff6b6b; }
+        .info { color: #cfd6e3; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Criar Contas Firebase</h2>
+    <p>Página de migração — use uma única vez.</p>
+
+    <div class="aviso">
+        ⚠️ <strong>Execute antes de mudar as regras do Firebase.</strong><br>
+        Este processo lê os colaboradores do banco e cria uma conta de login para cada um usando o nome e a senha já cadastrados.<br><br>
+        Após rodar com sucesso, delete ou desative esta página.
+    </div>
+
+    <button class="btn" id="btnCriar" onclick="criarContas()">Criar Contas para Todos</button>
+
+    <div class="log" id="log"><span class="info">Aguardando...</span></div>
+</div>
+
+<script type="module">
+    import { auth, nomeParaEmail, normalizarSenha, createUserWithEmailAndPassword, updateProfile } from './auth.js';
+    import { dbListarColaboradores } from './database.js';
+    import { signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const logEl = document.getElementById('log');
+
+    function addLog(msg, tipo = 'info') {
+        logEl.innerHTML += `<div class="${tipo}">${msg}</div>`;
+    }
+
+    window.criarContas = async function() {
+        const btn = document.getElementById('btnCriar');
+        btn.disabled = true;
+        logEl.innerHTML = '';
+
+        addLog('🔍 Lendo colaboradores do banco...');
+
+        let colaboradores;
+        try {
+            colaboradores = await dbListarColaboradores();
+        } catch (e) {
+            addLog('❌ Erro ao ler colaboradores: ' + e.message, 'erro');
+            btn.disabled = false;
+            return;
+        }
+
+        if (!colaboradores || colaboradores.length === 0) {
+            addLog('⚠️ Nenhum colaborador encontrado.', 'erro');
+            btn.disabled = false;
+            return;
+        }
+
+        addLog(`✅ ${colaboradores.length} colaborador(es) encontrado(s).`);
+        addLog('─────────────────────────');
+
+        let criados = 0;
+        let erros = 0;
+
+        for (const colab of colaboradores) {
+            const nome = colab.nome;
+            const senha = colab.senha;
+
+            if (!nome || !senha) {
+                addLog(`⚠️ <strong>${nome || '(sem nome)'}</strong> — sem senha cadastrada, pulando.`, 'erro');
+                erros++;
+                continue;
+            }
+
+            const email = nomeParaEmail(nome);
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, email, normalizarSenha(senha));
+                await updateProfile(cred.user, { displayName: nome });
+                addLog(`✅ <strong>${nome}</strong> — conta criada (${email})`, 'ok');
+                criados++;
+            } catch (e) {
+                if (e.code === 'auth/email-already-in-use') {
+                    addLog(`ℹ️ <strong>${nome}</strong> — conta já existe, ok.`, 'info');
+                    criados++;
+                } else {
+                    addLog(`❌ <strong>${nome}</strong> — erro: ${e.message}`, 'erro');
+                    erros++;
+                }
+            }
+        }
+
+        // Faz logout ao final para não ficar logado como o último usuário criado
+        try { await signOut(auth); } catch (_) {}
+
+        addLog('─────────────────────────');
+        addLog(`🏁 Concluído: ${criados} conta(s) criada(s), ${erros} erro(s).`, criados > 0 ? 'ok' : 'erro');
+
+        if (erros === 0) {
+            addLog('');
+            addLog('✅ Tudo certo! Agora você pode:', 'ok');
+            addLog('&nbsp;&nbsp;1. Testar o login em <a href="login.html" style="color:#ffeb3b">login.html</a>', 'ok');
+            addLog('&nbsp;&nbsp;2. Atualizar as regras do Firebase para <code>auth != null</code>', 'ok');
+            addLog('&nbsp;&nbsp;3. Deletar ou desativar esta página', 'ok');
+        }
+
+        btn.disabled = false;
+    };
+</script>
+</body>
+</html>

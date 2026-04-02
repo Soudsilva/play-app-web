@@ -135,6 +135,8 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
     import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbSalvarHistorico, dbEscutarHistorico, dbExcluirHistorico } from './database.js';
 
     let listaGlobal = [];

@@ -789,6 +789,8 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
     import { dbListarClientes, dbEscutarVersaoClientes, dbExcluirCliente, dbEscutarColaboradores, dbListarAtendimentos, dbEscutarManutencoes } from './database.js';
 
     // --- CACHE LOCAL DE CLIENTES ---

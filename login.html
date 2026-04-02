@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play Diversões - Login</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0f2a66;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 380px;
+            padding: 30px 24px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        .logo img {
+            width: 100%;
+            max-width: 220px;
+            margin-bottom: 40px;
+        }
+        .campo {
+            width: 100%;
+            background: rgba(255,255,255,0.08);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 14px;
+            padding: 14px 16px;
+            font-size: 20px;
+            color: white;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+            outline: none;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .campo::placeholder { color: rgba(255,255,255,0.4); }
+        .campo:focus { border-color: #ffeb3b; }
+        .btn-entrar {
+            width: 100%;
+            background: #4467a8;
+            border: 3px solid #d7dce3;
+            border-radius: 45px;
+            padding: 14px;
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: 0.15s;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .btn-entrar:hover { background: #3c5f9f; }
+        .btn-entrar:active { transform: translateY(2px); transition: 0.05s; }
+        .btn-entrar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .erro {
+            color: #ff6b6b;
+            font-size: 16px;
+            margin-top: 16px;
+            min-height: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="assets/img/logo.png" alt="Play Diversões">
+        </div>
+        <input type="text" id="inputNome" class="campo" placeholder="Seu nome" autocomplete="username" autocapitalize="words">
+        <input type="password" id="inputSenha" class="campo" placeholder="Senha" autocomplete="current-password">
+        <button class="btn-entrar" id="btnEntrar" onclick="entrar()">Entrar</button>
+        <div class="erro" id="msgErro"></div>
+    </div>
+
+    <script type="module">
+        import { fazerLogin, auth } from './auth.js';
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // Se já está logado, vai direto para o index
+        onAuthStateChanged(auth, (user) => {
+            if (user) window.location.replace('index.html');
+        });
+
+        window.entrar = async function() {
+            const nome = document.getElementById('inputNome').value.trim();
+            const senha = document.getElementById('inputSenha').value;
+            const btn = document.getElementById('btnEntrar');
+            const msgErro = document.getElementById('msgErro');
+
+            if (!nome || !senha) {
+                msgErro.textContent = 'Preencha nome e senha.';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Entrando...';
+            msgErro.textContent = '';
+
+            try {
+                await fazerLogin(nome, senha);
+                window.location.replace('index.html');
+            } catch (e) {
+                msgErro.textContent = 'Nome ou senha incorretos.';
+                btn.disabled = false;
+                btn.textContent = 'Entrar';
+            }
+        };
+
+        document.getElementById('inputNome').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') document.getElementById('inputSenha').focus();
+        });
+        document.getElementById('inputSenha').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') entrar();
+        });
+    </script>
+</body>
+</html>

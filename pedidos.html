@@ -103,6 +103,8 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
     import { dbSalvarPedido, dbEscutarPedidos, dbExcluirPedido } from './database.js';
 
     const usuarioLogado = localStorage.getItem('usuarioLogado') || "Desconhecido";

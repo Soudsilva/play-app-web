@@ -105,6 +105,8 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
     import { dbEscutarEstoque, dbSalvarItemEstoque, dbExcluirItemEstoque } from './database.js';
 
     document.getElementById('campoPesquisa').addEventListener('input', function(e) {

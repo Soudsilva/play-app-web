@@ -287,6 +287,8 @@
 </script>
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
     import { dbListarAtendimentos, storageSalvarFoto } from './database.js';
     import { dbSalvarDeposito, dbListarDepositos, dbAtualizarDeposito, dbExcluirDeposito } from './database.js';
 
