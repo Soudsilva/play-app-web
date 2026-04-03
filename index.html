@@ -164,7 +164,7 @@
             <span>Manutenção</span>
         </div>
 
-        <div>
+        <div id="blocoGestao">
             <div class="botao" id="btnGestao" onclick="toggleSubmenuGestao()">
                 <span class="icone">📊</span>
                 <span style="color:white; font-size:25px; font-weight:bold; text-align:center; width:100%;">Gestão</span>
@@ -356,6 +356,7 @@
             clientes: document.getElementById('btnClientes'),
             manutencao: document.getElementById('btnManutencao'),
             gestao: document.getElementById('btnGestao'),
+            blocoGestao: document.getElementById('blocoGestao'),
             rotas: document.getElementById('btnRotas'),
             cadColab: document.getElementById('btnCadColaborador'),
             estoque: document.getElementById('btnEstoque'),
@@ -365,6 +366,9 @@
             pix: document.getElementById('btnPix'),
             fluxoCaixa: document.getElementById('btnFluxoCaixa')
         };
+
+        // Por padrão, garante que o bloco de Gestão não vai deixar "espaço vazio" no menu.
+        btns.blocoGestao.style.display = 'block';
 
         // 1. PERFIL ESTOQUE
         if (perfil.includes('estoque')) {
@@ -377,6 +381,7 @@
             
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'none';
+            btns.blocoGestao.style.display = 'none';
             
             // Perfil Estoque também pode acessar a tela padrão de estoque.
             btns.estoque.style.display = 'flex'; 

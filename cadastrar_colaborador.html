@@ -83,7 +83,7 @@
         </div>
 
         <div style="display: flex; gap: 10px;">
-            <div style="flex: 1.5;"><label class="label-focada">Senha Global</label><input type="text" id="senhaColaborador" placeholder="0000" inputmode="numeric" maxlength="4"></div>
+            <div style="flex: 1.5;"><label class="label-focada">Senha Global</label><input type="text" id="senhaColaborador" placeholder="Ex: 1234A" maxlength="5" autocomplete="off" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);"></div>
             <div style="flex: 2;"><label class="label-focada">Perfil</label>
                 <select id="nivelAcesso">
                     <option value="gestao">Gestão</option>
@@ -208,6 +208,15 @@
               else historico.push({ valor: dados.comissao, inicio: mesAtual });
           }
           dados.comissaoHistorico = historico;
+      }
+
+      if (dados.senha) {
+          const digitos = (dados.senha.match(/[0-9]/g) || []).length;
+          const letras = (dados.senha.match(/[A-Za-z]/g) || []).length;
+          if (digitos !== 4 || letras !== 1 || dados.senha.length !== 5) {
+              await window.playAlert('A senha deve ter exatamente 4 números e 1 letra (ex: 1234A).');
+              return;
+          }
       }
 
       try {
