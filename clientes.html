@@ -294,6 +294,30 @@
         margin-bottom: 6px;
     }
 
+    /* Campo provisório (teste) */
+    .cliente-venda-dia-provisorio {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-top: 1px dashed rgba(255,255,255,0.25);
+        background: rgba(255,255,255,0.04);
+        border-radius: 12px;
+        font-size: 13px;
+        color: #ffffff;
+    }
+    .cliente-venda-dia-rotulo {
+        font-weight: bold;
+        color: #ffeb3b;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        font-size: 11px;
+        flex: none;
+    }
+    .cliente-venda-dia-valor { font-weight: 800; }
+
     /* Ações editar/excluir */
     .acoes-cliente {
         display: flex;
@@ -926,6 +950,17 @@
             if (equipString) campos.push(`<div class="campo-item"><b>Equip.:</b> ${equipString}</div>`);
             if (c.aberto) campos.push(`<div class="campo-item"><b>Aberto:</b> ${c.aberto}</div>`);
 
+            const vendaDiaNum = Number(c?.venda_por_dia);
+            const vendaDiaTxt = Number.isFinite(vendaDiaNum)
+                ? vendaDiaNum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                : '—';
+            const vendaDiaProvisorioHtml = `
+                <div class="cliente-venda-dia-provisorio">
+                    <span class="cliente-venda-dia-rotulo">Venda/dia (teste)</span>
+                    <span class="cliente-venda-dia-valor">${vendaDiaTxt}</span>
+                </div>
+            `;
+
             const camposLargura = [];
             if (c.endereco) camposLargura.push(`<div class="campo-item"><b>End.:</b> <span class="copiar">${c.endereco}</span><img src="https://cdn-icons-png.flaticon.com/512/1621/1621635.png" class="btn-copiar-img" onclick="copiarTexto('${c.endereco}')"></div>`);
             if (c.obs) camposLargura.push(`<div class="campo-item obs-item"><b>Obs:</b> ${c.obs}</div>`);
@@ -987,11 +1022,12 @@
                                 <span>Fotos</span>
                             </div>
                         </div>
-                    </div>
-                    ${camposLargura.length > 0 ? `<div class="cliente-campos-largura">${camposLargura.join('')}</div>` : ''}
-                    ${acoesVisuaisHtml}
-                </div>
-            `;
+                     </div>
+                     ${camposLargura.length > 0 ? `<div class="cliente-campos-largura">${camposLargura.join('')}</div>` : ''}
+                     ${acoesVisuaisHtml}
+                     ${vendaDiaProvisorioHtml}
+                 </div>
+             `;
             listaHTML.appendChild(card);
         });
 

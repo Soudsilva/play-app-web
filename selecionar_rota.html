@@ -12,7 +12,7 @@
 
         /* TOPO */
         .topo { display:flex; align-items:center; justify-content:center; min-height:40px; margin-bottom:20px; position:relative; }
-        .titulo { font-size:22px; font-weight:bold; text-align:center; }
+        .titulo { font-size:24px; font-weight:bold; text-align:center; }
         .btn-home { background:rgba(255,255,255,0.1); padding:8px; border-radius:50%; cursor:pointer; display:flex; position:absolute; left:0; border:none; }
         .btn-home:active { background:rgba(255,255,255,0.2); }
 
@@ -23,18 +23,18 @@
         /* CARREGANDO */
         .spinner { width:46px; height:46px; border:4px solid rgba(255,255,255,0.1); border-top-color:#ffeb3b; border-radius:50%; animation:girar 0.8s linear infinite; margin:50px auto 14px; }
         @keyframes girar { to { transform:rotate(360deg); } }
-        .txt-carregando { color:rgba(255,255,255,0.45); font-size:14px; letter-spacing:1px; }
+        .txt-carregando { color:#e5e7eb; font-size:15px; letter-spacing:1px; }
 
         /* TÍTULO DE SEÇÃO — padrão do app */
-        .secao-titulo { font-size:13px; font-weight:bold; color:#ffeb3b; text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; padding-bottom:5px; border-bottom:1px dashed rgba(255,235,59,0.3); text-align:center; display:block; width:100%; }
+        .secao-titulo { font-size:14px; font-weight:bold; color:#ffeb3b; text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; padding-bottom:5px; border-bottom:1px dashed rgba(255,235,59,0.3); text-align:center; display:block; width:100%; }
 
 
         /* LISTA QUEM JÁ SELECIONOU */
         .lista-selecoes { width:100%; display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
-        .item-selecao { display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px 16px; font-size:14px; animation:entrar 0.25s ease; }
+        .item-selecao { display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px 16px; font-size:15px; animation:entrar 0.25s ease; }
         @keyframes entrar { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
         .item-selecao .nome-usuario { font-weight:bold; }
-        .item-selecao .status-check { font-size:15px; color:rgba(255,255,255,0.45); }
+        .item-selecao .status-check { font-size:16px; color:#e5e7eb; }
 
         /* CARD COM NÚMERO GIRANDO */
         .slot-wrapper { width:100%; display:flex; justify-content:center; margin:6px 0 18px; }
@@ -43,25 +43,33 @@
         @keyframes brilhoSlot { 0%,100% { border-color:rgba(255,235,59,0.15); } 50% { border-color:rgba(255,235,59,0.6); box-shadow:0 0 14px rgba(255,235,59,0.15); } }
         .luzes.pausado { animation:none; border-color:rgba(255,255,255,0.08); }
         .slot-janela { text-align:center; position:relative; z-index:1; }
-        .slot-label { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,0.35); margin-bottom:2px; }
+        .slot-label { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:#e5e7eb; margin-bottom:2px; }
         .slot-numero { font-size:64px; font-weight:900; color:#ffeb3b; line-height:1; min-width:100px; display:block; font-family:'Courier New',monospace; text-shadow:0 0 16px rgba(255,235,59,0.35); }
         .slot-numero.girando { animation:piscarNumero 0.09s steps(1) infinite; }
         @keyframes piscarNumero { 50% { filter:blur(2px); opacity:0.65; } }
 
         /* BOTÃO SELECIONAR — padrão amarelo do app */
-        .btn-sortear { background:#ffeb3b; border:none; color:#0b2256; font-weight:bold; font-size:17px; padding:15px; border-radius:12px; cursor:pointer; width:100%; text-align:center; transition:0.15s; }
+        .btn-sortear { background:#ffeb3b; border:none; color:#0b2256; font-weight:bold; font-size:18px; padding:15px; border-radius:12px; cursor:pointer; width:100%; text-align:center; transition:0.15s; }
         .btn-sortear:active { transform:scale(0.98); background:#ffe100; }
-        .btn-sortear[disabled] { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.25); cursor:not-allowed; }
+        .btn-sortear[disabled] { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); color:#9ca3af; cursor:not-allowed; }
 
         /* CARD DE ROTA SELECIONADA */
-        .card-rota { padding:16px; border:1px solid rgba(255,255,255,0.13); border-radius:12px; margin-bottom:8px; background:rgba(255,255,255,0.03); width:100%; }
-        .card-rota-numero { font-size:20px; font-weight:bold; margin-bottom:10px; }
-        .card-rota-numero span { color:rgba(255,255,255,0.4); font-weight:normal; font-size:14px; margin-left:4px; }
-        .card-rota-dias { display:flex; align-items:center; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
-        .card-rota-dias-label { font-size:11px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.5px; }
-        .dia-badge { font-size:11px; color:#ffeb3b; background:rgba(255,235,59,0.1); border-radius:20px; padding:3px 9px; }
+        .card-rota { position:relative; overflow:hidden; padding:16px; border:2px solid #ffffff; border-radius:14px; margin-bottom:10px; background:linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)); width:100%; box-shadow:0 16px 30px rgba(0,0,0,0.25); }
+        .card-rota::before { content:""; position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg, #ffeb3b, #ffc107, #ffeb3b); }
+        .card-rota-numero { display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+        .card-rota-numero-badge { display:inline-flex; align-items:center; gap:10px; padding:8px 14px; border-radius:999px; background:rgba(255,235,59,0.12); border:1px solid rgba(255,235,59,0.6); box-shadow:0 14px 22px rgba(255,235,59,0.12); }
+        .card-rota-numero-badge-label { font-size:12px; font-weight:bold; letter-spacing:1.6px; text-transform:uppercase; color:#ffffff; }
+        .card-rota-numero-badge-num { font-size:26px; font-weight:900; color:#ffeb3b; line-height:1; font-family:'Courier New', monospace; text-shadow:0 0 14px rgba(255,235,59,0.35); }
+        .card-rota-numero-sub { font-size:15px; font-weight:bold; color:#ffffff; }
+        .card-rota-dias { display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:10px; }
+        .card-rota-dias-label { font-size:12px; color:#ffffff; text-transform:uppercase; letter-spacing:0.5px; width:100%; text-align:center; }
+        .card-rota-dias-val { display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; width:100%; }
+        .dia-badge { font-size:12px; font-weight:bold; border-radius:999px; padding:6px 0; text-align:center; border:1px solid transparent; white-space:nowrap; }
+        .dia-badge.disponivel { color:#ffffff; background:linear-gradient(180deg, #66bb6a, #2e7d32); border-color:#a5d6a7; box-shadow:0 0 0 1px rgba(165,214,167,0.18), 0 10px 18px rgba(76,175,80,0.18); }
+        .dia-badge.indisponivel { color:#cbd5e1; background:rgba(255,255,255,0.06); border:1px dashed rgba(255,255,255,0.35); text-decoration:line-through; text-decoration-thickness:2px; text-decoration-color:#ffffff; }
+        .card-rota-dias-hint { font-size:13px; font-weight:bold; color:#ff9800; text-align:center; margin-top:6px; }
         .card-rota-acoes { display:flex; gap:8px; margin-top:4px; }
-        .btn-ver-clientes { flex:1; padding:10px; border-radius:10px; background:#ffeb3b; color:#0b2256; font-size:13px; font-weight:bold; text-align:center; cursor:pointer; border:none; }
+        .btn-ver-clientes { flex:1; padding:10px; border-radius:10px; background:#ffeb3b; color:#0b2256; font-size:14px; font-weight:bold; text-align:center; cursor:pointer; border:none; }
         .btn-ver-clientes:active { background:#ffe100; transform:scale(0.98); }
 
         /* LIGHTBOX */
@@ -70,9 +78,9 @@
         .lightbox img { max-width:95vw; max-height:90vh; border-radius:10px; object-fit:contain; }
 
         /* BOTÃO ADMIN FLUTUANTE */
-        .btn-admin-float { position:fixed; bottom:20px; right:20px; background:rgba(11,34,86,0.92); border:1px solid rgba(255,255,255,0.13); border-radius:50px; padding:10px 18px; font-size:13px; color:rgba(255,255,255,0.45); cursor:pointer; z-index:100; backdrop-filter:blur(6px); display:none; gap:6px; align-items:center; }
+        .btn-admin-float { position:fixed; bottom:20px; right:20px; background:rgba(11,34,86,0.92); border:1px solid rgba(255,255,255,0.13); border-radius:50px; padding:10px 18px; font-size:13px; color:#e5e7eb; cursor:pointer; z-index:100; backdrop-filter:blur(6px); display:none; gap:6px; align-items:center; }
         .btn-admin-float.visivel { display:flex; }
-        .btn-admin-float:active { color:rgba(255,255,255,0.75); }
+        .btn-admin-float:active { color:#ffffff; }
 
         /* MODAL */
         .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; justify-content:center; align-items:flex-end; }
@@ -80,13 +88,17 @@
         .modal-content { background:linear-gradient(180deg,#173d8f,#0f2a66); border:1px solid rgba(255,255,255,0.15); border-radius:20px 20px 0 0; padding:22px 16px 36px; width:100%; max-width:600px; box-sizing:border-box; animation:subirModal 0.25s ease; }
         @keyframes subirModal { from { transform:translateY(100%); } to { transform:translateY(0); } }
         .modal-titulo { font-size:17px; font-weight:bold; color:#ffeb3b; text-align:center; margin-bottom:4px; }
-        .modal-subtitulo { font-size:12px; color:rgba(255,255,255,0.4); text-align:center; margin-bottom:18px; }
+        .modal-subtitulo { font-size:12px; color:#e5e7eb; text-align:center; margin-bottom:18px; }
+        .modal-info { font-size:13px; color:#ffffff; text-align:left; margin:0 0 14px; }
+        .modal-info-box { padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.14); background:rgba(255,255,255,0.06); }
+        .modal-info-titulo { font-size:12px; font-weight:bold; margin-bottom:6px; }
+        .modal-info-lista { font-size:12px; line-height:1.45; max-height:120px; overflow:auto; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.18); }
         .btn-modal-acao { padding:14px; border-radius:12px; font-size:15px; font-weight:bold; cursor:pointer; text-align:center; transition:0.15s; margin-bottom:10px; }
         .btn-modal-acao:active { transform:scale(0.97); }
         .btn-calcular { background:#ffeb3b; color:#0b2256; border:none; }
-        .btn-encerrar { background:rgba(255,80,80,0.08); border:1px solid rgba(255,80,80,0.22); color:rgba(255,130,130,0.85); }
-        .btn-encerrar-teste { background:rgba(255,150,50,0.08); border:1px solid rgba(255,150,50,0.22); color:rgba(255,175,100,0.85); }
-        .btn-fechar-modal { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.35); }
+        .btn-encerrar { background:rgba(255,80,80,0.08); border:1px solid rgba(255,80,80,0.22); color:#ff8282; }
+        .btn-encerrar-teste { background:rgba(255,150,50,0.08); border:1px solid rgba(255,150,50,0.22); color:#ffaf64; }
+        .btn-fechar-modal { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#e5e7eb; }
 
         /* TOAST */
         .toast { position:fixed; bottom:70px; left:50%; transform:translateX(-50%) translateY(12px); background:#0f2a66; border:1px solid rgba(255,255,255,0.13); border-radius:50px; padding:11px 22px; font-size:14px; color:white; z-index:500; opacity:0; transition:opacity 0.25s, transform 0.25s; white-space:nowrap; pointer-events:none; }
@@ -96,7 +108,7 @@
         .confetti-piece { position:fixed; width:9px; height:9px; border-radius:2px; top:-10px; animation:cair linear forwards; z-index:999; pointer-events:none; }
         @keyframes cair { to { transform:translateY(110vh) rotate(720deg); opacity:0; } }
 
-        .cor-aviso { color:rgba(255,152,0,0.75); font-size:13px; text-align:center; }
+        .cor-aviso { color:#ff9800; font-size:13px; text-align:center; }
     </style>
 </head>
 <body>
@@ -130,7 +142,7 @@
         <div id="listaSelecoes" class="lista-selecoes"></div>
 
         <!-- Card com número -->
-        <div class="slot-wrapper">
+        <div class="slot-wrapper" id="slotWrapper">
             <div class="slot-machine">
                 <div class="luzes" id="luzesMaquina"></div>
                 <div class="slot-janela">
@@ -144,7 +156,7 @@
 
         <div id="btnSortearWrap" style="width:100%">
             <div class="btn-sortear" id="btnSortear" onclick="selecionarRota()">
-                ✅ &nbsp;SELECIONAR MINHA ROTA
+                SELECIONAR ROTA
             </div>
         </div>
 
@@ -165,6 +177,7 @@
     <div class="modal-content">
         <div class="modal-titulo">⚙️ Painel do Gestor</div>
         <div class="modal-subtitulo">Gerencie a sessão de seleção de rotas</div>
+        <div class="modal-info" id="adminInfo"></div>
         <div class="btn-modal-acao btn-calcular" onclick="recalcularESessao()">🔄 Recalcular e Reiniciar Sessão</div>
         <div class="btn-modal-acao btn-encerrar" onclick="encerrarSessao()">🛑 Encerrar Sessão Atual</div>
         <div class="btn-modal-acao btn-encerrar-teste" onclick="limparSelecoes()">🧹 Limpar Seleções (Teste)</div>
@@ -190,6 +203,7 @@ import {
     dbCriarSessaoRotas,
     dbSelecionarRota,
     dbEncerrarSessaoRotas,
+    dbEscutarVersaoClientes,
     dbListarColaboradores,
     dbLimparSelecoes
 } from './database.js';
@@ -204,6 +218,9 @@ let numerosDeRota = [];
 let clientesPorRota = {};
 let maquinasPorCliente = {};
 let estaAnimando = false; // bloqueia renderização dos detalhes durante a animação
+let timerResetSlot = null;
+let versaoClientesAtual = null;
+let sessaoDesatualizadaAvisada = false;
 
 // ─────────────────────────────────────────────
 // Inicialização
@@ -218,6 +235,13 @@ async function init() {
 
     document.getElementById('btnAdminFloat').classList.add('visivel');
 
+    // Escuta a versão dos clientes para detectar quando rotas/clientes mudaram
+    dbEscutarVersaoClientes((versao) => {
+        versaoClientesAtual = versao || null;
+        tentarAutoRecalcularSessao();
+        atualizarInfoAdmin(sessaoAtual);
+    });
+
     // Escuta a sessão em tempo real
     dbEscutarSessaoRotas(onSessaoAtualizada);
 }
@@ -230,6 +254,12 @@ let criandoSessao = false;
 // ─────────────────────────────────────────────
 async function onSessaoAtualizada(sessao) {
     sessaoAtual = sessao;
+    atualizarInfoAdmin(sessaoAtual);
+    if (!sessaoEstaDesatualizada(sessaoAtual)) sessaoDesatualizadaAvisada = false;
+
+    // Se a sessão estiver desatualizada (clientes/rotas foram alterados), tenta recalcular automaticamente
+    // apenas quando ainda NÃO houve nenhuma seleção.
+    if (tentarAutoRecalcularSessao()) return;
 
     if (estaAnimando) {
         if (sessao && sessao.rotas) {
@@ -272,6 +302,100 @@ async function criarSessaoAutomatica() {
 
 const LIMITE_ROTAS = 3;
 
+function sessaoTemSelecoes(sessao) {
+    if (!sessao || !sessao.rotas) return false;
+    return Object.values(sessao.rotas).some(r => r && r.selecionada_por);
+}
+
+function sessaoEstaDesatualizada(sessao) {
+    if (!versaoClientesAtual) return false;
+    if (!sessao || !sessao.criada_em) return false;
+    const criadaMs = Date.parse(sessao.criada_em);
+    if (Number.isNaN(criadaMs)) return false;
+    return versaoClientesAtual > criadaMs;
+}
+
+function tentarAutoRecalcularSessao() {
+    if (estaAnimando) return false;
+    if (!sessaoAtual) return false;
+    if (criandoSessao) return true;
+    if (!sessaoEstaDesatualizada(sessaoAtual)) return false;
+
+    // Se ninguém selecionou ainda, é seguro recriar a sessão automaticamente
+    if (!sessaoTemSelecoes(sessaoAtual)) {
+        mostrarToast('🔄 Rotas foram alteradas — recalculando sessão...');
+        criarSessaoAutomatica();
+        return true;
+    }
+
+    // Se já existe seleção, não recalcula sozinho para não bagunçar a distribuição
+    if (!sessaoDesatualizadaAvisada) {
+        sessaoDesatualizadaAvisada = true;
+        mostrarToast('⚠️ Rotas/clientes mudaram. Use o Admin para recalcular a sessão.');
+    }
+    return false;
+}
+
+function atualizarInfoAdmin(sessao) {
+    const el = document.getElementById('adminInfo');
+    if (!el) return;
+
+    if (!sessao || !sessao.rotas) {
+        el.innerHTML = `<div class="modal-info-box"><div class="modal-info-titulo">Sessão</div>Nenhuma sessão ativa.</div>`;
+        return;
+    }
+
+    const criadaEm = sessao.criada_em ? new Date(sessao.criada_em) : null;
+    const criadaTxt = criadaEm && !Number.isNaN(criadaEm.getTime())
+        ? criadaEm.toLocaleString('pt-BR')
+        : '—';
+
+    const rotasEntries = Object.entries(sessao.rotas || {})
+        .map(([numero, r]) => ({
+            numero,
+            selecionada_por: r?.selecionada_por || null,
+            num_clientes: r?.num_clientes ?? ((sessao.clientes_por_rota || {})[numero]?.length ?? 0)
+        }))
+        .sort((a, b) => String(a.numero).localeCompare(String(b.numero), 'pt-BR', { numeric: true }));
+
+    const total = rotasEntries.length;
+    const disponiveis = rotasEntries.filter(r => !r.selecionada_por).length;
+    const selecionadas = total - disponiveis;
+
+    const listaTxt = rotasEntries
+        .map(r => `Rota ${r.numero}: ${r.num_clientes} cliente${r.num_clientes !== 1 ? 's' : ''}${r.selecionada_por ? ` — ${r.selecionada_por}` : ''}`)
+        .join('<br>');
+
+    const desatual = sessaoEstaDesatualizada(sessao)
+        ? ' <span style="color:#ff9800;font-weight:bold">(desatualizada)</span>'
+        : '';
+
+    el.innerHTML = `
+        <div class="modal-info-box">
+            <div class="modal-info-titulo">Sessão criada em: ${criadaTxt}${desatual}</div>
+            <div style="font-size:12px; margin-bottom:8px;">Rotas: ${total} &nbsp;|&nbsp; Disponíveis: ${disponiveis} &nbsp;|&nbsp; Selecionadas: ${selecionadas}</div>
+            <div class="modal-info-lista">${listaTxt || '—'}</div>
+        </div>
+    `;
+}
+
+function atualizarVisibilidadeCardNumero(qtdMinhas, ultimoNumero) {
+    const slotWrapper = document.getElementById('slotWrapper');
+    if (!slotWrapper) return;
+    const contadorRotas = document.getElementById('contadorRotas');
+
+    if (qtdMinhas >= LIMITE_ROTAS) {
+        slotWrapper.style.display = 'none';
+        if (contadorRotas) contadorRotas.style.display = 'none';
+        pausarAnimacao(ultimoNumero);
+    } else {
+        slotWrapper.style.display = '';
+        if (contadorRotas) contadorRotas.style.display = '';
+        const luzes = document.getElementById('luzesMaquina');
+        if (luzes) luzes.classList.remove('pausado');
+    }
+}
+
 // ─────────────────────────────────────────────
 // Tela: sessão ativa
 // ─────────────────────────────────────────────
@@ -302,6 +426,8 @@ function mostrarTelaSessaoAtiva(sessao) {
 
     const qtdMinhas = minhasRotas.length;
 
+    atualizarVisibilidadeCardNumero(qtdMinhas, minhasRotas[minhasRotas.length - 1]);
+
     if (qtdMinhas > 0 && !estaAnimando) {
         document.getElementById('wrapJaSelecionou').style.display = 'block';
         mostrarMinhasRotas(minhasRotas, sessao);
@@ -312,13 +438,11 @@ function mostrarTelaSessaoAtiva(sessao) {
     if (qtdMinhas >= LIMITE_ROTAS) {
         // Atingiu o limite: exibe só as rotas, sem botão
         document.getElementById('btnSortearWrap').style.display = 'none';
-        pausarAnimacao(minhasRotas[minhasRotas.length - 1]);
     } else {
         document.getElementById('btnSortearWrap').style.display = 'block';
         const btn = document.getElementById('btnSortear');
         btn.removeAttribute('disabled');
-        const ordinal = qtdMinhas === 0 ? '1ª' : qtdMinhas === 1 ? '2ª' : '3ª';
-        btn.innerHTML = `✅ &nbsp;SELECIONAR ${ordinal} ROTA`;
+        btn.innerHTML = 'SELECIONAR ROTA';
         if (disponiveis.length === 0) {
             btn.setAttribute('disabled', true);
             btn.innerHTML = '🔒 &nbsp;Todas as rotas já foram selecionadas';
@@ -342,6 +466,70 @@ function diasEmComum(clientes) {
     return ORDEM_DIAS.filter(d => sets.every(s => s.has(d)));
 }
 
+function montarEnderecoCliente(c) {
+    return [c?.endereco, c?.numero_endereco, c?.cidade].filter(Boolean).join(', ').trim();
+}
+
+function gerarUrlGoogleMapsRota(enderecos, origem) {
+    const destino = encodeURIComponent(enderecos[enderecos.length - 1]);
+    const waypoints = enderecos.slice(0, -1).map(e => encodeURIComponent(e)).join('|');
+    const origemParam = origem === 'My+Location' ? 'My+Location' : encodeURIComponent(origem);
+    let url = `https://www.google.com/maps/dir/?api=1&origin=${origemParam}&destination=${destino}&travelmode=driving`;
+    if (waypoints) url += `&waypoints=${waypoints}`;
+    return url;
+}
+
+window.abrirMapaRota = function(numeroRota) {
+    if (!sessaoAtual?.clientes_por_rota) {
+        mostrarToast('⚠️ Nenhuma sessão ativa');
+        return;
+    }
+
+    const clientes = sessaoAtual.clientes_por_rota[numeroRota] || [];
+    const enderecosAll = clientes
+        .map(montarEnderecoCliente)
+        .filter(Boolean);
+
+    if (enderecosAll.length === 0) {
+        mostrarToast('⚠️ Nenhum endereço encontrado nesta rota');
+        return;
+    }
+
+    const novaAba = window.open('about:blank', '_blank');
+    if (!novaAba) {
+        mostrarToast('⚠️ Permita pop-ups para abrir o mapa');
+        return;
+    }
+
+    try {
+        novaAba.document.title = 'Abrindo mapa...';
+        novaAba.document.body.innerHTML = '<div style="font-family:Arial,sans-serif;padding:16px">Abrindo mapa...</div>';
+    } catch (_) {}
+
+    // Limite prático de waypoints no Google Maps (origem + destino + 23 waypoints = 24 endereços)
+    const MAX_ENDERECOS = 24;
+    const enderecos = enderecosAll.length > MAX_ENDERECOS
+        ? enderecosAll.slice(0, MAX_ENDERECOS)
+        : enderecosAll;
+
+    if (enderecosAll.length > MAX_ENDERECOS) {
+        mostrarToast(`⚠️ Muitas paradas (${enderecosAll.length}). Abrindo ${MAX_ENDERECOS} no mapa.`);
+    }
+
+    const navegar = (origem) => { novaAba.location.href = gerarUrlGoogleMapsRota(enderecos, origem); };
+
+    if (!navigator.geolocation) {
+        navegar('My+Location');
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (pos) => navegar(`${pos.coords.latitude},${pos.coords.longitude}`),
+        () => navegar('My+Location'),
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+};
+
 function mostrarMinhasRotas(numerosRota, sessao) {
     const wrap = document.getElementById('detalhesMinhaRota');
     let html = `<div class="secao-titulo">Rotas Selecionadas</div>`;
@@ -349,25 +537,31 @@ function mostrarMinhasRotas(numerosRota, sessao) {
     numerosRota.forEach(numeroRota => {
         const clientes = (sessao.clientes_por_rota || {})[numeroRota] || [];
         const comuns = diasEmComum(clientes);
-        const diasHtml = comuns.length
-            ? comuns.map(d => `<span class="dia-badge">${d}</span>`).join('')
-            : `<span style="font-size:12px;color:rgba(255,255,255,0.3)">Dias variados</span>`;
+        const diasHtml = ORDEM_DIAS
+            .map(d => `<span class="dia-badge ${comuns.includes(d) ? 'disponivel' : 'indisponivel'}">${d}</span>`)
+            .join('');
+        const diasHint = comuns.length
+            ? 'Só faça essa rota nos dias em VERDE — os dias riscados NÃO estão disponíveis.'
+            : '⚠ Nenhum dia em comum para todos os clientes desta rota.';
 
-        // Monta query de endereços para o mapa (primeiro cliente com endereço)
-        const primeiroEnd = clientes.find(c => c.endereco);
-        const queryMapa = primeiroEnd
-            ? encodeURIComponent([primeiroEnd.endereco, primeiroEnd.numero_endereco, primeiroEnd.cidade].filter(Boolean).join(', '))
-            : '';
+        const temEndereco = clientes.some(c => montarEnderecoCliente(c));
 
         html += `
         <div class="card-rota">
-            <div class="card-rota-numero">Rota ${numeroRota} <span>(${clientes.length} cliente${clientes.length !== 1 ? 's' : ''})</span></div>
+            <div class="card-rota-numero">
+                <div class="card-rota-numero-badge">
+                    <span class="card-rota-numero-badge-label">Rota</span>
+                    <span class="card-rota-numero-badge-num">${numeroRota}</span>
+                </div>
+                <div class="card-rota-numero-sub">${clientes.length} cliente${clientes.length !== 1 ? 's' : ''}</div>
+            </div>
             <div class="card-rota-dias">
-                <span class="card-rota-dias-label">Dias em comum:</span>
-                ${diasHtml}
+                <div class="card-rota-dias-label">Dias em comum:</div>
+                <div class="card-rota-dias-val">${diasHtml}</div>
+                <div class="card-rota-dias-hint">${diasHint}</div>
             </div>
             <div class="card-rota-acoes">
-                ${queryMapa ? `<div onclick="window.open('https://www.google.com/maps/search/?api=1&query=${queryMapa}','_blank')" style="padding:6px 10px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);cursor:pointer;"><img src="assets/img/Localizacao.png" style="width:28px;height:28px;display:block;"></div>` : ''}
+                ${temEndereco ? `<div onclick="window.abrirMapaRota('${numeroRota}')" style="padding:6px 10px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);cursor:pointer;"><img src="assets/img/Localizacao.png" style="width:28px;height:28px;display:block;"></div>` : ''}
                 <div class="btn-ver-clientes" onclick="window.location.href='clientes.html?rota=${numeroRota}'">Ver clientes</div>
             </div>
         </div>`;
@@ -406,7 +600,7 @@ window.selecionarRota = async function() {
         estaAnimando = false;
         mostrarToast('❌ Erro ao selecionar. Tente novamente.');
         btn.removeAttribute('disabled');
-        btn.innerHTML = '✅ &nbsp;SELECIONAR MINHA ROTA';
+        btn.innerHTML = 'SELECIONAR ROTA';
         return;
     }
 
@@ -430,6 +624,7 @@ window.selecionarRota = async function() {
         const minhasRotas = Object.entries(rotas)
             .filter(([_, r]) => r.selecionada_por === usuarioAtual)
             .map(([n]) => n);
+        atualizarVisibilidadeCardNumero(minhasRotas.length, minhasRotas[minhasRotas.length - 1]);
         if (minhasRotas.length > 0) {
             document.getElementById('wrapJaSelecionou').style.display = 'block';
             mostrarMinhasRotas(minhasRotas, sessaoAtual);
@@ -442,9 +637,8 @@ window.selecionarRota = async function() {
                 btn.setAttribute('disabled', true);
                 btn.innerHTML = '🔒 &nbsp;Nenhuma rota disponível';
             } else {
-                const ordinal = minhasRotas.length === 1 ? '2ª' : '3ª';
                 btn.removeAttribute('disabled');
-                btn.innerHTML = `✅ &nbsp;SELECIONAR ${ordinal} ROTA`;
+                btn.innerHTML = 'SELECIONAR ROTA';
             }
         }
     }
@@ -701,6 +895,7 @@ function mostrarToast(msg) {
 
 function dispararConfetti() {
     const cores = ['#ffeb3b','#4cff91','#4e8aff','#ff5252','#ff9800','#e040fb'];
+    let maxMs = 0;
     for (let i = 0; i < 60; i++) {
         const p = document.createElement('div');
         p.className = 'confetti-piece';
@@ -708,11 +903,23 @@ function dispararConfetti() {
         p.style.background = cores[Math.floor(Math.random() * cores.length)];
         p.style.width = (6 + Math.random() * 8) + 'px';
         p.style.height = (6 + Math.random() * 8) + 'px';
-        p.style.animationDuration = (1.5 + Math.random() * 2) + 's';
-        p.style.animationDelay = (Math.random() * 0.6) + 's';
+        const durationMs = 1500 + Math.random() * 2000;
+        const delayMs = Math.random() * 600;
+        maxMs = Math.max(maxMs, durationMs + delayMs);
+        p.style.animationDuration = (durationMs / 1000) + 's';
+        p.style.animationDelay = (delayMs / 1000) + 's';
         document.body.appendChild(p);
-        setTimeout(() => p.remove(), 4000);
+        setTimeout(() => p.remove(), durationMs + delayMs + 200);
     }
+
+    if (timerResetSlot) clearTimeout(timerResetSlot);
+    timerResetSlot = setTimeout(() => {
+        if (estaAnimando) return;
+        const el = document.getElementById('slotNumero');
+        if (!el) return;
+        el.classList.remove('girando');
+        el.textContent = '?';
+    }, maxMs + 250);
 }
 
 // ─────────────────────────────────────────────

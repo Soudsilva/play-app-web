@@ -17,6 +17,8 @@ import {
     onValue,
     update,
     query,
+    orderByChild,
+    equalTo,
     limitToLast,
     runTransaction
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -94,7 +96,8 @@ export async function dbSalvarCliente(cliente, idExistente = null) {
         if (idExistente) {
             // Modo Edição: Atualiza o cliente específico
             const clienteRef = ref(db, `clientes/${idExistente}`);
-            await set(clienteRef, cliente);
+            // Usa update para preservar campos calculados/gerados pelo sistema (ex: venda_por_dia)
+            await update(clienteRef, cliente);
         } else {
             // Modo Criação: Cria um novo cliente com chave única
             const clientesRef = ref(db, 'clientes');
@@ -406,6 +409,60 @@ export async function storageSalvarFoto(base64String, pasta = 'atendimentos') {
     }
 }
 
+// [NOVO] Atualiza indicadores de venda do cliente (venda_por_dia / últimas visitas)
+// Regras:
+// - Usa os 2 atendimentos mais recentes por data para calcular venda_por_dia = (v1+v2)/diasEntre
+// - Não impede o salvamento do atendimento se falhar
+async function _atualizarIndicadoresVendaCliente(clienteId) {
+    const cid = String(clienteId || "").trim();
+    if (!cid) return;
+
+    const atendRef = ref(db, 'atendimentos');
+    const snap = await get(query(atendRef, orderByChild('cliente/id'), equalTo(cid)));
+    const data = snap.val();
+
+    const lista = data
+        ? Object.keys(data).map(key => ({ firebaseUrl: key, ...data[key] }))
+        : [];
+
+    lista.sort((a, b) => {
+        const da = Date.parse(a?.data || "");
+        const dbb = Date.parse(b?.data || "");
+        return (Number.isNaN(dbb) ? 0 : dbb) - (Number.isNaN(da) ? 0 : da);
+    });
+
+    const a1 = lista[0] || null;
+    const a2 = lista[1] || null;
+
+    let vendaPorDia = 0;
+    let diasEntre = 0;
+    let baseTotal = 0;
+    let ultimaEm = a1?.data || null;
+    let penultimaEm = a2?.data || null;
+
+    if (a1 && a2) {
+        const v1 = Number(a1?.financeiro?.totalGeral) || 0;
+        const v2 = Number(a2?.financeiro?.totalGeral) || 0;
+        baseTotal = v1 + v2;
+
+        const d1 = new Date(a1.data);
+        const d2 = new Date(a2.data);
+        d1.setHours(0, 0, 0, 0);
+        d2.setHours(0, 0, 0, 0);
+        diasEntre = Math.abs(Math.round((d1 - d2) / 86400000));
+        vendaPorDia = diasEntre > 0 ? Math.round(((baseTotal / diasEntre) + Number.EPSILON) * 100) / 100 : 0;
+    }
+
+    await update(ref(db, `clientes/${cid}`), {
+        venda_por_dia: vendaPorDia,
+        venda_por_dia_intervalo_dias: diasEntre,
+        venda_por_dia_base_total: baseTotal,
+        ultima_visita_em: ultimaEm,
+        penultima_visita_em: penultimaEm,
+        venda_por_dia_atualizado_em: new Date().toISOString()
+    });
+}
+
 // [NOVO] Salvar o registro completo do atendimento
 export async function dbSalvarAtendimento(atendimento, idExistente = null) {
     try {
@@ -415,6 +472,14 @@ export async function dbSalvarAtendimento(atendimento, idExistente = null) {
             // Cria uma nova entrada na coleção 'atendimentos'
             const atendimentosRef = ref(db, 'atendimentos');
             await push(atendimentosRef, atendimento);
+        }
+
+        // Atualiza a média de venda por dia do cliente (com base nas últimas 2 visitas)
+        try {
+            const clienteId = atendimento?.cliente?.id;
+            if (clienteId) await _atualizarIndicadoresVendaCliente(clienteId);
+        } catch (e) {
+            console.warn("Não foi possível atualizar venda_por_dia do cliente:", e);
         }
     } catch (error) {
         console.error("ERRO AO SALVAR ATENDIMENTO:", error);

@@ -14,13 +14,23 @@
         body {
             margin: 0;
             font-family: Arial, Helvetica, sans-serif;
-            background:
-                radial-gradient(circle at top, rgba(54, 105, 214, 0.55), transparent 34%),
-                linear-gradient(180deg, #11317a 0%, #0b2256 42%, #071634 100%);
+            background: #0b2256;
             display: flex;
             justify-content: center;
             color: white;
             min-height: 100vh;
+            position: relative;
+            z-index: 0;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at top, rgba(54, 105, 214, 0.55), transparent 34%),
+                linear-gradient(180deg, #11317a 0%, #0b2256 42%, #071634 100%);
+            z-index: -1;
         }
 
         .app {
@@ -45,7 +55,7 @@
         }
 
         .titulo {
-            font-size: 29px;
+            font-size: 31px;
             font-weight: bold;
             line-height: 1.05;
             color: #ffffff;
@@ -54,7 +64,7 @@
 
         .subtitulo {
             margin-top: 4px;
-            font-size: 13px;
+            font-size: 14px;
             letter-spacing: 1.6px;
             text-transform: uppercase;
             color: rgba(255,255,255,0.76);
@@ -109,7 +119,7 @@
         }
 
         .resumo-label {
-            font-size: 12px;
+            font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 1.2px;
             color: #ffffff;
@@ -117,7 +127,7 @@
         }
 
         .resumo-valor {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: bold;
             color: #ffeb3b;
             line-height: 1;
@@ -157,7 +167,7 @@
             border: none;
             padding: 6px 28px 6px 30px;
             color: white;
-            font-size: 14px;
+            font-size: 16px;
             outline: none;
             box-sizing: border-box;
         }
@@ -173,7 +183,7 @@
             background: none;
             border: none;
             color: rgba(255,255,255,0.4);
-            font-size: 14px;
+            font-size: 16px;
             cursor: pointer;
             padding: 0;
             line-height: 1;
@@ -253,13 +263,13 @@
         }
 
         .card-selecao-texto {
-            font-size: 16px;
+            font-size: 17px;
             color: #ffffff;
             line-height: 1.3;
         }
 
         .card-selecao-tecnico {
-            font-size: 13px;
+            font-size: 14px;
             color: #81c784;
             font-weight: bold;
         }
@@ -270,7 +280,7 @@
         }
 
         .linha-nome {
-            font-size: 18px;
+            font-size: 19px;
             font-weight: bold;
             color: #ffffff;
             line-height: 1.2;
@@ -282,7 +292,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 14px;
+            font-size: 15px;
             margin-bottom: 8px;
             color: rgba(255,255,255,0.9);
         }
@@ -295,7 +305,7 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
-            font-size: 14px;
+            font-size: 15px;
             color: rgba(255,255,255,0.9);
         }
 
@@ -318,7 +328,7 @@
         }
 
         .icone-label {
-            font-size: 10px;
+            font-size: 11px;
             color: #ffffff;
             letter-spacing: 0.3px;
         }
@@ -356,7 +366,7 @@
         }
 
         .linha-cidade {
-            font-size: 14px;
+            font-size: 15px;
             color: rgba(255,255,255,0.9);
             margin-bottom: 8px;
         }
@@ -366,7 +376,7 @@
         }
 
         .linha-solicitado {
-            font-size: 13px;
+            font-size: 14px;
             color: rgba(255,255,255,0.76);
         }
 
@@ -375,7 +385,6 @@
         }
 
         .bloco-acao {
-            margin-top: 12px;
             background: rgba(6, 17, 43, 0.36);
             border: 1px solid rgba(255,255,255,0.12);
             border-radius: 14px;
@@ -383,47 +392,63 @@
         }
 
         .bloco-acao-titulo {
-            font-size: 18px;
+            font-size: 19px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: #ffeb3b;
-            margin-bottom: 7px;
+            text-align: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
         }
 
         .bloco-acao-texto {
-            font-size: 15px;
+            font-size: 16px;
             line-height: 1.5;
             color: white;
             white-space: pre-line;
         }
 
+        .acao-foto-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .acao-foto-row .bloco-acao-texto {
+            text-align: center;
+            flex: 1;
+            min-width: 0;
+        }
+
         .foto-solicitacao {
-            margin-top: 12px;
+            position: relative;
             border-radius: 16px;
             overflow: hidden;
             border: 1px solid rgba(255,255,255,0.14);
             background: rgba(4, 13, 32, 0.45);
         }
 
-        .foto-solicitacao-titulo {
-            padding: 10px 12px 0;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #ffeb3b;
-            font-weight: bold;
-            text-align: center;
-        }
-
         .foto-solicitacao img {
             width: 100%;
-            max-height: 290px;
+            max-height: 220px;
             object-fit: contain;
             display: block;
             padding: 10px;
             box-sizing: border-box;
             cursor: zoom-in;
+        }
+
+        .acao-foto-row .foto-solicitacao {
+            margin-top: 0;
+            width: clamp(96px, 30vw, 140px);
+            flex-shrink: 0;
+        }
+
+        .acao-foto-row .foto-solicitacao img {
+            max-height: 140px;
+            padding: 8px;
         }
 
         .lightbox {
@@ -468,7 +493,7 @@
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 10px;
             padding: 8px 12px;
-            font-size: 15px;
+            font-size: 16px;
             color: rgba(255,255,255,0.75);
             white-space: nowrap;
             overflow: hidden;
@@ -539,14 +564,14 @@
         }
 
         .btn-navegar-label {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: bold;
             color: #ffffff;
             letter-spacing: 0.2px;
         }
 
         .btn-navegar-sub {
-            font-size: 13px;
+            font-size: 14px;
             color: #81c784;
             letter-spacing: 0.3px;
         }
@@ -603,14 +628,14 @@
         }
 
         .btn-selecoes-label {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: bold;
             color: #ffffff;
             letter-spacing: 0.2px;
         }
 
         .btn-selecoes-contador {
-            font-size: 13px;
+            font-size: 14px;
             color: #81c784;
             letter-spacing: 0.3px;
         }
@@ -1120,16 +1145,16 @@
                 </div>
 
                 <div class="bloco-acao">
-                    <div class="bloco-acao-titulo" style="text-align:center;">${escaparHtml(item.tipoAcao || "Manutencao")}</div>
-                    <div class="bloco-acao-texto" style="text-align:center;">${escaparHtml(item.observacoes || "Sem observacoes.")}</div>
-                </div>
-
-                ${item.fotoSolicitacao ? `
-                    <div class="foto-solicitacao">
-                        <div class="foto-solicitacao-titulo">Foto da solicitacao</div>
-                        <img src="${escaparHtml(item.fotoSolicitacao)}" alt="Foto da solicitacao de ${escaparHtml(item.clienteNome)}" onclick="abrirLightbox(this.src)">
+                    <div class="bloco-acao-titulo">${escaparHtml(item.tipoAcao || "Manutencao")}</div>
+                    <div class="acao-foto-row">
+                        ${item.fotoSolicitacao ? `
+                            <div class="foto-solicitacao">
+                                <img src="${escaparHtml(item.fotoSolicitacao)}" alt="Foto da solicitacao de ${escaparHtml(item.clienteNome)}" onclick="abrirLightbox(this.src)">
+                            </div>
+                        ` : ''}
+                        <div class="bloco-acao-texto">${escaparHtml(item.observacoes || "Sem observacoes.")}</div>
                     </div>
-                ` : ''}
+                </div>
 
                 ${item.ultimaVisita ? `
                     <div class="ultima-visita">

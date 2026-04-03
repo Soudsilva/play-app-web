@@ -49,6 +49,21 @@
         }
         .card-falta-label { font-size:12px; font-weight:bold; color:#fff; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
         .card-falta-valor { font-size:34px; font-weight:bold; color:#a5d6a7; line-height:1.1; }
+        .card-falta-pendente {
+            flex-direction:column;
+            align-items:center;
+            justify-content:flex-start;
+            gap:6px;
+            padding:14px 16px;
+            border:2px solid rgba(255,120,0,0.8);
+            background:linear-gradient(160deg,#4a1f00,#2e0e00,#3d1500);
+            box-shadow:0 0 22px rgba(255,120,0,0.32), inset 0 0 18px rgba(255,80,0,0.08);
+            animation:pulseDeposite 1.8s ease-in-out infinite;
+        }
+        .card-falta-pendente-titulo { font-size:10px; font-weight:bold; color:#ff6d00; text-transform:uppercase; letter-spacing:1.2px; text-align:center; }
+        .card-falta-pendente-valor { font-size:clamp(32px, 9vw, 44px); font-weight:bold; color:#ffb74d; line-height:1; text-shadow:0 0 12px rgba(255,152,0,0.5); }
+        .card-falta-pendente-linha { width:70%; height:2px; background:linear-gradient(90deg,transparent,rgba(255,152,0,0.6),transparent); border-radius:2px; }
+        .card-falta-pendente-sub { font-size:10px; color:rgba(255,183,77,0.55); font-weight:bold; text-transform:uppercase; letter-spacing:0.3px; text-align:center; }
 
         /* Form depósito */
         .form-deposito { background:rgba(76,175,80,0.08); border:1px solid rgba(76,175,80,0.3); border-radius:16px; padding:16px; margin-bottom:14px; }
@@ -653,11 +668,11 @@
             } else if (segTotal > 0) {
                 // Segmento aberto: só mostra se ainda há saldo a depositar
                 htmlItems.push(`
-                    <div class="card-falta" style="flex-direction:column; align-items:center; gap:14px; padding:36px 24px; margin-bottom:18px; border:2px solid rgba(255,120,0,0.8); background:linear-gradient(160deg,#4a1f00,#2e0e00,#3d1500); box-shadow:0 0 40px rgba(255,120,0,0.4), inset 0 0 30px rgba(255,80,0,0.08); animation:pulseDeposite 1.8s ease-in-out infinite;">
-                        <div style="font-size:11px; font-weight:bold; color:#ff6d00; text-transform:uppercase; letter-spacing:2px;">⚠ &nbsp;Falta Depositar&nbsp; ⚠</div>
-                        <div style="font-size:68px; font-weight:bold; color:#ffb74d; line-height:1; text-shadow:0 0 20px rgba(255,152,0,0.6);">${moeda(segTotal)}</div>
-                        <div style="width:80%; height:3px; background:linear-gradient(90deg,transparent,rgba(255,152,0,0.6),transparent); border-radius:2px;"></div>
-                        <div style="font-size:12px; color:rgba(255,183,77,0.55); font-weight:bold; text-transform:uppercase; letter-spacing:0.5px;">valor pendente do período</div>
+                    <div class="card-falta card-falta-pendente">
+                        <div class="card-falta-pendente-titulo">⚠ &nbsp;Falta Depositar&nbsp; ⚠</div>
+                        <div class="card-falta-pendente-valor">${moeda(segTotal)}</div>
+                        <div class="card-falta-pendente-linha"></div>
+                        <div class="card-falta-pendente-sub">valor pendente do período</div>
                     </div>`);
             }
         }
