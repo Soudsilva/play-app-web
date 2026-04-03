@@ -136,6 +136,11 @@
 
 <body style="visibility: hidden;">
 
+<!-- Indicador de conexão -->
+<div id="pill-offline" style="display:none; position:fixed; top:14px; left:50%; transform:translateX(-50%); background:#c62828; color:white; padding:7px 22px; border-radius:999px; font-size:15px; font-weight:bold; z-index:999; box-shadow:0 4px 14px rgba(0,0,0,0.35); white-space:nowrap;">
+    📵 Sem internet
+</div>
+
 <div class="app">
 
     <div class="logo">
@@ -286,8 +291,31 @@
 </script>
 
 <script type="module">
-    import { dbEscutarColaboradores } from './database.js';
+    import { dbEscutarColaboradores, dbSalvarAtendimento, storageSalvarFoto } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
+    import { sincronizarPendentes, contarPendentes } from './offline-sync.js';
+
+    // ── INDICADOR DE CONEXÃO ─────────────────────────────────────────
+    const pillOffline = document.getElementById('pill-offline');
+    function atualizarConexao() {
+        pillOffline.style.display = navigator.onLine ? 'none' : 'block';
+    }
+    atualizarConexao();
+    window.addEventListener('offline', atualizarConexao);
+    window.addEventListener('online', async () => {
+        atualizarConexao();
+        try {
+            const n = await sincronizarPendentes(storageSalvarFoto, dbSalvarAtendimento);
+            if (n > 0) await window.playAlert(`✅ ${n} atendimento${n > 1 ? 's' : ''} enviado${n > 1 ? 's' : ''} com sucesso!`);
+        } catch(e) { console.warn('Sync ao reconectar falhou:', e); }
+    });
+
+    // Sincroniza pendentes que ficaram da sessão anterior
+    if (navigator.onLine) {
+        sincronizarPendentes(storageSalvarFoto, dbSalvarAtendimento).then(async n => {
+            if (n > 0) await window.playAlert(`✅ ${n} atendimento${n > 1 ? 's' : ''} pendente${n > 1 ? 's' : ''} enviado${n > 1 ? 's' : ''} com sucesso!`);
+        }).catch(() => {});
+    }
 
     verificarAutenticacao();
     window.sair = fazerLogout;

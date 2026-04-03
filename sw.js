@@ -1,13 +1,18 @@
-const CACHE = 'play-v1';
+const CACHE = 'play-v3';
 
-// Arquivos do shell do app que ficam em cache
+// Arquivos essenciais do app — disponíveis sem internet
 const SHELL = [
-    '/login.html',
     '/index.html',
+    '/login.html',
+    '/atendimento_nivel_1.html',
+    '/clientes.html',
+    '/pedidos.html',
     '/auth.js',
     '/database.js',
+    '/offline-sync.js',
+    '/assets/js/play-dialogs.js',
     '/assets/img/logo.png',
-    '/assets/js/play-dialogs.js'
+    '/assets/img/logomenor.png',
 ];
 
 // Instala e faz cache dos arquivos do shell
@@ -30,16 +35,18 @@ self.addEventListener('activate', (e) => {
 
 // Estratégia: rede primeiro, cache como fallback
 self.addEventListener('fetch', (e) => {
-    // Deixa Firebase e CDN externo passarem direto (sem interceptar)
     const url = e.request.url;
-    if (url.includes('firebase') || url.includes('googleapis') || url.includes('gstatic') || url.includes('flaticon')) {
+
+    // Firebase, CDN externo e WebSockets passam direto — não interceptar
+    if (url.includes('firebase') || url.includes('googleapis') ||
+        url.includes('gstatic')  || url.includes('flaticon')) {
         return;
     }
 
     e.respondWith(
         fetch(e.request)
             .then(response => {
-                // Guarda no cache se for do próprio domínio
+                // Atualiza o cache se for do próprio domínio
                 if (response.ok && url.startsWith(self.location.origin)) {
                     const clone = response.clone();
                     caches.open(CACHE).then(cache => cache.put(e.request, clone));
@@ -47,7 +54,8 @@ self.addEventListener('fetch', (e) => {
                 return response;
             })
             .catch(() =>
-                caches.match(e.request).then(cached => cached || caches.match('/login.html'))
+                // Sem internet: serve do cache, ou index.html como fallback final
+                caches.match(e.request).then(cached => cached || caches.match('/index.html'))
             )
     );
 });

@@ -21,6 +21,7 @@ import {
     runTransaction
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+import { salvarCacheClientes, lerCacheClientes } from './offline-sync.js';
 
 // --- 2. CONFIGURAÇÃO (AS CHAVES DO COFRE) ---
 // Estas são as credenciais que permitem que seu site converse especificamente com o SEU banco de dados.
@@ -46,19 +47,20 @@ const storage = getStorage(app);
 // O que faz: Fica "de ouvidos abertos". Sempre que alguém mudar algo no banco de dados,
 // essa função avisa o site instantaneamente para atualizar a tela sem precisar recarregar (F5).
 export function dbEscutarClientes(callback) {
+    // Serve o cache do IndexedDB imediatamente (útil ao abrir offline após um reload)
+    lerCacheClientes().then(cached => {
+        if (cached.length > 0) callback(cached);
+    }).catch(() => {});
+
     const clientesRef = ref(db, 'clientes');
     onValue(clientesRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
-            // Transforma os dados brutos do banco em uma lista organizada
-            const lista = Object.keys(data).map(key => ({
-                ...data[key],
-                firebaseUrl: key
-            }));
-            // Devolve a lista pronta para quem chamou a função
+            const lista = Object.keys(data).map(key => ({ ...data[key], firebaseUrl: key }));
             callback(lista);
-        } else {
-            callback([]);
+            salvarCacheClientes(lista).catch(() => {}); // espelha no IndexedDB
+        } else if (navigator.onLine) {
+            callback([]); // só limpa se realmente não há dados (e temos internet)
         }
     });
 }
@@ -377,6 +379,8 @@ function base64ToBlob(base64, contentType = 'image/jpeg') {
 
 // [NOVO] Salvar uma foto no Firebase Storage
 export async function storageSalvarFoto(base64String, pasta = 'atendimentos') {
+    // Offline: devolve o base64 como está — será enviado quando a internet voltar
+    if (!navigator.onLine) return base64String;
     try {
         // 1. Converte a string base64 para um formato de arquivo (Blob)
         const blob = base64ToBlob(base64String);
