@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Play Diversões</title>
+    <title>Play Divers&otilde;es</title>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0f2a66">
     <meta name="mobile-web-app-capable" content="yes">
@@ -14,7 +14,7 @@
 
     <style>
         /* =========================================
-        CONFIGURAÇÃO GLOBAL DO APP
+        CONFIGURAÃ‡ÃƒO GLOBAL DO APP
         ========================================= */
         body {
             margin: 0;
@@ -49,7 +49,7 @@
         }
 
         /* =========================================
-        MENU E BOTÕES (CENTRALIZADOS)
+        MENU E BOTÃ•ES (CENTRALIZADOS)
         ========================================= */
         .menu {
             display: none;
@@ -58,32 +58,32 @@
         }
 
         .botao {
-            position: relative; /* Base para o ícone absoluto */
+            position: relative; /* Base para o Ã­cone absoluto */
             background: #4467a8;
             border: 4px solid #d7dce3;
             border-radius: 45px;
-            padding: 10px;     /*altura do botão*/
-            min-height: 35px; /* Garante altura mínima */
+            padding: 10px;     /*altura do botÃ£o*/
+            min-height: 35px; /* Garante altura mÃ­nima */
             cursor: pointer;
             transition: 0.15s;
             display: flex;
             align-items: center;
-            justify-content: center; /* Centraliza o conteúdo principal (texto) */
+            justify-content: center; /* Centraliza o conteÃºdo principal (texto) */
             user-select: none;
             -webkit-user-select: none;
         }
 
-        /* O Ícone fica "preso" na esquerda sem empurrar o texto */
+        /* O Ãcone fica "preso" na esquerda sem empurrar o texto */
         .icone {
             position: absolute;
-            left: 20px; /* Distância da borda esquerda */
+            left: 20px; /* DistÃ¢ncia da borda esquerda */
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 25px;
         }
 
-        /* O texto ocupa o centro real do botão */
+        /* O texto ocupa o centro real do botÃ£o */
         .botao span:last-child {
             color: white;
             font-size: 25px;
@@ -95,7 +95,7 @@
         .botao:hover { background: #3c5f9f; }
         .botao:active { transform: translateY(2px); background: #355792; transition: 0.05s; }
 
-        /* Submenu Gestão */
+        /* Submenu GestÃ£o */
         .submenu {
             display: none;
             flex-direction: column;
@@ -136,9 +136,9 @@
 
 <body style="visibility: hidden;">
 
-<!-- Indicador de conexão -->
+<!-- Indicador de conexÃ£o -->
 <div id="pill-offline" style="display:none; position:fixed; top:14px; left:50%; transform:translateX(-50%); background:#c62828; color:white; padding:7px 22px; border-radius:999px; font-size:15px; font-weight:bold; z-index:999; box-shadow:0 4px 14px rgba(0,0,0,0.35); white-space:nowrap;">
-    📵 Sem internet
+    &#128246; Sem internet
 </div>
 
 <div class="app">
@@ -148,56 +148,60 @@
     </div>
 
     <div class="ola" style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
-        Olá, <span id="nomeUsuario" style="color: #ffeb3b; font-size: 24px; font-weight: bold;"></span>
+        Ol&aacute;, <span id="nomeUsuario" style="color: #ffeb3b; font-size: 24px; font-weight: bold;"></span>
         <button onclick="sair()" style="background: transparent; border: 1px solid rgba(255,255,255,0.25); border-radius: 20px; color: rgba(255,255,255,0.5); font-size: 13px; cursor: pointer; padding: 3px 10px; font-family: Arial, Helvetica, sans-serif; transition: 0.15s;" title="Sair">Sair</button>
     </div>
 
     <div class="menu">
 
         <div class="botao" id="btnAtendimento" onclick="abrirAtendimento()">
-            <span class="icone">🤝</span>
+            <span class="icone">&#129309;</span>
             <span>Atendimento</span>
         </div>
 
         <div class="botao" id="btnClientes" onclick="window.location.href='clientes.html'">
-            <span class="icone">🔍</span>
+            <span class="icone">&#128269;</span>
             <span>Lista de Clientes</span>
         </div>
 
         <div class="botao" id="btnManutencao" onclick="abrirTela('manutencao')">
-            <span class="icone">🔧</span>
-            <span>Manutenção</span>
+            <span class="icone">&#128295;</span>
+            <span>Manuten&ccedil;&atilde;o</span>
         </div>
 
         <div id="blocoGestao">
             <div class="botao" id="btnGestao" onclick="toggleSubmenuGestao()">
-                <span class="icone">📊</span>
-                <span style="color:white; font-size:25px; font-weight:bold; text-align:center; width:100%;">Gestão</span>
-                <span class="seta-gestao" id="setaGestao">▼</span>
+                <span class="icone">&#128202;</span>
+                <span style="color:white; font-size:25px; font-weight:bold; text-align:center; width:100%;">Gest&atilde;o</span>
+                <span class="seta-gestao" id="setaGestao">&#9660;</span>
             </div>
             <div class="submenu" id="submenuGestao">
-                <div class="botao-sub" onclick="window.location.href='verificar_envios.html'">
-                    <span class="icone">📤</span>
+                <div class="botao-sub" onclick="abrirEnvios()">
+                    <span class="icone">&#128228;</span>
                     <span>Verificar Envios</span>
                 </div>
+                <div class="botao-sub" id="btnMediaVendas" onclick="abrirMediaVendas()" style="display: none;">
+                    <span class="icone">&#128185;</span>
+                    <span>Sa&uacute;de de Vendas</span>
+                </div>
                 <div class="botao-sub" onclick="window.location.href='balanco.html'">
-                    <span class="icone">📈</span>
-                    <span>Balanço</span>
+                    <span class="icone">&#128200;</span>
+                    <span>Balan&ccedil;o</span>
                 </div>
                 <div class="botao-sub" onclick="abrirTela('checkin')">
-                    <span class="icone">📍</span>
+                    <span class="icone">&#128205;</span>
                     <span>Check in de Rotas</span>
                 </div>
                 <div class="botao-sub" onclick="abrirTela('depositos')">
-                    <span class="icone">🏦</span>
-                    <span>Depósitos</span>
+                    <span class="icone">&#127974;</span>
+                    <span>Dep&oacute;sitos</span>
                 </div>
             </div>
         </div>
 
         <div class="botao" id="btnRotas" onclick="abrirTela('rotas')">
-            <span class="icone">🚀</span>
-            <span>Seleção de rotas</span>
+            <span class="icone">&#128640;</span>
+            <span>Sele&ccedil;&atilde;o de rotas</span>
         </div>
 
         <div class="botao" id="btnCadColaborador" onclick="window.location.href='cadastrar_colaborador.html'">
@@ -212,33 +216,33 @@
 
 
        <div class="botao" id="btnEstoque" onclick="abrirEstoque()">
-          <span class="icone">📦</span>
+          <span class="icone">&#128230;</span>
            <span>Estoque</span>
        </div>
 
 
        <div class="botao" id="btnMovimentacao" onclick="window.location.href='movimentacao_estoq.html'">
-          <span class="icone">🔄</span>
-           <span>Entr. Saídas </span>
+          <span class="icone">&#128260;</span>
+           <span>Entr. Sa&iacute;das </span>
        </div>
 
        <div class="botao" id="btnPedidos" onclick="window.location.href='pedidos.html'">
-          <span class="icone">🛒</span>
+          <span class="icone">&#128722;</span>
            <span>Pedidos</span>
        </div>
 
        <div class="botao" id="btnFinanceiro" onclick="abrirTela('financeiro')" style="display: none;">
-          <span class="icone">💰</span>
+          <span class="icone">&#128176;</span>
            <span>Financeiro</span>
        </div>
 
        <div class="botao" id="btnPix" onclick="abrirTela('pix')" style="display: none;">
-          <span class="icone">💠</span>
-           <span>Área Pix</span>
+          <span class="icone">&#128160;</span>
+           <span>&Aacute;rea Pix</span>
        </div>
 
        <div class="botao" id="btnFluxoCaixa" onclick="abrirTela('fluxo_caixa')" style="display: none;">
-          <span class="icone">💸</span>
+          <span class="icone">&#128184;</span>
            <span>Fluxo de Caixa</span>
        </div>
 
@@ -254,7 +258,7 @@
         const abrindo = !submenu.classList.contains('aberto');
         submenu.classList.toggle('aberto');
         seta.classList.toggle('girada');
-        // Empurra estado para o histórico ao abrir, para o botão voltar poder fechar
+        // Empurra estado para o histÃ³rico ao abrir, para o botÃ£o voltar poder fechar
         if (abrindo) history.pushState({ submenu: true }, '');
     }
 
@@ -267,12 +271,12 @@
         }
     }
 
-    // Trava o index como primeira página
+    // Trava o index como primeira pÃ¡gina
     function travarIndex() {
         history.pushState(null, '', window.location.href);
     }
 
-    // Empurra imediatamente (síncrono) + nas primeiras interações (mobile)
+    // Empurra imediatamente (sÃ­ncrono) + nas primeiras interaÃ§Ãµes (mobile)
     travarIndex();
     window.addEventListener('load', travarIndex);
     window.addEventListener('touchstart', function _t() {
@@ -295,7 +299,7 @@
     import { verificarAutenticacao, fazerLogout } from './auth.js';
     import { sincronizarPendentes, contarPendentes } from './offline-sync.js';
 
-    // ── INDICADOR DE CONEXÃO ─────────────────────────────────────────
+    // â”€â”€ INDICADOR DE CONEXÃƒO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const pillOffline = document.getElementById('pill-offline');
     function atualizarConexao() {
         pillOffline.style.display = navigator.onLine ? 'none' : 'block';
@@ -306,14 +310,14 @@
         atualizarConexao();
         try {
             const n = await sincronizarPendentes(storageSalvarFoto, dbSalvarAtendimento);
-            if (n > 0) await window.playAlert(`✅ ${n} atendimento${n > 1 ? 's' : ''} enviado${n > 1 ? 's' : ''} com sucesso!`);
+            if (n > 0) await window.playAlert(`Sucesso: ${n} atendimento${n > 1 ? 's' : ''} enviado${n > 1 ? 's' : ''} com sucesso!`);
         } catch(e) { console.warn('Sync ao reconectar falhou:', e); }
     });
 
-    // Sincroniza pendentes que ficaram da sessão anterior
+    // Sincroniza pendentes que ficaram da sessÃ£o anterior
     if (navigator.onLine) {
         sincronizarPendentes(storageSalvarFoto, dbSalvarAtendimento).then(async n => {
-            if (n > 0) await window.playAlert(`✅ ${n} atendimento${n > 1 ? 's' : ''} pendente${n > 1 ? 's' : ''} enviado${n > 1 ? 's' : ''} com sucesso!`);
+            if (n > 0) await window.playAlert(`Sucesso: ${n} atendimento${n > 1 ? 's' : ''} pendente${n > 1 ? 's' : ''} enviado${n > 1 ? 's' : ''} com sucesso!`);
         }).catch(() => {});
     }
 
@@ -327,7 +331,7 @@
         const nome = localStorage.getItem('usuarioLogado') || '';
         const usuario = listaColaboradores.find(c => c.nome === nome);
 
-        // Se for Gestor, vai para a tela avançada. Se for Estoque ou outro, vai para a padrão.
+        // Se for Gestor, vai para a tela avanÃ§ada. Se for Estoque ou outro, vai para a padrÃ£o.
         if (usuario && usuario.nivel_completo && usuario.nivel_completo.includes('gestao')) {
             window.location.href = 'estoque_gestor.html';
         } else {
@@ -347,10 +351,27 @@
             sessionStorage.setItem('atendimento_tela_origem', 'index.html');
             window.location.href = 'atendimento_nivel_1.html';
         } else {
-            // Caso existam outras telas para outros niveis ou padrão
-            console.log("Abrindo atendimento padrão...");
+            // Caso existam outras telas para outros niveis ou padrÃ£o
+            console.log("Abrindo atendimento padrÃ£o...");
             // window.location.href = 'atendimento.html'; // Descomente quando existir
         }
+    };
+
+    // Verificar Envios: Gestor vÃª todos, demais veem apenas os prÃ³prios
+    window.abrirEnvios = function() {
+        const nome = localStorage.getItem('usuarioLogado') || '';
+        const usuario = listaColaboradores.find(c => c.nome === nome);
+        const perfil = usuario ? (usuario.nivel_completo || "") : "";
+
+        if (perfil.includes('gestao')) {
+            window.location.href = 'lista_de_envios_para_gestor.html';
+        } else {
+            window.location.href = 'verificar_envios.html';
+        }
+    };
+
+    window.abrirMediaVendas = function() {
+        window.location.href = 'media_de_vendas.html';
     };
 
     window.abrirTela = function(tela){
@@ -370,21 +391,22 @@
             window.location.href = 'selecionar_rota.html';
             return;
         }
-        console.log("Abrindo tela genérica: " + tela);
+        console.log("Abrindo tela genÃ©rica: " + tela);
     };
 
-    // Verifica permissões baseado no nome selecionado
+    // Verifica permissÃµes baseado no nome selecionado
     function verificarPermissoes(nomeUsuario) {
         const usuario = listaColaboradores.find(c => c.nome === nomeUsuario);
         const perfil = usuario ? (usuario.nivel_completo || "") : "";
 
-        // Mapeamento de todos os botões para facilitar o controle
+        // Mapeamento de todos os botÃµes para facilitar o controle
         const btns = {
             atendimento: document.getElementById('btnAtendimento'),
             clientes: document.getElementById('btnClientes'),
             manutencao: document.getElementById('btnManutencao'),
             gestao: document.getElementById('btnGestao'),
             blocoGestao: document.getElementById('blocoGestao'),
+            mediaVendas: document.getElementById('btnMediaVendas'),
             rotas: document.getElementById('btnRotas'),
             cadColab: document.getElementById('btnCadColaborador'),
             estoque: document.getElementById('btnEstoque'),
@@ -395,7 +417,7 @@
             fluxoCaixa: document.getElementById('btnFluxoCaixa')
         };
 
-        // Por padrão, garante que o bloco de Gestão não vai deixar "espaço vazio" no menu.
+        // Por padrÃ£o, garante que o bloco de GestÃ£o nÃ£o vai deixar "espaÃ§o vazio" no menu.
         btns.blocoGestao.style.display = 'block';
 
         // 1. PERFIL ESTOQUE
@@ -406,15 +428,16 @@
             btns.cadColab.style.display = 'none';
             btns.pix.style.display = 'none';
             btns.fluxoCaixa.style.display = 'none';
+            btns.mediaVendas.style.display = 'none';
             
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'none';
             btns.blocoGestao.style.display = 'none';
             
-            // Perfil Estoque também pode acessar a tela padrão de estoque.
+            // Perfil Estoque tambÃ©m pode acessar a tela padrÃ£o de estoque.
             btns.estoque.style.display = 'flex'; 
             
-            // [MANTIDO] Botão 'Entr. Saídas' para perfil Estoque
+            // [MANTIDO] BotÃ£o 'Entr. SaÃ­das' para perfil Estoque
             btns.movimentacao.style.display = 'flex';
             
             btns.pedidos.style.display = 'flex';
@@ -423,7 +446,7 @@
         // 2. PERFIL ATENDIMENTO
         } else if (perfil.includes('atendimento')) {
             
-            // [ALTERADO] Botão Atendimento oculto para Nível 2
+            // [ALTERADO] BotÃ£o Atendimento oculto para NÃ­vel 2
             if (perfil.includes('atendimento_2')) {
                 btns.atendimento.style.display = 'none';
             } else {
@@ -433,22 +456,23 @@
             btns.clientes.style.display = 'flex';
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'flex';
+            btns.mediaVendas.style.display = perfil.includes('atendimento_2') ? 'flex' : 'none';
             
-            // [ALTERADO] Rotas apenas para Nível 1
+            // [ALTERADO] Rotas apenas para NÃ­vel 1
             if (perfil.includes('atendimento_1')) {
                 btns.rotas.style.display = 'flex';
             } else {
                 btns.rotas.style.display = 'none';
             }
             
-            // [ALTERADO] Área Pix não aparece para Nível 1
+            // [ALTERADO] Ãrea Pix nÃ£o aparece para NÃ­vel 1
             if (perfil.includes('atendimento_1')) {
                 btns.pix.style.display = 'none';
             } else {
                 btns.pix.style.display = 'flex';
             }
 
-            // Fluxo de Caixa: Apenas Nível 2
+            // Fluxo de Caixa: Apenas NÃ­vel 2
             btns.fluxoCaixa.style.display = perfil.includes('atendimento_2') ? 'flex' : 'none';
             
             // Oculta o restante
@@ -458,25 +482,26 @@
             btns.pedidos.style.display = 'none';
             btns.financeiro.style.display = 'none';
 
-        // 3. PERFIL GESTÃO
+        // 3. PERFIL GESTÃƒO
         } else {
             btns.atendimento.style.display = 'flex';
             btns.clientes.style.display = 'flex';
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'flex';
+            btns.mediaVendas.style.display = 'flex';
             
-            // [ALTERADO] Rotas é exclusivo de Atendimento 1
+            // [ALTERADO] Rotas Ã© exclusivo de Atendimento 1
             btns.rotas.style.display = 'none'; 
             
             btns.cadColab.style.display = 'flex';
             btns.estoque.style.display = 'flex';
             
-            // [ALTERADO] Movimentação (Entr. Saídas) fica para o perfil Estoque
+            // [ALTERADO] MovimentaÃ§Ã£o (Entr. SaÃ­das) fica para o perfil Estoque
             btns.movimentacao.style.display = 'none';
             
             btns.pedidos.style.display = 'flex';
             
-            btns.pix.style.display = perfil.includes('gestao') ? 'flex' : 'none'; // Apenas Gestão (ou atendimento acima)
+            btns.pix.style.display = perfil.includes('gestao') ? 'flex' : 'none'; // Apenas GestÃ£o (ou atendimento acima)
             btns.fluxoCaixa.style.display = perfil.includes('gestao') ? 'flex' : 'none';
             btns.financeiro.style.display = 'none'; // Financeiro continua restrito ao Estoque
         }

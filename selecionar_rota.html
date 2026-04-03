@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -25,18 +25,18 @@
         @keyframes girar { to { transform:rotate(360deg); } }
         .txt-carregando { color:#e5e7eb; font-size:15px; letter-spacing:1px; }
 
-        /* TÍTULO DE SEÇÃO — padrão do app */
+        /* TÃƒÂTULO DE SEÃƒâ€¡ÃƒÆ’O Ã¢â‚¬â€ padrÃƒÂ£o do app */
         .secao-titulo { font-size:14px; font-weight:bold; color:#ffeb3b; text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; padding-bottom:5px; border-bottom:1px dashed rgba(255,235,59,0.3); text-align:center; display:block; width:100%; }
 
 
-        /* LISTA QUEM JÁ SELECIONOU */
+        /* LISTA QUEM JÃƒÂ SELECIONOU */
         .lista-selecoes { width:100%; display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
         .item-selecao { display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px 16px; font-size:15px; animation:entrar 0.25s ease; }
         @keyframes entrar { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
         .item-selecao .nome-usuario { font-weight:bold; }
         .item-selecao .status-check { font-size:16px; color:#e5e7eb; }
 
-        /* CARD COM NÚMERO GIRANDO */
+        /* CARD COM NÃƒÅ¡MERO GIRANDO */
         .slot-wrapper { width:100%; display:flex; justify-content:center; margin:6px 0 18px; }
         .slot-machine { position:relative; width:180px; height:110px; background:rgba(255,255,255,0.04); border-radius:16px; border:1px solid rgba(255,235,59,0.2); display:flex; align-items:center; justify-content:center; box-shadow:inset 0 0 24px rgba(0,0,0,0.3); }
         .luzes { position:absolute; inset:-1px; border-radius:16px; border:2px solid rgba(255,235,59,0.25); animation:brilhoSlot 2s ease-in-out infinite; pointer-events:none; }
@@ -48,7 +48,7 @@
         .slot-numero.girando { animation:piscarNumero 0.09s steps(1) infinite; }
         @keyframes piscarNumero { 50% { filter:blur(2px); opacity:0.65; } }
 
-        /* BOTÃO SELECIONAR — padrão amarelo do app */
+        /* BOTÃƒÆ’O SELECIONAR Ã¢â‚¬â€ padrÃƒÂ£o amarelo do app */
         .btn-sortear { background:#ffeb3b; border:none; color:#0b2256; font-weight:bold; font-size:18px; padding:15px; border-radius:12px; cursor:pointer; width:100%; text-align:center; transition:0.15s; }
         .btn-sortear:active { transform:scale(0.98); background:#ffe100; }
         .btn-sortear[disabled] { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); color:#9ca3af; cursor:not-allowed; }
@@ -77,7 +77,7 @@
         .lightbox.ativo { display:flex; }
         .lightbox img { max-width:95vw; max-height:90vh; border-radius:10px; object-fit:contain; }
 
-        /* BOTÃO ADMIN FLUTUANTE */
+        /* BOTÃƒÆ’O ADMIN FLUTUANTE */
         .btn-admin-float { position:fixed; bottom:20px; right:20px; background:rgba(11,34,86,0.92); border:1px solid rgba(255,255,255,0.13); border-radius:50px; padding:10px 18px; font-size:13px; color:#e5e7eb; cursor:pointer; z-index:100; backdrop-filter:blur(6px); display:none; gap:6px; align-items:center; }
         .btn-admin-float.visivel { display:flex; }
         .btn-admin-float:active { color:#ffffff; }
@@ -129,19 +129,19 @@
         <div class="txt-carregando">Carregando...</div>
     </div>
 
-    <!-- TELA: PREPARANDO SESSÃO (criação automática) -->
+    <!-- TELA: PREPARANDO SESSÃƒÆ’O (criaÃƒÂ§ÃƒÂ£o automÃƒÂ¡tica) -->
     <div id="telaSemSessao" class="tela">
         <div class="spinner"></div>
         <div class="txt-carregando">Preparando as rotas...</div>
     </div>
 
-    <!-- TELA: SESSÃO ATIVA -->
+    <!-- TELA: SESSÃƒÆ’O ATIVA -->
     <div id="telaSessaoAtiva" class="tela">
 
-        <!-- Lista de quem já selecionou -->
+        <!-- Lista de quem jÃƒÂ¡ selecionou -->
         <div id="listaSelecoes" class="lista-selecoes"></div>
 
-        <!-- Card com número -->
+        <!-- Card com nÃƒÂºmero -->
         <div class="slot-wrapper" id="slotWrapper">
             <div class="slot-machine">
                 <div class="luzes" id="luzesMaquina"></div>
@@ -160,7 +160,7 @@
             </div>
         </div>
 
-        <!-- Rotas já selecionadas pelo usuário -->
+        <!-- Rotas jÃƒÂ¡ selecionadas pelo usuÃƒÂ¡rio -->
         <div id="wrapJaSelecionou" style="display:none; width:100%">
             <div id="detalhesMinhaRota"></div>
         </div>
@@ -199,74 +199,90 @@ verificarAutenticacao();
 import {
     dbListarClientes,
     dbListarAtendimentos,
+    dbListarMediaDeVendas,
+    dbSincronizarMediaDeVendasComClientes,
     dbEscutarSessaoRotas,
     dbCriarSessaoRotas,
     dbSelecionarRota,
     dbEncerrarSessaoRotas,
     dbEscutarVersaoClientes,
+    dbEscutarVersaoMediaDeVendas,
     dbListarColaboradores,
     dbLimparSelecoes
 } from './database.js';
 
-// ─────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // Estado global
-// ─────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 let usuarioAtual = '';
 let ehAdmin = false;
 let sessaoAtual = null;
 let numerosDeRota = [];
 let clientesPorRota = {};
 let maquinasPorCliente = {};
-let estaAnimando = false; // bloqueia renderização dos detalhes durante a animação
+let estaAnimando = false; // bloqueia renderizaÃƒÂ§ÃƒÂ£o dos detalhes durante a animaÃƒÂ§ÃƒÂ£o
 let timerResetSlot = null;
 let versaoClientesAtual = null;
-let sessaoDesatualizadaAvisada = false;
+let versaoMediaDeVendasAtual = null;
 
-// ─────────────────────────────────────────────
-// Inicialização
-// ─────────────────────────────────────────────
+function obterHojeLocal() {
+    const hoje = new Date();
+    const y = hoje.getFullYear();
+    const m = String(hoje.getMonth() + 1).padStart(2, '0');
+    const d = String(hoje.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// InicializaÃƒÂ§ÃƒÂ£o
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 async function init() {
     usuarioAtual = localStorage.getItem('usuario_selecionado') || '';
 
-    // Carrega colaboradores para saber se é admin (apenas para mostrar botão de gestão)
+    // Carrega colaboradores para saber se ÃƒÂ© admin (apenas para mostrar botÃƒÂ£o de gestÃƒÂ£o)
     const colaboradores = await dbListarColaboradores();
     const usuario = colaboradores.find(c => c.nome === usuarioAtual);
     ehAdmin = usuario && (usuario.nivel_completo || '').includes('gestao');
 
     document.getElementById('btnAdminFloat').classList.add('visivel');
 
-    // Escuta a versão dos clientes para detectar quando rotas/clientes mudaram
+    // Escuta a versÃƒÂ£o dos clientes para detectar quando rotas/clientes mudaram
     dbEscutarVersaoClientes((versao) => {
         versaoClientesAtual = versao || null;
         tentarAutoRecalcularSessao();
         atualizarInfoAdmin(sessaoAtual);
     });
 
-    // Escuta a sessão em tempo real
+    dbEscutarVersaoMediaDeVendas((versao) => {
+        versaoMediaDeVendasAtual = versao || null;
+        tentarAutoRecalcularSessao();
+        atualizarInfoAdmin(sessaoAtual);
+    });
+
+    // Escuta a sessÃƒÂ£o em tempo real
     dbEscutarSessaoRotas(onSessaoAtualizada);
 }
 
-// Flag para evitar criação dupla de sessão (vários usuários abrindo ao mesmo tempo)
+// Flag para evitar criaÃƒÂ§ÃƒÂ£o dupla de sessÃƒÂ£o (vÃƒÂ¡rios usuÃƒÂ¡rios abrindo ao mesmo tempo)
 let criandoSessao = false;
+let recalculandoSessaoEmSegundoPlano = false;
 
-// ─────────────────────────────────────────────
-// Callback: sessão foi atualizada no Firebase
-// ─────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Callback: sessÃƒÂ£o foi atualizada no Firebase
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 async function onSessaoAtualizada(sessao) {
     sessaoAtual = sessao;
     atualizarInfoAdmin(sessaoAtual);
-    if (!sessaoEstaDesatualizada(sessaoAtual)) sessaoDesatualizadaAvisada = false;
 
-    // Se a sessão estiver desatualizada (clientes/rotas foram alterados), tenta recalcular automaticamente
-    // apenas quando ainda NÃO houve nenhuma seleção.
-    if (tentarAutoRecalcularSessao()) return;
+    // Se a sessão estiver desatualizada, recalcule em segundo plano sem derrubar a tela atual.
+    tentarAutoRecalcularSessao();
 
     if (estaAnimando) {
         if (sessao && sessao.rotas) {
             const qtdDisp = Object.values(sessao.rotas).filter(r => !r.selecionada_por).length;
             document.getElementById('contadorRotas').textContent =
                 qtdDisp > 0
-                    ? `${qtdDisp} rota${qtdDisp !== 1 ? 's' : ''} disponíve${qtdDisp !== 1 ? 'is' : 'l'}`
+                    ? `${qtdDisp} rota${qtdDisp !== 1 ? 's' : ''} disponível${qtdDisp !== 1 ? 'is' : ''}`
                     : 'Nenhuma rota disponível';
         }
         return;
@@ -275,20 +291,24 @@ async function onSessaoAtualizada(sessao) {
     ocultarTodas();
 
     if (!sessao) {
-        await criarSessaoAutomatica();
+        await criarSessaoAutomatica({ mostrarTelaPreparando: true });
     } else {
         mostrarTelaSessaoAtiva(sessao);
     }
 }
 
-// ─────────────────────────────────────────────
-// Criação automática da sessão
-// ─────────────────────────────────────────────
-async function criarSessaoAutomatica() {
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// CriaÃƒÂ§ÃƒÂ£o automÃƒÂ¡tica da sessÃƒÂ£o
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+async function criarSessaoAutomatica({ mostrarTelaPreparando = false } = {}) {
     if (criandoSessao) return;
     criandoSessao = true;
+    recalculandoSessaoEmSegundoPlano = !mostrarTelaPreparando;
 
-    document.getElementById('telaSemSessao').classList.add('ativa');
+    if (mostrarTelaPreparando) {
+        ocultarTodas();
+        document.getElementById('telaSemSessao').classList.add('ativa');
+    }
 
     try {
         await iniciarSessao();
@@ -297,43 +317,36 @@ async function criarSessaoAutomatica() {
         mostrarToast('❌ Erro ao preparar rotas. Tente voltar e entrar novamente.');
     } finally {
         criandoSessao = false;
+        recalculandoSessaoEmSegundoPlano = false;
+
+        if (mostrarTelaPreparando && sessaoAtual) {
+            ocultarTodas();
+            mostrarTelaSessaoAtiva(sessaoAtual);
+        }
     }
 }
 
 const LIMITE_ROTAS = 3;
 
-function sessaoTemSelecoes(sessao) {
-    if (!sessao || !sessao.rotas) return false;
-    return Object.values(sessao.rotas).some(r => r && r.selecionada_por);
-}
-
 function sessaoEstaDesatualizada(sessao) {
-    if (!versaoClientesAtual) return false;
+    const hojeLocal = obterHojeLocal();
+    if (sessao?.referencia_dia && sessao.referencia_dia !== hojeLocal) return true;
     if (!sessao || !sessao.criada_em) return false;
     const criadaMs = Date.parse(sessao.criada_em);
     if (Number.isNaN(criadaMs)) return false;
-    return versaoClientesAtual > criadaMs;
+    if (versaoClientesAtual && versaoClientesAtual > criadaMs) return true;
+    if (versaoMediaDeVendasAtual && versaoMediaDeVendasAtual > criadaMs) return true;
+    return false;
 }
 
 function tentarAutoRecalcularSessao() {
     if (estaAnimando) return false;
     if (!sessaoAtual) return false;
-    if (criandoSessao) return true;
+    if (criandoSessao || recalculandoSessaoEmSegundoPlano) return false;
     if (!sessaoEstaDesatualizada(sessaoAtual)) return false;
 
-    // Se ninguém selecionou ainda, é seguro recriar a sessão automaticamente
-    if (!sessaoTemSelecoes(sessaoAtual)) {
-        mostrarToast('🔄 Rotas foram alteradas — recalculando sessão...');
-        criarSessaoAutomatica();
-        return true;
-    }
-
-    // Se já existe seleção, não recalcula sozinho para não bagunçar a distribuição
-    if (!sessaoDesatualizadaAvisada) {
-        sessaoDesatualizadaAvisada = true;
-        mostrarToast('⚠️ Rotas/clientes mudaram. Use o Admin para recalcular a sessão.');
-    }
-    return false;
+    criarSessaoAutomatica({ mostrarTelaPreparando: false });
+    return true;
 }
 
 function atualizarInfoAdmin(sessao) {
@@ -396,9 +409,9 @@ function atualizarVisibilidadeCardNumero(qtdMinhas, ultimoNumero) {
     }
 }
 
-// ─────────────────────────────────────────────
-// Tela: sessão ativa
-// ─────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Tela: sessÃƒÂ£o ativa
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function mostrarTelaSessaoAtiva(sessao) {
     document.getElementById('telaSessaoAtiva').classList.add('ativa');
 
@@ -410,7 +423,7 @@ function mostrarTelaSessaoAtiva(sessao) {
     const qtdDisp = disponiveis.length;
     document.getElementById('contadorRotas').textContent =
         qtdDisp > 0
-            ? `${qtdDisp} rota${qtdDisp !== 1 ? 's' : ''} disponíve${qtdDisp !== 1 ? 'is' : 'l'}`
+            ? `${qtdDisp} rota${qtdDisp !== 1 ? 's' : ''} disponível${qtdDisp !== 1 ? 'is' : ''}`
             : 'Nenhuma rota disponível';
 
 
@@ -419,7 +432,7 @@ function mostrarTelaSessaoAtiva(sessao) {
     maquinasPorCliente = sessao.maquinas_por_cliente || {};
 
 
-    // Rotas já selecionadas pelo usuário atual
+    // Rotas jÃƒÂ¡ selecionadas pelo usuÃƒÂ¡rio atual
     const minhasRotas = todasRotas
         .filter(([_, r]) => r.selecionada_por === usuarioAtual)
         .map(([n]) => n);
@@ -436,7 +449,7 @@ function mostrarTelaSessaoAtiva(sessao) {
     }
 
     if (qtdMinhas >= LIMITE_ROTAS) {
-        // Atingiu o limite: exibe só as rotas, sem botão
+        // Atingiu o limite: exibe sÃƒÂ³ as rotas, sem botÃƒÂ£o
         document.getElementById('btnSortearWrap').style.display = 'none';
     } else {
         document.getElementById('btnSortearWrap').style.display = 'block';
@@ -474,9 +487,37 @@ function gerarUrlGoogleMapsRota(enderecos, origem) {
     const destino = encodeURIComponent(enderecos[enderecos.length - 1]);
     const waypoints = enderecos.slice(0, -1).map(e => encodeURIComponent(e)).join('|');
     const origemParam = origem === 'My+Location' ? 'My+Location' : encodeURIComponent(origem);
-    let url = `https://www.google.com/maps/dir/?api=1&origin=${origemParam}&destination=${destino}&travelmode=driving`;
+    let url = `https://www.google.com/maps/dir/?api=1&origin=${origemParam}&destination=${destino}&travelmode=driving&dir_action=navigate`;
     if (waypoints) url += `&waypoints=${waypoints}`;
     return url;
+}
+
+function gerarUrlPreferencialMaps(urlWeb) {
+    const ua = navigator.userAgent || '';
+    const isiPhone = /iPhone|iPad|iPod/i.test(ua);
+    if (isiPhone) {
+        return urlWeb.replace(/^https?:\/\//i, 'comgooglemapsurl://');
+    }
+    return urlWeb;
+}
+
+function abrirMapaPreferencial(novaAba, urlWeb) {
+    const urlPreferencial = gerarUrlPreferencialMaps(urlWeb);
+    try {
+        novaAba.location.replace(urlPreferencial);
+    } catch (_) {
+        novaAba.location.href = urlPreferencial;
+    }
+
+    if (urlPreferencial !== urlWeb) {
+        setTimeout(() => {
+            try {
+                if (!novaAba.closed && novaAba.location.href === 'about:blank') {
+                    novaAba.location.replace(urlWeb);
+                }
+            } catch (_) {}
+        }, 900);
+    }
 }
 
 window.abrirMapaRota = function(numeroRota) {
@@ -488,7 +529,8 @@ window.abrirMapaRota = function(numeroRota) {
     const clientes = sessaoAtual.clientes_por_rota[numeroRota] || [];
     const enderecosAll = clientes
         .map(montarEnderecoCliente)
-        .filter(Boolean);
+        .filter(Boolean)
+        .filter((endereco, indice, lista) => lista.indexOf(endereco) === indice);
 
     if (enderecosAll.length === 0) {
         mostrarToast('⚠️ Nenhum endereço encontrado nesta rota');
@@ -506,7 +548,7 @@ window.abrirMapaRota = function(numeroRota) {
         novaAba.document.body.innerHTML = '<div style="font-family:Arial,sans-serif;padding:16px">Abrindo mapa...</div>';
     } catch (_) {}
 
-    // Limite prático de waypoints no Google Maps (origem + destino + 23 waypoints = 24 endereços)
+    // Limite prÃƒÂ¡tico de waypoints no Google Maps (origem + destino + 23 waypoints = 24 endereÃƒÂ§os)
     const MAX_ENDERECOS = 24;
     const enderecos = enderecosAll.length > MAX_ENDERECOS
         ? enderecosAll.slice(0, MAX_ENDERECOS)
@@ -516,7 +558,10 @@ window.abrirMapaRota = function(numeroRota) {
         mostrarToast(`⚠️ Muitas paradas (${enderecosAll.length}). Abrindo ${MAX_ENDERECOS} no mapa.`);
     }
 
-    const navegar = (origem) => { novaAba.location.href = gerarUrlGoogleMapsRota(enderecos, origem); };
+    const navegar = (origem) => {
+        const urlWeb = gerarUrlGoogleMapsRota(enderecos, origem);
+        abrirMapaPreferencial(novaAba, urlWeb);
+    };
 
     if (!navigator.geolocation) {
         navegar('My+Location');
@@ -571,9 +616,9 @@ function mostrarMinhasRotas(numerosRota, sessao) {
 }
 
 
-// ─────────────────────────────────────────────
-// Selecionar rota (usuário pressiona o botão)
-// ─────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Selecionar rota (usuÃƒÂ¡rio pressiona o botÃƒÂ£o)
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 window.selecionarRota = async function() {
     if (!usuarioAtual) {
         mostrarToast('⚠️ Nenhum usuário selecionado no app');
@@ -589,7 +634,7 @@ window.selecionarRota = async function() {
     btn.innerHTML = 'Buscando rota de maior valor disponível...';
 
     // Liga a flag ANTES de chamar o Firebase para que o listener
-    // que dispara ao salvar já encontre estaAnimando = true
+    // que dispara ao salvar jÃƒÂ¡ encontre estaAnimando = true
     estaAnimando = true;
 
     let rotaSelecionada = null;
@@ -618,7 +663,7 @@ window.selecionarRota = async function() {
     // Confetti
     dispararConfetti();
 
-    // Renderiza os detalhes agora que a animação terminou
+    // Renderiza os detalhes agora que a animaÃƒÂ§ÃƒÂ£o terminou
     if (sessaoAtual) {
         const rotas = sessaoAtual.rotas || {};
         const minhasRotas = Object.entries(rotas)
@@ -644,13 +689,14 @@ window.selecionarRota = async function() {
     }
 };
 
-// ─────────────────────────────────────────────
-// Animação slot machine
-// ─────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// AnimaÃƒÂ§ÃƒÂ£o slot machine
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function animarSlot(rotaFinal) {
     return new Promise(resolve => {
         const el = document.getElementById('slotNumero');
-        const rotas = numerosDeRota.length > 0 ? numerosDeRota : ['01','02','03','04','05'];
+        const rotasSessao = Object.keys(sessaoAtual?.rotas || {});
+        const rotas = numerosDeRota.length > 0 ? numerosDeRota : (rotasSessao.length > 0 ? rotasSessao : ['01']);
         el.classList.add('girando');
 
         let count = 0;
@@ -679,14 +725,20 @@ function animarSlot(rotaFinal) {
     });
 }
 
-// ─────────────────────────────────────────────
-// Cálculo das estimativas por rota
-// ─────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// CÃƒÂ¡lculo das estimativas por rota
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 async function calcularValoresPorRota() {
-    const [clientes, atendimentos] = await Promise.all([
+    await dbSincronizarMediaDeVendasComClientes();
+
+    const [clientes, atendimentos, medias] = await Promise.all([
         dbListarClientes(),
-        dbListarAtendimentos()
+        dbListarAtendimentos(),
+        dbListarMediaDeVendas()
     ]);
+
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
 
     // Agrupa atendimentos por clienteId, ordena por data desc
     const atendPorCliente = {};
@@ -713,15 +765,33 @@ async function calcularValoresPorRota() {
         }
     });
 
-    // Calcula estimativa por cliente e agrupa por rota
+    const mediaPorNumero = {};
+    medias.forEach(item => {
+        const numero = String(item?.cliente?.numero ?? item?.cliente_numero ?? item?.firebaseUrl ?? '').trim();
+        if (!numero) return;
+        mediaPorNumero[numero] = item;
+    });
+
+    // Calcula estimativa por cliente usando 100% a base Media_de_Vendas atual
     const rotasMap = {}; // { "01": { valor_estimado, clientes: [] } }
 
     clientes.forEach(c => {
         const numRota = (c.rota || '').trim();
         if (!numRota) return;
 
-        const lista = atendPorCliente[c.firebaseUrl] || [];
-        const estimativa = calcularEstimativaCliente(lista);
+        const mediaAtual = mediaPorNumero[String(c.numero ?? '').trim()] || null;
+        const ultimoAtendimentoIso = mediaAtual?.ultimo_atendimento_em || null;
+        const vendaPorDia = typeof mediaAtual?.venda_por_dia === 'number' ? mediaAtual.venda_por_dia : null;
+        let estimativa = 0;
+
+        if (ultimoAtendimentoIso && vendaPorDia !== null) {
+            const ultimo = new Date(ultimoAtendimentoIso);
+            if (!Number.isNaN(ultimo.getTime())) {
+                ultimo.setHours(0,0,0,0);
+                const diasDesdeUltimo = Math.max(0, Math.round((hoje - ultimo) / 86400000));
+                estimativa = Math.round(((vendaPorDia * diasDesdeUltimo) + Number.EPSILON) * 100) / 100;
+            }
+        }
 
         if (!rotasMap[numRota]) {
             rotasMap[numRota] = { valor_estimado: 0, clientes: [], num_clientes: 0 };
@@ -735,7 +805,9 @@ async function calcularValoresPorRota() {
             numero_endereco: c.numero_endereco || '',
             cidade: c.cidade || '',
             aberto: c.aberto || '',
-            estimativa_valor: estimativa
+            estimativa_valor: estimativa,
+            venda_por_dia: vendaPorDia,
+            ultimo_atendimento_em: ultimoAtendimentoIso
         });
     });
 
@@ -751,40 +823,9 @@ async function calcularValoresPorRota() {
     return { rotas, clientesPorRota: cpr, maquinasPorClienteMap };
 }
 
-function calcularEstimativaCliente(atendimentos) {
-    if (atendimentos.length === 0) return 0;
-
-    const hoje = new Date();
-    hoje.setHours(0,0,0,0);
-
-    const ultimo = new Date(atendimentos[0].data);
-    ultimo.setHours(0,0,0,0);
-    const diasDesdeUltimo = Math.max(0, Math.round((hoje - ultimo) / 86400000));
-
-    if (atendimentos.length === 1) {
-        // Só um atendimento: usa o valor dele como referência diária mínima (1 dia)
-        const valorUnico = atendimentos[0].financeiro?.totalGeral || 0;
-        return valorUnico > 0 ? Math.round(valorUnico * 0.5) : 0; // estimativa conservadora
-    }
-
-    // Dois últimos atendimentos
-    const v1 = atendimentos[0].financeiro?.totalGeral || 0;
-    const v2 = atendimentos[1].financeiro?.totalGeral || 0;
-    const d1 = new Date(atendimentos[0].data);
-    const d2 = new Date(atendimentos[1].data);
-    d1.setHours(0,0,0,0);
-    d2.setHours(0,0,0,0);
-
-    const diasEntre = Math.abs(Math.round((d1 - d2) / 86400000));
-    if (diasEntre === 0) return 0;
-
-    const taxaDiaria = (v1 + v2) / diasEntre;
-    return Math.round(taxaDiaria * diasDesdeUltimo);
-}
-
-// ─────────────────────────────────────────────
-// Criar/reiniciar sessão (automático ou via admin)
-// ─────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Criar/reiniciar sessÃƒÂ£o (automÃƒÂ¡tico ou via admin)
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 async function iniciarSessao() {
     const dados = await calcularValoresPorRota();
 
@@ -792,6 +833,10 @@ async function iniciarSessao() {
         mostrarToast('❌ Nenhuma rota encontrada nos clientes cadastrados');
         return;
     }
+
+    const sessaoAnterior = sessaoAtual || null;
+    const rotasAntigas = sessaoAnterior?.rotas || {};
+    const clientesPorRotaAntigos = sessaoAnterior?.clientes_por_rota || {};
 
     const rotasObj = {};
     dados.rotas.forEach(r => {
@@ -803,12 +848,43 @@ async function iniciarSessao() {
         };
     });
 
+    const clientesPorRota = { ...(dados.clientesPorRota || {}) };
+
+    Object.entries(rotasAntigas).forEach(([numero, rotaAntiga]) => {
+        if (!rotaAntiga?.selecionada_por) return;
+
+        if (!rotasObj[numero]) {
+            rotasObj[numero] = {
+                valor_estimado: rotaAntiga.valor_estimado || 0,
+                num_clientes: rotaAntiga.num_clientes ?? ((clientesPorRotaAntigos[numero] || []).length),
+                selecionada_por: rotaAntiga.selecionada_por,
+                timestamp_selecao: rotaAntiga.timestamp_selecao || null
+            };
+        } else {
+            rotasObj[numero] = {
+                ...rotasObj[numero],
+                valor_estimado: rotaAntiga.valor_estimado || 0,
+                num_clientes: rotaAntiga.num_clientes ?? ((clientesPorRotaAntigos[numero] || []).length),
+                selecionada_por: rotaAntiga.selecionada_por,
+                timestamp_selecao: rotaAntiga.timestamp_selecao || null
+            };
+        }
+
+        if (clientesPorRotaAntigos[numero]) {
+            clientesPorRota[numero] = clientesPorRotaAntigos[numero];
+        }
+    });
+
     const sessao = {
         criada_em: new Date().toISOString(),
+        referencia_dia: obterHojeLocal(),
         criada_por: usuarioAtual,
         rotas: rotasObj,
-        clientes_por_rota: dados.clientesPorRota,
-        maquinas_por_cliente: dados.maquinasPorClienteMap
+        clientes_por_rota: clientesPorRota,
+        maquinas_por_cliente: {
+            ...(sessaoAnterior?.maquinas_por_cliente || {}),
+            ...(dados.maquinasPorClienteMap || {})
+        }
     };
 
     await dbCriarSessaoRotas(sessao);
@@ -850,9 +926,9 @@ window.encerrarSessao = async function() {
     }
 };
 
-// ─────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // Helpers de UI
-// ─────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function ocultarTodas() {
     document.getElementById('telaCarregando').classList.remove('ativa');
     document.getElementById('telaSemSessao').classList.remove('ativa');
@@ -922,17 +998,20 @@ function dispararConfetti() {
     }, maxMs + 250);
 }
 
-// ─────────────────────────────────────────────
-// Persiste/recupera o usuário selecionado no index
-// ─────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// Persiste/recupera o usuÃƒÂ¡rio selecionado no index
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // (O index.html grava 'usuario_selecionado' no localStorage ao navegar)
-// Garante que o select no index grава antes de abrir esta página
-// (isso já é feito no index via abrirTela)
+// Garante que o select no index grÃÂ°ÃÂ²ÃÂ° antes de abrir esta pÃƒÂ¡gina
+// (isso jÃƒÂ¡ ÃƒÂ© feito no index via abrirTela)
 
-// ─────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // Start
-// ─────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 init();
 </script>
 </body>
 </html>
+
+
+

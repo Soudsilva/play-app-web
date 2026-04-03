@@ -1,11 +1,11 @@
 /* =========================================================================
    PROJETO: PLAY NA WEB
    BANCO DE DADOS: FIREBASE REALTIME DATABASE
-   OBJETIVO: Este arquivo é o "mensageiro". Ele leva dados do site para o servidor e traz de volta.
+   OBJETIVO: Este arquivo Ã© o "mensageiro". Ele leva dados do site para o servidor e traz de volta.
    ========================================================================= */
 
-// --- 1. IMPORTAÇÃO DAS FERRAMENTAS ---
-// Aqui estamos "pegando emprestado" as funções prontas do Google (Firebase) para não ter que criar tudo do zero.
+// --- 1. IMPORTAÃ‡ÃƒO DAS FERRAMENTAS ---
+// Aqui estamos "pegando emprestado" as funÃ§Ãµes prontas do Google (Firebase) para nÃ£o ter que criar tudo do zero.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
     getDatabase,
@@ -25,8 +25,8 @@ import {
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 import { salvarCacheClientes, lerCacheClientes, salvarCacheEstoque, lerCacheEstoque } from './offline-sync.js';
 
-// --- 2. CONFIGURAÇÃO (AS CHAVES DO COFRE) ---
-// Estas são as credenciais que permitem que seu site converse especificamente com o SEU banco de dados.
+// --- 2. CONFIGURAÃ‡ÃƒO (AS CHAVES DO COFRE) ---
+// Estas sÃ£o as credenciais que permitem que seu site converse especificamente com o SEU banco de dados.
 const firebaseConfig = {
     apiKey: "AIzaSyAog2lzvvWkOSvr8BqPgtGCZpSM4VQ2b3E",
     authDomain: "play-na-web.firebaseapp.com",
@@ -37,19 +37,19 @@ const firebaseConfig = {
     appId: "1:278404685529:web:c8e7dc89eeb660173ae8c8"
 };
 
-// --- 3. INICIALIZAÇÃO ---
-// Aqui ligamos o "motor" do Firebase usando as configurações acima.
+// --- 3. INICIALIZAÃ‡ÃƒO ---
+// Aqui ligamos o "motor" do Firebase usando as configuraÃ§Ãµes acima.
 export const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const storage = getStorage(app);
 
-/* --- FUNÇÕES PARA CLIENTES --- */
+/* --- FUNÃ‡Ã•ES PARA CLIENTES --- */
 
-// FUNÇÃO: ESCUTAR CLIENTES (Em Tempo Real)
-// O que faz: Fica "de ouvidos abertos". Sempre que alguém mudar algo no banco de dados,
-// essa função avisa o site instantaneamente para atualizar a tela sem precisar recarregar (F5).
+// FUNÃ‡ÃƒO: ESCUTAR CLIENTES (Em Tempo Real)
+// O que faz: Fica "de ouvidos abertos". Sempre que alguÃ©m mudar algo no banco de dados,
+// essa funÃ§Ã£o avisa o site instantaneamente para atualizar a tela sem precisar recarregar (F5).
 export function dbEscutarClientes(callback) {
-    // Serve o cache do IndexedDB imediatamente (útil ao abrir offline após um reload)
+    // Serve o cache do IndexedDB imediatamente (Ãºtil ao abrir offline apÃ³s um reload)
     lerCacheClientes().then(cached => {
         if (cached.length > 0) callback(cached);
     }).catch(() => {});
@@ -62,46 +62,67 @@ export function dbEscutarClientes(callback) {
             callback(lista);
             salvarCacheClientes(lista).catch(() => {}); // espelha no IndexedDB
         } else if (navigator.onLine) {
-            callback([]); // só limpa se realmente não há dados (e temos internet)
+            callback([]); // sÃ³ limpa se realmente nÃ£o hÃ¡ dados (e temos internet)
         }
     });
 }
 
-// FUNÇÃO INTERNA: Atualiza o timestamp de versão dos clientes no banco.
-// Usada após qualquer alteração na lista de clientes para avisar todos os dispositivos.
+// FUNÃ‡ÃƒO INTERNA: Atualiza o timestamp de versÃ£o dos clientes no banco.
+// Usada apÃ³s qualquer alteraÃ§Ã£o na lista de clientes para avisar todos os dispositivos.
 async function _atualizarVersaoClientes() {
     try {
         await set(ref(db, 'metadata/clientes_versao'), Date.now());
     } catch (e) {
-        // Não bloquear a operação principal se isso falhar
-        console.warn("Não foi possível atualizar versão dos clientes:", e);
+        // NÃ£o bloquear a operaÃ§Ã£o principal se isso falhar
+        console.warn("NÃ£o foi possÃ­vel atualizar versÃ£o dos clientes:", e);
     }
 }
 
-// FUNÇÃO: ESCUTAR VERSÃO DOS CLIENTES
-// O que faz: Escuta APENAS um número (timestamp) no banco. Quando ele muda,
-// significa que alguém alterou a lista de clientes. Economiza dados pois não
-// baixa a lista inteira — só avisa que ela mudou.
+// FUNÃ‡ÃƒO: ESCUTAR VERSÃƒO DOS CLIENTES
+// O que faz: Escuta APENAS um nÃºmero (timestamp) no banco. Quando ele muda,
+// significa que alguÃ©m alterou a lista de clientes. Economiza dados pois nÃ£o
+// baixa a lista inteira â€” sÃ³ avisa que ela mudou.
+async function _atualizarVersaoMediaDeVendas() {
+    try {
+        await set(ref(db, 'metadata/media_de_vendas_versao'), Date.now());
+    } catch (e) {
+        console.warn("NÃƒÂ£o foi possÃƒÂ­vel atualizar versÃƒÂ£o da Media_de_Vendas:", e);
+    }
+}
+
 export function dbEscutarVersaoClientes(callback) {
     onValue(ref(db, 'metadata/clientes_versao'), (snap) => {
         callback(snap.val());
     });
 }
 
-// FUNÇÃO: SALVAR CLIENTE (Criar ou Editar)
-// O que faz: Verifica se é um cliente novo ou antigo.
-// Se tiver ID (idExistente), ele atualiza os dados. Se não, cria um novo registro.
+export function dbEscutarVersaoMediaDeVendas(callback) {
+    onValue(ref(db, 'metadata/media_de_vendas_versao'), (snap) => {
+        callback(snap.val());
+    });
+}
+
+// FUNÃ‡ÃƒO: SALVAR CLIENTE (Criar ou Editar)
+// O que faz: Verifica se Ã© um cliente novo ou antigo.
+// Se tiver ID (idExistente), ele atualiza os dados. Se nÃ£o, cria um novo registro.
 export async function dbSalvarCliente(cliente, idExistente = null) {
     try {
         if (idExistente) {
-            // Modo Edição: Atualiza o cliente específico
+            // Modo EdiÃ§Ã£o: Atualiza o cliente especÃ­fico
             const clienteRef = ref(db, `clientes/${idExistente}`);
+            const snapAnt = await get(clienteRef);
+            const dadosAnt = snapAnt.exists() ? snapAnt.val() : null;
+            const numeroAntigo = dadosAnt?.numero ?? null;
             // Usa update para preservar campos calculados/gerados pelo sistema (ex: venda_por_dia)
             await update(clienteRef, cliente);
+            await _upsertMediaDeVendasPorCliente(cliente, idExistente, numeroAntigo);
+            await _atualizarVersaoMediaDeVendas();
         } else {
-            // Modo Criação: Cria um novo cliente com chave única
+            // Modo CriaÃ§Ã£o: Cria um novo cliente com chave Ãºnica
             const clientesRef = ref(db, 'clientes');
-            await push(clientesRef, cliente);
+            const novoRef = await push(clientesRef, cliente);
+            await _upsertMediaDeVendasPorCliente(cliente, novoRef.key || null, null);
+            await _atualizarVersaoMediaDeVendas();
         }
         // Avisa todos os dispositivos que a lista mudou
         await _atualizarVersaoClientes();
@@ -111,40 +132,40 @@ export async function dbSalvarCliente(cliente, idExistente = null) {
     }
 }
 
-// [BLOCO: EMERGÊNCIA - LIMPAR TUDO]
+// [BLOCO: EMERGÃŠNCIA - LIMPAR TUDO]
 export async function dbLimparHistoricoCompleto() {
     try {
         const histRef = ref(db, 'historico_estoque');
         await remove(histRef);
     } catch (error) {
-        console.error("Erro ao limpar histórico completo:", error);
+        console.error("Erro ao limpar histÃ³rico completo:", error);
         throw error;
     }
 }
 
-// [BLOCO: HISTÓRICO - EXCLUIR]
+// [BLOCO: HISTÃ“RICO - EXCLUIR]
 export async function dbExcluirHistorico(id) {
     try {
         const histRef = ref(db, `historico_estoque/${id}`);
         await remove(histRef);
     } catch (error) {
-        console.error("Erro ao excluir histórico:", error);
+        console.error("Erro ao excluir histÃ³rico:", error);
         throw error;
     }
 }
 
-// [BLOCO: HISTÓRICO DE MOVIMENTAÇÃO]
-// Grava um registro eterno de cada entrada ou saída
+// [BLOCO: HISTÃ“RICO DE MOVIMENTAÃ‡ÃƒO]
+// Grava um registro eterno de cada entrada ou saÃ­da
 export async function dbSalvarHistorico(movimento) {
     try {
         const histRef = ref(db, 'historico_estoque');
         await push(histRef, movimento);
     } catch (error) {
-        console.error("Erro ao salvar histórico:", error);
+        console.error("Erro ao salvar histÃ³rico:", error);
     }
 }
 
-// Escuta apenas os últimos 20 movimentos para exibir na tela
+// Escuta apenas os Ãºltimos 20 movimentos para exibir na tela
 export function dbEscutarHistorico(callback) {
     const histRef = ref(db, 'historico_estoque');
     const ultimosQuery = query(histRef, limitToLast(20));
@@ -158,15 +179,24 @@ export function dbEscutarHistorico(callback) {
                 lista.push({ ...data[key], firebaseUrl: key });
             });
         }
-        // O Firebase devolve na ordem cronológica (antigo -> novo), vamos inverter na tela depois
+        // O Firebase devolve na ordem cronolÃ³gica (antigo -> novo), vamos inverter na tela depois
         callback(lista);
     });
 }
 
-// FUNÇÃO: EXCLUIR CLIENTE
+// FUNÃ‡ÃƒO: EXCLUIR CLIENTE
 // O que faz: Remove permanentemente o cliente do banco de dados baseado no ID.
 export async function dbExcluirCliente(id) {
     try {
+        // Remove tambÃ©m da base Media_de_Vendas (id = nÃºmero do cliente)
+        try {
+            const snap = await get(ref(db, `clientes/${id}`));
+            const numero = snap.exists() ? (snap.val()?.numero ?? null) : null;
+            const key = _normalizarNumeroCliente(numero);
+            if (key) await remove(ref(db, `Media_de_Vendas/${key}`));
+        } catch (e) {
+            console.warn("NÃ£o foi possÃ­vel remover cliente de Media_de_Vendas:", e);
+        }
         const clienteRef = ref(db, `clientes/${id}`);
         await remove(clienteRef);
         // Avisa todos os dispositivos que a lista mudou
@@ -177,9 +207,9 @@ export async function dbExcluirCliente(id) {
     }
 }
 
-// FUNÇÃO: LISTAR CLIENTES (Uma única vez)
+// FUNÃ‡ÃƒO: LISTAR CLIENTES (Uma Ãºnica vez)
 // O que faz: Tira uma "foto" (snapshot) do banco naquele momento.
-// Diferente do "Escutar", este não fica vigiando alterações futuras.
+// Diferente do "Escutar", este nÃ£o fica vigiando alteraÃ§Ãµes futuras.
 export async function dbListarClientes() {
     try {
         const snapshot = await get(ref(db, 'clientes'));
@@ -196,11 +226,11 @@ export async function dbListarClientes() {
     return [];
 }
 
-/* --- FUNÇÕES PARA COLABORADORES --- */
+/* --- FUNÃ‡Ã•ES PARA COLABORADORES --- */
 
-// FUNÇÃO: ESCUTAR COLABORADORES (Com Ordem)
-// O que faz: Igual ao de clientes, mas com um passo extra: ORDENAÇÃO.
-// Garante que a lista apareça na ordem que você definiu (arrastar e soltar).
+// FUNÃ‡ÃƒO: ESCUTAR COLABORADORES (Com Ordem)
+// O que faz: Igual ao de clientes, mas com um passo extra: ORDENAÃ‡ÃƒO.
+// Garante que a lista apareÃ§a na ordem que vocÃª definiu (arrastar e soltar).
 export function dbEscutarColaboradores(callback) {
     const colabRef = ref(db, 'colaboradores'); 
     onValue(colabRef, (snapshot) => {
@@ -210,7 +240,7 @@ export function dbEscutarColaboradores(callback) {
                 ...data[key],
                 firebaseUrl: key
             })).sort((a, b) => {
-                // CORREÇÃO: Agora ordena pelo campo 'ordem' para respeitar o arrastar e soltar
+                // CORREÃ‡ÃƒO: Agora ordena pelo campo 'ordem' para respeitar o arrastar e soltar
                 return (a.ordem || 0) - (b.ordem || 0); 
             });
             callback(lista);
@@ -227,24 +257,24 @@ export async function dbListarColaboradores() {
     return Object.keys(data).map(key => ({ ...data[key], firebaseUrl: key }));
 }
 
-// FUNÇÃO: SALVAR COLABORADOR
-// O que faz: Salva dados do funcionário.
-// Truque especial: Usa um número negativo (-Date.now()) para que novos cadastros
-// apareçam automaticamente no topo da lista antes de você reordenar.
+// FUNÃ‡ÃƒO: SALVAR COLABORADOR
+// O que faz: Salva dados do funcionÃ¡rio.
+// Truque especial: Usa um nÃºmero negativo (-Date.now()) para que novos cadastros
+// apareÃ§am automaticamente no topo da lista antes de vocÃª reordenar.
 export async function dbSalvarColaborador(colaborador, idExistente = null) {
     try {
         if (idExistente) {
             const colabRef = ref(db, `colaboradores/${idExistente}`);
             const snapshot = await get(colabRef);
             const dadosAntigos = snapshot.val();
-            // Mantém a posição na fila se já existir (não joga pro final)
+            // MantÃ©m a posiÃ§Ã£o na fila se jÃ¡ existir (nÃ£o joga pro final)
             if (dadosAntigos && dadosAntigos.ordem !== undefined) {
                 colaborador.ordem = dadosAntigos.ordem;
             }
             await set(colabRef, colaborador);
         } else {
             // USANDO O TIMESTAMP NEGATIVO: 
-            // Quanto mais recente o cadastro, menor o número, logo, fica no topo.
+            // Quanto mais recente o cadastro, menor o nÃºmero, logo, fica no topo.
             colaborador.ordem = -Date.now();
             const colabRef = ref(db, 'colaboradores');
             await push(colabRef, colaborador);
@@ -255,9 +285,9 @@ export async function dbSalvarColaborador(colaborador, idExistente = null) {
     }
 }
 
-// NOVA FUNÇÃO: Necessária para gravar a posição após o arraste
-// O que faz: Atualiza APENAS o número da ordem, sem mexer no nome ou foto.
-// É usada quando você solta o card na tela de gestão.
+// NOVA FUNÃ‡ÃƒO: NecessÃ¡ria para gravar a posiÃ§Ã£o apÃ³s o arraste
+// O que faz: Atualiza APENAS o nÃºmero da ordem, sem mexer no nome ou foto.
+// Ã‰ usada quando vocÃª solta o card na tela de gestÃ£o.
 export async function dbAtualizarOrdemColaborador(id, novaOrdem) {
     try {
         const colabRef = ref(db, `colaboradores/${id}`);
@@ -267,7 +297,7 @@ export async function dbAtualizarOrdemColaborador(id, novaOrdem) {
     }
 }
 
-// FUNÇÃO: EXCLUIR COLABORADOR
+// FUNÃ‡ÃƒO: EXCLUIR COLABORADOR
 export async function dbExcluirColaborador(id) {
     try {
         const colabRef = ref(db, `colaboradores/${id}`);
@@ -286,7 +316,7 @@ export async function dbSalvarItemEstoque(item, id = null) {
             const itemRef = ref(db, `estoque/${id}`);
             await update(itemRef, item);
         } else {
-            // Se não tem ID, cria um novo
+            // Se nÃ£o tem ID, cria um novo
             const estoqueRef = ref(db, 'estoque');
             await push(estoqueRef, item);
         }
@@ -363,7 +393,7 @@ export async function dbExcluirPedido(id) {
     }
 }
 
-/* --- FUNÇÕES PARA ATENDIMENTO --- */
+/* --- FUNÃ‡Ã•ES PARA ATENDIMENTO --- */
 
 // [NOVO] Helper para converter Base64 em Blob para upload
 function base64ToBlob(base64, contentType = 'image/jpeg') {
@@ -383,84 +413,30 @@ function base64ToBlob(base64, contentType = 'image/jpeg') {
 
 // [NOVO] Salvar uma foto no Firebase Storage
 export async function storageSalvarFoto(base64String, pasta = 'atendimentos') {
-    // Offline: devolve o base64 como está — será enviado quando a internet voltar
+    // Offline: devolve o base64 como estÃ¡ â€” serÃ¡ enviado quando a internet voltar
     if (!navigator.onLine) return base64String;
     try {
         // 1. Converte a string base64 para um formato de arquivo (Blob)
         const blob = base64ToBlob(base64String);
         
-        // 2. Cria um nome de arquivo único para evitar sobreposições
+        // 2. Cria um nome de arquivo Ãºnico para evitar sobreposiÃ§Ãµes
         const nomeArquivo = `${String(pasta || 'atendimentos').replace(/^\/+|\/+$/g, '')}/${Date.now()}-${Math.round(Math.random() * 1E9)}.jpg`;
         const fotoRef = storageRef(storage, nomeArquivo);
         
-        // 3. Faz o upload do arquivo (Com limite de 15 segundos para não travar)
+        // 3. Faz o upload do arquivo (Com limite de 15 segundos para nÃ£o travar)
         const uploadPromise = uploadBytes(fotoRef, blob);
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite de upload excedido. A internet pode estar instável.")), 15000));
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite de upload excedido. A internet pode estar instÃ¡vel.")), 15000));
         
         const snapshot = await Promise.race([uploadPromise, timeoutPromise]);
         
-        // 4. Pega a URL pública do arquivo que acabamos de subir
+        // 4. Pega a URL pÃºblica do arquivo que acabamos de subir
         const downloadURL = await getDownloadURL(snapshot.ref);
         
         return downloadURL;
     } catch (error) {
         console.error("Erro ao fazer upload da foto:", error);
-        throw error; // Re-lança o erro para ser tratado na tela de atendimento
+        throw error; // Re-lanÃ§a o erro para ser tratado na tela de atendimento
     }
-}
-
-// [NOVO] Atualiza indicadores de venda do cliente (venda_por_dia / últimas visitas)
-// Regras:
-// - Usa os 2 atendimentos mais recentes por data para calcular venda_por_dia = (v1+v2)/diasEntre
-// - Não impede o salvamento do atendimento se falhar
-async function _atualizarIndicadoresVendaCliente(clienteId) {
-    const cid = String(clienteId || "").trim();
-    if (!cid) return;
-
-    const atendRef = ref(db, 'atendimentos');
-    const snap = await get(query(atendRef, orderByChild('cliente/id'), equalTo(cid)));
-    const data = snap.val();
-
-    const lista = data
-        ? Object.keys(data).map(key => ({ firebaseUrl: key, ...data[key] }))
-        : [];
-
-    lista.sort((a, b) => {
-        const da = Date.parse(a?.data || "");
-        const dbb = Date.parse(b?.data || "");
-        return (Number.isNaN(dbb) ? 0 : dbb) - (Number.isNaN(da) ? 0 : da);
-    });
-
-    const a1 = lista[0] || null;
-    const a2 = lista[1] || null;
-
-    let vendaPorDia = 0;
-    let diasEntre = 0;
-    let baseTotal = 0;
-    let ultimaEm = a1?.data || null;
-    let penultimaEm = a2?.data || null;
-
-    if (a1 && a2) {
-        const v1 = Number(a1?.financeiro?.totalGeral) || 0;
-        const v2 = Number(a2?.financeiro?.totalGeral) || 0;
-        baseTotal = v1 + v2;
-
-        const d1 = new Date(a1.data);
-        const d2 = new Date(a2.data);
-        d1.setHours(0, 0, 0, 0);
-        d2.setHours(0, 0, 0, 0);
-        diasEntre = Math.abs(Math.round((d1 - d2) / 86400000));
-        vendaPorDia = diasEntre > 0 ? Math.round(((baseTotal / diasEntre) + Number.EPSILON) * 100) / 100 : 0;
-    }
-
-    await update(ref(db, `clientes/${cid}`), {
-        venda_por_dia: vendaPorDia,
-        venda_por_dia_intervalo_dias: diasEntre,
-        venda_por_dia_base_total: baseTotal,
-        ultima_visita_em: ultimaEm,
-        penultima_visita_em: penultimaEm,
-        venda_por_dia_atualizado_em: new Date().toISOString()
-    });
 }
 
 // [NOVO] Salvar o registro completo do atendimento
@@ -469,21 +445,33 @@ export async function dbSalvarAtendimento(atendimento, idExistente = null) {
         if (idExistente) {
             await set(ref(db, `atendimentos/${idExistente}`), atendimento);
         } else {
-            // Cria uma nova entrada na coleção 'atendimentos'
+            // Cria uma nova entrada na coleÃ§Ã£o 'atendimentos'
             const atendimentosRef = ref(db, 'atendimentos');
             await push(atendimentosRef, atendimento);
         }
-
-        // Atualiza a média de venda por dia do cliente (com base nas últimas 2 visitas)
-        try {
-            const clienteId = atendimento?.cliente?.id;
-            if (clienteId) await _atualizarIndicadoresVendaCliente(clienteId);
-        } catch (e) {
-            console.warn("Não foi possível atualizar venda_por_dia do cliente:", e);
-        }
+        // Atualiza a base "Media_de_Vendas" (tempo real, sem depender do cache offline)
+        await _upsertMediaDeVendasPorAtendimento(atendimento);
+        await _atualizarVersaoMediaDeVendas();
     } catch (error) {
         console.error("ERRO AO SALVAR ATENDIMENTO:", error);
         throw error;
+    }
+}
+
+export async function dbListarAtendimentosRecentes(limite = 800) {
+    try {
+        const n = Math.max(1, Math.min(Number(limite) || 800, 5000));
+        const atendRef = ref(db, 'atendimentos');
+        const snap = await get(query(atendRef, limitToLast(n)));
+        if (!snap.exists()) return [];
+        const data = snap.val();
+        return Object.keys(data).map(key => ({
+            ...data[key],
+            firebaseUrl: key
+        }));
+    } catch (e) {
+        console.error("ERRO AO LISTAR ATENDIMENTOS RECENTES:", e);
+        return [];
     }
 }
 
@@ -527,6 +515,359 @@ export async function dbExcluirAtendimento(id) {
     }
 }
 
+export async function dbAtualizarAtendimento(id, patch) {
+    try {
+        if (!id) throw new Error("ID do atendimento Ã© obrigatÃ³rio.");
+        if (!patch || typeof patch !== 'object') throw new Error("Patch invÃ¡lido.");
+        await update(ref(db, `atendimentos/${id}`), patch);
+    } catch (error) {
+        console.error("ERRO AO ATUALIZAR ATENDIMENTO:", error);
+        throw error;
+    }
+}
+
+/* --- FUNÃ‡Ã•ES: MEDIA DE VENDAS (SAÃšDE FINANCEIRA) --- */
+
+function _normalizarNumeroCliente(numero) {
+    const k = String(numero ?? '').trim();
+    return k ? k : null;
+}
+
+function _hojeLocalYYYYMMDD() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+function _inicioDiaLocalFromIso(iso) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+function _inicioDiaLocalFromYMD(ymd) {
+    if (!ymd) return null;
+    const d = new Date(`${ymd}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return null;
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+function _diasDesdeUltimoAtendimento(ultimoIso, ymdAlvo) {
+    const dUlt = _inicioDiaLocalFromIso(ultimoIso);
+    const dAlvo = _inicioDiaLocalFromYMD(ymdAlvo);
+    if (!dUlt || !dAlvo) return null;
+    const diff = Math.round((dAlvo - dUlt) / 86400000);
+    return Math.max(0, diff);
+}
+
+function _calcularEstimativa(vendaPorDia, ultimoIso, ymdAlvo) {
+    if (typeof vendaPorDia !== 'number') return null;
+    const dias = _diasDesdeUltimoAtendimento(ultimoIso, ymdAlvo);
+    if (dias === null) return null;
+    return Math.round(((vendaPorDia * dias) + Number.EPSILON) * 100) / 100;
+}
+
+async function _buscarClienteBasePorReferencia(clienteRef) {
+    const id = String(clienteRef?.id ?? clienteRef?.firebaseUrl ?? '').trim();
+    if (id) {
+        const snapPorId = await get(ref(db, `clientes/${id}`));
+        if (snapPorId.exists()) {
+            return { firebaseUrl: id, ...snapPorId.val() };
+        }
+    }
+
+    const numero = _normalizarNumeroCliente(clienteRef?.numero);
+    if (!numero) return null;
+
+    const valoresBusca = [numero];
+    const numeroComoNumero = Number(numero);
+    if (Number.isFinite(numeroComoNumero) && String(numeroComoNumero) === numero) {
+        valoresBusca.unshift(numeroComoNumero);
+    }
+
+    for (const valor of valoresBusca) {
+        const snapPorNumero = await get(query(ref(db, 'clientes'), orderByChild('numero'), equalTo(valor)));
+        if (!snapPorNumero.exists()) continue;
+        const data = snapPorNumero.val() || {};
+        const primeiroId = Object.keys(data)[0];
+        if (primeiroId) {
+            return { firebaseUrl: primeiroId, ...data[primeiroId] };
+        }
+    }
+
+    return null;
+}
+
+async function _upsertMediaDeVendasPorCliente(cliente, clienteId = null, numeroAntigo = null) {
+    const numeroNovoKey = _normalizarNumeroCliente(cliente?.numero);
+    if (!numeroNovoKey) return;
+
+    const agoraIso = new Date().toISOString();
+    const hojeYmd = _hojeLocalYYYYMMDD();
+
+    const oldKey = _normalizarNumeroCliente(numeroAntigo);
+    if (oldKey && oldKey !== numeroNovoKey) {
+        try {
+            const oldRef = ref(db, `Media_de_Vendas/${oldKey}`);
+            const snapOld = await get(oldRef);
+            const oldData = snapOld.exists() ? snapOld.val() : null;
+            if (oldData) {
+                await runTransaction(ref(db, `Media_de_Vendas/${numeroNovoKey}`), (current) => {
+                    const cur = current || {};
+                    return {
+                        ...oldData,
+                        ...cur,
+                        cliente: { ...(oldData?.cliente || {}), ...(cur?.cliente || {}) },
+                    };
+                });
+            }
+            await remove(oldRef);
+        } catch (e) {
+            console.warn("Falha ao mover Media_de_Vendas para novo nÃºmero:", e);
+        }
+    }
+
+    await runTransaction(ref(db, `Media_de_Vendas/${numeroNovoKey}`), (current) => {
+        const cur = current || {};
+        const clienteAtual = {
+            ...(cur?.cliente || {}),
+            id: clienteId ?? cur?.cliente?.id ?? null,
+            numero: cliente?.numero ?? cur?.cliente?.numero ?? null,
+            nome: cliente?.nome ?? cur?.cliente?.nome ?? "",
+            rota: cliente?.rota ?? cur?.cliente?.rota ?? "",
+        };
+
+        const next = {
+            ...cur,
+            cliente: clienteAtual,
+            rota: clienteAtual.rota || cur?.rota || "",
+            atualizado_em: agoraIso,
+            hoje_dia: hojeYmd,
+        };
+
+        const vendaDia = (typeof next.venda_por_dia === 'number') ? next.venda_por_dia : null;
+        next.estimativa_hoje = _calcularEstimativa(vendaDia, next.ultimo_atendimento_em, hojeYmd);
+
+        return next;
+    });
+}
+
+async function _upsertMediaDeVendasPorAtendimento(atendimento) {
+    const clienteAtendimento = atendimento?.cliente || {};
+    const clienteBase = await _buscarClienteBasePorReferencia(clienteAtendimento);
+    const c = clienteBase || clienteAtendimento;
+    const numeroKey = _normalizarNumeroCliente(c?.numero) || _normalizarNumeroCliente(clienteAtendimento?.numero);
+    if (!numeroKey) return;
+
+    const dataAt = atendimento?.data || null;
+    const tAt = Date.parse(dataAt || "");
+    if (Number.isNaN(tAt)) return;
+
+    const agoraIso = new Date().toISOString();
+    const hojeYmd = _hojeLocalYYYYMMDD();
+
+    const ind = atendimento?.indicadores_venda_dia || null;
+    const novoVendaDia = (typeof ind?.venda_por_dia === 'number')
+        ? ind.venda_por_dia
+        : (typeof c?.venda_por_dia === 'number' ? c.venda_por_dia : null);
+    const novoMsg = (ind?.msg ?? c?.venda_por_dia_msg ?? null);
+    const novoBaseTotal = (typeof ind?.baseTotal === 'number')
+        ? ind.baseTotal
+        : (Number(c?.venda_por_dia_base_total) || 0);
+    const novoDiasEntre = (typeof ind?.diasEntre === 'number')
+        ? ind.diasEntre
+        : (Number(c?.venda_por_dia_intervalo_dias) || 0);
+
+    const temIndicador = (novoVendaDia !== null) || Boolean(novoMsg);
+
+    await runTransaction(ref(db, `Media_de_Vendas/${numeroKey}`), (current) => {
+        const cur = current || {};
+
+        const curUlt = Date.parse(cur?.ultimo_atendimento_em || "");
+        const atualizarUltimo = Number.isNaN(curUlt) || tAt >= curUlt;
+
+        const clienteAtual = {
+            ...(cur?.cliente || {}),
+            id: clienteBase?.firebaseUrl ?? c?.id ?? clienteAtendimento?.id ?? cur?.cliente?.id ?? null,
+            numero: c?.numero ?? cur?.cliente?.numero ?? null,
+            nome: c?.nome ?? cur?.cliente?.nome ?? "",
+            rota: c?.rota ?? cur?.cliente?.rota ?? "",
+        };
+
+        const next = {
+            ...cur,
+            cliente: clienteAtual,
+            rota: clienteAtual.rota || cur?.rota || "",
+            atualizado_em: agoraIso,
+            hoje_dia: hojeYmd,
+        };
+
+        if (atualizarUltimo) {
+            next.ultimo_atendimento_em = dataAt;
+
+            // SÃ³ sobrescreve o indicador se este atendimento tiver indicador (ou se ainda nÃ£o houver nenhum no registro)
+            const jaTemVenda = (typeof next.venda_por_dia === 'number') || Boolean(next.venda_por_dia_msg);
+            if (temIndicador || !jaTemVenda) {
+                next.venda_por_dia = novoVendaDia;
+                next.venda_por_dia_msg = novoMsg || null;
+                next.venda_por_dia_base_total = novoBaseTotal;
+                next.venda_por_dia_intervalo_dias = novoDiasEntre;
+                next.venda_por_dia_atualizado_em = ind?.calculadoEm ?? c?.venda_por_dia_atualizado_em ?? agoraIso;
+            }
+        }
+
+        const vendaDia = (typeof next.venda_por_dia === 'number') ? next.venda_por_dia : null;
+        next.estimativa_hoje = _calcularEstimativa(vendaDia, next.ultimo_atendimento_em, hojeYmd);
+
+        return next;
+    });
+}
+
+export function dbEscutarMediaDeVendas(callback) {
+    const refBase = ref(db, 'Media_de_Vendas');
+    onValue(refBase, (snapshot) => {
+        const data = snapshot.val();
+        if (!data) {
+            callback([]);
+            return;
+        }
+        const lista = Object.keys(data).map(key => ({ firebaseUrl: key, ...data[key] }));
+        callback(lista);
+    });
+}
+
+export async function dbListarMediaDeVendas() {
+    try {
+        const snapshot = await get(ref(db, 'Media_de_Vendas'));
+        if (!snapshot.exists()) return [];
+        const data = snapshot.val() || {};
+        return Object.keys(data).map(key => ({
+            firebaseUrl: key,
+            ...data[key]
+        }));
+    } catch (error) {
+        console.error("ERRO AO LISTAR MEDIA_DE_VENDAS:", error);
+        return [];
+    }
+}
+
+export async function dbSincronizarMediaDeVendasComClientes() {
+    const [snapClientes, snapBase, snapAtendimentos] = await Promise.all([
+        get(ref(db, 'clientes')),
+        get(ref(db, 'Media_de_Vendas')),
+        get(ref(db, 'atendimentos'))
+    ]);
+    if (!snapClientes.exists()) return 0;
+
+    const data = snapClientes.val();
+    const baseAtual = snapBase.exists() ? (snapBase.val() || {}) : {};
+    const atendimentos = snapAtendimentos.exists() ? (snapAtendimentos.val() || {}) : {};
+
+    const agoraIso = new Date().toISOString();
+    const hojeYmd = _hojeLocalYYYYMMDD();
+
+    const updates = {};
+    let total = 0;
+
+    const ultimosAtendimentos = {};
+    const ultimosIndicadores = {};
+
+    Object.keys(atendimentos).forEach((id) => {
+        const at = atendimentos[id] || {};
+        const numeroKey = _normalizarNumeroCliente(at?.cliente?.numero);
+        const dataAt = at?.data || null;
+        const ts = Date.parse(dataAt || "");
+        if (!numeroKey || Number.isNaN(ts)) return;
+
+        const atualUltimo = ultimosAtendimentos[numeroKey];
+        if (!atualUltimo || ts > atualUltimo.ts) {
+            ultimosAtendimentos[numeroKey] = { ts, at };
+        }
+
+        const ind = at?.indicadores_venda_dia || null;
+        const temIndicador =
+            (typeof ind?.venda_por_dia === 'number') ||
+            Boolean(ind?.msg) ||
+            (typeof at?.cliente?.venda_por_dia === 'number') ||
+            Boolean(at?.cliente?.venda_por_dia_msg);
+
+        if (temIndicador) {
+            const atualComIndicador = ultimosIndicadores[numeroKey];
+            if (!atualComIndicador || ts > atualComIndicador.ts) {
+                ultimosIndicadores[numeroKey] = { ts, at };
+            }
+        }
+    });
+
+    const chavesClientes = new Set();
+
+    Object.keys(data).forEach(id => {
+        const c = data[id] || {};
+        const key = _normalizarNumeroCliente(c?.numero);
+        if (!key) return;
+        chavesClientes.add(key);
+        total++;
+
+        const reg = baseAtual[key] || {};
+        const ultimoAt = ultimosAtendimentos[key]?.at || null;
+        const ultimoAtComIndicador = ultimosIndicadores[key]?.at || null;
+
+        const origemIndicador = ultimoAtComIndicador || ultimoAt || null;
+        const ind = origemIndicador?.indicadores_venda_dia || null;
+
+        const vendaDia = (typeof ind?.venda_por_dia === 'number')
+            ? ind.venda_por_dia
+            : (typeof origemIndicador?.cliente?.venda_por_dia === 'number'
+                ? origemIndicador.cliente.venda_por_dia
+                : (typeof reg?.venda_por_dia === 'number' ? reg.venda_por_dia : null));
+        const vendaMsg = (ind?.msg ?? origemIndicador?.cliente?.venda_por_dia_msg ?? reg?.venda_por_dia_msg ?? null);
+        const vendaBaseTotal = (typeof ind?.baseTotal === 'number')
+            ? ind.baseTotal
+            : (Number(origemIndicador?.cliente?.venda_por_dia_base_total) || Number(reg?.venda_por_dia_base_total) || 0);
+        const vendaDiasEntre = (typeof ind?.diasEntre === 'number')
+            ? ind.diasEntre
+            : (Number(origemIndicador?.cliente?.venda_por_dia_intervalo_dias) || Number(reg?.venda_por_dia_intervalo_dias) || 0);
+        const ultimo = ultimoAt?.data || reg?.ultimo_atendimento_em || null;
+
+        updates[`Media_de_Vendas/${key}/cliente/id`] = id;
+        updates[`Media_de_Vendas/${key}/cliente/numero`] = c.numero ?? null;
+        updates[`Media_de_Vendas/${key}/cliente/nome`] = c.nome || "";
+        updates[`Media_de_Vendas/${key}/cliente/rota`] = c.rota || "";
+        updates[`Media_de_Vendas/${key}/rota`] = c.rota || "";
+        updates[`Media_de_Vendas/${key}/ultimo_atendimento_em`] = ultimo;
+        updates[`Media_de_Vendas/${key}/venda_por_dia`] = vendaDia;
+        updates[`Media_de_Vendas/${key}/venda_por_dia_msg`] = vendaMsg;
+        updates[`Media_de_Vendas/${key}/venda_por_dia_base_total`] = vendaBaseTotal;
+        updates[`Media_de_Vendas/${key}/venda_por_dia_intervalo_dias`] = vendaDiasEntre;
+        updates[`Media_de_Vendas/${key}/venda_por_dia_atualizado_em`] =
+            ind?.calculadoEm ??
+            origemIndicador?.cliente?.venda_por_dia_atualizado_em ??
+            reg?.venda_por_dia_atualizado_em ??
+            agoraIso;
+        updates[`Media_de_Vendas/${key}/hoje_dia`] = hojeYmd;
+        updates[`Media_de_Vendas/${key}/estimativa_hoje`] = _calcularEstimativa(vendaDia, ultimo, hojeYmd);
+        updates[`Media_de_Vendas/${key}/atualizado_em`] = agoraIso;
+    });
+
+    Object.keys(baseAtual).forEach((key) => {
+        if (!chavesClientes.has(String(key))) {
+            updates[`Media_de_Vendas/${key}`] = null;
+        }
+    });
+
+    if (Object.keys(updates).length > 0) {
+        await update(ref(db), updates);
+        await _atualizarVersaoMediaDeVendas();
+    }
+
+    return total;
+}
+
 /* --- FUNCOES PARA MANUTENCAO --- */
 
 export async function dbSalvarManutencao(manutencao, idExistente = null) {
@@ -543,7 +884,7 @@ export async function dbSalvarManutencao(manutencao, idExistente = null) {
     }
 }
 
-/* --- FUNÇÕES PARA DEPÓSITOS --- */
+/* --- FUNÃ‡Ã•ES PARA DEPÃ“SITOS --- */
 
 export async function dbSalvarDeposito(deposito) {
     try {
@@ -616,43 +957,43 @@ export function dbEscutarManutencoes(callback) {
     });
 }
 
-/* --- FUNÇÕES PARA SELEÇÃO DE ROTAS --- */
+/* --- FUNÃ‡Ã•ES PARA SELEÃ‡ÃƒO DE ROTAS --- */
 
-// Cria ou sobrescreve a sessão ativa de seleção de rotas
+// Cria ou sobrescreve a sessÃ£o ativa de seleÃ§Ã£o de rotas
 export async function dbCriarSessaoRotas(sessao) {
     try {
         await set(ref(db, 'selecao_rotas/ativa'), sessao);
     } catch (error) {
-        console.error("ERRO AO CRIAR SESSÃO DE ROTAS:", error);
+        console.error("ERRO AO CRIAR SESSÃƒO DE ROTAS:", error);
         throw error;
     }
 }
 
-// Escuta em tempo real a sessão ativa de seleção de rotas
+// Escuta em tempo real a sessÃ£o ativa de seleÃ§Ã£o de rotas
 export function dbEscutarSessaoRotas(callback) {
     onValue(ref(db, 'selecao_rotas/ativa'), (snapshot) => {
         callback(snapshot.val());
     });
 }
 
-// Lê uma vez a sessão ativa
+// LÃª uma vez a sessÃ£o ativa
 export async function dbObterSessaoRotas() {
     const snapshot = await get(ref(db, 'selecao_rotas/ativa'));
     return snapshot.val();
 }
 
-// Encerra a sessão ativa de seleção de rotas
+// Encerra a sessÃ£o ativa de seleÃ§Ã£o de rotas
 export async function dbEncerrarSessaoRotas() {
     try {
         await remove(ref(db, 'selecao_rotas/ativa'));
     } catch (error) {
-        console.error("ERRO AO ENCERRAR SESSÃO:", error);
+        console.error("ERRO AO ENCERRAR SESSÃƒO:", error);
         throw error;
     }
 }
 
-// Tenta atomicamente reivindicar a rota de maior valor disponível para o usuário.
-// Retorna { numeroRota, ...dadosRota } se conseguir, ou null se não houver rotas disponíveis.
+// Tenta atomicamente reivindicar a rota de maior valor disponÃ­vel para o usuÃ¡rio.
+// Retorna { numeroRota, ...dadosRota } se conseguir, ou null se nÃ£o houver rotas disponÃ­veis.
 export async function dbSelecionarRota(nomeUsuario) {
     const sessionRef = ref(db, 'selecao_rotas/ativa');
     const snapshot = await get(sessionRef);
@@ -661,7 +1002,7 @@ export async function dbSelecionarRota(nomeUsuario) {
 
     const rotas = sessao.rotas;
 
-    // Ordena as disponíveis pelo maior valor estimado
+    // Ordena as disponÃ­veis pelo maior valor estimado
     const disponiveis = Object.entries(rotas)
         .filter(([_, r]) => !r.selecionada_por)
         .sort(([_, a], [__, b]) => (b.valor_estimado || 0) - (a.valor_estimado || 0));
@@ -674,7 +1015,7 @@ export async function dbSelecionarRota(nomeUsuario) {
     let tentativa = null;
 
     const result = await runTransaction(rotaRef, (dadosAtuais) => {
-        tentativa = null; // reseta a cada invocação do callback (Firebase pode chamar várias vezes)
+        tentativa = null; // reseta a cada invocaÃ§Ã£o do callback (Firebase pode chamar vÃ¡rias vezes)
         if (dadosAtuais && !dadosAtuais.selecionada_por) {
             tentativa = { ...dadosAtuais, numeroRota };
             return {
@@ -683,18 +1024,18 @@ export async function dbSelecionarRota(nomeUsuario) {
                 timestamp_selecao: new Date().toISOString()
             };
         }
-        return undefined; // aborta: rota já foi pega
+        return undefined; // aborta: rota jÃ¡ foi pega
     });
 
     if (result.committed && tentativa) {
         return { ...tentativa, selecionada_por: nomeUsuario };
     }
 
-    // Rota foi pega por outra pessoa no mesmo instante: tenta a próxima
+    // Rota foi pega por outra pessoa no mesmo instante: tenta a prÃ³xima
     return dbSelecionarRota(nomeUsuario);
 }
 
-/* --- FUNÇÕES PARA CHECK-IN DE ROTAS / JUSTIFICATIVAS --- */
+/* --- FUNÃ‡Ã•ES PARA CHECK-IN DE ROTAS / JUSTIFICATIVAS --- */
 
 // Salva (ou substitui) a justificativa de um cliente em uma rota
 export async function dbSalvarJustificativaCheckin(routeNumber, clienteKey, dados) {
@@ -706,7 +1047,7 @@ export async function dbSalvarJustificativaCheckin(routeNumber, clienteKey, dado
     }
 }
 
-// Lê todas as justificativas de uma rota (retorna objeto { clienteKey: {...} })
+// LÃª todas as justificativas de uma rota (retorna objeto { clienteKey: {...} })
 export async function dbListarJustificativasCheckin(routeNumber) {
     try {
         const snap = await get(ref(db, `justificativas_rotas/${routeNumber}`));
@@ -734,7 +1075,7 @@ export function dbEscutarJustificativasCheckin(routeNumber, callback) {
     });
 }
 
-// Limpa todas as seleções da sessão ativa (apenas para testes)
+// Limpa todas as seleÃ§Ãµes da sessÃ£o ativa (apenas para testes)
 export async function dbLimparSelecoes(numerosRota) {
     const updates = {};
     numerosRota.forEach(n => {
@@ -743,3 +1084,4 @@ export async function dbLimparSelecoes(numerosRota) {
     });
     await update(ref(db, '/'), updates);
 }
+

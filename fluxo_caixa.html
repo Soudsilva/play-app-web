@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluxo de Caixa</title>
+    <style>
+        * { box-sizing: border-box; }
+        input, textarea { user-select: text; -webkit-user-select: text; }
+        body { margin:0; font-family:Arial,sans-serif; background:#0f2a66; display:flex; justify-content:center; color:white; min-height:100vh; user-select:none; -webkit-user-select:none; }
+        .app { width:100%; max-width:480px; padding:15px 15px 310px; }
+
+        /* Topo */
+        .topo { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+        .btn-voltar { background:rgba(255,255,255,0.1); border:none; color:white; font-size:20px; width:40px; height:40px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:0.15s; }
+        .btn-voltar:active { background:rgba(255,255,255,0.2); }
+        .titulo-topo { font-size:20px; font-weight:bold; flex:1; text-align:center; }
+
+        /* Card saldo */
+        .card-saldo { background:linear-gradient(135deg,#162f7a,#0c1e56); border:1px solid rgba(255,255,255,0.14); border-radius:20px; padding:22px 20px; margin-bottom:18px; text-align:center; }
+        .saldo-label { font-size:12px; font-weight:bold; text-transform:uppercase; letter-spacing:2px; color:rgba(255,255,255,0.5); margin-bottom:10px; }
+        .saldo-valor { font-size:44px; font-weight:bold; line-height:1; color:#a5d6a7; }
+        .saldo-valor.negativo { color:#ef9a9a; }
+
+        /* Lista */
+        .lista { display:flex; flex-direction:column; gap:9px; }
+        .vazio { text-align:center; padding:50px 20px; color:rgba(255,255,255,0.3); font-size:15px; }
+
+        /* Card movimentação */
+        .mov-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:12px; }
+        .mov-icon { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:21px; flex-shrink:0; }
+        .mov-icon.gasto { background:rgba(239,154,154,0.13); }
+        .mov-icon.entrada { background:rgba(165,214,167,0.13); }
+        .mov-info { flex:1; min-width:0; }
+        .mov-cat { font-size:14px; font-weight:bold; color:white; }
+        .mov-desc { font-size:12px; color:rgba(255,255,255,0.5); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .mov-data { font-size:11px; color:rgba(255,255,255,0.3); margin-top:4px; }
+        .mov-valores { text-align:right; flex-shrink:0; }
+        .mov-valor { font-size:17px; font-weight:bold; }
+        .mov-valor.gasto { color:#ef9a9a; }
+        .mov-valor.entrada { color:#a5d6a7; }
+        .mov-saldo-apos { font-size:11px; color:rgba(255,255,255,0.35); margin-top:3px; }
+
+        /* Form fixo bottom */
+        .form-fixo { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; background:#091845; border-top:1px solid rgba(255,255,255,0.1); border-radius:22px 22px 0 0; padding:16px 16px 28px; z-index:100; box-shadow:0 -8px 32px rgba(0,0,0,0.4); }
+
+        /* Toggle GASTO / ENTRADA */
+        .toggle-tipo { display:flex; gap:8px; margin-bottom:14px; }
+        .toggle-btn { flex:1; padding:12px 8px; border-radius:13px; border:2px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.45); font-size:15px; font-weight:bold; cursor:pointer; transition:0.15s; font-family:Arial,sans-serif; }
+        .toggle-btn.gasto.ativo { background:rgba(239,154,154,0.18); border-color:rgba(239,154,154,0.55); color:#ef9a9a; }
+        .toggle-btn.entrada.ativo { background:rgba(165,214,167,0.18); border-color:rgba(165,214,167,0.55); color:#a5d6a7; }
+
+        /* Categoria */
+        .cat-wrap { display:flex; gap:8px; margin-bottom:13px; }
+        .cat-btn { flex:1; padding:10px 8px; border-radius:12px; border:2px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04); color:rgba(255,255,255,0.5); font-size:14px; font-weight:bold; cursor:pointer; text-align:center; transition:0.15s; font-family:Arial,sans-serif; }
+        .cat-btn.ativo { border-color:rgba(255,235,59,0.65); background:rgba(255,235,59,0.09); color:#ffeb3b; }
+
+        /* Campos */
+        .campo-wrap { margin-bottom:11px; }
+        .campo-label { font-size:11px; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:5px; display:block; }
+        .campo-input { width:100%; padding:12px 14px; border-radius:12px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); color:white; font-size:18px; font-weight:bold; outline:none; font-family:Arial,sans-serif; transition:border-color 0.15s; }
+        .campo-input::placeholder { color:rgba(255,255,255,0.22); font-size:14px; font-weight:normal; }
+        .campo-input:focus { border-color:rgba(255,235,59,0.5); }
+        #inputDesc { font-size:15px; font-weight:normal; }
+
+        /* Botão registrar */
+        .btn-registrar { width:100%; padding:14px; border-radius:14px; background:#ffeb3b; color:#0b2256; font-size:17px; font-weight:bold; border:none; cursor:pointer; transition:0.15s; font-family:Arial,sans-serif; margin-top:4px; }
+        .btn-registrar:disabled { opacity:0.35; cursor:default; }
+        .btn-registrar:active:not(:disabled) { transform:translateY(1px); background:#f5e233; }
+
+        /* Toast */
+        .toast { position:fixed; top:18px; left:50%; transform:translateX(-50%); background:#1e3a8a; color:white; padding:10px 22px; border-radius:999px; font-size:14px; font-weight:bold; z-index:999; box-shadow:0 4px 18px rgba(0,0,0,0.4); transition:opacity 0.3s; white-space:nowrap; pointer-events:none; }
+        .toast.erro { background:#7f1d1d; }
+    </style>
+</head>
+<body style="visibility:hidden;">
+
+<div class="app">
+    <div class="topo">
+        <button class="btn-voltar" onclick="history.back()">&#8592;</button>
+        <div class="titulo-topo">&#128184; Fluxo de Caixa</div>
+        <div style="width:40px;"></div>
+    </div>
+
+    <!-- Saldo atual -->
+    <div class="card-saldo">
+        <div class="saldo-label">Saldo Atual</div>
+        <div class="saldo-valor" id="saldoAtual">R$ 0,00</div>
+    </div>
+
+    <!-- Lista de movimentações -->
+    <div class="lista" id="listaMov">
+        <div class="vazio" id="msgVazio">Nenhuma movimentação ainda.</div>
+    </div>
+</div>
+
+<!-- Form fixo no bottom -->
+<div class="form-fixo">
+    <!-- Toggle tipo -->
+    <div class="toggle-tipo">
+        <button class="toggle-btn gasto ativo" id="btnGasto" onclick="setTipo('gasto')">&#11015;&#65039; Gasto</button>
+        <button class="toggle-btn entrada" id="btnEntrada" onclick="setTipo('entrada')">&#11014;&#65039; Entrada</button>
+    </div>
+
+    <!-- Categoria (visível só para gasto) -->
+    <div class="cat-wrap" id="catWrap">
+        <button class="cat-btn ativo" id="catCombustivel" onclick="setCategoria('combustivel')">&#9981; Combustível</button>
+        <button class="cat-btn" id="catOutros" onclick="setCategoria('outros')">&#128230; Outros</button>
+    </div>
+
+    <!-- Campos -->
+    <div class="campo-wrap">
+        <span class="campo-label">Valor (R$)</span>
+        <input class="campo-input" id="inputValor" type="number" inputmode="decimal" placeholder="0,00" min="0.01" step="0.01">
+    </div>
+    <div class="campo-wrap">
+        <span class="campo-label" id="labelDesc">Descrição (opcional)</span>
+        <input class="campo-input" id="inputDesc" type="text" placeholder="Detalhes...">
+    </div>
+
+    <button class="btn-registrar" id="btnRegistrar" onclick="registrar()">Registrar</button>
+</div>
+
+<script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { app } from './database.js';
+
+    const db = getDatabase(app);
+
+    let tipoAtual = 'gasto';
+    let catAtual = 'combustivel';
+    let movimentacoes = [];
+    let movRef;
+
+    await verificarAutenticacao();
+
+    const nomeUsuario = localStorage.getItem('usuarioLogado') || '';
+    const usuarioKey = nomeUsuario.replace(/[.#$/[\]]/g, '_');
+    movRef = ref(db, `fluxo_caixa/${usuarioKey}/movimentacoes`);
+
+    // Expõe funções para onclick inline
+    window.setTipo = setTipo;
+    window.setCategoria = setCategoria;
+    window.registrar = registrar;
+
+    function toast(msg, erro = false) {
+        const el = document.createElement('div');
+        el.className = 'toast' + (erro ? ' erro' : '');
+        el.textContent = msg;
+        document.body.appendChild(el);
+        setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 2200);
+    }
+
+    function setTipo(tipo) {
+        tipoAtual = tipo;
+        document.getElementById('btnGasto').classList.toggle('ativo', tipo === 'gasto');
+        document.getElementById('btnEntrada').classList.toggle('ativo', tipo === 'entrada');
+        document.getElementById('catWrap').style.display = tipo === 'gasto' ? 'flex' : 'none';
+
+        const labelDesc = document.getElementById('labelDesc');
+        const inputDesc = document.getElementById('inputDesc');
+        if (tipo === 'entrada') {
+            labelDesc.textContent = 'De quem / de onde';
+            inputDesc.placeholder = 'Ex: João, venda do dia...';
+        } else {
+            labelDesc.textContent = 'Descrição (opcional)';
+            inputDesc.placeholder = 'Detalhes...';
+        }
+    }
+
+    function setCategoria(cat) {
+        catAtual = cat;
+        document.getElementById('catCombustivel').classList.toggle('ativo', cat === 'combustivel');
+        document.getElementById('catOutros').classList.toggle('ativo', cat === 'outros');
+    }
+
+    function formatarMoeda(valor) {
+        return 'R$ ' + Math.abs(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function atualizarSaldo() {
+        let saldo = 0;
+        for (const m of movimentacoes) {
+            saldo += m.tipo === 'entrada' ? Number(m.valor) : -Number(m.valor);
+        }
+        const el = document.getElementById('saldoAtual');
+        el.textContent = formatarMoeda(saldo);
+        el.className = 'saldo-valor' + (saldo < 0 ? ' negativo' : '');
+        return saldo;
+    }
+
+    function renderLista() {
+        const lista = document.getElementById('listaMov');
+        const vazio = document.getElementById('msgVazio');
+
+        if (movimentacoes.length === 0) {
+            lista.innerHTML = '';
+            vazio.style.display = 'block';
+            lista.appendChild(vazio);
+            return;
+        }
+
+        vazio.style.display = 'none';
+
+        // Calcula saldo corrido na ordem cronológica
+        const ordenadas = [...movimentacoes].sort((a, b) => (a.criado_em || 0) - (b.criado_em || 0));
+        let saldoCorrido = 0;
+        const saldoPorKey = {};
+        for (const m of ordenadas) {
+            saldoCorrido += m.tipo === 'entrada' ? Number(m.valor) : -Number(m.valor);
+            saldoPorKey[m.firebaseKey] = saldoCorrido;
+        }
+
+        // Exibe mais recente primeiro
+        const invertidas = [...ordenadas].reverse();
+
+        lista.innerHTML = '';
+        for (const m of invertidas) {
+            const saldoApos = saldoPorKey[m.firebaseKey];
+            const isGasto = m.tipo === 'gasto';
+
+            const icone = isGasto
+                ? (m.categoria === 'combustivel' ? '&#9981;' : '&#128230;')
+                : '&#128176;';
+            const catLabel = isGasto
+                ? (m.categoria === 'combustivel' ? 'Combustível' : 'Outros')
+                : 'Entrada';
+
+            let dataStr = '';
+            if (m.data) {
+                const [y, mo, d] = m.data.split('-');
+                dataStr = `${d}/${mo}/${y}`;
+            }
+
+            const card = document.createElement('div');
+            card.className = 'mov-card';
+            card.innerHTML = `
+                <div class="mov-icon ${m.tipo}">${icone}</div>
+                <div class="mov-info">
+                    <div class="mov-cat">${catLabel}</div>
+                    ${m.descricao ? `<div class="mov-desc">${m.descricao}</div>` : ''}
+                    <div class="mov-data">${dataStr}</div>
+                </div>
+                <div class="mov-valores">
+                    <div class="mov-valor ${m.tipo}">${isGasto ? '-' : '+'}${formatarMoeda(m.valor)}</div>
+                    <div class="mov-saldo-apos">saldo ${formatarMoeda(saldoApos)}</div>
+                </div>
+            `;
+            lista.appendChild(card);
+        }
+    }
+
+    // Escuta em tempo real
+    onValue(movRef, (snapshot) => {
+        const data = snapshot.val();
+        movimentacoes = data
+            ? Object.keys(data).map(key => ({ firebaseKey: key, ...data[key] }))
+            : [];
+        atualizarSaldo();
+        renderLista();
+    });
+
+    async function registrar() {
+        const valorRaw = parseFloat(document.getElementById('inputValor').value);
+        if (!valorRaw || valorRaw <= 0) {
+            toast('Informe um valor válido.', true);
+            return;
+        }
+
+        const desc = document.getElementById('inputDesc').value.trim();
+        const hoje = new Date().toISOString().split('T')[0];
+
+        const movimento = {
+            tipo: tipoAtual,
+            valor: valorRaw,
+            descricao: desc,
+            data: hoje,
+            criado_em: Date.now()
+        };
+
+        if (tipoAtual === 'gasto') {
+            movimento.categoria = catAtual;
+        }
+
+        const btn = document.getElementById('btnRegistrar');
+        btn.disabled = true;
+        try {
+            await push(movRef, movimento);
+            document.getElementById('inputValor').value = '';
+            document.getElementById('inputDesc').value = '';
+            toast('Registrado!');
+        } catch (e) {
+            toast('Erro ao salvar. Tente novamente.', true);
+            console.error(e);
+        }
+        btn.disabled = false;
+    }
+</script>
+</body>
+</html>

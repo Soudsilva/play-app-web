@@ -1,0 +1,712 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sa&uacute;de de Vendas</title>
+    <style>
+        body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; }
+        .app { width:100%; max-width:700px; padding:15px; box-sizing:border-box; min-height: 100vh; padding-bottom: 70px; }
+
+        .topo { display:flex; align-items:center; justify-content:center; margin-bottom: 14px; position: relative; min-height: 45px; }
+        .titulo { font-size: 22px; font-weight: 900; text-align:center; }
+        .btn-home { background: rgba(255,255,255,0.1); padding: 8px; border-radius: 50%; cursor: pointer; display:flex; position:absolute; right:0; }
+        .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
+
+        .barra { position: sticky; top: 0; z-index: 100; background:#042d86; padding: 10px 0 12px; margin-bottom: 12px; }
+        .linha-barra { display:flex; gap: 10px; align-items: center; }
+        .card-controle {
+            flex: 1;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 14px;
+            padding: 10px 12px;
+        }
+        .card-controle.periodo {
+            flex: 0 0 62px;
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+        .card-controle.ordenar {
+            flex: 0 0 62px;
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+        .card-controle.periodo select {
+            padding-left: 8px;
+            padding-right: 8px;
+            text-align: center;
+        }
+        .card-controle.ordenar select {
+            padding-left: 6px;
+            padding-right: 6px;
+            text-align: center;
+        }
+        .card-controle.buscar { flex: 1.35; }
+        .busca-topo {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .modo-busca-row {
+            display: flex;
+            gap: 6px;
+        }
+        .btn-modo-busca {
+            flex: 1;
+            border: 1px solid rgba(255,255,255,0.22);
+            background: rgba(255,255,255,0.10);
+            color: white;
+            border-radius: 10px;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.15s ease;
+        }
+        .btn-modo-busca.ativo {
+            background: rgba(255,235,59,0.18);
+            border-color: rgba(255,235,59,0.45);
+            color: #ffeb3b;
+        }
+        .busca-campo[hidden] { display: none !important; }
+        .lbl { font-size: 11px; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
+        input[type="date"], input[type="text"], select {
+            width: 100%;
+            background: rgba(0,0,0,0.18);
+            border: 1px solid rgba(255,255,255,0.22);
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: white;
+            outline: none;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+        input::placeholder { color: rgba(255,255,255,0.45); }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.85; }
+        select option { color: #111; }
+
+        .btn-sync {
+            background: #ffeb3b;
+            color: #042d86;
+            border: none;
+            border-radius: 12px;
+            padding: 11px 12px;
+            font-weight: 900;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-sync:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .status { font-size: 12px; opacity: 0.8; margin: 8px 0 0; }
+
+        .lista { display:flex; flex-direction: column; gap: 12px; }
+        .card {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .card-top { display:flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+        .cliente { font-size: 18px; font-weight: 900; }
+        .cliente small { font-size: 12px; opacity: 0.8; font-weight: 700; }
+        .rota { font-size: 12px; opacity: 0.9; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.12); padding: 4px 8px; border-radius: 999px; white-space: nowrap; }
+
+        .estimativa {
+            margin-top: 10px;
+            background: rgba(0,0,0,0.22);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            padding: 10px 12px;
+            display:flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .estimativa .lbl-est { font-size: 12px; opacity: 0.85; }
+        .estimativa .val { font-size: 22px; font-weight: 1000; color: #4caf50; }
+
+        .grid { margin-top: 10px; display:grid; grid-template-columns: 1fr; gap: 8px; }
+        .linha { display:flex; justify-content: space-between; gap: 10px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px; }
+        .linha span { opacity: 0.8; }
+        .linha strong { color:white; }
+        .resumo-venda {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px 12px;
+            align-items: center;
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 12px;
+        }
+        .resumo-venda .meta {
+            font-size: 12px;
+            opacity: 0.82;
+            text-align: center;
+        }
+        .resumo-venda .meta strong {
+            color: white;
+            font-size: 14px;
+            margin-left: 4px;
+        }
+        .badge-venda-dia {
+            background: rgba(76,175,80,0.16);
+            border: 1px solid rgba(76,175,80,0.34);
+            color: #b9f6ca;
+            border-radius: 999px;
+            padding: 7px 12px;
+            font-size: 14px;
+            font-weight: 900;
+            white-space: nowrap;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+        .badge-venda-dia.abaixo-media {
+            background: rgba(255, 152, 0, 0.16);
+            border-color: rgba(255, 193, 7, 0.34);
+            color: #ffe082;
+        }
+
+        .vazia { text-align:center; opacity: 0.65; margin-top: 45px; background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.12); padding: 18px; border-radius: 14px; }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="topo">
+        <div class="titulo">Sa&uacute;de de Vendas</div>
+        <div class="btn-home" onclick="window.location.href='index.html'">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
+        </div>
+    </div>
+
+    <div class="barra">
+        <div class="linha-barra">
+            <div class="card-controle periodo">
+                <div class="lbl" style="text-align:center;">Per&iacute;odo</div>
+                <select id="periodoDias">
+                    <option value="15">15</option>
+                    <option value="30">30</option>
+                </select>
+            </div>
+            <div class="card-controle ordenar">
+                <div class="lbl" style="text-align:center;">Ordem</div>
+                <select id="ordenacao">
+                    <option value="valor_menor">- &#128181;</option>
+                    <option value="valor_maior">+ &#128181;</option>
+                </select>
+            </div>
+            <div class="card-controle buscar">
+                <div class="busca-topo">
+                    <div class="lbl" id="lblEscolhaBusca" style="text-align:center; margin-bottom:0;">Escolha</div>
+                    <div class="modo-busca-row">
+                        <button type="button" class="btn-modo-busca" id="btnModoCliente">Cliente</button>
+                        <button type="button" class="btn-modo-busca" id="btnModoMaquina">Máquina</button>
+                    </div>
+                </div>
+                <input class="busca-campo" type="text" id="busca" placeholder="Nome, n&ordm; ou rota">
+                <select class="busca-campo" id="buscaMaquina" hidden>
+                    <option value="">Selecione a m&aacute;quina</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div id="lista" class="lista"></div>
+    <div id="vazia" class="vazia" style="display:none;"></div>
+</div>
+
+<script src="assets/js/play-dialogs.js"></script>
+<script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    import { dbEscutarAtendimentos, dbEscutarClientes, dbEscutarColaboradores, dbEscutarMediaDeVendas } from './database.js';
+
+    verificarAutenticacao();
+
+    const nomeLogado = localStorage.getItem('usuarioLogado') || '';
+    let colaboradores = [];
+    let autorizado = false;
+    let listaBase = [];
+    let listaAtendimentos = [];
+    let mapaClientesPorId = new Map();
+    let mapaClientesPorNumero = new Map();
+    let termo = '';
+    let modoBusca = '';
+    let termoMaquina = '';
+    let modoOrdenacao = 'numero_menor';
+
+    const elLista = document.getElementById('lista');
+    const elVazia = document.getElementById('vazia');
+    const elBusca = document.getElementById('busca');
+    const elBuscaMaquina = document.getElementById('buscaMaquina');
+    const elLblEscolhaBusca = document.getElementById('lblEscolhaBusca');
+    const elBtnModoCliente = document.getElementById('btnModoCliente');
+    const elBtnModoMaquina = document.getElementById('btnModoMaquina');
+    const elPeriodo = document.getElementById('periodoDias');
+    const elOrdenacao = document.getElementById('ordenacao');
+    function normalizar(txt) {
+        return String(txt || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim();
+    }
+
+    function hojeLocalYYYYMMDD() {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+
+    function somarDiasYMD(ymdBase, dias) {
+        const base = new Date(`${ymdBase}T00:00:00`);
+        if (Number.isNaN(base.getTime())) return ymdBase;
+        base.setDate(base.getDate() + Number(dias || 0));
+        const y = base.getFullYear();
+        const m = String(base.getMonth() + 1).padStart(2, '0');
+        const day = String(base.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+
+    function inicioDiaLocalFromIso(iso) {
+        if (!iso) return null;
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return null;
+        d.setHours(0,0,0,0);
+        return d;
+    }
+
+    function inicioDiaLocalFromYMD(ymd) {
+        if (!ymd) return null;
+        const d = new Date(`${ymd}T00:00:00`);
+        if (Number.isNaN(d.getTime())) return null;
+        d.setHours(0,0,0,0);
+        return d;
+    }
+
+    function diasEntre(isoUltimo, ymdAlvo) {
+        const dUlt = inicioDiaLocalFromIso(isoUltimo);
+        const dAlvo = inicioDiaLocalFromYMD(ymdAlvo);
+        if (!dUlt || !dAlvo) return null;
+        const diff = Math.round((dAlvo - dUlt) / 86400000);
+        return Math.max(0, diff);
+    }
+
+    function fimDiaLocalFromYMD(ymd) {
+        if (!ymd) return null;
+        const d = new Date(`${ymd}T23:59:59`);
+        if (Number.isNaN(d.getTime())) return null;
+        return d;
+    }
+
+    function fmtDataHora(iso) {
+        if (!iso) return '&mdash;';
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return '&mdash;';
+        return d.toLocaleString('pt-BR');
+    }
+
+    function fmtData(iso) {
+        if (!iso) return '&mdash;';
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return '&mdash;';
+        return d.toLocaleDateString('pt-BR');
+    }
+
+    function fmtMoeda(v) {
+        return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    function perfilPorNome(nome) {
+        return colaboradores.find(c => c.nome === nome)?.nivel_completo || '';
+    }
+
+    function extrairNomesMaquinas(cliente) {
+        const bruto = String(cliente?.equip || '').trim();
+        if (!bruto) return [];
+
+        return bruto
+            .split(',')
+            .map(item => String(item || '').trim())
+            .map(item => item.replace(/\s*\(([^)]+)\)\s*$/, '').trim())
+            .map(item => item.replace(/\s*\[Pix:\s*([^\]]+)\]\s*$/i, '').trim())
+            .map(item => item.replace(/\s+/g, ' ').trim())
+            .filter(Boolean);
+    }
+
+    function atualizarOpcoesMaquina() {
+        const nomes = new Set();
+        Array.from(mapaClientesPorId.values()).forEach(cliente => {
+            extrairNomesMaquinas(cliente).forEach(nome => nomes.add(nome));
+        });
+
+        const listaOrdenada = Array.from(nomes).sort((a, b) => normalizar(a).localeCompare(normalizar(b)));
+        const valorAtual = elBuscaMaquina.value;
+        elBuscaMaquina.innerHTML = '<option value="">Selecione a m&aacute;quina</option>';
+        listaOrdenada.forEach(nome => {
+            const option = document.createElement('option');
+            option.value = nome;
+            option.textContent = nome;
+            elBuscaMaquina.appendChild(option);
+        });
+        if (listaOrdenada.includes(valorAtual)) {
+            elBuscaMaquina.value = valorAtual;
+        } else {
+            elBuscaMaquina.value = '';
+            termoMaquina = '';
+        }
+    }
+
+    function atualizarModoBuscaUI() {
+        const clienteAtivo = modoBusca === 'cliente';
+        const maquinaAtiva = modoBusca === 'maquina';
+        elBtnModoCliente.classList.toggle('ativo', clienteAtivo);
+        elBtnModoMaquina.classList.toggle('ativo', maquinaAtiva);
+        elLblEscolhaBusca.hidden = !!modoBusca;
+        elBusca.hidden = !clienteAtivo;
+        elBuscaMaquina.hidden = !maquinaAtiva;
+        if (clienteAtivo) {
+            elBusca.placeholder = 'Nome, n\u00ba ou rota';
+        }
+    }
+
+    function atualizarMapasClientes(lista) {
+        mapaClientesPorId = new Map();
+        mapaClientesPorNumero = new Map();
+
+        (lista || []).forEach(cliente => {
+            const id = String(cliente?.firebaseUrl || '').trim();
+            const numero = String(cliente?.numero ?? '').trim();
+            if (id) mapaClientesPorId.set(id, cliente);
+            if (numero) mapaClientesPorNumero.set(numero, cliente);
+        });
+        atualizarOpcoesMaquina();
+    }
+
+    function obterClienteFonte(reg) {
+        const id = String(reg?.cliente?.id || '').trim();
+        if (id && mapaClientesPorId.has(id)) return mapaClientesPorId.get(id);
+
+        const numero = String(reg?.cliente?.numero ?? reg?.cliente_numero ?? '').trim();
+        if (numero && mapaClientesPorNumero.has(numero)) return mapaClientesPorNumero.get(numero);
+
+        return reg?.cliente || {};
+    }
+
+    function obterListaBaseCompleta() {
+        if (mapaClientesPorId.size === 0) return Array.isArray(listaBase) ? listaBase : [];
+
+        const porId = new Map();
+        const porNumero = new Map();
+
+        (Array.isArray(listaBase) ? listaBase : []).forEach(reg => {
+            const id = String(reg?.cliente?.id || '').trim();
+            const numero = String(reg?.cliente?.numero ?? reg?.cliente_numero ?? '').trim();
+            if (id) porId.set(id, reg);
+            if (numero) porNumero.set(numero, reg);
+        });
+
+        return Array.from(mapaClientesPorId.values()).map(cliente => {
+            const id = String(cliente?.firebaseUrl || '').trim();
+            const numero = String(cliente?.numero ?? '').trim();
+            const existente = (id && porId.get(id)) || (numero && porNumero.get(numero));
+            if (existente) return existente;
+
+            return {
+                cliente: {
+                    id,
+                    numero: cliente?.numero ?? '',
+                    nome: cliente?.nome || '',
+                    rota: cliente?.rota || ''
+                },
+                cliente_numero: cliente?.numero ?? '',
+                rota: cliente?.rota || '',
+                atualizado_em: null,
+                ultimo_atendimento_em: null
+            };
+        });
+    }
+
+    function checarAutorizacao() {
+        const perfil = perfilPorNome(nomeLogado);
+        return String(perfil || '').includes('gestao') || String(perfil || '').includes('atendimento_2');
+    }
+
+    function calcularIndicadorHistoricoCliente(numeroCliente, ymdAlvo) {
+        const numero = String(numeroCliente ?? '').trim();
+        if (!numero) {
+            return { venda_por_dia: null, msg: 'N\u00e3o calculado', baseTotal: 0, diasEntre: 0, ultimoAtendimentoEm: null, usados: [] };
+        }
+
+        const dataLimite = fimDiaLocalFromYMD(ymdAlvo);
+        const limiteTs = dataLimite ? dataLimite.getTime() : null;
+
+        const validos = listaAtendimentos
+            .filter(item => String(item?.cliente?.numero ?? '').trim() === numero)
+            .filter(item => {
+                const total = Number(item?.financeiro?.totalGeral) || 0;
+                const data = Date.parse(item?.data || '');
+                if (total <= 0 || Number.isNaN(data)) return false;
+                if (limiteTs === null) return true;
+                return data <= limiteTs;
+            })
+            .map(item => ({
+                data: item.data,
+                totalGeral: Number(item?.financeiro?.totalGeral) || 0,
+                saldoFinal: Number(item?.financeiro?.saldoFinal) || 0
+            }))
+            .sort((a, b) => Date.parse(b.data) - Date.parse(a.data));
+
+        const usadosBase = validos.slice(0, 3);
+        const usados = usadosBase.length >= 3 ? usadosBase : usadosBase.slice(0, 2);
+        const ultimoAtendimentoEm = validos[0]?.data || null;
+
+        if (usados.length < 2) {
+            return {
+                venda_por_dia: null,
+                msg: 'aguardando mais atendimentos para a media por dia',
+                baseTotal: usados.length === 1 ? (Number(usados[0]?.totalGeral) || 0) : 0,
+                diasEntre: 0,
+                ultimoAtendimentoEm,
+                usados
+            };
+        }
+
+        const baseTotal = usados.reduce((soma, item) => soma + (Number(item.totalGeral) || 0), 0);
+        const maisRecente = new Date(usados[0].data);
+        const maisAntigo = new Date(usados[usados.length - 1].data);
+        maisRecente.setHours(0, 0, 0, 0);
+        maisAntigo.setHours(0, 0, 0, 0);
+        const diasEntreCalc = Math.abs(Math.round((maisRecente - maisAntigo) / 86400000));
+        const dias = diasEntreCalc > 0 ? diasEntreCalc : 1;
+        const vendaPorDia = Math.round(((baseTotal / dias) + Number.EPSILON) * 100) / 100;
+
+        return {
+            venda_por_dia: vendaPorDia,
+            msg: null,
+            baseTotal,
+            diasEntre: diasEntreCalc,
+            ultimoAtendimentoEm,
+            usados
+        };
+    }
+
+    function ordenarLista(lista, ymdAlvo) {
+        return [...lista].sort((a, b) => {
+            const clienteA = obterClienteFonte(a);
+            const clienteB = obterClienteFonte(b);
+            const numeroA = Number(clienteA?.numero ?? a?.cliente_numero ?? Number.MAX_SAFE_INTEGER);
+            const numeroB = Number(clienteB?.numero ?? b?.cliente_numero ?? Number.MAX_SAFE_INTEGER);
+            const aEhNumero = Number.isFinite(numeroA);
+            const bEhNumero = Number.isFinite(numeroB);
+
+            const ea = calcularEstimativaHistorica(a, ymdAlvo)?.estimativa ?? -1;
+            const eb = calcularEstimativaHistorica(b, ymdAlvo)?.estimativa ?? -1;
+
+            if (modoOrdenacao === 'numero_menor') {
+                if (aEhNumero && bEhNumero && numeroA !== numeroB) return numeroA - numeroB;
+                if (aEhNumero && !bEhNumero) return -1;
+                if (!aEhNumero && bEhNumero) return 1;
+                if (eb !== ea) return eb - ea;
+            }
+
+            if (modoOrdenacao === 'numero_maior') {
+                if (aEhNumero && bEhNumero && numeroA !== numeroB) return numeroB - numeroA;
+                if (aEhNumero && !bEhNumero) return -1;
+                if (!aEhNumero && bEhNumero) return 1;
+                if (eb !== ea) return eb - ea;
+            }
+
+            if (modoOrdenacao === 'valor_maior' && eb !== ea) return eb - ea;
+            if (modoOrdenacao === 'valor_menor' && eb !== ea) return ea - eb;
+
+            const na = normalizar(clienteA?.nome || '');
+            const nb = normalizar(clienteB?.nome || '');
+            return na.localeCompare(nb);
+        });
+    }
+
+    function calcularEstimativaHistorica(reg, ymdAlvo) {
+        const clienteNumero = reg?.cliente?.numero ?? reg?.cliente_numero ?? null;
+        const hist = calcularIndicadorHistoricoCliente(clienteNumero, ymdAlvo);
+        const vendaDia = (typeof hist?.venda_por_dia === 'number') ? hist.venda_por_dia : null;
+        const msg = hist?.msg || null;
+        const ultimo = hist?.ultimoAtendimentoEm || null;
+        const dias = diasEntre(ultimo, ymdAlvo);
+        if (msg) return { msg, dias, estimativa: null, vendaDia, ultimoAtendimentoEm: ultimo };
+        if (vendaDia === null || !ultimo || dias === null) return { msg: 'N\u00e3o calculado', dias, estimativa: null, vendaDia, ultimoAtendimentoEm: ultimo };
+        const est = Math.round(((vendaDia * dias) + Number.EPSILON) * 100) / 100;
+        return { msg: null, dias, estimativa: est, vendaDia, ultimoAtendimentoEm: ultimo };
+    }
+
+    function render() {
+        if (!navigator.onLine) {
+            elLista.innerHTML = '';
+            elVazia.style.display = 'block';
+            elVazia.innerText = 'Sem internet — esta tela depende de dados em tempo real.';
+            return;
+        }
+
+        const diasProjetados = Number(elPeriodo.value || 15);
+        const ymdHoje = hojeLocalYYYYMMDD();
+        const ymd = somarDiasYMD(ymdHoje, diasProjetados);
+        const filtradaBusca = obterListaBaseCompleta().filter(reg => {
+            const cliente = obterClienteFonte(reg);
+            if (modoBusca === 'maquina') {
+                if (!termoMaquina) return true;
+                const maquinas = extrairNomesMaquinas(cliente);
+                return maquinas.some(nome => normalizar(nome) === normalizar(termoMaquina));
+            }
+            if (!termo) return true;
+            const campos = [
+                cliente.nome,
+                cliente.numero,
+                cliente.rota,
+                reg?.rota,
+                reg?.ultimo_atendimento_em ? fmtDataHora(reg.ultimo_atendimento_em) : ''
+            ];
+            return campos.some(c => normalizar(c).includes(termo));
+        });
+
+        const filtrada = filtradaBusca.filter(reg => {
+            const calc = calcularEstimativaHistorica(reg, ymd);
+            return typeof calc?.vendaDia === 'number' && calc.vendaDia >= 1;
+        });
+
+        const listaOrdenada = ordenarLista(filtrada, ymd);
+
+        if (listaOrdenada.length === 0) {
+            elLista.innerHTML = '';
+            elVazia.style.display = 'block';
+            elVazia.innerText = termo ? 'Nenhum cliente encontrado para este filtro.' : 'Nenhum registro dispon\u00edvel.';
+            return;
+        }
+
+        elVazia.style.display = 'none';
+        elLista.innerHTML = '';
+        const listaCalculada = listaOrdenada.map(reg => {
+            const calc = calcularEstimativaHistorica(reg, ymd);
+            return { reg, calc };
+        });
+        const vendasDiaValidas = listaCalculada
+            .map(item => item.calc?.vendaDia)
+            .filter(valor => typeof valor === 'number' && Number.isFinite(valor));
+        const mediaVendaDia = vendasDiaValidas.length
+            ? (vendasDiaValidas.reduce((soma, valor) => soma + valor, 0) / vendasDiaValidas.length)
+            : null;
+
+        listaCalculada.forEach(({ reg, calc }) => {
+            const cliente = obterClienteFonte(reg);
+            const numero = cliente.numero ?? reg?.cliente_numero ?? '&mdash;';
+            const nome = cliente.nome || '&mdash;';
+            const rota = cliente.rota || reg?.rota || '&mdash;';
+            const ultimoTxt = fmtData(calc?.ultimoAtendimentoEm);
+            const vendaDiaTxt = (typeof calc?.vendaDia === 'number') ? fmtMoeda(calc.vendaDia) : '&mdash;';
+            const estTxt = (typeof calc?.estimativa === 'number') ? fmtMoeda(calc.estimativa) : '&mdash;';
+            const abaixoDaMedia = mediaVendaDia !== null && typeof calc?.vendaDia === 'number' && calc.vendaDia < mediaVendaDia;
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <div class="card-top">
+                    <div class="cliente">N&ordm; ${numero} - ${nome} <small></small></div>
+                    <div class="rota">Rota: ${rota}</div>
+                </div>
+
+                <div class="estimativa">
+                    <div>
+                        <div class="lbl-est">Estimativa ${diasProjetados} dias</div>
+                        ${calc?.msg ? `<div style="margin-top:4px; font-size:12px; opacity:0.8;">${calc.msg}</div>` : ``}
+                    </div>
+                    <div class="val">${estTxt}</div>
+                </div>
+
+                <div class="resumo-venda">
+                    <div class="meta">&Uacute;ltimo atendimento <strong>${ultimoTxt}</strong></div>
+                    <div class="badge-venda-dia${abaixoDaMedia ? ' abaixo-media' : ''}">Venda/dia ${vendaDiaTxt}</div>
+                </div>
+            `;
+            elLista.appendChild(card);
+        });
+    }
+
+    elBusca.addEventListener('input', () => {
+        termo = normalizar(elBusca.value);
+        render();
+    });
+    elBuscaMaquina.addEventListener('change', () => {
+        termoMaquina = elBuscaMaquina.value || '';
+        render();
+    });
+    elBtnModoCliente.addEventListener('click', () => {
+        modoBusca = 'cliente';
+        termoMaquina = '';
+        elBuscaMaquina.value = '';
+        atualizarModoBuscaUI();
+        render();
+        setTimeout(() => elBusca.focus(), 0);
+    });
+    elBtnModoMaquina.addEventListener('click', () => {
+        modoBusca = 'maquina';
+        termo = '';
+        elBusca.value = '';
+        atualizarModoBuscaUI();
+        render();
+        setTimeout(() => elBuscaMaquina.focus(), 0);
+    });
+    elPeriodo.addEventListener('change', render);
+    elOrdenacao.addEventListener('change', () => {
+        modoOrdenacao = elOrdenacao.value || 'numero_menor';
+        render();
+    });
+
+    // Default: próximos 15 dias
+    atualizarModoBuscaUI();
+    elPeriodo.value = '15';
+    elOrdenacao.value = 'numero_menor';
+
+    dbEscutarColaboradores((lista) => {
+        colaboradores = lista || [];
+        autorizado = checarAutorizacao();
+        if (!nomeLogado) {
+            window.playAlert('Nenhum usu\u00e1rio logado. Volte ao Menu Inicial e selecione seu nome.').then(() => {
+                window.location.replace('index.html');
+            });
+            return;
+        }
+        if (!autorizado) {
+            window.playAlert('Acesso restrito (Gest\u00e3o e Atendimento N\u00edvel 2).').then(() => {
+                window.location.replace('index.html');
+            });
+            return;
+        }
+    });
+
+    dbEscutarMediaDeVendas((lista) => {
+        listaBase = Array.isArray(lista) ? lista : [];
+        render();
+    });
+
+    dbEscutarClientes((lista) => {
+        atualizarMapasClientes(Array.isArray(lista) ? lista : []);
+        render();
+    });
+
+    dbEscutarAtendimentos((lista) => {
+        listaAtendimentos = Array.isArray(lista) ? lista : [];
+        render();
+    });
+
+    window.addEventListener('online', render);
+    window.addEventListener('offline', render);
+</script>
+</body>
+</html>
+
+

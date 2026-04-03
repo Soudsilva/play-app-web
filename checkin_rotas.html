@@ -710,7 +710,11 @@ function classificarClientes(clientes, routeNumber) {
         // Atendido = este usuário atendeu este cliente nos últimos 2 dias
         const foiAtendido = todosAtendimentos.some(a => {
             if (!a.cliente) return false;
-            const mesmoCliente = a.cliente.id === c.firebaseUrl || a.cliente.nome === c.nome;
+            const numeroAtendimento = String(a?.cliente?.numero ?? '').trim();
+            const numeroCliente = String(c?.numero ?? '').trim();
+            const mesmoCliente =
+                a.cliente.id === c.firebaseUrl ||
+                (numeroAtendimento && numeroCliente && numeroAtendimento === numeroCliente);
             if (!mesmoCliente) return false;
             const mesmoUsuario = (a.atendente || '').toLowerCase() === usuarioAtual.toLowerCase();
             const dentroJanela = (agora - new Date(a.data).getTime()) <= DOIS_DIAS;

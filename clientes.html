@@ -6,7 +6,6 @@
 <title>Lista de Clientes</title>
 <style>
     * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-    .copiar { -webkit-user-select: text !important; user-select: text !important; }
 
     body {
         margin: 0;
@@ -131,6 +130,30 @@
 
     .search-flutuante.visivel {
         top: 14px;
+    }
+
+    .aviso-atualizacao {
+        position: fixed;
+        left: 50%;
+        bottom: 18px;
+        transform: translateX(-50%);
+        width: calc(100% - 32px);
+        max-width: 408px;
+        background: rgba(12, 28, 68, 0.96);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 14px;
+        padding: 12px 16px;
+        font-size: 13px;
+        font-weight: bold;
+        text-align: center;
+        box-shadow: 0 12px 28px rgba(0,0,0,0.32);
+        z-index: 1200;
+        display: none;
+    }
+
+    .aviso-atualizacao.visivel {
+        display: block;
     }
 
     .search-flutuante svg {
@@ -294,30 +317,6 @@
         margin-bottom: 6px;
     }
 
-    /* Campo provisório (teste) */
-    .cliente-venda-dia-provisorio {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        margin-top: 10px;
-        padding: 10px 12px;
-        border-top: 1px dashed rgba(255,255,255,0.25);
-        background: rgba(255,255,255,0.04);
-        border-radius: 12px;
-        font-size: 13px;
-        color: #ffffff;
-    }
-    .cliente-venda-dia-rotulo {
-        font-weight: bold;
-        color: #ffeb3b;
-        letter-spacing: 0.3px;
-        text-transform: uppercase;
-        font-size: 11px;
-        flex: none;
-    }
-    .cliente-venda-dia-valor { font-weight: 800; }
-
     /* Ações editar/excluir */
     .acoes-cliente {
         display: flex;
@@ -337,9 +336,6 @@
     .acao-cliente.excluir { color: #ff8a8a; }
     .acao-cliente:active { transform: scale(0.95); }
     .acao-divisor { color: #ffffff; }
-
-    .btn-copiar-img { width: 15px; height: 15px; cursor: pointer; vertical-align: middle; margin-left: 6px; opacity: 0.7; }
-    .btn-copiar-img:active { transform: scale(0.9); }
 
     /* Modal de fotos */
     .fotos-overlay {
@@ -811,6 +807,8 @@
     </div>
 </div>
 
+<div class="aviso-atualizacao" id="avisoAtualizacaoClientes"></div>
+
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
@@ -856,6 +854,23 @@
     let nomeUsuarioLogado = "";
     let clientesSalvos = [];
     let pontosNovos = [];
+    let versaoClientesAtual = Number(localStorage.getItem(_CACHE_VERSAO_KEY) || 0);
+    let escutaVersaoInicializada = false;
+    let recargaClientesAgendada = false;
+
+    function mostrarAvisoAtualizacaoClientes(mensagem) {
+        const aviso = document.getElementById('avisoAtualizacaoClientes');
+        if (!aviso) return;
+        aviso.textContent = mensagem;
+        aviso.classList.add('visivel');
+    }
+
+    function agendarRecargaListaClientes() {
+        if (recargaClientesAgendada) return;
+        recargaClientesAgendada = true;
+        mostrarAvisoAtualizacaoClientes('Lista de clientes atualizada. Recarregando...');
+        setTimeout(() => window.location.reload(), 900);
+    }
 
     function normalizarTexto(valor) {
         return String(valor || "")
@@ -940,29 +955,18 @@
 
             // 2. Construir campos de info
             const campos = [];
-            if (c.cidade) campos.push(`<div class="campo-item"><b>Cidade:</b> <span class="copiar">${c.cidade}</span></div>`);
+            if (c.cidade) campos.push(`<div class="campo-item"><b>Cidade:</b> <span>${c.cidade}</span></div>`);
             if (c.rota || c.comissao) {
                 let rc = '';
-                if (c.rota) rc += `<b>Rota:</b> <span class="copiar">${c.rota}</span>`;
+                if (c.rota) rc += `<b>Rota:</b> <span>${c.rota}</span>`;
                 if (c.comissao) rc += `${c.rota ? ' &nbsp;' : ''}<b>Perc.:</b> ${c.comissao}`;
                 campos.push(`<div class="campo-item">${rc}</div>`);
             }
             if (equipString) campos.push(`<div class="campo-item"><b>Equip.:</b> ${equipString}</div>`);
             if (c.aberto) campos.push(`<div class="campo-item"><b>Aberto:</b> ${c.aberto}</div>`);
 
-            const vendaDiaNum = Number(c?.venda_por_dia);
-            const vendaDiaTxt = Number.isFinite(vendaDiaNum)
-                ? vendaDiaNum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                : '—';
-            const vendaDiaProvisorioHtml = `
-                <div class="cliente-venda-dia-provisorio">
-                    <span class="cliente-venda-dia-rotulo">Venda/dia (teste)</span>
-                    <span class="cliente-venda-dia-valor">${vendaDiaTxt}</span>
-                </div>
-            `;
-
             const camposLargura = [];
-            if (c.endereco) camposLargura.push(`<div class="campo-item"><b>End.:</b> <span class="copiar">${c.endereco}</span><img src="https://cdn-icons-png.flaticon.com/512/1621/1621635.png" class="btn-copiar-img" onclick="copiarTexto('${c.endereco}')"></div>`);
+            if (c.endereco) camposLargura.push(`<div class="campo-item"><b>End.:</b> <span>${c.endereco}</span></div>`);
             if (c.obs) camposLargura.push(`<div class="campo-item obs-item"><b>Obs:</b> ${c.obs}</div>`);
 
             const acoesVisuaisHtml = usuarioPodeGerenciarCliente(c) ? `
@@ -1025,7 +1029,6 @@
                      </div>
                      ${camposLargura.length > 0 ? `<div class="cliente-campos-largura">${camposLargura.join('')}</div>` : ''}
                      ${acoesVisuaisHtml}
-                     ${vendaDiaProvisorioHtml}
                  </div>
              `;
             listaHTML.appendChild(card);
@@ -1069,6 +1072,23 @@
 
         // Versão mudou (alguém adicionou/editou/excluiu um cliente). Baixar lista fresca.
         await _atualizarListaDoServidor(versaoRemota);
+    });
+
+    let ultimaVersaoRemotaClientes = null;
+    dbEscutarVersaoClientes((versaoRemota) => {
+        const versaoNormalizada = Number(versaoRemota || 0);
+        if (ultimaVersaoRemotaClientes === null) {
+            ultimaVersaoRemotaClientes = versaoNormalizada;
+            return;
+        }
+
+        if (versaoNormalizada > 0 && versaoNormalizada !== ultimaVersaoRemotaClientes) {
+            ultimaVersaoRemotaClientes = versaoNormalizada;
+            agendarRecargaListaClientes();
+            return;
+        }
+
+        ultimaVersaoRemotaClientes = versaoNormalizada;
     });
 
     document.getElementById('btnNovo').onclick = () => {
@@ -1141,21 +1161,6 @@
             barraBusca.classList.remove('visivel');
         }
     }, { passive: true });
-
-    window.copiarTexto = function(texto) {
-        if (!texto) return;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(texto).catch(() => usarPlanoB(texto));
-        } else {
-            usarPlanoB(texto);
-        }
-        function usarPlanoB(txt) {
-            const area = document.createElement("textarea");
-            area.value = txt; document.body.appendChild(area);
-            area.select(); document.execCommand('copy');
-            document.body.removeChild(area);
-        }
-    };
 
     window.excluirCliente = async function(url) {
         const id = url.split('/').pop().replace('.json', '');

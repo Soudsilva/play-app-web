@@ -38,7 +38,7 @@
             animation: fadeIn 0.3s ease;
         }
         .card-cliente.erro { background: #f44336; } /* Vermelho se não achar */
-        
+
         /* Lista de Produtos Dinâmica */
         .linha-produto {
             display: flex;
@@ -317,6 +317,7 @@
     <div id="resultadoCliente" class="card-cliente">
         <!-- Conteúdo preenchido via JS -->
     </div>
+
     <input type="hidden" id="idClienteSelecionado">
 
     <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
@@ -393,7 +394,7 @@
                     <input type="text" id="totalGeral" class="input-readonly" readonly placeholder="R$ 0.00" style="text-align: center;">
                 </div>
                 <div style="flex:1">
-                    <label class="lbl-fin" style="text-align: center;">Saldo Final</label>
+                    <label class="lbl-fin" style="text-align: center;">Saldo Depositar</label>
                     <input type="text" id="saldoFinal" class="input-saldo" readonly placeholder="R$ 0.00" style="text-align: center;">
                 </div>
             </div>
@@ -452,6 +453,31 @@
 
         <button class="btn-teste-secundario" onclick="randomizarTeste()">🎲 Randomizar Valores</button>
 
+        <div id="testeCamposValores" style="margin-top:10px;">
+            <div style="color:#ffeb3b; font-weight:bold; text-align:center; font-size:14px; margin-bottom:8px;">
+                Valores do Teste (pode editar)
+            </div>
+            <div style="color:#999; font-size:12px; text-align:center; margin-bottom:10px; line-height:1.3;">
+                Digite os valores abaixo ou clique em <b style="color:#ff9800">Randomizar Valores</b> para preencher automaticamente.
+            </div>
+
+            <label style="color:#ccc; font-size:14px; display:block; margin-bottom:5px;">Dinheiro (R$)</label>
+            <input type="text" inputmode="numeric" id="testeDinheiro" placeholder="0"
+                   oninput="formatarNumero(this, 8); atualizarPreviaTeste()"
+                   style="width:100%; padding:10px; border-radius:8px; font-size:16px; box-sizing:border-box; margin-bottom:10px; background:white; color:#333; text-align:center;">
+
+            <div id="testeAreaPix" style="margin-top:12px; display:none;">
+                <div style="color:#ccc; font-weight:bold; font-size:14px; margin-bottom:6px;">PIX</div>
+                <div id="testePixContainer"></div>
+            </div>
+
+            <div style="margin-top:12px;">
+                <div style="color:#ccc; font-weight:bold; font-size:14px; margin-bottom:6px;">Produtos</div>
+                <div id="testeProdutosContainer"></div>
+                <button type="button" class="btn-teste-secundario" onclick="adicionarLinhaProdutoTeste()" style="margin-top:6px;">Adicionar Produto</button>
+            </div>
+        </div>
+
         <div id="testePrevia" style="display:none; color:white;"></div>
 
         <button id="btnEnviarTeste" class="btn-teste-acao" onclick="enviarAtendimentoTeste()">
@@ -503,6 +529,8 @@
     function limparEstadoEdicao() {
         localStorage.removeItem('atendimento_em_edicao_id');
         localStorage.removeItem('atendimento_em_edicao_data');
+        localStorage.removeItem('atendimento_em_edicao_atendente');
+        localStorage.removeItem('atendimento_edicao_gestor');
     }
 
     function atualizarModoEdicao() {
@@ -904,6 +932,7 @@
             divResultado.className = 'card-cliente erro'; // Vermelho
             divResultado.innerHTML = `❌ Cliente nº ${termo} não encontrado.`;
             document.getElementById('idClienteSelecionado').value = "";
+            if (cardVendaDia) cardVendaDia.style.display = 'none';
             document.getElementById('areaPix').style.display = 'block';
             document.getElementById('containerPix').innerHTML = '';
             document.getElementById('containerFotosPix').innerHTML = '';
@@ -1035,7 +1064,7 @@
 
         const total = Math.round(vPixTotal + vDin);
         const valorComissao = Math.round(total * (pct / 100));
-        const saldo = total - valorComissao;
+        const saldoDepositar = vDin - valorComissao;
 
         // Formatação para BRL sem exibir os centavos
         const formatoMoeda = { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 };
@@ -1043,7 +1072,7 @@
         // Atualiza campos readonly
         document.getElementById('valorComissao').value = valorComissao.toLocaleString('pt-BR', formatoMoeda);
         document.getElementById('totalGeral').value = total.toLocaleString('pt-BR', formatoMoeda);
-        document.getElementById('saldoFinal').value = saldo.toLocaleString('pt-BR', formatoMoeda);
+        document.getElementById('saldoFinal').value = saldoDepositar.toLocaleString('pt-BR', formatoMoeda);
     }
 
     // --- FINALIZAR (Simulação) ---
@@ -1167,11 +1196,76 @@
         return null;
     }
 
+    function calcularIndicadorVendaDiaCliente(listaAtendimentos, novoAtendimento) {
+        const numeroCliente = String(novoAtendimento?.cliente?.numero ?? '').trim();
+        if (!numeroCliente) {
+            return { venda_por_dia: null, msg: "aguardando mais atendimentos para a media por dia", baseTotal: 0, diasEntre: 0, usados: [], calculadoEm: new Date().toISOString() };
+        }
+
+        const candidatos = Array.isArray(listaAtendimentos) ? listaAtendimentos : [];
+
+        const prev = candidatos
+            .filter(a => String(a?.cliente?.numero ?? '').trim() === numeroCliente)
+            .filter(a => {
+                const total = Number(a?.financeiro?.totalGeral) || 0;
+                const saldo = Number(a?.financeiro?.saldoFinal) || 0;
+                const t = Date.parse(a?.data || "");
+                return total > 0 && !Number.isNaN(t);
+            })
+            .map(a => ({
+                data: a.data,
+                totalGeral: Number(a?.financeiro?.totalGeral) || 0,
+                saldoFinal: Number(a?.financeiro?.saldoFinal) || 0,
+            }));
+
+        const atual = {
+            data: novoAtendimento?.data || new Date().toISOString(),
+            totalGeral: Number(novoAtendimento?.financeiro?.totalGeral) || 0,
+            saldoFinal: Number(novoAtendimento?.financeiro?.saldoFinal) || 0,
+        };
+
+        const todos = [atual, ...prev]
+            .filter(a => (Number(a.totalGeral) || 0) > 0 && !Number.isNaN(Date.parse(a.data || "")))
+            .sort((a, b) => Date.parse(b.data) - Date.parse(a.data));
+
+        const usadosBase = todos.slice(0, 3);
+        const usados = usadosBase.length >= 3 ? usadosBase : usadosBase.slice(0, 2);
+
+        let vendaPorDia = null;
+        let msg = null;
+        let baseTotal = 0;
+        let diasEntre = 0;
+
+        if (usados.length >= 2) {
+            baseTotal = usados.reduce((s, x) => s + (Number(x.totalGeral) || 0), 0);
+            const dRec = new Date(usados[0].data);
+            const dAnt = new Date(usados[usados.length - 1].data);
+            dRec.setHours(0, 0, 0, 0);
+            dAnt.setHours(0, 0, 0, 0);
+            diasEntre = Math.abs(Math.round((dRec - dAnt) / 86400000));
+            const dias = diasEntre > 0 ? diasEntre : 1;
+            vendaPorDia = Math.round(((baseTotal / dias) + Number.EPSILON) * 100) / 100;
+        } else {
+            msg = "aguardando mais atendimentos para a media por dia";
+            if (usados.length === 1) baseTotal = Number(usados[0]?.totalGeral) || 0;
+        }
+
+        return {
+            venda_por_dia: vendaPorDia,
+            msg,
+            baseTotal,
+            diasEntre,
+            usados,
+            calculadoEm: new Date().toISOString()
+        };
+    }
+
     window.salvarAtendimento = async function() { // [ALTERADO] para async
         const btn = document.querySelector('.btn-finalizar');
         const idCliente = document.getElementById('idClienteSelecionado').value;
         const atendimentoEmEdicaoId = obterIdAtendimentoEmEdicao();
         const dataOriginalEdicao = obterDataAtendimentoEmEdicao();
+        const atendimentoOriginal = atendimentoEmEdicaoId ? (listaAtendimentos || []).find(a => a.firebaseUrl === atendimentoEmEdicaoId) : null;
         if (!idCliente) return alert("Selecione um cliente válido.");
 
         const erroSaturno = validarSaturno();
@@ -1195,7 +1289,9 @@
 
         try {
             // --- 1. Coleta de Dados ---
-            const atendente = localStorage.getItem('usuarioLogado') || "N/A";
+            const atendenteLogado = localStorage.getItem('usuarioLogado') || "N/A";
+            const atendenteOriginalEdicao = localStorage.getItem('atendimento_em_edicao_atendente') || atendimentoOriginal?.atendente || "";
+            const atendente = atendimentoEmEdicaoId && atendenteOriginalEdicao ? atendenteOriginalEdicao : atendenteLogado;
             const clienteEl = document.getElementById('resultadoCliente');
             const clienteNome = clienteEl.querySelector('div:first-child')?.innerText || "Cliente não encontrado";
             const clienteNumero = document.getElementById('inputBuscaCliente').value;
@@ -1225,13 +1321,18 @@
                 });
             });
 
+            const dinheiroValor = window.parseFormatted(document.getElementById('valorDinheiro').value);
+            const comissaoValor = window.parseFormatted(document.getElementById('valorComissao').value);
+            const totalGeralValor = window.parseFormatted(document.getElementById('totalGeral').value);
+            const saldoDepositarValor = window.parseFormatted(document.getElementById('saldoFinal').value);
             const financeiro = {
                 pix: pixLinhas,
-                dinheiro: window.parseFormatted(document.getElementById('valorDinheiro').value),
+                dinheiro: dinheiroValor,
                 comissaoPorcentagem: parseFloat(document.getElementById('porcComissao').value) || 0,
-                comissaoValor: window.parseFormatted(document.getElementById('valorComissao').value),
-                totalGeral: window.parseFormatted(document.getElementById('totalGeral').value),
-                saldoFinal: window.parseFormatted(document.getElementById('saldoFinal').value)
+                comissaoValor,
+                totalGeral: totalGeralValor,
+                saldoFinal: totalGeralValor - comissaoValor,
+                saldoDepositar: saldoDepositarValor
             };
 
             // --- 2. Upload de Fotos ---
@@ -1287,7 +1388,7 @@
             const clienteCompleto = listaClientes.find(c => c.firebaseUrl === idCliente) || {};
             const dadosAtendimento = {
                 atendente,
-                data: atendimentoEmEdicaoId && dataOriginalEdicao ? dataOriginalEdicao : new Date().toISOString(),
+                data: atendimentoEmEdicaoId ? (dataOriginalEdicao || atendimentoOriginal?.data || new Date().toISOString()) : new Date().toISOString(),
                 cliente: {
                     id:              idCliente,
                     nome:            clienteCompleto.nome            || clienteNome,
@@ -1308,14 +1409,47 @@
                 })()
             };
 
+            if (atendimentoEmEdicaoId && atendimentoOriginal?._teste) {
+                dadosAtendimento._teste = true;
+            }
+
             if (atendimentoEmEdicaoId) {
                 dadosAtendimento.ultimaEdicao = new Date().toISOString();
+            }
+
+            // Indicador de Venda/dia fica salvo apenas no atendimento mais recente (novo atendimento)
+            if (!atendimentoEmEdicaoId && navigator.onLine) {
+                const ind = calcularIndicadorVendaDiaCliente(listaAtendimentos, dadosAtendimento);
+                dadosAtendimento.indicadores_venda_dia = ind;
+                dadosAtendimento.cliente.venda_por_dia = ind.venda_por_dia;
+                dadosAtendimento.cliente.venda_por_dia_msg = ind.msg;
+                dadosAtendimento.cliente.venda_por_dia_intervalo_dias = ind.diasEntre;
+                dadosAtendimento.cliente.venda_por_dia_base_total = ind.baseTotal;
+                dadosAtendimento.cliente.venda_por_dia_atualizado_em = ind.calculadoEm;
+            }
+
+            if (atendimentoEmEdicaoId && atendimentoOriginal?._gestor_ultima_edicao) {
+                dadosAtendimento._gestor_ultima_edicao = atendimentoOriginal._gestor_ultima_edicao;
+            }
+
+            const gestorEditor = localStorage.getItem('atendimento_edicao_gestor') || "";
+            if (atendimentoEmEdicaoId && gestorEditor) {
+                dadosAtendimento._gestor_ultima_edicao = {
+                    nome: gestorEditor,
+                    em: new Date().toISOString()
+                };
             }
 
             // --- 4. Salvar no Banco de Dados (ou na fila offline) ---
             btn.innerText = "FINALIZANDO...";
             const semInternet = !navigator.onLine;
             if (semInternet) {
+                if (atendimentoEmEdicaoId) {
+                    await window.playAlert("📵 Sem internet — não é possível editar um atendimento já enviado.\nConecte-se e tente novamente.");
+                    btn.disabled = false;
+                    atualizarModoEdicao();
+                    return;
+                }
                 await enfileirarAtendimento(dadosAtendimento);
             } else {
                 await dbSalvarAtendimento(dadosAtendimento, atendimentoEmEdicaoId || null);
@@ -1525,6 +1659,306 @@
 
     let clienteTesteAtual = null;
     let dadosTesteGerados = null;
+    let maquinasTesteAtual = [];
+
+    function extrairPixEMaquinasTeste(cliente) {
+        const pixDevices = [];
+        const maquinas = [];
+        if (cliente?.equip) {
+            cliente.equip.split(', ').forEach(item => {
+                if (!item.trim()) return;
+                let nome = item.replace(/\s*\(([^)]+)\)$/, '').trim();
+                const matchPix = nome.match(/\s*\[Pix:\s*([^\]]+)\]$/i);
+                if (matchPix) pixDevices.push(matchPix[1].trim());
+                nome = nome.replace(/\s*\[Pix:\s*([^\]]+)\]$/i, '').trim();
+                if (nome) maquinas.push(nome);
+            });
+        }
+        return { pixDevices, maquinas };
+    }
+
+    function limparCamposTestePainel() {
+        dadosTesteGerados = null;
+        maquinasTesteAtual = [];
+
+        const dinheiro = document.getElementById('testeDinheiro');
+        if (dinheiro) dinheiro.value = '';
+
+        const areaPix = document.getElementById('testeAreaPix');
+        if (areaPix) areaPix.style.display = 'none';
+
+        const pixContainer = document.getElementById('testePixContainer');
+        if (pixContainer) pixContainer.innerHTML = '';
+
+        const prodContainer = document.getElementById('testeProdutosContainer');
+        if (prodContainer) prodContainer.innerHTML = '';
+
+        const prev = document.getElementById('testePrevia');
+        if (prev) prev.style.display = 'none';
+    }
+
+    function criarLinhaPixTeste(data = {}) {
+        const div = document.createElement('div');
+        div.className = 'linha-form';
+        div.style.gap = '5px';
+        div.style.marginBottom = '10px';
+        div.innerHTML = `
+            <div style="flex:1">
+                <label class="lbl-fin" style="margin-top:0;">Pix Nº</label>
+                <input type="number" class="testePixNumero input-readonly" readonly placeholder="Nº" value="${data.numero || ''}">
+            </div>
+            <div style="flex:2">
+                <label class="lbl-fin" style="margin-top:0;">Cont. Ant</label>
+                <input type="text" inputmode="numeric" class="testePixContAnt" placeholder="0"
+                       oninput="formatarNumero(this, 6); atualizarValorLinhaTestePix(this.closest('.linha-form'))"
+                       value="${data.contAnt ?? ''}">
+            </div>
+            <div style="flex:2">
+                <label class="lbl-fin" style="margin-top:0;">Cont. Atual</label>
+                <input type="text" inputmode="numeric" class="testePixContAtual" placeholder="0"
+                       oninput="formatarNumero(this, 6); atualizarValorLinhaTestePix(this.closest('.linha-form'))"
+                       value="${data.contAtual ?? ''}">
+            </div>
+            <div style="flex:1.5">
+                <label class="lbl-fin" style="margin-top:0;">Valor</label>
+                <input type="text" inputmode="numeric" class="testePixValor input-readonly" readonly placeholder="0" value="${data.valor ?? ''}">
+            </div>
+        `;
+
+        const contAntEl = div.querySelector('.testePixContAnt');
+        const contAtualEl = div.querySelector('.testePixContAtual');
+        const valorEl = div.querySelector('.testePixValor');
+        if (contAntEl && contAntEl.value) window.formatarNumero(contAntEl, 6);
+        if (contAtualEl && contAtualEl.value) window.formatarNumero(contAtualEl, 6);
+        if (valorEl && valorEl.value) window.formatarNumero(valorEl, 8);
+
+        return div;
+    }
+
+    window.atualizarValorLinhaTestePix = function(linha) {
+        if (!linha) return;
+        const contAntInput = linha.querySelector('.testePixContAnt');
+        const contAtualInput = linha.querySelector('.testePixContAtual');
+        const valorInput = linha.querySelector('.testePixValor');
+        if (!contAntInput || !contAtualInput || !valorInput) return;
+
+        const contAntRaw = contAntInput.value.trim();
+        const contAtualRaw = contAtualInput.value.trim();
+        if (!contAntRaw || !contAtualRaw) {
+            valorInput.value = "";
+            if (window.atualizarPreviaTeste) window.atualizarPreviaTeste();
+            return;
+        }
+
+        const contAnt = window.parseFormatted(contAntRaw);
+        const contAtual = window.parseFormatted(contAtualRaw);
+        const diferenca = Math.max(contAtual - contAnt, 0);
+        valorInput.value = diferenca.toString();
+        window.formatarNumero(valorInput, 8);
+        if (window.atualizarPreviaTeste) window.atualizarPreviaTeste();
+    }
+
+    window.adicionarLinhaProdutoTeste = function(data = {}) {
+        const container = document.getElementById('testeProdutosContainer');
+        if (!container) return;
+
+        const linha = document.createElement('div');
+        linha.className = 'linha-produto';
+
+        const colProd = document.createElement('div');
+        colProd.className = 'col-prod';
+        const colQtd = document.createElement('div');
+        colQtd.className = 'col-qtd';
+
+        const select = document.createElement('select');
+        select.addEventListener('change', () => window.atualizarPreviaTeste && window.atualizarPreviaTeste());
+
+        const optVazio = document.createElement('option');
+        optVazio.value = '';
+        optVazio.textContent = '-- Produto --';
+        select.appendChild(optVazio);
+
+        [...listaProdutos]
+            .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'))
+            .forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.firebaseUrl;
+                opt.textContent = p.nome;
+                select.appendChild(opt);
+            });
+
+        const inputQtd = document.createElement('input');
+        inputQtd.type = 'text';
+        inputQtd.inputMode = 'numeric';
+        inputQtd.placeholder = '0';
+        inputQtd.style.textAlign = 'center';
+        inputQtd.addEventListener('input', () => {
+            window.formatarNumero(inputQtd, 4);
+            window.atualizarPreviaTeste && window.atualizarPreviaTeste();
+        });
+
+        colProd.appendChild(select);
+        colQtd.appendChild(inputQtd);
+        linha.appendChild(colProd);
+        linha.appendChild(colQtd);
+        container.appendChild(linha);
+
+        if (data.produtoId) select.value = data.produtoId;
+        if (!data.produtoId && data.nome) {
+            const match = listaProdutos.find(p => p.nome === data.nome);
+            if (match) select.value = match.firebaseUrl;
+        }
+        if (data.quantidade != null && data.quantidade !== '') {
+            inputQtd.value = String(data.quantidade);
+            window.formatarNumero(inputQtd, 4);
+        }
+    }
+
+    function montarCamposTesteParaCliente(cliente) {
+        if (!cliente) return;
+
+        limparCamposTestePainel();
+
+        const { pixDevices, maquinas } = extrairPixEMaquinasTeste(cliente);
+        maquinasTesteAtual = maquinas;
+
+        // PIX
+        const pixContainer = document.getElementById('testePixContainer');
+        const areaPix = document.getElementById('testeAreaPix');
+
+        if (areaPix) areaPix.style.display = pixDevices.length > 0 ? 'block' : 'none';
+        if (pixContainer) pixContainer.innerHTML = '';
+
+        const ultimosContadores = obterUltimosContadoresCliente(cliente);
+        pixDevices.forEach(pixNum => {
+            const contAnt = ultimosContadores[pixNum];
+            const linha = criarLinhaPixTeste({ numero: pixNum, contAnt: contAnt != null ? String(contAnt) : '' });
+            pixContainer && pixContainer.appendChild(linha);
+        });
+
+        // Produtos
+        window.adicionarLinhaProdutoTeste();
+    }
+
+    function preencherPainelTesteComDados(dados) {
+        if (!dados) return;
+
+        // Dinheiro
+        const dinheiroEl = document.getElementById('testeDinheiro');
+        if (dinheiroEl) {
+            dinheiroEl.value = String(dados.dinheiro ?? '');
+            if (dinheiroEl.value) window.formatarNumero(dinheiroEl, 8);
+        }
+
+        // PIX
+        const areaPix = document.getElementById('testeAreaPix');
+        const pixContainer = document.getElementById('testePixContainer');
+        if (pixContainer) pixContainer.innerHTML = '';
+
+        const pixData = Array.isArray(dados.pixData) ? dados.pixData : [];
+        if (areaPix) areaPix.style.display = pixData.length > 0 ? 'block' : 'none';
+        pixData.forEach(p => {
+            const linha = criarLinhaPixTeste({
+                numero: p.numero,
+                contAnt: p.contAnt,
+                contAtual: p.contAtual,
+                valor: p.valor
+            });
+            pixContainer && pixContainer.appendChild(linha);
+        });
+
+        // Produtos
+        const prodContainer = document.getElementById('testeProdutosContainer');
+        if (prodContainer) prodContainer.innerHTML = '';
+
+        const prods = Array.isArray(dados.prodsSelecionados) ? dados.prodsSelecionados : [];
+        if (prods.length === 0) {
+            window.adicionarLinhaProdutoTeste();
+        } else {
+            prods.forEach(p => window.adicionarLinhaProdutoTeste(p));
+        }
+    }
+
+    window.atualizarPreviaTeste = function() {
+        if (!clienteTesteAtual) return;
+
+        const prev = document.getElementById('testePrevia');
+        if (!prev) return;
+
+        const fmt = (n) => (Number(n) || 0).toLocaleString('pt-BR');
+        const cliente = clienteTesteAtual;
+        const comissaoPct = parseFloat((cliente.comissao || '0').replace('%', '').trim()) || 0;
+
+        // Dinheiro
+        const dinheiroInput = document.getElementById('testeDinheiro');
+        const dinheiro = dinheiroInput ? window.parseFormatted(dinheiroInput.value) : 0;
+
+        // PIX
+        const pixData = [];
+        document.querySelectorAll('#testePixContainer .linha-form').forEach(linha => {
+            const numero = String(linha.querySelector('.testePixNumero')?.value || '').trim();
+            const contAntRaw = String(linha.querySelector('.testePixContAnt')?.value || '').trim();
+            const contAtualRaw = String(linha.querySelector('.testePixContAtual')?.value || '').trim();
+
+            const contAnt = window.parseFormatted(contAntRaw);
+            const contAtual = window.parseFormatted(contAtualRaw);
+            const valor = contAntRaw && contAtualRaw ? Math.max(contAtual - contAnt, 0) : 0;
+
+            const valorInput = linha.querySelector('.testePixValor');
+            if (valorInput) {
+                if (!contAntRaw || !contAtualRaw) {
+                    valorInput.value = '';
+                } else {
+                    valorInput.value = String(valor);
+                    window.formatarNumero(valorInput, 8);
+                }
+            }
+
+            if (numero) pixData.push({ numero, contAnt, contAtual, valor });
+        });
+
+        // Produtos
+        const prodsSelecionados = [];
+        document.querySelectorAll('#testeProdutosContainer .linha-produto').forEach(linha => {
+            const prodId = String(linha.querySelector('select')?.value || '').trim();
+            const qtd = window.parseFormatted(linha.querySelector('input')?.value || '');
+            if (!prodId || qtd <= 0) return;
+            const produtoInfo = listaProdutos.find(p => p.firebaseUrl === prodId);
+            prodsSelecionados.push({
+                nome: produtoInfo ? produtoInfo.nome : 'Produto não encontrado',
+                quantidade: qtd
+            });
+        });
+
+        // Totais
+        const totalPix = pixData.reduce((s, p) => s + (Number(p.valor) || 0), 0);
+        const totalGeral = totalPix + dinheiro;
+        const comissaoValor = Math.round(totalGeral * (comissaoPct / 100));
+        const saldoFinal = totalGeral - comissaoValor;
+        const saldoDepositar = dinheiro - comissaoValor;
+
+        // Máquinas (para as fotos)
+        const { maquinas } = extrairPixEMaquinasTeste(cliente);
+        maquinasTesteAtual = maquinas;
+
+        dadosTesteGerados = { pixData, dinheiro, comissaoPct, comissaoValor, totalGeral, saldoFinal, saldoDepositar, prodsSelecionados, maquinas: maquinasTesteAtual };
+
+        let html = `<div style="font-size:13px; margin-top:10px; background:rgba(255,152,0,0.1); border:1px solid rgba(255,152,0,0.35); border-radius:8px; padding:12px; line-height:2;">`;
+        html += `<b style="color:#ff9800">Produtos:</b> ${prodsSelecionados.length ? prodsSelecionados.map(p => `${p.nome} x${p.quantidade}`).join(', ') : 'Nenhum'}<br>`;
+        if (pixData.length > 0) {
+            html += `<b style="color:#ff9800">PIX:</b> `;
+            html += pixData.map(p => `Nº${p.numero}: ${fmt(p.contAnt)}->${fmt(p.contAtual)} (R$${fmt(p.valor)})`).join(' | ');
+            html += `<br>`;
+        }
+        html += `<b style="color:#ff9800">Espécie:</b> R$ ${fmt(dinheiro)} &nbsp;&nbsp;`;
+        html += `<b style="color:#ff9800">Comissão:</b> ${comissaoPct}% (R$ ${fmt(comissaoValor)})<br>`;
+        html += `<b style="color:#ff9800">Total:</b> R$ ${fmt(totalGeral)} &nbsp;&nbsp;`;
+        html += `<b style="color:#ff9800">Saldo Depositar:</b> R$ ${fmt(saldoDepositar)}`;
+        html += `</div>`;
+
+        prev.innerHTML = html;
+        prev.style.display = 'block';
+    }
 
     window.abrirPainelTeste = function() {
         const sel = document.getElementById('testeClienteSel');
@@ -1537,11 +1971,13 @@
                 opt.textContent = `${c.numero} - ${c.nome}`;
                 sel.appendChild(opt);
             });
+        sel.value = '';
+        clienteTesteAtual = null;
+        limparCamposTestePainel();
         const agora = new Date();
         const offset = agora.getTimezoneOffset() * 60000;
         const local = new Date(agora - offset);
         document.getElementById('testeDataHora').value = local.toISOString().slice(0, 16);
-        document.getElementById('testePrevia').style.display = 'none';
         document.getElementById('btnEnviarTeste').disabled = false;
         document.getElementById('btnEnviarTeste').innerText = 'ENVIAR ATENDIMENTO TESTE';
         document.getElementById('overlayTeste').style.display = 'flex';
@@ -1554,8 +1990,12 @@
     window.selecionarClienteTeste = function() {
         const id = document.getElementById('testeClienteSel').value;
         clienteTesteAtual = id ? listaClientes.find(c => c.firebaseUrl === id) || null : null;
-        if (clienteTesteAtual) gerarDadosTeste();
-        else document.getElementById('testePrevia').style.display = 'none';
+        if (clienteTesteAtual) {
+            montarCamposTesteParaCliente(clienteTesteAtual);
+            gerarDadosTeste();
+        } else {
+            limparCamposTestePainel();
+        }
     }
 
     function gerarDadosTeste() {
@@ -1591,6 +2031,7 @@
         const totalGeral = totalPix + dinheiro;
         const comissaoValor = Math.round(totalGeral * (comissaoPct / 100));
         const saldoFinal = totalGeral - comissaoValor;
+        const saldoDepositar = dinheiro - comissaoValor;
 
         const qtdProds = Math.min(listaProdutos.length, Math.floor(Math.random() * 3) + 1);
         const prodsSelecionados = [...listaProdutos]
@@ -1598,7 +2039,7 @@
             .slice(0, qtdProds)
             .map(p => ({ nome: p.nome, quantidade: Math.floor(Math.random() * 5) + 1 }));
 
-        dadosTesteGerados = { pixData, dinheiro, comissaoPct, comissaoValor, totalGeral, saldoFinal, prodsSelecionados, maquinas };
+        dadosTesteGerados = { pixData, dinheiro, comissaoPct, comissaoValor, totalGeral, saldoFinal, saldoDepositar, prodsSelecionados, maquinas };
 
         const prev = document.getElementById('testePrevia');
         let html = `<div style="font-size:13px; margin-top:10px; background:rgba(255,152,0,0.1); border:1px solid rgba(255,152,0,0.35); border-radius:8px; padding:12px; line-height:2;">`;
@@ -1610,10 +2051,13 @@
         }
         html += `<b style="color:#ff9800">Espécie:</b> R$ ${dinheiro} &nbsp;&nbsp;`;
         html += `<b style="color:#ff9800">Total:</b> R$ ${totalGeral} &nbsp;&nbsp;`;
-        html += `<b style="color:#ff9800">Saldo:</b> R$ ${saldoFinal}`;
+        html += `<b style="color:#ff9800">Saldo Depositar:</b> R$ ${saldoDepositar}`;
         html += `</div>`;
         prev.innerHTML = html;
         prev.style.display = 'block';
+
+        maquinasTesteAtual = maquinas;
+        preencherPainelTesteComDados(dadosTesteGerados);
     }
 
     window.randomizarTeste = function() {
@@ -1646,7 +2090,8 @@
 
     window.enviarAtendimentoTeste = async function() {
         if (!clienteTesteAtual) { alert('Selecione um cliente.'); return; }
-        if (!dadosTesteGerados) { alert('Clique em "Randomizar Valores" primeiro.'); return; }
+        if (window.atualizarPreviaTeste) window.atualizarPreviaTeste();
+        if (!dadosTesteGerados) { alert('Preencha os valores ou clique em "Randomizar Valores" primeiro.'); return; }
         const dataHoraVal = document.getElementById('testeDataHora').value;
         if (!dataHoraVal) { alert('Informe a data e hora.'); return; }
 
@@ -1655,7 +2100,7 @@
         btn.innerText = '⏳ Enviando fotos de teste...';
 
         try {
-            const { pixData, dinheiro, comissaoPct, comissaoValor, totalGeral, saldoFinal, prodsSelecionados, maquinas } = dadosTesteGerados;
+            const { pixData, dinheiro, comissaoPct, comissaoValor, totalGeral, saldoFinal, saldoDepositar, prodsSelecionados, maquinas } = dadosTesteGerados;
             const cliente = clienteTesteAtual;
             const atendente = localStorage.getItem('usuarioLogado') || 'TESTE';
             const dataISO = new Date(dataHoraVal).toISOString();
@@ -1693,7 +2138,8 @@
                     comissaoPorcentagem: comissaoPct,
                     comissaoValor,
                     totalGeral,
-                    saldoFinal
+                    saldoFinal,
+                    saldoDepositar
                 },
                 fotos
             };
@@ -1781,6 +2227,8 @@
             localStorage.removeItem('rascunho_atendimento');
             localStorage.removeItem('atendimento_em_edicao_id');
             localStorage.removeItem('atendimento_em_edicao_data');
+            localStorage.removeItem('atendimento_em_edicao_atendente');
+            localStorage.removeItem('atendimento_edicao_gestor');
             sessionStorage.removeItem(CHAVE_TELA_ORIGEM_ATENDIMENTO);
         } catch (error) {
             console.error('Falha ao limpar estado antes de sair do atendimento:', error);

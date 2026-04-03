@@ -24,7 +24,6 @@
 
         /* Bloqueio de seleção de texto (para evitar que o usuário selecione sem querer ao clicar rápido) */
         * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
-        .copiar { -webkit-user-select: text !important; user-select: text !important; }
 
         /* Alinhamento para os equipamentos ficarem lado a lado (Equip + Qtd) */
         .equip-group { display: flex; gap: 8px; margin-bottom: 8px; }
@@ -369,12 +368,34 @@
         .alerta-play-btn:active {
             transform: scale(0.98);
         }
+        .aviso-bloqueio-sessao {
+            display: none;
+            margin: 0 0 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: rgba(255, 152, 0, 0.16);
+            border: 1px solid rgba(255, 193, 7, 0.45);
+            color: #fff4cf;
+            font-size: 13px;
+            line-height: 1.4;
+            font-weight: bold;
+        }
+        .campo-bloqueado-sessao {
+            background: #b8c0d1 !important;
+            color: #4a587a !important;
+            border: 1px solid rgba(255,255,255,0.28) !important;
+            cursor: not-allowed !important;
+        }
+        .campo-bloqueado-sessao::placeholder {
+            color: rgba(74, 88, 122, 0.75);
+        }
     </style>
 </head>
 <body>
 
 <div class="app">
     <h2 style="text-align:center;">Novo Cliente</h2>
+    <div id="avisoBloqueioSessao" class="aviso-bloqueio-sessao"></div>
 
     <input id="ponto_aberto" placeholder="Ponto Aberto por:">
     <input id="nome" placeholder="Nome do cliente">
@@ -506,7 +527,7 @@
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
     // Importamos as ferramentas de banco de dados do seu arquivo externo
-    import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, storageSalvarFoto } from './database.js';
+    import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, dbEscutarSessaoRotas, storageSalvarFoto } from './database.js';
 
     let maquinasDisponiveis = [];
     let clientesCadastrados = [];
@@ -521,6 +542,8 @@
     let proximoEquipamentoRowId = 0;
     let ultimoElementoFocadoAntesDoAlerta = null;
     let elementoParaFocarDepoisDoAlerta = null;
+    let sessaoRotasAtiva = null;
+    let bloqueioCamposCriticosAtivo = false;
 
     function normalizarTexto(valor) {
         return String(valor || "")
@@ -1559,6 +1582,37 @@
         window.location.href = "clientes.html";
     }
 
+    function clienteTemRotaSelecionadaNaSessao() {
+        const rotaCliente = String(clienteEmEdicao?.rota || "").trim();
+        if (!editId || !rotaCliente || !sessaoRotasAtiva?.rotas) return false;
+        const dadosRota = sessaoRotasAtiva.rotas[rotaCliente];
+        return Boolean(dadosRota?.selecionada_por);
+    }
+
+    async function avisarBloqueioCamposCriticosSessao() {
+        if (!bloqueioCamposCriticosAtivo) return;
+        await window.playAlert("Cliente selecionado para atendimento. Aguarde a finalizacao do atendimento para editar nome e rota.");
+    }
+
+    function aplicarBloqueioCamposCriticosSessao() {
+        const inputNome = document.getElementById('nome');
+        const inputRota = document.getElementById('rota');
+        const aviso = document.getElementById('avisoBloqueioSessao');
+        if (!inputNome || !inputRota || !aviso) return;
+
+        bloqueioCamposCriticosAtivo = clienteTemRotaSelecionadaNaSessao();
+
+        [inputNome, inputRota].forEach(input => {
+            input.readOnly = bloqueioCamposCriticosAtivo;
+            input.classList.toggle('campo-bloqueado-sessao', bloqueioCamposCriticosAtivo);
+        });
+
+        aviso.style.display = bloqueioCamposCriticosAtivo ? 'block' : 'none';
+        aviso.textContent = bloqueioCamposCriticosAtivo
+            ? 'Cliente selecionado para atendimento, aguarde a finalizacao do atendimento para editar nome e rota.'
+            : '';
+    }
+
     dbEscutarColaboradores((colaboradores) => {
         nomeUsuarioLogado = localStorage.getItem('usuarioLogado') || "";
         const usuarioAtual = colaboradores.find(c => c.nome === nomeUsuarioLogado);
@@ -1567,6 +1621,11 @@
         if (editId && clienteEmEdicao && !usuarioPodeEditarCliente(clienteEmEdicao)) {
             bloquearEdicaoSemPermissao();
         }
+    });
+
+    dbEscutarSessaoRotas((sessao) => {
+        sessaoRotasAtiva = sessao || null;
+        aplicarBloqueioCamposCriticosSessao();
     });
 
     // --- CARREGAR MÁQUINAS ---
@@ -1637,6 +1696,20 @@
             carregarDadosPontoNovo(fromPontoNovo);
         }
     }
+
+    ['nome', 'rota'].forEach((idCampo) => {
+        const campo = document.getElementById(idCampo);
+        if (!campo) return;
+        campo.addEventListener('click', () => {
+            if (bloqueioCamposCriticosAtivo) avisarBloqueioCamposCriticosSessao();
+        });
+        campo.addEventListener('focus', () => {
+            if (bloqueioCamposCriticosAtivo) {
+                campo.blur();
+                avisarBloqueioCamposCriticosSessao();
+            }
+        });
+    });
 
     if (modoSolicitar) {
         // --- visual ---
@@ -1790,6 +1863,7 @@
                 document.getElementById("rota").value = cliente.rota || "";
                 adicionarRota(document.getElementById("rota"));
                 document.getElementById("obs").value = cliente.obs || "";
+                aplicarBloqueioCamposCriticosSessao();
 
                 // Especial: Recria as linhas de equipamentos baseadas no texto salvo
                 const equipamentosDetalhados = obterEquipamentosDetalhadosDoCliente(cliente);
@@ -2055,10 +2129,14 @@
                 const dadosFinal = {
                     numero: numeroFinal,
                     ponto_aberto: document.getElementById("ponto_aberto").value,
-                    nome: document.getElementById("nome").value,
+                    nome: (bloqueioCamposCriticosAtivo && clienteEmEdicao)
+                        ? (clienteEmEdicao.nome || "")
+                        : document.getElementById("nome").value,
                     cidade: document.getElementById("cidade").value,
                     comissao: comissaoFinal,
-                    rota: document.getElementById("rota").value.replace(/^R\./, "").replace(/^(\d)$/, "0$1"),
+                    rota: (bloqueioCamposCriticosAtivo && clienteEmEdicao)
+                        ? String(clienteEmEdicao.rota || "").replace(/^R\./, "").replace(/^(\d)$/, "0$1")
+                        : document.getElementById("rota").value.replace(/^R\./, "").replace(/^(\d)$/, "0$1"),
                     endereco: enderecoCompletoFinal,
                     endereco_base: enderecoBaseFinal,
                     numero_endereco: numeroEnderecoFinal,
