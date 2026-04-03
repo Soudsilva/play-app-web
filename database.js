@@ -21,7 +21,7 @@ import {
     runTransaction
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-import { salvarCacheClientes, lerCacheClientes } from './offline-sync.js';
+import { salvarCacheClientes, lerCacheClientes, salvarCacheEstoque, lerCacheEstoque } from './offline-sync.js';
 
 // --- 2. CONFIGURAÇÃO (AS CHAVES DO COFRE) ---
 // Estas são as credenciais que permitem que seu site converse especificamente com o SEU banco de dados.
@@ -295,6 +295,11 @@ export async function dbSalvarItemEstoque(item, id = null) {
 
 // [BLOCO: ESTOQUE - LER ITENS]
 export function dbEscutarEstoque(callback) {
+    // Serve o cache do IndexedDB imediatamente quando offline
+    lerCacheEstoque().then(cached => {
+        if (cached.length > 0) callback(cached);
+    }).catch(() => {});
+
     const estoqueRef = ref(db, 'estoque');
     onValue(estoqueRef, (snapshot) => {
         const dados = snapshot.val();
@@ -304,13 +309,9 @@ export function dbEscutarEstoque(callback) {
                 lista.push({ firebaseUrl: key, ...dados[key] });
             }
         }
-        // Ordena por ordem alfabética
-        lista.sort((a, b) => {
-            const nomeA = (a.nome || "").toUpperCase();
-            const nomeB = (b.nome || "").toUpperCase();
-            return nomeA.localeCompare(nomeB);
-        });
+        lista.sort((a, b) => (a.nome || "").toUpperCase().localeCompare((b.nome || "").toUpperCase()));
         callback(lista);
+        if (lista.length) salvarCacheEstoque(lista).catch(() => {}); // espelha no IndexedDB
     });
 }
 

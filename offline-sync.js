@@ -6,8 +6,9 @@
  */
 
 const DB_NAME   = 'play-offline';
-const DB_VER    = 1;
+const DB_VER    = 2;
 const CLIENTES  = 'clientes_cache';
+const ESTOQUE   = 'estoque_cache';
 const PENDENTES = 'atendimentos_pendentes';
 
 function abrirDB() {
@@ -17,6 +18,8 @@ function abrirDB() {
             const db = e.target.result;
             if (!db.objectStoreNames.contains(CLIENTES))
                 db.createObjectStore(CLIENTES, { keyPath: 'id' });
+            if (!db.objectStoreNames.contains(ESTOQUE))
+                db.createObjectStore(ESTOQUE, { keyPath: 'id' });
             if (!db.objectStoreNames.contains(PENDENTES))
                 db.createObjectStore(PENDENTES, { keyPath: 'id', autoIncrement: true });
         };
@@ -42,6 +45,27 @@ export async function lerCacheClientes() {
         const db = await abrirDB();
         return new Promise((resolve, reject) => {
             const req = db.transaction(CLIENTES, 'readonly').objectStore(CLIENTES).get('lista');
+            req.onsuccess = () => resolve(req.result?.dados || []);
+            req.onerror  = () => reject(req.error);
+        });
+    } catch(e) { return []; }
+}
+
+// ─── CACHE DE ESTOQUE (PRODUTOS) ─────────────────────────────────────────────
+export async function salvarCacheEstoque(lista) {
+    try {
+        const db = await abrirDB();
+        const tx = db.transaction(ESTOQUE, 'readwrite');
+        tx.objectStore(ESTOQUE).put({ id: 'lista', dados: lista, ts: Date.now() });
+        return new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+    } catch(e) { console.warn('offline-sync: salvarCacheEstoque falhou:', e); }
+}
+
+export async function lerCacheEstoque() {
+    try {
+        const db = await abrirDB();
+        return new Promise((resolve, reject) => {
+            const req = db.transaction(ESTOQUE, 'readonly').objectStore(ESTOQUE).get('lista');
             req.onsuccess = () => resolve(req.result?.dados || []);
             req.onerror  = () => reject(req.error);
         });

@@ -1,6 +1,6 @@
-const CACHE = 'play-v3';
+const CACHE = 'play-v4';
 
-// Arquivos essenciais do app — disponíveis sem internet
+// Arquivos essenciais do próprio app
 const SHELL = [
     '/index.html',
     '/login.html',
@@ -15,15 +15,26 @@ const SHELL = [
     '/assets/img/logomenor.png',
 ];
 
-// Instala e faz cache dos arquivos do shell
+// Arquivos do Firebase SDK (CDN) — necessários para o app funcionar offline
+const FIREBASE_SDK = [
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js',
+];
+
 self.addEventListener('install', (e) => {
     e.waitUntil(
-        caches.open(CACHE).then(cache => cache.addAll(SHELL))
+        caches.open(CACHE).then(cache =>
+            // SHELL com addAll (falha se algum falhar) + SDK com add individual (tolerante a falhas)
+            cache.addAll(SHELL).then(() =>
+                Promise.allSettled(FIREBASE_SDK.map(url => cache.add(url)))
+            )
+        )
     );
     self.skipWaiting();
 });
 
-// Remove caches antigos ao ativar nova versão
 self.addEventListener('activate', (e) => {
     e.waitUntil(
         caches.keys().then(keys =>
@@ -33,28 +44,30 @@ self.addEventListener('activate', (e) => {
     self.clients.claim();
 });
 
-// Estratégia: rede primeiro, cache como fallback
 self.addEventListener('fetch', (e) => {
     const url = e.request.url;
 
-    // Firebase, CDN externo e WebSockets passam direto — não interceptar
-    if (url.includes('firebase') || url.includes('googleapis') ||
-        url.includes('gstatic')  || url.includes('flaticon')) {
+    // Chamadas de API do Firebase (dados em tempo real, auth tokens, storage uploads)
+    // NÃO devem ser cacheadas — passam direto para a rede
+    if (url.includes('firebaseio.com') ||
+        url.includes('firebasestorage.googleapis.com') ||
+        url.includes('googleapis.com') ||
+        url.includes('flaticon.com')) {
         return;
     }
 
+    // Todo o resto (próprio app + Firebase SDK do gstatic.com):
+    // rede primeiro, cache como fallback
     e.respondWith(
         fetch(e.request)
             .then(response => {
-                // Atualiza o cache se for do próprio domínio
-                if (response.ok && url.startsWith(self.location.origin)) {
+                if (response.ok) {
                     const clone = response.clone();
                     caches.open(CACHE).then(cache => cache.put(e.request, clone));
                 }
                 return response;
             })
             .catch(() =>
-                // Sem internet: serve do cache, ou index.html como fallback final
                 caches.match(e.request).then(cached => cached || caches.match('/index.html'))
             )
     );
