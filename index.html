@@ -511,15 +511,29 @@
         }
     }
 
+    // Abre o menu imediatamente com dados do cache (se existir)
+    const cacheColab = localStorage.getItem('cache_colaboradores');
+    if (cacheColab) {
+        try {
+            listaColaboradores = JSON.parse(cacheColab);
+            const nome = localStorage.getItem('usuarioLogado') || '';
+            document.getElementById('nomeUsuario').textContent = nome;
+            if (nome) verificarPermissoes(nome);
+            document.querySelector('.menu').style.display = 'flex';
+            document.body.style.visibility = 'visible';
+        } catch (_) {}
+    }
+
     dbEscutarColaboradores((lista) => {
         listaColaboradores = lista;
+        localStorage.setItem('cache_colaboradores', JSON.stringify(lista));
         const nome = localStorage.getItem('usuarioLogado') || '';
 
         document.getElementById('nomeUsuario').textContent = nome;
-
         if (nome) verificarPermissoes(nome);
 
         document.querySelector('.menu').style.display = 'flex';
+        document.body.style.visibility = 'visible';
     });
 </script>
 
