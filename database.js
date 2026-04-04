@@ -884,11 +884,79 @@ export async function dbSalvarManutencao(manutencao, idExistente = null) {
     }
 }
 
+function _normalizarChaveUsuario(nomeUsuario) {
+    return String(nomeUsuario || '').replace(/[.#$/[\]]/g, '_');
+}
+
+export function dbEscutarFluxoCaixa(nomeUsuario, callback) {
+    const chave = _normalizarChaveUsuario(nomeUsuario);
+    if (!chave) {
+        callback([]);
+        return;
+    }
+
+    onValue(ref(db, `fluxo_caixa/${chave}/movimentacoes`), (snapshot) => {
+        const data = snapshot.val();
+        const lista = data
+            ? Object.keys(data).map(key => ({ firebaseKey: key, ...data[key] }))
+            : [];
+        callback(lista);
+    });
+}
+
+export async function dbListarFluxoCaixa(nomeUsuario) {
+    try {
+        const chave = _normalizarChaveUsuario(nomeUsuario);
+        if (!chave) return [];
+        const snapshot = await get(ref(db, `fluxo_caixa/${chave}/movimentacoes`));
+        if (!snapshot.exists()) return [];
+        const data = snapshot.val();
+        return Object.keys(data).map(key => ({ firebaseKey: key, ...data[key] }));
+    } catch (error) {
+        console.error("ERRO AO LISTAR MOVIMENTOS DO FLUXO DE CAIXA:", error);
+        throw error;
+    }
+}
+
+export async function dbSalvarMovimentoFluxoCaixa(nomeUsuario, movimento) {
+    try {
+        const chave = _normalizarChaveUsuario(nomeUsuario);
+        if (!chave) throw new Error('USUARIO_INVALIDO_FLUXO_CAIXA');
+        const novoRef = await push(ref(db, `fluxo_caixa/${chave}/movimentacoes`), movimento);
+        return { firebaseKey: novoRef.key, ...movimento };
+    } catch (error) {
+        console.error("ERRO AO SALVAR MOVIMENTO DO FLUXO DE CAIXA:", error);
+        throw error;
+    }
+}
+
+export async function dbExcluirMovimentoFluxoCaixa(nomeUsuario, firebaseKey) {
+    try {
+        const chave = _normalizarChaveUsuario(nomeUsuario);
+        if (!chave) throw new Error('USUARIO_INVALIDO_FLUXO_CAIXA');
+        await remove(ref(db, `fluxo_caixa/${chave}/movimentacoes/${firebaseKey}`));
+    } catch (error) {
+        console.error("ERRO AO EXCLUIR MOVIMENTO DO FLUXO DE CAIXA:", error);
+        throw error;
+    }
+}
+
+export async function dbExcluirTodosMovimentosFluxoCaixa(nomeUsuario) {
+    try {
+        const chave = _normalizarChaveUsuario(nomeUsuario);
+        if (!chave) throw new Error('USUARIO_INVALIDO_FLUXO_CAIXA');
+        await remove(ref(db, `fluxo_caixa/${chave}/movimentacoes`));
+    } catch (error) {
+        console.error("ERRO AO EXCLUIR TODOS OS MOVIMENTOS DO FLUXO DE CAIXA:", error);
+        throw error;
+    }
+}
+
 /* --- FUNÃ‡Ã•ES PARA DEPÃ“SITOS --- */
 
 export async function dbSalvarDeposito(deposito) {
     try {
-        const chave = deposito.usuario.replace(/[.#$/[\]]/g, '_');
+        const chave = _normalizarChaveUsuario(deposito.usuario);
         await push(ref(db, `depositos/${chave}`), deposito);
     } catch (error) {
         console.error("ERRO AO SALVAR DEPOSITO:", error);
@@ -898,7 +966,7 @@ export async function dbSalvarDeposito(deposito) {
 
 export async function dbExcluirDeposito(nomeUsuario, firebaseKey) {
     try {
-        const chave = nomeUsuario.replace(/[.#$/[\]]/g, '_');
+        const chave = _normalizarChaveUsuario(nomeUsuario);
         await remove(ref(db, `depositos/${chave}/${firebaseKey}`));
     } catch (error) {
         console.error("ERRO AO EXCLUIR DEPOSITO:", error);
@@ -908,7 +976,7 @@ export async function dbExcluirDeposito(nomeUsuario, firebaseKey) {
 
 export async function dbAtualizarDeposito(nomeUsuario, firebaseKey, dados) {
     try {
-        const chave = nomeUsuario.replace(/[.#$/[\]]/g, '_');
+        const chave = _normalizarChaveUsuario(nomeUsuario);
         await set(ref(db, `depositos/${chave}/${firebaseKey}`), dados);
     } catch (error) {
         console.error("ERRO AO ATUALIZAR DEPOSITO:", error);
@@ -918,7 +986,7 @@ export async function dbAtualizarDeposito(nomeUsuario, firebaseKey, dados) {
 
 export async function dbListarDepositos(nomeUsuario) {
     try {
-        const chave = nomeUsuario.replace(/[.#$/[\]]/g, '_');
+        const chave = _normalizarChaveUsuario(nomeUsuario);
         const snapshot = await get(ref(db, `depositos/${chave}`));
         if (snapshot.exists()) {
             const data = snapshot.val();
