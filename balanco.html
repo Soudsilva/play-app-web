@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BalanÃ§o</title>
+    <title>Balanço</title>
     <style>
         body { margin:0; font-family:Arial, sans-serif; background:#0b2256; display:flex; justify-content:center; color:white; user-select:none; -webkit-user-select:none; }
         .app { width:100%; max-width:600px; padding:15px; box-sizing:border-box; min-height:100vh; padding-bottom:50px; }
@@ -19,7 +19,7 @@
         .topo-fin-datas { display:flex; align-items:center; gap:6px; font-size:12px; color:rgba(255,235,59,0.85); cursor:pointer; padding:3px 10px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:20px; }
         .topo-fin-datas:active { background:rgba(255,255,255,0.14); }
 
-        /* Seletor de perÃ­odo */
+        /* Seletor de período */
         .seletor-periodo {
             display:flex; align-items:center; gap:8px; margin-bottom:18px;
             background:#0f2a66; border:1px solid rgba(255,255,255,0.15);
@@ -38,7 +38,7 @@
         .data-valor.vazio { color:rgba(255,255,255,0.75); font-weight:normal; font-size:13px; }
         .sep-seta { color:rgba(255,255,255,0.35); font-size:18px; flex-shrink:0; }
 
-        /* Overlay do calendÃ¡rio */
+        /* Overlay do calendário */
         .cal-overlay {
             display:none; position:fixed; inset:0;
             background:rgba(0,0,0,0.7); z-index:2000;
@@ -121,7 +121,7 @@
         .resumo-valor { font-size:22px; font-weight:bold; color:#fff; }
         .resumo-label { font-size:11px; color:rgba(255,255,255,0.55); margin-top:2px; text-transform:uppercase; letter-spacing:0.5px; }
 
-        /* SeÃ§Ã£o */
+        /* Seção */
         .secao { margin-bottom:20px; }
         .secao-titulo {
             font-size:12px; font-weight:bold; color:#ffeb3b; text-transform:uppercase;
@@ -144,7 +144,7 @@
         .dia-count { font-size:14px; font-weight:bold; color:#fff; }
         .loading { text-align:center; padding:40px; opacity:0.6; }
 
-        /* Card de fichas do perÃ­odo */
+        /* Card de fichas do período */
         .ficha-card {
             display:flex; gap:12px; align-items:flex-start;
             background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
@@ -196,10 +196,10 @@
 <div class="app">
 
     <div class="topo">
-        <div class="titulo" id="tituloPrincipal">ðŸ“¦ BalanÃ§o</div>
+        <div class="titulo" id="tituloPrincipal">📦 Balanço</div>
         <div class="topo-fin" id="topoFin" onclick="abrirCalendario()">
-            <div class="topo-fin-titulo">ðŸ’° BalanÃ§o Financeiro</div>
-            <div class="topo-fin-datas" id="topoFinDatas">Selecione um perÃ­odo</div>
+            <div class="topo-fin-titulo">💰 Balanço Financeiro</div>
+            <div class="topo-fin-datas" id="topoFinDatas">Selecione um período</div>
         </div>
         <div class="btn-home" onclick="event.stopPropagation(); window.location.href='index.html'">
             <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
@@ -214,11 +214,11 @@
 
 <!-- Lightbox foto ficha -->
 <div class="lb-overlay" id="lbOverlay" onclick="fecharLightbox()">
-    <div class="lb-fechar" onclick="fecharLightbox()">âœ•</div>
+    <div class="lb-fechar" onclick="fecharLightbox()">✕</div>
     <img class="lb-img" id="lbImg" src="" alt="Ficha">
 </div>
 
-<!-- CalendÃ¡rio customizado -->
+<!-- Calendário customizado -->
 <div class="cal-overlay" id="calOverlay" onclick="fecharCalendarioOverlay(event)">
     <div class="cal-modal">
         <div class="cal-status">
@@ -227,14 +227,14 @@
                 <div class="cal-status-valor vazio" id="calValorDe">Toque para selecionar</div>
             </div>
             <div class="cal-status-item" id="calStatusAte">
-                <div class="cal-status-label">AtÃ©</div>
+                <div class="cal-status-label">Até</div>
                 <div class="cal-status-valor vazio" id="calValorAte">Toque para selecionar</div>
             </div>
         </div>
         <div class="cal-header">
-            <button class="cal-nav" onclick="calNavegar(-1)">â€¹</button>
+            <button class="cal-nav" onclick="calNavegar(-1)">‹</button>
             <div class="cal-mes-ano" id="calMesAno"></div>
-            <button class="cal-nav" onclick="calNavegar(1)">â€º</button>
+            <button class="cal-nav" onclick="calNavegar(1)">›</button>
         </div>
         <div class="cal-semana">
             <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
@@ -253,12 +253,16 @@
     verificarAutenticacao();
     import { dbListarAtendimentos, dbListarColaboradores, dbListarClientes } from './database.js';
     import { dbListarDepositos } from './database.js';
+    // dbLerPosseAcumulada: lê o contador persistente de produtos/máquinas acumulados
+    // de atendimentos já excluídos do Firebase. Sem isso, ao excluir atendimentos antigos
+    // os totais de posse ficariam incorretos (menores do que o real).
+    import { dbLerPosseAcumulada } from './database.js';
 
     const usuarioLogado = localStorage.getItem('usuarioLogado') || '';
     let todosAtendimentos = [];
     let todosDepositos = [];
     let datasComAtendimento = new Set();
-    let comissaoUsuario = 0; // % de comissÃ£o do colaborador logado (calculado por mÃªs)
+    let comissaoUsuario = 0; // % de comissão do colaborador logado (calculado por mês)
     let colaboradorObj  = null;
     function dataLocalStr(date) {
         const d = (date instanceof Date) ? date : new Date(date || 0);
@@ -267,18 +271,18 @@
     }
     const hoje = dataLocalStr(new Date());
 
-    // Estado do calendÃ¡rio
-    // etapa: 0 = nenhum selecionado, 1 = aguardando AtÃ©
+    // Estado do calendário
+    // etapa: 0 = nenhum selecionado, 1 = aguardando Até
     let calEtapa = 0;
     let calMesAtual = new Date();
     let dataDe  = '';
     let dataAte = '';
 
-    const MESES = ['Janeiro','Fevereiro','MarÃ§o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-    // â”€â”€ CalendÃ¡rio â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Calendário ────────────────────────────────────────────────
     window.abrirCalendario = function() {
-        // Navega para o mÃªs mais recente com atendimento (ou mÃªs atual)
+        // Navega para o mês mais recente com atendimento (ou mês atual)
         if (!dataDe) {
             const datas = [...datasComAtendimento].sort();
             calMesAtual = datas.length ? new Date(datas[datas.length-1] + 'T00:00:00') : new Date();
@@ -307,7 +311,7 @@
     };
 
     window.calNavegar = function(delta) {
-        if (calEtapa === 1 || calEtapa === 2) return; // bloqueado enquanto datas estÃ£o selecionadas
+        if (calEtapa === 1 || calEtapa === 2) return; // bloqueado enquanto datas estão selecionadas
         calMesAtual = new Date(calMesAtual.getFullYear(), calMesAtual.getMonth() + delta, 1);
         renderizarCalendario();
     };
@@ -320,10 +324,10 @@
 
     window.calSelecionarData = function(dataStr) {
         if (calEtapa === 0 || calEtapa === 2) {
-            // Primeiro toque: define De, limpa AtÃ©
+            // Primeiro toque: define De, limpa Até
             dataDe = dataStr; dataAte = ''; calEtapa = 1;
         } else {
-            // Segundo toque: define AtÃ© (garante ordem)
+            // Segundo toque: define Até (garante ordem)
             if (dataStr < dataDe) { dataAte = dataDe; dataDe = dataStr; }
             else { dataAte = dataStr; }
             calEtapa = 2;
@@ -356,7 +360,7 @@
         const mes = calMesAtual.getMonth();
         document.getElementById('calMesAno').textContent = `${MESES[mes]} ${ano}`;
 
-        // Bloqueia navegaÃ§Ã£o de mÃªs quando aguardando seleÃ§Ã£o do "AtÃ©"
+        // Bloqueia navegação de mês quando aguardando seleção do "Até"
         const navBloqueado = calEtapa === 1 || calEtapa === 2;
         document.querySelectorAll('.cal-nav').forEach(btn => btn.disabled = navBloqueado);
 
@@ -371,7 +375,7 @@
         for (let d = 1; d <= diasNoMes; d++) {
             const dataStr = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
             const temAtend = datasComAtendimento.has(dataStr);
-            // Na etapa 1 (escolhendo AtÃ©), sÃ³ permite datas >= De com atendimento; nunca permite data futura
+            // Na etapa 1 (escolhendo Até), só permite datas >= De com atendimento; nunca permite data futura
             const disponivel = temAtend && dataStr <= hoje && (calEtapa !== 1 || dataStr >= dataDe);
 
             const ehDe  = dataStr === dataDe;
@@ -390,7 +394,7 @@
         }
     }
 
-    // â”€â”€ Seletor visual â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Seletor visual ────────────────────────────────────────────
     function formatarDataBR(iso) {
         if (!iso) return null;
         const [y, m, d] = iso.split('-');
@@ -398,10 +402,10 @@
     }
 
     function renderizarSeletor() {
-        // nÃ£o necessÃ¡rio â€” o seletor agora Ã© gerado dentro do renderizar()
+        // não necessário — o seletor agora é gerado dentro do renderizar()
     }
 
-    // â”€â”€ Dados â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Dados ─────────────────────────────────────────────────────
     function filtrarPorDatas(atendimentos, de, ate) {
         const inicio = de  ? new Date(de  + 'T00:00:00') : null;
         const fim    = ate ? new Date(ate + 'T23:59:59') : null;
@@ -413,8 +417,18 @@
         });
     }
 
-    function somarProdutos(atendimentos) {
-        const mapa = {};
+    /**
+     * Soma os produtos de todos os atendimentos passados.
+     * @param {Array}  atendimentos - Lista de atendimentos ativos no Firebase
+     * @param {Object} acumulado    - Objeto { "NomeProduto": quantidade } vindo de
+     *                               dbLerPosseAcumulada, representando produtos de
+     *                               atendimentos JÁ EXCLUÍDOS. Padrão: {} (vazio).
+     * Resultado: lista ordenada por quantidade decrescente [["nome", qtd], ...]
+     */
+    function somarProdutos(atendimentos, acumulado = {}) {
+        // Começa com os dados acumulados dos atendimentos excluídos
+        const mapa = { ...acumulado };
+        // Soma os atendimentos ativos por cima
         atendimentos.forEach(a => {
             (a.produtos || []).forEach(p => {
                 if (!p.nome) return;
@@ -448,7 +462,7 @@
             const f = a.financeiro || {};
             bruto    += Number(f.totalGeral    || 0);
             comissao += Number(f.comissaoValor || 0);
-            // saldoFinal jÃ¡ Ã© totalGeral - comissaoValor, salvo pelo atendimento
+            // saldoFinal já é totalGeral - comissaoValor, salvo pelo atendimento
             liquido  += obterLiquidoEmpresa(f);
             dinheiro += Number(f.dinheiro || 0);
             pix      += obterTotalPix(f);
@@ -467,8 +481,18 @@
         });
     }
 
-    function somarMaquinas(atendimentos) {
-        const mapa = {};
+    /**
+     * Conta as máquinas atendidas somando os atendimentos passados.
+     * @param {Array}  atendimentos - Lista de atendimentos ativos no Firebase
+     * @param {Object} acumulado    - Objeto { "NomeMaquina": contagem } vindo de
+     *                               dbLerPosseAcumulada, representando máquinas de
+     *                               atendimentos JÁ EXCLUÍDOS. Padrão: {} (vazio).
+     * Resultado: lista ordenada por contagem decrescente [["nome", contagem], ...]
+     */
+    function somarMaquinas(atendimentos, acumulado = {}) {
+        // Começa com os dados acumulados dos atendimentos excluídos
+        const mapa = { ...acumulado };
+        // Soma os atendimentos ativos por cima (máquinas ficam em a.fotos.maquinas)
         atendimentos.forEach(a => {
             (a.fotos?.maquinas || []).forEach(m => {
                 if (!m.nome) return;
@@ -518,7 +542,7 @@
         return taxa;
     }
 
-    // â”€â”€ Render principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Render principal ──────────────────────────────────────────
     function renderizar() {
         const filtrados  = filtrarPorDatas(todosAtendimentos, dataDe, dataAte || dataDe);
         const doMes      = filtrarMesCompleto(todosAtendimentos, dataDe);
@@ -526,6 +550,16 @@
 
         const fin        = somarFinanceiro(doMes);
         const finPeriodo = somarFinanceiro(filtrados);
+
+        // Posse total = atendimentos ativos + acumulado dos excluídos (lido na inicialização)
+        // window._posseAcumuladaProdutos e window._posseAcumuladaMaquinas são populados
+        // via dbLerPosseAcumulada no bloco de inicialização lá embaixo.
+        const produtosPosse = somarProdutos(todosAtendimentos, window._posseAcumuladaProdutos || {});
+        const maquinasPosse = somarMaquinas(todosAtendimentos, window._posseAcumuladaMaquinas || {});
+        const maxProd       = produtosPosse[0]?.[1] || 1;   // usado para calcular a barra de progresso
+        const maxMaqPosse   = maquinasPosse[0]?.[1] || 1;
+
+        // Máquinas apenas do período selecionado (para a seção "Máquinas Atendidas no Período")
         const maquinas   = somarMaquinas(filtrados);
         const porDia  = atendimentosPorDia(filtrados);
 
@@ -534,21 +568,76 @@
 
         conteudo.innerHTML = `
 
-            <!-- RÃ³tulo BalanÃ§o Financeiro -->
+            <!--
+              =====================================================================
+              SEÇÃO: PRODUTOS EM POSSE (total acumulado)
+              Exibe todos os produtos que o colaborador tem em campo, somando:
+                1. Atendimentos ATIVOS no Firebase (todosAtendimentos)
+                2. Atendimentos JÁ EXCLUÍDOS (window._posseAcumuladaProdutos)
+              A barra de progresso é proporcional ao item de maior quantidade.
+              Só aparece se houver ao menos um produto registrado.
+              =====================================================================
+            -->
+            ${produtosPosse.length > 0 ? `
+            <div class="secao">
+                <div class="secao-titulo">🧃 Produtos em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
+                <div class="lista-card">
+                    ${produtosPosse.map(([nome, qtd], i) => `
+                        <div class="lista-item">
+                            <div class="item-nome">${nome}</div>
+                            <div class="item-barra-wrap">
+                                <div class="item-barra-bg">
+                                    <div class="item-barra" style="width:${Math.round((qtd / maxProd) * 100)}%"></div>
+                                </div>
+                            </div>
+                            <div class="item-badge${i === 0 ? ' destaque' : ''}">-${qtd}</div>
+                        </div>`).join('')}
+                </div>
+            </div>` : ''}
+
+            <!--
+              =====================================================================
+              SEÇÃO: MÁQUINAS EM POSSE (total acumulado)
+              Exibe todas as máquinas atendidas pelo colaborador, somando:
+                1. Atendimentos ATIVOS no Firebase (todosAtendimentos)
+                2. Atendimentos JÁ EXCLUÍDOS (window._posseAcumuladaMaquinas)
+              Máquinas ficam salvas dentro de a.fotos.maquinas em cada atendimento.
+              A barra é verde para destacar diferente dos produtos (amarela).
+              Só aparece se houver ao menos uma máquina registrada.
+              =====================================================================
+            -->
+            ${maquinasPosse.length > 0 ? `
+            <div class="secao">
+                <div class="secao-titulo">🎰 Máquinas em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
+                <div class="lista-card">
+                    ${maquinasPosse.map(([nome, qtd], i) => `
+                        <div class="lista-item">
+                            <div class="item-nome">${nome}</div>
+                            <div class="item-barra-wrap">
+                                <div class="item-barra-bg">
+                                    <div class="item-barra" style="width:${Math.round((qtd / maxMaqPosse) * 100)}%;background:${i === 0 ? '#4caf50' : 'rgba(76,175,80,0.6)'}"></div>
+                                </div>
+                            </div>
+                            <div class="item-badge${i === 0 ? ' destaque' : ''}" style="${i === 0 ? 'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;' : ''}">-${qtd}</div>
+                        </div>`).join('')}
+                </div>
+            </div>` : ''}
+
+            <!-- Rótulo Balanço Financeiro -->
             <div id="tituloFinanceiro" style="text-align:center; font-size:22px; font-weight:bold; color:#fff; margin:24px 0 14px; position:relative;">
-                ðŸ’° BalanÃ§o Financeiro
+                💰 Balanço Financeiro
                 <div style="height:1px; background:linear-gradient(to right, transparent, rgba(255,235,59,0.4), transparent); margin-top:10px;"></div>
             </div>
 
-            <!-- Seletor de perÃ­odo -->
+            <!-- Seletor de período -->
             <div class="seletor-periodo" onclick="abrirCalendario()" style="cursor:pointer;">
                 <div class="data-btn${dataDe ? ' ativo' : ''}" style="pointer-events:none;">
                     <span class="data-label">De</span>
                     <span class="data-valor${!dataDe ? ' vazio' : ''}">${labelDe}</span>
                 </div>
-                <span class="sep-seta">â†’</span>
+                <span class="sep-seta">→</span>
                 <div class="data-btn${dataAte ? ' ativo' : ''}" style="pointer-events:none;">
-                    <span class="data-label">AtÃ©</span>
+                    <span class="data-label">Até</span>
                     <span class="data-valor${!dataAte ? ' vazio' : ''}">${labelAte}</span>
                 </div>
             </div>
@@ -571,16 +660,16 @@
                     })
                     .reduce((s, d) => s + Number(d.valor || 0), 0);
                 const valorDepositar = Math.max(0, totalDeveDepositar - totalJaDepositado);
-                const labelPeriodo = (!dataAte || dataAte === dataDe) ? formatarDataBR(dataDe) : 'PerÃ­odo';
+                const labelPeriodo = (!dataAte || dataAte === dataDe) ? formatarDataBR(dataDe) : 'Período';
                 return `
             <div class="card-resumo">
 
-                <!-- Cobrado no perÃ­odo + Depositar na Loja -->
+                <!-- Cobrado no período + Depositar na Loja -->
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
                     <div style="background:rgba(255,235,59,0.1); border:1px solid rgba(255,235,59,0.35); border-radius:14px; padding:14px 8px; text-align:center;">
                         <div style="font-size:11px; color:#ffeb3b; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">${labelPeriodo}</div>
                         <div style="font-size:20px; font-weight:bold; color:#ffeb3b; line-height:1;">${moeda(finPeriodo.liquido)}</div>
-                        <div style="font-size:10px; color:rgba(255,235,59,0.5); text-transform:uppercase; margin-top:5px;">Cobrado lÃ­quido</div>
+                        <div style="font-size:10px; color:rgba(255,235,59,0.5); text-transform:uppercase; margin-top:5px;">Cobrado líquido</div>
                     </div>
                     <div style="background:rgba(255,152,0,0.15); border:1px solid rgba(255,152,0,0.4); border-radius:14px; padding:14px 8px; text-align:center;">
                         <div style="font-size:11px; color:#ffb74d; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Depositar na Loja</div>
@@ -588,30 +677,30 @@
                     </div>
                 </div>
 
-                <!-- Total do mÃªs + ComissÃ£o -->
+                <!-- Total do mês + Comissão -->
                 <div style="border-top:1px dashed rgba(255,255,255,0.1); padding-top:14px;">
-                    <div class="resumo-titulo" style="margin-bottom:10px;">ðŸ’° ${nomeMes}</div>
+                    <div class="resumo-titulo" style="margin-bottom:10px;">💰 ${nomeMes}</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                     <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:14px 8px; text-align:center;">
-                        <div style="font-size:11px; color:rgba(255,255,255,0.6); font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Total do mÃªs</div>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.6); font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Total do mês</div>
                         <div style="font-size:20px; font-weight:bold; color:rgba(255,255,255,0.7); line-height:1;">${moeda(fin.liquido)}</div>
-                        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:5px;">lÃ­quido</div>
+                        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:5px;">líquido</div>
                     </div>
                     ${comissaoUsuario > 0 ? `
                     <div style="background:rgba(76,175,80,0.15); border:1px solid rgba(76,175,80,0.35); border-radius:14px; padding:14px 8px; text-align:center;">
-                        <div style="font-size:11px; color:#81c784; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">ComissÃ£o do mÃªs</div>
+                        <div style="font-size:11px; color:#81c784; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Comissão do mês</div>
                         <div style="font-size:20px; font-weight:bold; color:#a5d6a7; line-height:1;">${moeda(valorComissao)}</div>
-                        <div style="font-size:10px; color:rgba(165,214,167,0.6); margin-top:5px;">${comissaoUsuario}% do mÃªs</div>
+                        <div style="font-size:10px; color:rgba(165,214,167,0.6); margin-top:5px;">${comissaoUsuario}% do mês</div>
                     </div>` : `<div></div>`}
                 </div>
                 </div>
             </div>`;
             })() : ''}
 
-            <!-- Fichas do perÃ­odo -->
+            <!-- Fichas do período -->
             ${filtrados.length > 0 && dataDe ? `
             <div class="secao">
-                <div class="secao-titulo">ðŸ“‹ Fichas do PerÃ­odo</div>
+                <div class="secao-titulo">📋 Fichas do Período</div>
                 ${filtrados.map((a, i) => {
                     const f = a.financeiro || {};
                     const totalPix = obterTotalPix(f);
@@ -625,36 +714,32 @@
                         ${fotoUrl ? `
                         <div class="ficha-foto-wrap" onclick="abrirFoto('${fotoUrl}')">
                             <img src="${fotoUrl}" class="ficha-foto" alt="Ficha">
-                            <div class="ficha-foto-overlay">ðŸ”</div>
+                            <div class="ficha-foto-overlay">🔍</div>
                         </div>` : `<div class="ficha-foto-wrap ficha-sem-foto">Sem<br>foto</div>`}
                         <div class="ficha-foto-data">${dataFicha}</div>
                     </div>
                     <div class="ficha-info">
-                        <div class="ficha-numero">NÂº ${a.cliente?.numero || i+1} â€” ${a.cliente?.nome || 'Cliente'}</div>
+                        <div class="ficha-numero">Nº ${a.cliente?.numero || i+1} — ${a.cliente?.nome || 'Cliente'}</div>
                         <div class="ficha-linha">
                             <span class="ficha-chave">Total Geral</span>
                             <span class="ficha-val">${moeda(f.totalGeral || 0)}</span>
                         </div>
                         <div class="ficha-linha">
-                            <span class="ficha-chave">Valor em EspÃ©cie</span>
+                            <span class="ficha-chave">Dinheiro em Espécie</span>
                             <span class="ficha-val dinheiro">${moeda(f.dinheiro || 0)}</span>
                         </div>
                         ${totalPix > 0 ? `
                         <div class="ficha-linha">
-                            <span class="ficha-chave">Valor em Pix</span>
+                            <span class="ficha-chave">Pix (Total)</span>
                             <span class="ficha-val pix">${moeda(totalPix)}</span>
                         </div>` : ''}
                         ${Number(f.comissaoValor || 0) > 0 ? `
                         <div class="ficha-linha">
-                            <span class="ficha-chave">ComissÃ£o Paga</span>
+                            <span class="ficha-chave">Comissão${f.comissaoPorcentagem ? ` (${f.comissaoPorcentagem}%)` : ''}</span>
                             <span class="ficha-val comissao">${moeda(f.comissaoValor)}</span>
                         </div>` : ''}
                         <div class="ficha-linha">
-                            <span class="ficha-chave">Líquido Empresa</span>
-                            <span class="ficha-val saldo">${moeda(liquidoEmpresa)}</span>
-                        </div>
-                        <div class="ficha-linha">
-                            <span class="ficha-chave">Saldo Depositar</span>
+                            <span class="ficha-chave">Depositar</span>
                             <span class="ficha-val dep">${moeda(depositar)}</span>
                         </div>
                     </div>
@@ -662,10 +747,10 @@
                 }).join('')}
             </div>` : ''}
 
-            <!-- MÃ¡quinas atendidas no perÃ­odo -->
+            <!-- Máquinas atendidas no período -->
             ${maquinas.length > 0 && (dataDe || dataAte) ? `
             <div class="secao">
-                <div class="secao-titulo" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10px;">ðŸŽ° MÃ¡quinas Atendidas no PerÃ­odo Selecionado</div>
+                <div class="secao-titulo" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10px;">🎰 Máquinas Atendidas no Período Selecionado</div>
                 <div class="lista-card">
                     ${maquinas.map(([nome,qtd]) => `
                         <div class="lista-item">
@@ -678,7 +763,7 @@
             <!-- Por dia -->
             ${porDia.length > 0 && (dataDe || dataAte) ? `
             <div class="secao">
-                <div class="secao-titulo">ðŸ“… Líquido por Dia</div>
+                <div class="secao-titulo">📅 Líquido por Dia</div>
                 <div class="lista-card">
                     ${porDia.map(([data,{count,rotas,saldo}]) => {
                         const nums = [...rotas].map(r => r.replace(/^rota\s*/i, '').replace(/^r\.\s*/i, '').trim());
@@ -704,7 +789,7 @@
         if (!el) return;
         const de  = formatarDataBR(dataDe)  || 'Selecione';
         const ate = formatarDataBR(dataAte) || '';
-        el.textContent = (ate && ate !== de) ? `${de} â†’ ${ate}` : de;
+        el.textContent = (ate && ate !== de) ? `${de} → ${ate}` : de;
     }
 
     function setupTopoObserver() {
@@ -746,9 +831,13 @@
         }
     });
 
-    // â”€â”€ InicializaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    const [todos, colaboradores, clientes, depositos] = await Promise.all([
+    // ── Inicialização ─────────────────────────────────────────────
+    // Todas as chamadas ao Firebase rodam em paralelo para carregar mais rápido.
+    // posseAcumulada: dados de produtos/máquinas de atendimentos já excluídos.
+    // Sem isso, ao excluir atendimentos antigos o balanço de material ficaria errado.
+    const [todos, posseAcumulada, colaboradores, clientes, depositos] = await Promise.all([
         dbListarAtendimentos(),
+        dbLerPosseAcumulada(usuarioLogado),   // ← acumulado dos atendimentos excluídos
         dbListarColaboradores(),
         dbListarClientes(),
         dbListarDepositos(usuarioLogado)
@@ -756,7 +845,7 @@
     todosDepositos = depositos;
     colaboradorObj  = colaboradores.find(c => c.nome === usuarioLogado) || null;
 
-    // Mapa para cruzar cliente do atendimento â†’ rota atual
+    // Mapa para cruzar cliente do atendimento → rota atual
     const mapaRotas = {};
     clientes.forEach(c => {
         if (!c.rota) return;
@@ -774,6 +863,12 @@
             })
             .map(a => dataLocalStr(a.data || a.dataHora || 0))
     );
+
+    // Salva o acumulado em variáveis globais para o renderizar() acessar sempre que
+    // redesenha a tela (ex: ao trocar o período selecionado no calendário).
+    // Estrutura: { produtos: { "NomeProduto": qtd }, maquinas: { "NomeMaquina": contagem } }
+    window._posseAcumuladaProdutos = posseAcumulada.produtos || {};
+    window._posseAcumuladaMaquinas = posseAcumulada.maquinas || {};
 
     renderizar();
 </script>

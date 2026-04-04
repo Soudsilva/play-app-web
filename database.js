@@ -1,11 +1,11 @@
 /* =========================================================================
    PROJETO: PLAY NA WEB
    BANCO DE DADOS: FIREBASE REALTIME DATABASE
-   OBJETIVO: Este arquivo Ã© o "mensageiro". Ele leva dados do site para o servidor e traz de volta.
+   OBJETIVO: Este arquivo é o "mensageiro". Ele leva dados do site para o servidor e traz de volta.
    ========================================================================= */
 
-// --- 1. IMPORTAÃ‡ÃƒO DAS FERRAMENTAS ---
-// Aqui estamos "pegando emprestado" as funÃ§Ãµes prontas do Google (Firebase) para nÃ£o ter que criar tudo do zero.
+// --- 1. IMPORTAÇÃO DAS FERRAMENTAS ---
+// Aqui estamos "pegando emprestado" as funções prontas do Google (Firebase) para não ter que criar tudo do zero.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
     getDatabase,
@@ -25,8 +25,8 @@ import {
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 import { salvarCacheClientes, lerCacheClientes, salvarCacheEstoque, lerCacheEstoque } from './offline-sync.js';
 
-// --- 2. CONFIGURAÃ‡ÃƒO (AS CHAVES DO COFRE) ---
-// Estas sÃ£o as credenciais que permitem que seu site converse especificamente com o SEU banco de dados.
+// --- 2. CONFIGURAÇÃO (AS CHAVES DO COFRE) ---
+// Estas são as credenciais que permitem que seu site converse especificamente com o SEU banco de dados.
 const firebaseConfig = {
     apiKey: "AIzaSyAog2lzvvWkOSvr8BqPgtGCZpSM4VQ2b3E",
     authDomain: "play-na-web.firebaseapp.com",
@@ -37,19 +37,19 @@ const firebaseConfig = {
     appId: "1:278404685529:web:c8e7dc89eeb660173ae8c8"
 };
 
-// --- 3. INICIALIZAÃ‡ÃƒO ---
-// Aqui ligamos o "motor" do Firebase usando as configuraÃ§Ãµes acima.
+// --- 3. INICIALIZAÇÃO ---
+// Aqui ligamos o "motor" do Firebase usando as configurações acima.
 export const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const storage = getStorage(app);
 
-/* --- FUNÃ‡Ã•ES PARA CLIENTES --- */
+/* --- FUNÇÕES PARA CLIENTES --- */
 
-// FUNÃ‡ÃƒO: ESCUTAR CLIENTES (Em Tempo Real)
-// O que faz: Fica "de ouvidos abertos". Sempre que alguÃ©m mudar algo no banco de dados,
-// essa funÃ§Ã£o avisa o site instantaneamente para atualizar a tela sem precisar recarregar (F5).
+// FUNÇÃO: ESCUTAR CLIENTES (Em Tempo Real)
+// O que faz: Fica "de ouvidos abertos". Sempre que alguém mudar algo no banco de dados,
+// essa função avisa o site instantaneamente para atualizar a tela sem precisar recarregar (F5).
 export function dbEscutarClientes(callback) {
-    // Serve o cache do IndexedDB imediatamente (Ãºtil ao abrir offline apÃ³s um reload)
+    // Serve o cache do IndexedDB imediatamente (útil ao abrir offline após um reload)
     lerCacheClientes().then(cached => {
         if (cached.length > 0) callback(cached);
     }).catch(() => {});
@@ -62,31 +62,31 @@ export function dbEscutarClientes(callback) {
             callback(lista);
             salvarCacheClientes(lista).catch(() => {}); // espelha no IndexedDB
         } else if (navigator.onLine) {
-            callback([]); // sÃ³ limpa se realmente nÃ£o hÃ¡ dados (e temos internet)
+            callback([]); // só limpa se realmente não há dados (e temos internet)
         }
     });
 }
 
-// FUNÃ‡ÃƒO INTERNA: Atualiza o timestamp de versÃ£o dos clientes no banco.
-// Usada apÃ³s qualquer alteraÃ§Ã£o na lista de clientes para avisar todos os dispositivos.
+// FUNÇÃO INTERNA: Atualiza o timestamp de versão dos clientes no banco.
+// Usada após qualquer alteração na lista de clientes para avisar todos os dispositivos.
 async function _atualizarVersaoClientes() {
     try {
         await set(ref(db, 'metadata/clientes_versao'), Date.now());
     } catch (e) {
-        // NÃ£o bloquear a operaÃ§Ã£o principal se isso falhar
-        console.warn("NÃ£o foi possÃ­vel atualizar versÃ£o dos clientes:", e);
+        // Não bloquear a operação principal se isso falhar
+        console.warn("Não foi possível atualizar versão dos clientes:", e);
     }
 }
 
-// FUNÃ‡ÃƒO: ESCUTAR VERSÃƒO DOS CLIENTES
-// O que faz: Escuta APENAS um nÃºmero (timestamp) no banco. Quando ele muda,
-// significa que alguÃ©m alterou a lista de clientes. Economiza dados pois nÃ£o
-// baixa a lista inteira â€” sÃ³ avisa que ela mudou.
+// FUNÇÃO: ESCUTAR VERSÃO DOS CLIENTES
+// O que faz: Escuta APENAS um número (timestamp) no banco. Quando ele muda,
+// significa que alguém alterou a lista de clientes. Economiza dados pois não
+// baixa a lista inteira — só avisa que ela mudou.
 async function _atualizarVersaoMediaDeVendas() {
     try {
         await set(ref(db, 'metadata/media_de_vendas_versao'), Date.now());
     } catch (e) {
-        console.warn("NÃƒÂ£o foi possÃƒÂ­vel atualizar versÃƒÂ£o da Media_de_Vendas:", e);
+        console.warn("NÃ£o foi possÃ­vel atualizar versÃ£o da Media_de_Vendas:", e);
     }
 }
 
@@ -102,13 +102,13 @@ export function dbEscutarVersaoMediaDeVendas(callback) {
     });
 }
 
-// FUNÃ‡ÃƒO: SALVAR CLIENTE (Criar ou Editar)
-// O que faz: Verifica se Ã© um cliente novo ou antigo.
-// Se tiver ID (idExistente), ele atualiza os dados. Se nÃ£o, cria um novo registro.
+// FUNÇÃO: SALVAR CLIENTE (Criar ou Editar)
+// O que faz: Verifica se é um cliente novo ou antigo.
+// Se tiver ID (idExistente), ele atualiza os dados. Se não, cria um novo registro.
 export async function dbSalvarCliente(cliente, idExistente = null) {
     try {
         if (idExistente) {
-            // Modo EdiÃ§Ã£o: Atualiza o cliente especÃ­fico
+            // Modo Edição: Atualiza o cliente específico
             const clienteRef = ref(db, `clientes/${idExistente}`);
             const snapAnt = await get(clienteRef);
             const dadosAnt = snapAnt.exists() ? snapAnt.val() : null;
@@ -118,7 +118,7 @@ export async function dbSalvarCliente(cliente, idExistente = null) {
             await _upsertMediaDeVendasPorCliente(cliente, idExistente, numeroAntigo);
             await _atualizarVersaoMediaDeVendas();
         } else {
-            // Modo CriaÃ§Ã£o: Cria um novo cliente com chave Ãºnica
+            // Modo Criação: Cria um novo cliente com chave única
             const clientesRef = ref(db, 'clientes');
             const novoRef = await push(clientesRef, cliente);
             await _upsertMediaDeVendasPorCliente(cliente, novoRef.key || null, null);
@@ -132,40 +132,40 @@ export async function dbSalvarCliente(cliente, idExistente = null) {
     }
 }
 
-// [BLOCO: EMERGÃŠNCIA - LIMPAR TUDO]
+// [BLOCO: EMERGÊNCIA - LIMPAR TUDO]
 export async function dbLimparHistoricoCompleto() {
     try {
         const histRef = ref(db, 'historico_estoque');
         await remove(histRef);
     } catch (error) {
-        console.error("Erro ao limpar histÃ³rico completo:", error);
+        console.error("Erro ao limpar histórico completo:", error);
         throw error;
     }
 }
 
-// [BLOCO: HISTÃ“RICO - EXCLUIR]
+// [BLOCO: HISTÓRICO - EXCLUIR]
 export async function dbExcluirHistorico(id) {
     try {
         const histRef = ref(db, `historico_estoque/${id}`);
         await remove(histRef);
     } catch (error) {
-        console.error("Erro ao excluir histÃ³rico:", error);
+        console.error("Erro ao excluir histórico:", error);
         throw error;
     }
 }
 
-// [BLOCO: HISTÃ“RICO DE MOVIMENTAÃ‡ÃƒO]
-// Grava um registro eterno de cada entrada ou saÃ­da
+// [BLOCO: HISTÓRICO DE MOVIMENTAÇÃO]
+// Grava um registro eterno de cada entrada ou saída
 export async function dbSalvarHistorico(movimento) {
     try {
         const histRef = ref(db, 'historico_estoque');
         await push(histRef, movimento);
     } catch (error) {
-        console.error("Erro ao salvar histÃ³rico:", error);
+        console.error("Erro ao salvar histórico:", error);
     }
 }
 
-// Escuta apenas os Ãºltimos 20 movimentos para exibir na tela
+// Escuta apenas os últimos 20 movimentos para exibir na tela
 export function dbEscutarHistorico(callback) {
     const histRef = ref(db, 'historico_estoque');
     const ultimosQuery = query(histRef, limitToLast(20));
@@ -179,23 +179,23 @@ export function dbEscutarHistorico(callback) {
                 lista.push({ ...data[key], firebaseUrl: key });
             });
         }
-        // O Firebase devolve na ordem cronolÃ³gica (antigo -> novo), vamos inverter na tela depois
+        // O Firebase devolve na ordem cronológica (antigo -> novo), vamos inverter na tela depois
         callback(lista);
     });
 }
 
-// FUNÃ‡ÃƒO: EXCLUIR CLIENTE
+// FUNÇÃO: EXCLUIR CLIENTE
 // O que faz: Remove permanentemente o cliente do banco de dados baseado no ID.
 export async function dbExcluirCliente(id) {
     try {
-        // Remove tambÃ©m da base Media_de_Vendas (id = nÃºmero do cliente)
+        // Remove também da base Media_de_Vendas (id = número do cliente)
         try {
             const snap = await get(ref(db, `clientes/${id}`));
             const numero = snap.exists() ? (snap.val()?.numero ?? null) : null;
             const key = _normalizarNumeroCliente(numero);
             if (key) await remove(ref(db, `Media_de_Vendas/${key}`));
         } catch (e) {
-            console.warn("NÃ£o foi possÃ­vel remover cliente de Media_de_Vendas:", e);
+            console.warn("Não foi possível remover cliente de Media_de_Vendas:", e);
         }
         const clienteRef = ref(db, `clientes/${id}`);
         await remove(clienteRef);
@@ -207,9 +207,9 @@ export async function dbExcluirCliente(id) {
     }
 }
 
-// FUNÃ‡ÃƒO: LISTAR CLIENTES (Uma Ãºnica vez)
+// FUNÇÃO: LISTAR CLIENTES (Uma única vez)
 // O que faz: Tira uma "foto" (snapshot) do banco naquele momento.
-// Diferente do "Escutar", este nÃ£o fica vigiando alteraÃ§Ãµes futuras.
+// Diferente do "Escutar", este não fica vigiando alterações futuras.
 export async function dbListarClientes() {
     try {
         const snapshot = await get(ref(db, 'clientes'));
@@ -226,11 +226,11 @@ export async function dbListarClientes() {
     return [];
 }
 
-/* --- FUNÃ‡Ã•ES PARA COLABORADORES --- */
+/* --- FUNÇÕES PARA COLABORADORES --- */
 
-// FUNÃ‡ÃƒO: ESCUTAR COLABORADORES (Com Ordem)
-// O que faz: Igual ao de clientes, mas com um passo extra: ORDENAÃ‡ÃƒO.
-// Garante que a lista apareÃ§a na ordem que vocÃª definiu (arrastar e soltar).
+// FUNÇÃO: ESCUTAR COLABORADORES (Com Ordem)
+// O que faz: Igual ao de clientes, mas com um passo extra: ORDENAÇÃO.
+// Garante que a lista apareça na ordem que você definiu (arrastar e soltar).
 export function dbEscutarColaboradores(callback) {
     const colabRef = ref(db, 'colaboradores'); 
     onValue(colabRef, (snapshot) => {
@@ -240,7 +240,7 @@ export function dbEscutarColaboradores(callback) {
                 ...data[key],
                 firebaseUrl: key
             })).sort((a, b) => {
-                // CORREÃ‡ÃƒO: Agora ordena pelo campo 'ordem' para respeitar o arrastar e soltar
+                // CORREÇÃO: Agora ordena pelo campo 'ordem' para respeitar o arrastar e soltar
                 return (a.ordem || 0) - (b.ordem || 0); 
             });
             callback(lista);
@@ -257,24 +257,24 @@ export async function dbListarColaboradores() {
     return Object.keys(data).map(key => ({ ...data[key], firebaseUrl: key }));
 }
 
-// FUNÃ‡ÃƒO: SALVAR COLABORADOR
-// O que faz: Salva dados do funcionÃ¡rio.
-// Truque especial: Usa um nÃºmero negativo (-Date.now()) para que novos cadastros
-// apareÃ§am automaticamente no topo da lista antes de vocÃª reordenar.
+// FUNÇÃO: SALVAR COLABORADOR
+// O que faz: Salva dados do funcionário.
+// Truque especial: Usa um número negativo (-Date.now()) para que novos cadastros
+// apareçam automaticamente no topo da lista antes de você reordenar.
 export async function dbSalvarColaborador(colaborador, idExistente = null) {
     try {
         if (idExistente) {
             const colabRef = ref(db, `colaboradores/${idExistente}`);
             const snapshot = await get(colabRef);
             const dadosAntigos = snapshot.val();
-            // MantÃ©m a posiÃ§Ã£o na fila se jÃ¡ existir (nÃ£o joga pro final)
+            // Mantém a posição na fila se já existir (não joga pro final)
             if (dadosAntigos && dadosAntigos.ordem !== undefined) {
                 colaborador.ordem = dadosAntigos.ordem;
             }
             await set(colabRef, colaborador);
         } else {
             // USANDO O TIMESTAMP NEGATIVO: 
-            // Quanto mais recente o cadastro, menor o nÃºmero, logo, fica no topo.
+            // Quanto mais recente o cadastro, menor o número, logo, fica no topo.
             colaborador.ordem = -Date.now();
             const colabRef = ref(db, 'colaboradores');
             await push(colabRef, colaborador);
@@ -285,9 +285,9 @@ export async function dbSalvarColaborador(colaborador, idExistente = null) {
     }
 }
 
-// NOVA FUNÃ‡ÃƒO: NecessÃ¡ria para gravar a posiÃ§Ã£o apÃ³s o arraste
-// O que faz: Atualiza APENAS o nÃºmero da ordem, sem mexer no nome ou foto.
-// Ã‰ usada quando vocÃª solta o card na tela de gestÃ£o.
+// NOVA FUNÇÃO: Necessária para gravar a posição após o arraste
+// O que faz: Atualiza APENAS o número da ordem, sem mexer no nome ou foto.
+// É usada quando você solta o card na tela de gestão.
 export async function dbAtualizarOrdemColaborador(id, novaOrdem) {
     try {
         const colabRef = ref(db, `colaboradores/${id}`);
@@ -297,7 +297,7 @@ export async function dbAtualizarOrdemColaborador(id, novaOrdem) {
     }
 }
 
-// FUNÃ‡ÃƒO: EXCLUIR COLABORADOR
+// FUNÇÃO: EXCLUIR COLABORADOR
 export async function dbExcluirColaborador(id) {
     try {
         const colabRef = ref(db, `colaboradores/${id}`);
@@ -316,7 +316,7 @@ export async function dbSalvarItemEstoque(item, id = null) {
             const itemRef = ref(db, `estoque/${id}`);
             await update(itemRef, item);
         } else {
-            // Se nÃ£o tem ID, cria um novo
+            // Se não tem ID, cria um novo
             const estoqueRef = ref(db, 'estoque');
             await push(estoqueRef, item);
         }
@@ -393,7 +393,7 @@ export async function dbExcluirPedido(id) {
     }
 }
 
-/* --- FUNÃ‡Ã•ES PARA ATENDIMENTO --- */
+/* --- FUNÇÕES PARA ATENDIMENTO --- */
 
 // [NOVO] Helper para converter Base64 em Blob para upload
 function base64ToBlob(base64, contentType = 'image/jpeg') {
@@ -413,29 +413,29 @@ function base64ToBlob(base64, contentType = 'image/jpeg') {
 
 // [NOVO] Salvar uma foto no Firebase Storage
 export async function storageSalvarFoto(base64String, pasta = 'atendimentos') {
-    // Offline: devolve o base64 como estÃ¡ â€” serÃ¡ enviado quando a internet voltar
+    // Offline: devolve o base64 como está — será enviado quando a internet voltar
     if (!navigator.onLine) return base64String;
     try {
         // 1. Converte a string base64 para um formato de arquivo (Blob)
         const blob = base64ToBlob(base64String);
         
-        // 2. Cria um nome de arquivo Ãºnico para evitar sobreposiÃ§Ãµes
+        // 2. Cria um nome de arquivo único para evitar sobreposições
         const nomeArquivo = `${String(pasta || 'atendimentos').replace(/^\/+|\/+$/g, '')}/${Date.now()}-${Math.round(Math.random() * 1E9)}.jpg`;
         const fotoRef = storageRef(storage, nomeArquivo);
         
-        // 3. Faz o upload do arquivo (Com limite de 15 segundos para nÃ£o travar)
+        // 3. Faz o upload do arquivo (Com limite de 15 segundos para não travar)
         const uploadPromise = uploadBytes(fotoRef, blob);
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite de upload excedido. A internet pode estar instÃ¡vel.")), 15000));
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Tempo limite de upload excedido. A internet pode estar instável.")), 15000));
         
         const snapshot = await Promise.race([uploadPromise, timeoutPromise]);
         
-        // 4. Pega a URL pÃºblica do arquivo que acabamos de subir
+        // 4. Pega a URL pública do arquivo que acabamos de subir
         const downloadURL = await getDownloadURL(snapshot.ref);
         
         return downloadURL;
     } catch (error) {
         console.error("Erro ao fazer upload da foto:", error);
-        throw error; // Re-lanÃ§a o erro para ser tratado na tela de atendimento
+        throw error; // Re-lança o erro para ser tratado na tela de atendimento
     }
 }
 
@@ -445,7 +445,7 @@ export async function dbSalvarAtendimento(atendimento, idExistente = null) {
         if (idExistente) {
             await set(ref(db, `atendimentos/${idExistente}`), atendimento);
         } else {
-            // Cria uma nova entrada na coleÃ§Ã£o 'atendimentos'
+            // Cria uma nova entrada na coleção 'atendimentos'
             const atendimentosRef = ref(db, 'atendimentos');
             await push(atendimentosRef, atendimento);
         }
@@ -517,8 +517,8 @@ export async function dbExcluirAtendimento(id) {
 
 export async function dbAtualizarAtendimento(id, patch) {
     try {
-        if (!id) throw new Error("ID do atendimento Ã© obrigatÃ³rio.");
-        if (!patch || typeof patch !== 'object') throw new Error("Patch invÃ¡lido.");
+        if (!id) throw new Error("ID do atendimento é obrigatório.");
+        if (!patch || typeof patch !== 'object') throw new Error("Patch inválido.");
         await update(ref(db, `atendimentos/${id}`), patch);
     } catch (error) {
         console.error("ERRO AO ATUALIZAR ATENDIMENTO:", error);
@@ -526,7 +526,7 @@ export async function dbAtualizarAtendimento(id, patch) {
     }
 }
 
-/* --- FUNÃ‡Ã•ES: MEDIA DE VENDAS (SAÃšDE FINANCEIRA) --- */
+/* --- FUNÇÕES: MEDIA DE VENDAS (SAÚDE FINANCEIRA) --- */
 
 function _normalizarNumeroCliente(numero) {
     const k = String(numero ?? '').trim();
@@ -628,7 +628,7 @@ async function _upsertMediaDeVendasPorCliente(cliente, clienteId = null, numeroA
             }
             await remove(oldRef);
         } catch (e) {
-            console.warn("Falha ao mover Media_de_Vendas para novo nÃºmero:", e);
+            console.warn("Falha ao mover Media_de_Vendas para novo número:", e);
         }
     }
 
@@ -710,7 +710,7 @@ async function _upsertMediaDeVendasPorAtendimento(atendimento) {
         if (atualizarUltimo) {
             next.ultimo_atendimento_em = dataAt;
 
-            // SÃ³ sobrescreve o indicador se este atendimento tiver indicador (ou se ainda nÃ£o houver nenhum no registro)
+            // Só sobrescreve o indicador se este atendimento tiver indicador (ou se ainda não houver nenhum no registro)
             const jaTemVenda = (typeof next.venda_por_dia === 'number') || Boolean(next.venda_por_dia_msg);
             if (temIndicador || !jaTemVenda) {
                 next.venda_por_dia = novoVendaDia;
@@ -952,7 +952,85 @@ export async function dbExcluirTodosMovimentosFluxoCaixa(nomeUsuario) {
     }
 }
 
-/* --- FUNÃ‡Ã•ES PARA DEPÃ“SITOS --- */
+/* =============================================================================
+   FUNÇÕES PARA POSSE ACUMULADA (PRODUTOS E MÁQUINAS)
+   =============================================================================
+   CONTEXTO / POR QUE EXISTE:
+   Quando um atendimento é EXCLUÍDO do Firebase (ex: atendimentos antigos removidos
+   para poupar espaço ou corrigir erro), os produtos e máquinas que faziam parte
+   daquele atendimento seriam perdidos para sempre do balanço.
+
+   Para resolver isso, existe este "acumulador": antes de excluir qualquer atendimento,
+   o sistema chama `dbAcumularPosse` para somar os produtos e máquinas daquele
+   atendimento a um contador permanente no banco, no nó `posse_acumulada/{usuario}`.
+
+   Assim, o balanço em `balanco.html` pode mostrar:
+     - Produtos em posse = soma dos atendimentos ATIVOS + acumulado dos excluídos
+     - Máquinas em posse = idem
+
+   ESTRUTURA NO FIREBASE:
+   posse_acumulada/
+     {nomeUsuario}/
+       produtos/
+         "Nome do Produto": <quantidade total>
+       maquinas/
+         "Nome da Máquina": <quantidade total>
+
+   ONDE É USADO:
+   - `balanco.html` lê via `dbLerPosseAcumulada` na inicialização
+   - `[tela de exclusão de atendimento]` deve chamar `dbAcumularPosse` ANTES de excluir
+   ============================================================================= */
+
+/**
+ * Lê o acumulador de posse de um usuário no Firebase.
+ * Retorna { produtos: { "NomeProduto": quantidade, ... }, maquinas: { "NomeMaquina": contagem, ... } }
+ * Se não houver nada salvo, retorna objetos vazios.
+ */
+export async function dbLerPosseAcumulada(nomeUsuario) {
+    try {
+        const chave = _normalizarChaveUsuario(nomeUsuario);
+        const snap = await get(ref(db, `posse_acumulada/${chave}`));
+        return snap.val() || { produtos: {}, maquinas: {} };
+    } catch (error) {
+        console.error("ERRO AO LER POSSE ACUMULADA:", error);
+        return { produtos: {}, maquinas: {} };
+    }
+}
+
+/**
+ * Incrementa o acumulador de posse com os dados de UM atendimento.
+ * DEVE ser chamada ANTES de excluir um atendimento para não perder os dados.
+ *
+ * @param {string} nomeUsuario - Nome do colaborador dono do atendimento
+ * @param {object} atendimento - Objeto completo do atendimento que será excluído
+ */
+export async function dbAcumularPosse(nomeUsuario, atendimento) {
+    try {
+        const chave = _normalizarChaveUsuario(nomeUsuario);
+        const posseRef = ref(db, `posse_acumulada/${chave}`);
+        const snap = await get(posseRef);
+        const atual = snap.val() || { produtos: {}, maquinas: {} };
+
+        // Acumula produtos do atendimento
+        (atendimento.produtos || []).forEach(p => {
+            if (!p.nome) return;
+            atual.produtos[p.nome] = (atual.produtos[p.nome] || 0) + Number(p.quantidade || 0);
+        });
+
+        // Acumula máquinas do atendimento (salvas dentro de fotos.maquinas)
+        (atendimento.fotos?.maquinas || []).forEach(m => {
+            if (!m.nome) return;
+            atual.maquinas[m.nome] = (atual.maquinas[m.nome] || 0) + 1;
+        });
+
+        await set(posseRef, atual);
+    } catch (error) {
+        console.error("ERRO AO ACUMULAR POSSE:", error);
+        throw error;
+    }
+}
+
+/* --- FUNÇÕES PARA DEPÓSITOS --- */
 
 export async function dbSalvarDeposito(deposito) {
     try {
@@ -1025,43 +1103,43 @@ export function dbEscutarManutencoes(callback) {
     });
 }
 
-/* --- FUNÃ‡Ã•ES PARA SELEÃ‡ÃƒO DE ROTAS --- */
+/* --- FUNÇÕES PARA SELEÇÃO DE ROTAS --- */
 
-// Cria ou sobrescreve a sessÃ£o ativa de seleÃ§Ã£o de rotas
+// Cria ou sobrescreve a sessão ativa de seleção de rotas
 export async function dbCriarSessaoRotas(sessao) {
     try {
         await set(ref(db, 'selecao_rotas/ativa'), sessao);
     } catch (error) {
-        console.error("ERRO AO CRIAR SESSÃƒO DE ROTAS:", error);
+        console.error("ERRO AO CRIAR SESSÃO DE ROTAS:", error);
         throw error;
     }
 }
 
-// Escuta em tempo real a sessÃ£o ativa de seleÃ§Ã£o de rotas
+// Escuta em tempo real a sessão ativa de seleção de rotas
 export function dbEscutarSessaoRotas(callback) {
     onValue(ref(db, 'selecao_rotas/ativa'), (snapshot) => {
         callback(snapshot.val());
     });
 }
 
-// LÃª uma vez a sessÃ£o ativa
+// Lê uma vez a sessão ativa
 export async function dbObterSessaoRotas() {
     const snapshot = await get(ref(db, 'selecao_rotas/ativa'));
     return snapshot.val();
 }
 
-// Encerra a sessÃ£o ativa de seleÃ§Ã£o de rotas
+// Encerra a sessão ativa de seleção de rotas
 export async function dbEncerrarSessaoRotas() {
     try {
         await remove(ref(db, 'selecao_rotas/ativa'));
     } catch (error) {
-        console.error("ERRO AO ENCERRAR SESSÃƒO:", error);
+        console.error("ERRO AO ENCERRAR SESSÃO:", error);
         throw error;
     }
 }
 
-// Tenta atomicamente reivindicar a rota de maior valor disponÃ­vel para o usuÃ¡rio.
-// Retorna { numeroRota, ...dadosRota } se conseguir, ou null se nÃ£o houver rotas disponÃ­veis.
+// Tenta atomicamente reivindicar a rota de maior valor disponível para o usuário.
+// Retorna { numeroRota, ...dadosRota } se conseguir, ou null se não houver rotas disponíveis.
 export async function dbSelecionarRota(nomeUsuario) {
     const sessionRef = ref(db, 'selecao_rotas/ativa');
     const snapshot = await get(sessionRef);
@@ -1070,7 +1148,7 @@ export async function dbSelecionarRota(nomeUsuario) {
 
     const rotas = sessao.rotas;
 
-    // Ordena as disponÃ­veis pelo maior valor estimado
+    // Ordena as disponíveis pelo maior valor estimado
     const disponiveis = Object.entries(rotas)
         .filter(([_, r]) => !r.selecionada_por)
         .sort(([_, a], [__, b]) => (b.valor_estimado || 0) - (a.valor_estimado || 0));
@@ -1083,7 +1161,7 @@ export async function dbSelecionarRota(nomeUsuario) {
     let tentativa = null;
 
     const result = await runTransaction(rotaRef, (dadosAtuais) => {
-        tentativa = null; // reseta a cada invocaÃ§Ã£o do callback (Firebase pode chamar vÃ¡rias vezes)
+        tentativa = null; // reseta a cada invocação do callback (Firebase pode chamar várias vezes)
         if (dadosAtuais && !dadosAtuais.selecionada_por) {
             tentativa = { ...dadosAtuais, numeroRota };
             return {
@@ -1092,18 +1170,18 @@ export async function dbSelecionarRota(nomeUsuario) {
                 timestamp_selecao: new Date().toISOString()
             };
         }
-        return undefined; // aborta: rota jÃ¡ foi pega
+        return undefined; // aborta: rota já foi pega
     });
 
     if (result.committed && tentativa) {
         return { ...tentativa, selecionada_por: nomeUsuario };
     }
 
-    // Rota foi pega por outra pessoa no mesmo instante: tenta a prÃ³xima
+    // Rota foi pega por outra pessoa no mesmo instante: tenta a próxima
     return dbSelecionarRota(nomeUsuario);
 }
 
-/* --- FUNÃ‡Ã•ES PARA CHECK-IN DE ROTAS / JUSTIFICATIVAS --- */
+/* --- FUNÇÕES PARA CHECK-IN DE ROTAS / JUSTIFICATIVAS --- */
 
 // Salva (ou substitui) a justificativa de um cliente em uma rota
 export async function dbSalvarJustificativaCheckin(routeNumber, clienteKey, dados) {
@@ -1115,7 +1193,7 @@ export async function dbSalvarJustificativaCheckin(routeNumber, clienteKey, dado
     }
 }
 
-// LÃª todas as justificativas de uma rota (retorna objeto { clienteKey: {...} })
+// Lê todas as justificativas de uma rota (retorna objeto { clienteKey: {...} })
 export async function dbListarJustificativasCheckin(routeNumber) {
     try {
         const snap = await get(ref(db, `justificativas_rotas/${routeNumber}`));
@@ -1143,7 +1221,36 @@ export function dbEscutarJustificativasCheckin(routeNumber, callback) {
     });
 }
 
-// Limpa todas as seleÃ§Ãµes da sessÃ£o ativa (apenas para testes)
+/**
+ * Libera uma rota específica da sessão ativa, zerando o campo selecionada_por.
+ *
+ * QUANDO USAR:
+ * Critérios de liberação (verificados no checkin_rotas.html ao abrir):
+ *   1. Todos os clientes atendidos (pelo mesmo usuário nos últimos 2 dias)
+ *      OU com justificativa expirada (mais de 2 dias) — zero pendentes.
+ *   2. Rota selecionada há mais de 5 dias (timestamp_selecao).
+ * Ao liberar, a rota volta a ficar disponível para outro usuário selecionar.
+ *
+ * QUEM CHAMA:
+ * - atendimento_nivel_1.html → após salvar um atendimento, verifica se a rota ficou completa
+ * - checkin_rotas.html → na inicialização, verifica se alguma rota já expirou e pode ser liberada
+ *
+ * @param {string} numeroRota - O número/chave da rota no Firebase (ex: "3", "12")
+ */
+export async function dbLiberarRota(numeroRota) {
+    try {
+        const rotaRef = ref(db, `selecao_rotas/ativa/rotas/${numeroRota}`);
+        await update(rotaRef, {
+            selecionada_por: null,
+            timestamp_selecao: null
+        });
+    } catch (error) {
+        console.error("ERRO AO LIBERAR ROTA:", error);
+        throw error;
+    }
+}
+
+// Limpa todas as seleções da sessão ativa (apenas para testes)
 export async function dbLimparSelecoes(numerosRota) {
     const updates = {};
     numerosRota.forEach(n => {

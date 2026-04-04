@@ -854,6 +854,8 @@
     let nomeUsuarioLogado = "";
     let clientesSalvos = [];
     let pontosNovos = [];
+    const urlParamsClientes = new URLSearchParams(window.location.search);
+    const abrirCadastroClienteAoEntrar = urlParamsClientes.get('abrirCadastroCliente') === '1';
     let versaoClientesAtual = Number(localStorage.getItem(_CACHE_VERSAO_KEY) || 0);
     let escutaVersaoInicializada = false;
     let recargaClientesAgendada = false;
@@ -1091,11 +1093,38 @@
         ultimaVersaoRemotaClientes = versaoNormalizada;
     });
 
-    document.getElementById('btnNovo').onclick = () => {
+    function abrirEscolhaCadastro() {
         document.getElementById('escolhaOverlay').classList.add('aberto');
         document.body.style.overflow = 'hidden';
         history.pushState({ escolhaSheet: true }, '');
+    }
+
+    function abrirEtapaCadastrarCliente() {
+        const select = document.getElementById('selectRepresentante');
+        const representantes = [...new Set(pontosNovos.map(m => m.cadastradoPor).filter(Boolean))].sort();
+        select.innerHTML = '<option value="">Representante</option>';
+        representantes.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r;
+            opt.textContent = r;
+            select.appendChild(opt);
+        });
+        document.getElementById('listaPontosNovos').innerHTML = '';
+        document.getElementById('escolhaPasso1').style.display = 'none';
+        document.getElementById('escolhaPasso2').style.display = 'block';
+    }
+
+    document.getElementById('btnNovo').onclick = () => {
+        abrirEscolhaCadastro();
     };
+
+    if (abrirCadastroClienteAoEntrar) {
+        abrirEscolhaCadastro();
+        abrirEtapaCadastrarCliente();
+        const urlLimpa = new URL(window.location.href);
+        urlLimpa.searchParams.delete('abrirCadastroCliente');
+        history.replaceState({ escolhaSheet: true }, '', urlLimpa.pathname + urlLimpa.search + urlLimpa.hash);
+    }
 
     function aplicarBusca(termo) {
         const normalizado = termo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -1342,6 +1371,10 @@
             const status = String(m?.status || "pendente").toLowerCase();
             return m.tipoAcao === "Ponto Novo" && status !== "concluida" && status !== "concluido";
         });
+
+        if (document.getElementById('escolhaPasso2').style.display === 'block') {
+            abrirEtapaCadastrarCliente();
+        }
     });
 
     function escaparHtmlLocal(valor) {
@@ -1351,18 +1384,7 @@
     }
 
     document.getElementById('btnIrCadastrar').addEventListener('click', () => {
-        const select = document.getElementById('selectRepresentante');
-        const representantes = [...new Set(pontosNovos.map(m => m.cadastradoPor).filter(Boolean))].sort();
-        select.innerHTML = '<option value="">— Representante —</option>';
-        representantes.forEach(r => {
-            const opt = document.createElement('option');
-            opt.value = r;
-            opt.textContent = r;
-            select.appendChild(opt);
-        });
-        document.getElementById('listaPontosNovos').innerHTML = '';
-        document.getElementById('escolhaPasso1').style.display = 'none';
-        document.getElementById('escolhaPasso2').style.display = 'block';
+        abrirEtapaCadastrarCliente();
     });
 
     window.voltarEscolhaPasso1 = function() {

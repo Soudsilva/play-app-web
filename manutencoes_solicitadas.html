@@ -38,6 +38,7 @@
             max-width: 440px;
             padding: 18px;
             box-sizing: border-box;
+            transition: padding-bottom 0.25s ease;
         }
 
         .topo {
@@ -723,6 +724,9 @@
     let atendimentos = [];
     let termoPesquisa = "";
     let filtroMinhasSelecoes = false;
+    let manutencaoPendenteAjuste = "";
+
+    const APP_PADDING_BASE = 18;
 
     function normalizar(texto) {
         return String(texto || "")
@@ -870,6 +874,43 @@
         pendentesEl.textContent = String(lista.length);
     }
 
+    function obterCardPorId(id) {
+        if (!id) return null;
+        return Array.from(document.querySelectorAll('.card-manutencao'))
+            .find(card => card.dataset.manutencaoId === id) || null;
+    }
+
+    function atualizarEspacoDaBarra(barraVisivel) {
+        const app = document.querySelector('.app');
+        const barra = document.getElementById('barraFlutuante');
+        if (!app || !barra) return;
+
+        const alturaBarra = barraVisivel ? Math.ceil(barra.getBoundingClientRect().height) : 0;
+        const espacoExtra = barraVisivel ? alturaBarra + 12 : 0;
+        app.style.paddingBottom = `${APP_PADDING_BASE + espacoExtra}px`;
+    }
+
+    function ajustarScrollParaConteudoVisivel(id = "") {
+        const barra = document.getElementById('barraFlutuante');
+        if (!barra || !barra.classList.contains('visivel')) return;
+
+        const card = obterCardPorId(id) || document.querySelector('.card-manutencao:last-child');
+        if (!card) return;
+
+        const alvo = card.querySelector('.bloco-acao-texto') || card;
+        const barraTopo = barra.getBoundingClientRect().top;
+        const alvoRect = alvo.getBoundingClientRect();
+        const margem = 4;
+        const sobreposicao = alvoRect.bottom - (barraTopo - margem);
+
+        if (sobreposicao > 0) {
+            window.scrollBy({
+                top: sobreposicao,
+                behavior: 'smooth'
+            });
+        }
+    }
+
     document.getElementById('btnNavegarRota').addEventListener('click', async () => {
         const usuarioLogado = localStorage.getItem('usuarioLogado') || "";
         const selecionados = manutencoes.filter(m => {
@@ -976,6 +1017,8 @@
         const atualizado = { ...item };
         delete atualizado.firebaseUrl;
 
+        manutencaoPendenteAjuste = marcado ? id : "";
+
         if (marcado) {
             atualizado.selecionadoPor = usuarioLogado;
             atualizado.dataSelecionado = new Date().toISOString();
@@ -1037,22 +1080,8 @@
             return;
         }
 
-        const ok = await window.playConfirm("Confirmar conclusao do servico?", {
-            secondaryLabel: "Sim",
-            secondaryResult: true,
-            primaryLabel: "Nao",
-            primaryResult: false,
-            overlayResult: false
-        });
-        if (!ok) return;
-
-        try {
-            const atualizado = { ...item, status: "concluida", dataConclusao: new Date().toISOString() };
-            delete atualizado.firebaseUrl;
-            await dbSalvarManutencao(atualizado, id);
-        } catch (e) {
-            await window.playAlert(e?.message || "Erro ao concluir manutencao.");
-        }
+        sessionStorage.setItem('manutencao_realizando', JSON.stringify(item));
+        window.location.href = 'manutencao_realizada.html';
     }
 
     function renderizarLista() {
@@ -1064,6 +1093,9 @@
         container.innerHTML = "";
 
         if (lista.length === 0) {
+            document.getElementById('barraFlutuante').classList.remove('visivel');
+            atualizarEspacoDaBarra(false);
+            manutencaoPendenteAjuste = "";
             estado.style.display = 'block';
             estado.textContent = "Nenhuma manutencao pendente no momento.";
             return;
@@ -1083,9 +1115,11 @@
             const enderecos = minhasSelecoes.filter(i => i.clienteEndereco || i.clienteCidade);
             btnNavegarSub.textContent = `${enderecos.length} ${enderecos.length === 1 ? 'parada' : 'paradas'}`;
             barra.classList.add('visivel');
+            atualizarEspacoDaBarra(true);
         } else {
             barra.classList.remove('visivel');
             filtroMinhasSelecoes = false;
+            atualizarEspacoDaBarra(false);
         }
 
         let listaFiltrada = termoPesquisa
@@ -1105,6 +1139,7 @@
         listaFiltrada.forEach(item => {
             const card = document.createElement('div');
             card.className = `card-manutencao urgencia-${item.classeUrgencia}`;
+            card.dataset.manutencaoId = item.firebaseUrl || "";
             const estaSelecionado = !!item.selecionadoPor;
             const usuarioLogado = localStorage.getItem('usuarioLogado') || "";
             const selecaoLabel = estaSelecionado
@@ -1165,6 +1200,15 @@
 
             container.appendChild(card);
         });
+
+        if (barra.classList.contains('visivel')) {
+            requestAnimationFrame(() => {
+                ajustarScrollParaConteudoVisivel(manutencaoPendenteAjuste);
+                manutencaoPendenteAjuste = "";
+            });
+        } else {
+            manutencaoPendenteAjuste = "";
+        }
     }
 
     const inputPesquisa = document.getElementById('campoPesquisa');

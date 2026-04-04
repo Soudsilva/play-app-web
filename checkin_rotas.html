@@ -249,6 +249,21 @@
         }
         .btn-justificar:active { background: rgba(255,82,82,0.22); transform: scale(0.96); }
 
+        .btn-atender {
+            background: rgba(76,175,80,0.12);
+            border: 1px solid rgba(76,175,80,0.3);
+            border-radius: 20px;
+            padding: 6px 12px;
+            color: #81c784;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: 0.15s;
+        }
+        .btn-atender:active { background: rgba(76,175,80,0.24); transform: scale(0.96); }
+
         .btn-ver-justif {
             background: rgba(255,183,77,0.08);
             border: 1px solid rgba(255,183,77,0.2);
@@ -598,7 +613,11 @@ import {
     dbObterSessaoRotas,
     dbSalvarJustificativaCheckin,
     dbListarJustificativasCheckin,
-    dbRemoverJustificativaCheckin
+    dbRemoverJustificativaCheckin,
+    // dbLiberarRota: libera a rota quando todos os clientes foram atendidos ou
+    // tiveram a justificativa expirada (2 dias). Chamado no init para capturar
+    // rotas que completaram enquanto o app estava fechado.
+    dbLiberarRota
 } from './database.js';
 
 // ─────────────────────────────────────────────
@@ -647,6 +666,33 @@ async function init() {
         await Promise.all(rotasDoUsuario.map(async (r) => {
             justificativasPorRota[r.numero] = await dbListarJustificativasCheckin(r.numero);
         }));
+
+        // Verifica e libera automaticamente rotas que ficaram completas enquanto o
+        // app estava fechado (ex: justificativas que expiraram nos últimos 2 dias).
+        // Isso garante que o usuário não fique travado com rotas "fantasma" concluídas.
+        if (sessao && sessao.clientes_por_rota) {
+            const agora = Date.now();
+            const CINCO_DIAS = 5 * 24 * 60 * 60 * 1000;
+
+            for (const rota of rotasDoUsuario) {
+                // Critério 1: mais de 5 dias desde a seleção → libera independente do status
+                if (rota.timestamp_selecao && (agora - rota.timestamp_selecao) >= CINCO_DIAS) {
+                    await dbLiberarRota(rota.numero);
+                    rotasDoUsuario = rotasDoUsuario.filter(r => r.numero !== rota.numero);
+                    continue;
+                }
+
+                const clientesDaRota = (sessao.clientes_por_rota[rota.numero] || []);
+                if (clientesDaRota.length === 0) continue;
+
+                // Critério 2: todos os clientes atendidos ou com justificativa expirada → libera
+                const { pendentes } = classificarClientes(clientesDaRota, rota.numero);
+                if (pendentes.length === 0) {
+                    await dbLiberarRota(rota.numero);
+                    rotasDoUsuario = rotasDoUsuario.filter(r => r.numero !== rota.numero);
+                }
+            }
+        }
 
         renderizar();
     } catch (err) {
@@ -726,7 +772,9 @@ function classificarClientes(clientes, routeNumber) {
         }
         const justif = justifs[c.firebaseUrl];
         if (justif && justif.timestamp) {
-            const expirou = (agora - justif.timestamp) >= UM_DIA;
+            // Justificativa expira após 2 dias: depois disso o cliente é considerado
+            // resolvido e a rota pode ser liberada automaticamente.
+            const expirou = (agora - justif.timestamp) >= DOIS_DIAS;
             justificados.push({ ...c, justif, expirou });
             return;
         }
@@ -791,6 +839,7 @@ function criarCardRota(rota, clientes, atendidos, justificados, pendentes) {
                             <div class="item-cliente-nome">${c.nome || '—'}</div>
                             <div class="item-cliente-detalhe">${c.endereco ? c.endereco + (c.numero_endereco ? ', ' + c.numero_endereco : '') : 'Sem endereço'}</div>
                         </div>
+                        <button class="btn-atender" onclick="irParaAtendimento('${rota.numero}', '${c.numero}')">Atender</button>
                         <button class="btn-justificar" onclick="abrirModalJustif('${rota.numero}', ${JSON.stringify(c).replace(/"/g, '&quot;')})">Justificar</button>
                     </div>
                 `).join('')}
@@ -844,6 +893,23 @@ function criarCardRota(rota, clientes, atendidos, justificados, pendentes) {
 // ─────────────────────────────────────────────
 // Modal Justificativa
 // ─────────────────────────────────────────────
+window.irParaAtendimento = function(routeNumber, clienteNumero) {
+    // Coleta os números dos clientes desta rota a partir dos dados já carregados offline
+    const norm = v => String(v || '').trim().replace(/^0+(\d)/, '$1');
+    const numNorm = norm(routeNumber);
+    const numerosRota = todosClientes
+        .filter(c => norm(c.rota) === numNorm)
+        .map(c => String(c.numero));
+
+    sessionStorage.setItem('rota_filtro_numeros', JSON.stringify(numerosRota));
+    sessionStorage.setItem('rota_filtro_numero_rota', String(routeNumber));
+    if (clienteNumero) {
+        sessionStorage.setItem('cliente_pre_selecionado', String(clienteNumero));
+    }
+    sessionStorage.setItem('atendimento_tela_origem', 'checkin_rotas.html');
+    window.location.href = 'atendimento_nivel_1.html';
+};
+
 window.abrirModalJustif = function(routeNumber, cliente) {
     modalRota    = routeNumber;
     modalCliente = typeof cliente === 'string' ? JSON.parse(cliente.replace(/&quot;/g, '"')) : cliente;

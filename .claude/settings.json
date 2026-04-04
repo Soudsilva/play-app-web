@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e ':*)",
+      "Bash(node -e \" const fs = require\\('fs'\\); const c = fs.readFileSync\\('database.js', 'utf8'\\); // Fix encoding const fixed = Buffer.from\\(c, 'latin1'\\).toString\\('utf8'\\); fs.writeFileSync\\('database.js', fixed, 'utf8'\\); console.log\\('Fixed'\\); \")"
+    ]
+  }
+}

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manutenção Realizada</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0b2256;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            color: white;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 560px;
+            padding: 20px 16px 80px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        /* ── HEADER ── */
+        .topo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .btn-voltar {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; flex-shrink: 0;
+        }
+        .btn-voltar:active { background: rgba(255,255,255,0.2); transform: scale(0.92); }
+        .topo-titulo { font-size: 23px; font-weight: bold; }
+
+        /* ── CARD DA MANUTENÇÃO ── */
+        .card-manut {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 28px;
+        }
+        .card-manut-cliente { font-size: 21px; font-weight: bold; margin-bottom: 4px; }
+        .card-manut-meta { font-size: 16px; color: #b0bbd4; margin-bottom: 10px; }
+        .card-manut-tipo {
+            display: inline-block;
+            background: rgba(255,235,59,0.12);
+            border: 1px solid rgba(255,235,59,0.3);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 15px;
+            font-weight: bold;
+            color: #ffeb3b;
+            margin-bottom: 10px;
+        }
+        .card-manut-obs {
+            font-size: 16px;
+            color: #cfd6e3;
+            line-height: 1.5;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        /* ── CHAT ── */
+        .chat { display: flex; flex-direction: column; gap: 16px; }
+
+        .balao {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            animation: entrar 0.3s ease;
+        }
+        @keyframes entrar {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .avatar {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, #1565c0, #0d47a1);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 21px;
+            flex-shrink: 0;
+            align-self: flex-end;
+        }
+
+        .balao-texto {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 18px 18px 18px 4px;
+            padding: 12px 16px;
+            font-size: 15px;
+            line-height: 1.5;
+            max-width: calc(100% - 50px);
+        }
+
+        /* resposta do usuário */
+        .balao-usuario {
+            flex-direction: row-reverse;
+        }
+        .balao-usuario .balao-texto {
+            background: rgba(255,235,59,0.12);
+            border-color: rgba(255,235,59,0.25);
+            border-radius: 18px 18px 4px 18px;
+            color: #fff;
+        }
+
+        /* ── BOTÕES DE RESPOSTA ── */
+        .opcoes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding-left: 46px;
+            animation: entrar 0.3s ease;
+        }
+        .btn-opcao {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 22px;
+            padding: 10px 20px;
+            font-size: 15px;
+            color: white;
+            cursor: pointer;
+            transition: 0.15s;
+            font-weight: bold;
+        }
+        .btn-opcao:active { transform: scale(0.96); }
+        .btn-opcao.sim  { background: rgba(76,175,80,0.15); border-color: rgba(76,175,80,0.4); color: #81c784; }
+        .btn-opcao.nao  { background: rgba(255,82,82,0.12); border-color: rgba(255,82,82,0.3);  color: #ef9a9a; }
+        .btn-opcao.sim:active { background: rgba(76,175,80,0.3); }
+        .btn-opcao.nao:active  { background: rgba(255,82,82,0.25); }
+
+        /* ── ÁREA DE TEXTO (observação) ── */
+        .area-obs-wrap {
+            padding-left: 46px;
+            animation: entrar 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .input-obs {
+            width: 100%;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 14px;
+            color: white;
+            resize: vertical;
+            min-height: 90px;
+            outline: none;
+            font-family: Arial, sans-serif;
+            line-height: 1.5;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        .input-obs::placeholder { color: rgba(255,255,255,0.3); }
+        .input-obs:focus { border-color: rgba(255,235,59,0.5); }
+        .btn-enviar-obs {
+            background: #ffeb3b;
+            color: #0b2256;
+            border: none;
+            border-radius: 12px;
+            padding: 13px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .btn-enviar-obs:active { transform: scale(0.98); background: #ffe100; }
+
+        /* ── DIGITANDO ── */
+        .digitando {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            animation: entrar 0.25s ease;
+        }
+        .dots {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 18px 18px 18px 4px;
+            padding: 14px 18px;
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .dot {
+            width: 7px; height: 7px;
+            background: #b0bbd4;
+            border-radius: 50%;
+            animation: piscar 1.2s infinite;
+        }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes piscar {
+            0%, 60%, 100% { opacity: 0.3; transform: scale(0.85); }
+            30% { opacity: 1; transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <div class="topo">
+        <button class="btn-voltar" onclick="window.location.href='manutencoes_solicitadas.html'">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+        </button>
+        <div class="topo-titulo">Registro de Manutenção</div>
+    </div>
+
+    <!-- Card com os dados da manutenção -->
+    <div class="card-manut" id="cardManut"></div>
+
+    <!-- Conversa -->
+    <div class="chat" id="chat"></div>
+
+</div>
+
+<script type="module">
+import { verificarAutenticacao } from './auth.js';
+verificarAutenticacao();
+import { dbSalvarManutencao } from './database.js';
+
+const raw = sessionStorage.getItem('manutencao_realizando');
+if (!raw) { window.location.href = 'manutencoes_solicitadas.html'; }
+
+const item = JSON.parse(raw);
+const chat = document.getElementById('chat');
+const ehPontoNovo = String(item?.tipoAcao || "").trim().toLowerCase() === 'ponto novo';
+
+// ── Preenche card da manutenção ──
+(function renderCard() {
+    const el = document.getElementById('cardManut');
+    const meta = [
+        item.clienteRota  ? `Rota ${item.clienteRota}` : null,
+        item.clienteCidade ? item.clienteCidade : null,
+        item.solicitante   ? `Solicitado por ${item.solicitante}` : null,
+    ].filter(Boolean).join(' · ');
+
+    el.innerHTML = `
+        <div class="card-manut-cliente">${item.clienteNumero ? 'N. ' + item.clienteNumero + ' — ' : ''}${item.clienteNome || '—'}</div>
+        <div class="card-manut-meta">${meta}</div>
+        ${item.tipoAcao ? `<div class="card-manut-tipo">${item.tipoAcao}</div>` : ''}
+        ${item.observacoes ? `<div class="card-manut-obs">${item.observacoes}</div>` : ''}
+    `;
+})();
+
+// ── Helpers de UI ──
+function addBotMsg(texto, delay = 0) {
+    return new Promise(resolve => {
+        // Mostra "digitando..."
+        const typing = document.createElement('div');
+        typing.className = 'digitando';
+        typing.innerHTML = `<div class="avatar">🔧</div><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+        chat.appendChild(typing);
+        scrollDown();
+
+        setTimeout(() => {
+            typing.remove();
+            const balao = document.createElement('div');
+            balao.className = 'balao';
+            balao.innerHTML = `<div class="avatar">🔧</div><div class="balao-texto">${texto}</div>`;
+            chat.appendChild(balao);
+            scrollDown();
+            resolve();
+        }, delay || 900);
+    });
+}
+
+function addUserMsg(texto) {
+    const balao = document.createElement('div');
+    balao.className = 'balao balao-usuario';
+    balao.innerHTML = `<div class="balao-texto">${texto}</div>`;
+    chat.appendChild(balao);
+    scrollDown();
+}
+
+function mostrarOpcoes(opcoes) {
+    return new Promise(resolve => {
+        const wrap = document.createElement('div');
+        wrap.className = 'opcoes';
+        opcoes.forEach(({ label, classe, valor }) => {
+            const btn = document.createElement('button');
+            btn.className = `btn-opcao ${classe || ''}`;
+            btn.textContent = label;
+            btn.onclick = () => {
+                wrap.remove();
+                resolve(valor);
+            };
+            wrap.appendChild(btn);
+        });
+        chat.appendChild(wrap);
+        scrollDown();
+    });
+}
+
+function mostrarCampoObs(placeholder, valorInicial) {
+    return new Promise(resolve => {
+        const wrap = document.createElement('div');
+        wrap.className = 'area-obs-wrap';
+        wrap.innerHTML = `
+            <textarea class="input-obs" placeholder="${placeholder}">${valorInicial || ''}</textarea>
+            <button class="btn-enviar-obs">Confirmar →</button>
+        `;
+        const btn = wrap.querySelector('.btn-enviar-obs');
+        const ta  = wrap.querySelector('.input-obs');
+        btn.onclick = () => {
+            const val = ta.value.trim();
+            wrap.remove();
+            resolve(val);
+        };
+        chat.appendChild(wrap);
+        ta.focus();
+        scrollDown();
+    });
+}
+
+function mostrarBotaoAcao(label = 'OK') {
+    return new Promise(resolve => {
+        const wrap = document.createElement('div');
+        wrap.className = 'area-obs-wrap';
+        wrap.innerHTML = `<button class="btn-enviar-obs">${label}</button>`;
+        const btn = wrap.querySelector('.btn-enviar-obs');
+        btn.onclick = () => {
+            wrap.remove();
+            resolve();
+        };
+        chat.appendChild(wrap);
+        scrollDown();
+    });
+}
+
+function scrollDown() {
+    setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 50);
+}
+
+function voltarParaLista(delay = 1200) {
+    setTimeout(() => window.location.href = 'manutencoes_solicitadas.html', delay);
+}
+
+function irParaFluxoCadastroPontoNovo(delay = 1600) {
+    setTimeout(() => window.location.href = 'clientes.html?abrirCadastroCliente=1', delay);
+}
+
+// ── Fluxo da conversa ──
+async function iniciarConversa() {
+    await addBotMsg(`Olá! Vejo que você foi atender a manutenção de <strong>${item.clienteNome || 'cliente'}</strong>. 👍<br>Vamos registrar tudo direitinho!`, 600);
+
+    // PERGUNTA 1: todo serviço foi realizado?
+    await addBotMsg('Todo o serviço solicitado foi realizado?');
+    const tudoOk = await mostrarOpcoes([
+        { label: '✅ Sim, tudo feito!', classe: 'sim', valor: true  },
+        { label: '⚠️ Não, ficou pendente', classe: 'nao', valor: false },
+    ]);
+
+    if (!tudoOk) {
+        addUserMsg('⚠️ Não, ficou pendente');
+
+        if (item.observacoes) {
+            await addBotMsg(`Tudo bem! Aqui está o que estava anotado para este serviço:<br><br><em style="color:#cfd6e3; background:rgba(0,0,0,0.25); display:block; padding:10px 12px; border-radius:10px; border-left:3px solid rgba(255,235,59,0.4); line-height:1.6;">"${item.observacoes}"</em><br>Edite abaixo com o que ficou faltando:`);
+        } else {
+            await addBotMsg('Tudo bem! Não havia observação anterior. Descreva abaixo o que ficou pendente:');
+        }
+
+        const obsAtualizada = await mostrarCampoObs('Descreva o que ficou faltando...', item.observacoes);
+
+        if (!obsAtualizada) {
+            await addBotMsg('Hmm, você não escreveu nada. 🤔 Tudo bem, mas tente descrever o que ficou pendente para facilitar o próximo atendimento!');
+            return;
+        }
+
+        addUserMsg(obsAtualizada);
+
+        try {
+            const atualizado = { ...item, observacoes: obsAtualizada };
+            delete atualizado.firebaseUrl;
+            await dbSalvarManutencao(atualizado, item.firebaseUrl);
+            await addBotMsg('Anotado! ✅ Observação atualizada.');
+        } catch (e) {
+            await addBotMsg('⚠️ Não consegui salvar a observação agora. Verifique sua conexão e tente novamente.');
+            return;
+        }
+
+        if (ehPontoNovo) {
+            await addBotMsg('Obrigado! Já deixei a observação atualizada e vou te levar de volta.');
+            voltarParaLista();
+            return;
+        }
+
+        // Mesmo sem concluir, pode ter mexido em máquina
+        await addBotMsg('Mesmo sem concluir o serviço — adicionou ou retirou alguma máquina neste cliente?');
+        const mexeuMaquinaPendente = await mostrarOpcoes([
+            { label: '🔄 Sim', classe: 'sim', valor: true  },
+            { label: '➡️ Não', classe: 'nao', valor: false },
+        ]);
+
+        if (mexeuMaquinaPendente) {
+            addUserMsg('🔄 Sim');
+            await addBotMsg('Entendido! Vamos registrar a movimentação de máquina. <em>(Em breve 🚧)</em>');
+            // TODO: desenvolver fluxo de máquinas
+            return;
+        }
+
+        addUserMsg('➡️ Não');
+        await addBotMsg('Tudo registrado! Quando voltar para concluir o serviço, é só clicar em <strong>Realizada</strong> novamente. 👊');
+        return;
+    }
+
+    addUserMsg('✅ Sim, tudo feito!');
+    await addBotMsg('Ótimo! 🎉');
+
+    if (ehPontoNovo) {
+        await addBotMsg('Perfeito! Vou te levar para a tela certa de cadastro desse ponto novo, já na opção de cadastrar cliente, para você seguir com as informações.');
+        await addBotMsg('Toque em OK para continuar.');
+        await mostrarBotaoAcao('OK');
+        addUserMsg('OK');
+        irParaFluxoCadastroPontoNovo(250);
+        return;
+    }
+
+    // PERGUNTA 2: adicionou ou retirou máquina?
+    await addBotMsg('Adicionou ou retirou alguma máquina neste cliente?');
+    const mexeuMaquina = await mostrarOpcoes([
+        { label: '🔄 Sim', classe: 'sim', valor: true  },
+        { label: '➡️ Não', classe: 'nao', valor: false },
+    ]);
+
+    if (mexeuMaquina) {
+        addUserMsg('🔄 Sim');
+        await addBotMsg('Entendido! Vamos registrar a movimentação de máquina. <em>(Em breve 🚧)</em>');
+        // TODO: desenvolver fluxo de máquinas
+        return;
+    }
+
+    addUserMsg('➡️ Não');
+
+    // PERGUNTA 3: teve reposição de produtos?
+    await addBotMsg('Teve reposição de produtos nesta visita?');
+    const teveProdutos = await mostrarOpcoes([
+        { label: '📦 Sim', classe: 'sim', valor: true  },
+        { label: '➡️ Não', classe: 'nao', valor: false },
+    ]);
+
+    if (teveProdutos) {
+        addUserMsg('📦 Sim');
+        await addBotMsg('Ótimo! Vamos registrar a reposição. <em>(Próximo passo 🚧)</em>');
+        // TODO: desenvolver fluxo de produtos
+        return;
+    }
+
+    addUserMsg('➡️ Não');
+
+    try {
+        const atualizado = { ...item, status: 'concluida', dataConclusao: new Date().toISOString() };
+        delete atualizado.firebaseUrl;
+        await dbSalvarManutencao(atualizado, item.firebaseUrl);
+        await addBotMsg('✅ Manutenção concluída!');
+        voltarParaLista();
+    } catch (e) {
+        await addBotMsg('⚠️ Erro ao salvar. Verifique a conexão e tente novamente.');
+    }
+}
+
+iniciarConversa();
+</script>
+</body>
+</html>

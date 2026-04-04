@@ -77,11 +77,6 @@
         .lightbox.ativo { display:flex; }
         .lightbox img { max-width:95vw; max-height:90vh; border-radius:10px; object-fit:contain; }
 
-        /* BOTÃƒÆ’O ADMIN FLUTUANTE */
-        .btn-admin-float { position:fixed; bottom:20px; right:20px; background:rgba(11,34,86,0.92); border:1px solid rgba(255,255,255,0.13); border-radius:50px; padding:10px 18px; font-size:13px; color:#e5e7eb; cursor:pointer; z-index:100; backdrop-filter:blur(6px); display:none; gap:6px; align-items:center; }
-        .btn-admin-float.visivel { display:flex; }
-        .btn-admin-float:active { color:#ffffff; }
-
         /* MODAL */
         .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; justify-content:center; align-items:flex-end; }
         .modal-overlay.ativo { display:flex; }
@@ -167,23 +162,6 @@
     </div>
 </div>
 
-<!-- Botão admin flutuante -->
-<div class="btn-admin-float" id="btnAdminFloat" onclick="abrirModalAdmin()">
-    ⚙️ Admin
-</div>
-
-<!-- Modal admin -->
-<div class="modal-overlay" id="modalAdmin" onclick="fecharModalAdmin(event)">
-    <div class="modal-content">
-        <div class="modal-titulo">⚙️ Painel do Gestor</div>
-        <div class="modal-subtitulo">Gerencie a sessão de seleção de rotas</div>
-        <div class="modal-info" id="adminInfo"></div>
-        <div class="btn-modal-acao btn-calcular" onclick="recalcularESessao()">🔄 Recalcular e Reiniciar Sessão</div>
-        <div class="btn-modal-acao btn-encerrar" onclick="encerrarSessao()">🛑 Encerrar Sessão Atual</div>
-        <div class="btn-modal-acao btn-encerrar-teste" onclick="limparSelecoes()">🧹 Limpar Seleções (Teste)</div>
-        <div class="btn-modal-acao btn-fechar-modal" onclick="fecharModalAdmin()">Fechar</div>
-    </div>
-</div>
 
 <!-- Lightbox fotos -->
 <div class="lightbox" id="lightbox" onclick="fecharLightbox()">
@@ -204,18 +182,14 @@ import {
     dbEscutarSessaoRotas,
     dbCriarSessaoRotas,
     dbSelecionarRota,
-    dbEncerrarSessaoRotas,
     dbEscutarVersaoClientes,
-    dbEscutarVersaoMediaDeVendas,
-    dbListarColaboradores,
-    dbLimparSelecoes
+    dbEscutarVersaoMediaDeVendas
 } from './database.js';
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // Estado global
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 let usuarioAtual = '';
-let ehAdmin = false;
 let sessaoAtual = null;
 let numerosDeRota = [];
 let clientesPorRota = {};
@@ -239,24 +213,15 @@ function obterHojeLocal() {
 async function init() {
     usuarioAtual = localStorage.getItem('usuario_selecionado') || '';
 
-    // Carrega colaboradores para saber se ÃƒÂ© admin (apenas para mostrar botÃƒÂ£o de gestÃƒÂ£o)
-    const colaboradores = await dbListarColaboradores();
-    const usuario = colaboradores.find(c => c.nome === usuarioAtual);
-    ehAdmin = usuario && (usuario.nivel_completo || '').includes('gestao');
-
-    document.getElementById('btnAdminFloat').classList.add('visivel');
-
     // Escuta a versÃƒÂ£o dos clientes para detectar quando rotas/clientes mudaram
     dbEscutarVersaoClientes((versao) => {
         versaoClientesAtual = versao || null;
         tentarAutoRecalcularSessao();
-        atualizarInfoAdmin(sessaoAtual);
     });
 
     dbEscutarVersaoMediaDeVendas((versao) => {
         versaoMediaDeVendasAtual = versao || null;
         tentarAutoRecalcularSessao();
-        atualizarInfoAdmin(sessaoAtual);
     });
 
     // Escuta a sessÃƒÂ£o em tempo real
@@ -272,7 +237,6 @@ let recalculandoSessaoEmSegundoPlano = false;
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 async function onSessaoAtualizada(sessao) {
     sessaoAtual = sessao;
-    atualizarInfoAdmin(sessaoAtual);
 
     // Se a sessão estiver desatualizada, recalcule em segundo plano sem derrubar a tela atual.
     tentarAutoRecalcularSessao();
@@ -349,48 +313,6 @@ function tentarAutoRecalcularSessao() {
     return true;
 }
 
-function atualizarInfoAdmin(sessao) {
-    const el = document.getElementById('adminInfo');
-    if (!el) return;
-
-    if (!sessao || !sessao.rotas) {
-        el.innerHTML = `<div class="modal-info-box"><div class="modal-info-titulo">Sessão</div>Nenhuma sessão ativa.</div>`;
-        return;
-    }
-
-    const criadaEm = sessao.criada_em ? new Date(sessao.criada_em) : null;
-    const criadaTxt = criadaEm && !Number.isNaN(criadaEm.getTime())
-        ? criadaEm.toLocaleString('pt-BR')
-        : '—';
-
-    const rotasEntries = Object.entries(sessao.rotas || {})
-        .map(([numero, r]) => ({
-            numero,
-            selecionada_por: r?.selecionada_por || null,
-            num_clientes: r?.num_clientes ?? ((sessao.clientes_por_rota || {})[numero]?.length ?? 0)
-        }))
-        .sort((a, b) => String(a.numero).localeCompare(String(b.numero), 'pt-BR', { numeric: true }));
-
-    const total = rotasEntries.length;
-    const disponiveis = rotasEntries.filter(r => !r.selecionada_por).length;
-    const selecionadas = total - disponiveis;
-
-    const listaTxt = rotasEntries
-        .map(r => `Rota ${r.numero}: ${r.num_clientes} cliente${r.num_clientes !== 1 ? 's' : ''}${r.selecionada_por ? ` — ${r.selecionada_por}` : ''}`)
-        .join('<br>');
-
-    const desatual = sessaoEstaDesatualizada(sessao)
-        ? ' <span style="color:#ff9800;font-weight:bold">(desatualizada)</span>'
-        : '';
-
-    el.innerHTML = `
-        <div class="modal-info-box">
-            <div class="modal-info-titulo">Sessão criada em: ${criadaTxt}${desatual}</div>
-            <div style="font-size:12px; margin-bottom:8px;">Rotas: ${total} &nbsp;|&nbsp; Disponíveis: ${disponiveis} &nbsp;|&nbsp; Selecionadas: ${selecionadas}</div>
-            <div class="modal-info-lista">${listaTxt || '—'}</div>
-        </div>
-    `;
-}
 
 function atualizarVisibilidadeCardNumero(qtdMinhas, ultimoNumero) {
     const slotWrapper = document.getElementById('slotWrapper');
@@ -412,6 +334,7 @@ function atualizarVisibilidadeCardNumero(qtdMinhas, ultimoNumero) {
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // Tela: sessÃƒÂ£o ativa
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+
 function mostrarTelaSessaoAtiva(sessao) {
     document.getElementById('telaSessaoAtiva').classList.add('ativa');
 
@@ -430,6 +353,7 @@ function mostrarTelaSessaoAtiva(sessao) {
     numerosDeRota = todasRotas.map(([n]) => n);
     clientesPorRota = sessao.clientes_por_rota || {};
     maquinasPorCliente = sessao.maquinas_por_cliente || {};
+
 
 
     // Rotas jÃƒÂ¡ selecionadas pelo usuÃƒÂ¡rio atual
@@ -890,41 +814,6 @@ async function iniciarSessao() {
     await dbCriarSessaoRotas(sessao);
 }
 
-window.recalcularESessao = async function() {
-    fecharModalAdmin();
-    mostrarToast('🔄 Recalculando rotas...');
-    try {
-        await iniciarSessao();
-        mostrarToast('✅ Sessão reiniciada!');
-    } catch(e) {
-        mostrarToast('❌ Erro ao recalcular');
-    }
-};
-
-window.limparSelecoes = async function() {
-    if (!sessaoAtual || !sessaoAtual.rotas) {
-        mostrarToast('Nenhuma sessão ativa');
-        return;
-    }
-    fecharModalAdmin();
-    try {
-        await dbLimparSelecoes(Object.keys(sessaoAtual.rotas));
-        mostrarToast('✅ Seleções limpas!');
-    } catch(e) {
-        mostrarToast('❌ Erro ao limpar seleções');
-    }
-};
-
-window.encerrarSessao = async function() {
-    if (!confirm('Tem certeza que quer encerrar a sessão atual?')) return;
-    fecharModalAdmin();
-    try {
-        await dbEncerrarSessaoRotas();
-        mostrarToast('✅ Sessão encerrada');
-    } catch(e) {
-        mostrarToast('❌ Erro ao encerrar sessão');
-    }
-};
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // Helpers de UI
@@ -935,13 +824,6 @@ function ocultarTodas() {
     document.getElementById('telaSessaoAtiva').classList.remove('ativa');
 }
 
-window.abrirModalAdmin = function() {
-    document.getElementById('modalAdmin').classList.add('ativo');
-};
-window.fecharModalAdmin = function(e) {
-    if (e && e.target !== document.getElementById('modalAdmin')) return;
-    document.getElementById('modalAdmin').classList.remove('ativo');
-};
 
 window.abrirLightbox = function(url) {
     document.getElementById('lightboxImg').src = url;
