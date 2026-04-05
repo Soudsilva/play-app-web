@@ -201,6 +201,25 @@
             margin-bottom: 14px;
         }
 
+        .loading-engrenagem {
+            display: block;
+            margin: 0 auto 14px;
+            animation: girar-eng 2s linear infinite;
+            transform-origin: center;
+        }
+        @keyframes girar-eng {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+        .loading-msg {
+            font-size: 15px;
+            min-height: 22px;
+            transition: opacity 0.35s ease;
+        }
+        .loading-msg.fade-out {
+            opacity: 0;
+        }
+
         .lista-manutencoes {
             display: flex;
             flex-direction: column;
@@ -677,7 +696,14 @@
         </div>
     </div>
 
-    <div id="estadoLista" class="estado-card">Carregando manutencoes solicitadas...</div>
+    <div id="estadoLista" class="estado-card">
+        <svg class="loading-engrenagem" width="44" height="44" viewBox="0 0 24 24" fill="none"
+             stroke="rgba(255,200,50,0.9)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <div id="loadingMsg" class="loading-msg">Buscando as ordens de serviço...</div>
+    </div>
     <div id="listaManutencoes" class="lista-manutencoes"></div>
 </div>
 
@@ -725,6 +751,41 @@
     let termoPesquisa = "";
     let filtroMinhasSelecoes = false;
     let manutencaoPendenteAjuste = "";
+
+    const _loadingMsgs = [
+        "Buscando as ordens de serviço...",
+        "Calibrando os equipamentos...",
+        "Consultando o técnico sênior...",
+        "Apertando os parafusos...",
+        "Verificando o estoque de peças...",
+        "Lendo o manual técnico...",
+        "Aquecendo as ferramentas...",
+        "Organizando a caixa de ferramentas...",
+        "Pedindo ajuda pro estagiário...",
+        "Procurando a chave de fenda...",
+    ];
+    let _loadingIdx = 0;
+    let _loadingTimer = null;
+
+    function _iniciarLoading() {
+        const el = document.getElementById('loadingMsg');
+        if (!el || _loadingTimer) return;
+        _loadingTimer = setInterval(() => {
+            el.classList.add('fade-out');
+            setTimeout(() => {
+                _loadingIdx = (_loadingIdx + 1) % _loadingMsgs.length;
+                el.textContent = _loadingMsgs[_loadingIdx];
+                el.classList.remove('fade-out');
+            }, 350);
+        }, 2200);
+    }
+
+    function _pararLoading() {
+        clearInterval(_loadingTimer);
+        _loadingTimer = null;
+    }
+
+    _iniciarLoading();
 
     const APP_PADDING_BASE = 18;
 
@@ -836,13 +897,56 @@
     }
 
     function obterManutencoesPendentesEnriquecidas() {
+        // Índices para O(1) em vez de O(n) por item
+        const clientesPorId = new Map(clientes.filter(c => c.firebaseUrl).map(c => [c.firebaseUrl, c]));
+        const clientesPorNumero = new Map(clientes.filter(c => c.numero != null).map(c => [String(c.numero), c]));
+
+        const ultimoAtendPorId = new Map();
+        const ultimoAtendPorNumero = new Map();
+        atendimentos.forEach(a => {
+            const ts = Date.parse(a?.ultimaEdicao || a?.data || "") || 0;
+            if (a?.cliente?.id) {
+                const atual = ultimoAtendPorId.get(a.cliente.id);
+                const tsAtual = atual ? (Date.parse(atual?.ultimaEdicao || atual?.data || "") || 0) : -1;
+                if (ts > tsAtual) ultimoAtendPorId.set(a.cliente.id, a);
+            }
+            if (a?.cliente?.numero != null) {
+                const num = String(a.cliente.numero);
+                const atual = ultimoAtendPorNumero.get(num);
+                const tsAtual = atual ? (Date.parse(atual?.ultimaEdicao || atual?.data || "") || 0) : -1;
+                if (ts > tsAtual) ultimoAtendPorNumero.set(num, a);
+            }
+        });
+
         return manutencoes
             .filter(manutencao => {
                 const status = String(manutencao?.status || "pendente").toLowerCase();
                 return status !== 'concluida' && status !== 'concluido';
             })
             .map(manutencao => {
-                const cliente = obterClienteRelacionado(manutencao);
+                const cliente = (manutencao?.clienteId && clientesPorId.get(manutencao.clienteId))
+                    || (manutencao?.clienteNumero != null && clientesPorNumero.get(String(manutencao.clienteNumero)))
+                    || null;
+
+                const atendimento = (manutencao?.clienteId && ultimoAtendPorId.get(manutencao.clienteId))
+                    || (manutencao?.clienteNumero != null && ultimoAtendPorNumero.get(String(manutencao.clienteNumero)))
+                    || null;
+
+                let ultimaVisita = null;
+                if (atendimento) {
+                    const dataBase = atendimento.ultimaEdicao || atendimento.data || "";
+                    const data = new Date(dataBase);
+                    const dataOk = !Number.isNaN(data.getTime());
+                    const hoje = new Date();
+                    const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+                    const inicioData = new Date(data.getFullYear(), data.getMonth(), data.getDate());
+                    ultimaVisita = {
+                        atendente: atendimento.atendente || "N/A",
+                        dataFormatada: dataOk ? data.toLocaleDateString('pt-BR') : "N/A",
+                        dias: dataOk ? Math.max(0, Math.floor((inicioHoje - inicioData) / 86400000)) : null
+                    };
+                }
+
                 const diasEmAberto = calcularDiasEmAberto(manutencao?.dataRegistro);
 
                 return {
@@ -856,7 +960,7 @@
                     diasEmAberto,
                     classeUrgencia: obterClasseUrgencia(diasEmAberto),
                     dataFormatada: formatarData(manutencao?.dataRegistro),
-                    ultimaVisita: obterUltimaVisita(manutencao?.clienteId, manutencao?.clienteNumero)
+                    ultimaVisita
                 };
             })
             .sort((a, b) => {
@@ -1101,6 +1205,7 @@
             return;
         }
 
+        _pararLoading();
         estado.style.display = 'none';
 
         const usuarioLogado = localStorage.getItem('usuarioLogado') || "";
@@ -1136,12 +1241,12 @@
             return;
         }
 
+        const _fragment = document.createDocumentFragment();
         listaFiltrada.forEach(item => {
             const card = document.createElement('div');
             card.className = `card-manutencao urgencia-${item.classeUrgencia}`;
             card.dataset.manutencaoId = item.firebaseUrl || "";
             const estaSelecionado = !!item.selecionadoPor;
-            const usuarioLogado = localStorage.getItem('usuarioLogado') || "";
             const selecaoLabel = estaSelecionado
                 ? `<span class="card-selecao-tecnico">${escaparHtml(item.selecionadoPor)}</span> vai realizar este serviço`
                 : 'Marcar que farei este serviço';
@@ -1198,26 +1303,30 @@
                 ` : ''}
             `;
 
-            container.appendChild(card);
+            _fragment.appendChild(card);
         });
+        container.appendChild(_fragment);
 
-        if (barra.classList.contains('visivel')) {
-            requestAnimationFrame(() => {
-                ajustarScrollParaConteudoVisivel(manutencaoPendenteAjuste);
-                manutencaoPendenteAjuste = "";
-            });
-        } else {
-            manutencaoPendenteAjuste = "";
-        }
+        manutencaoPendenteAjuste = "";
     }
 
     const inputPesquisa = document.getElementById('campoPesquisa');
     const btnLimpar = document.getElementById('btnLimparPesquisa');
 
+    let _manutencoesRecebidas = false;
+    let _renderTimeout = null;
+    function agendarRenderizacao() {
+        if (!_manutencoesRecebidas) return;
+        clearTimeout(_renderTimeout);
+        _renderTimeout = setTimeout(renderizarLista, 80);
+    }
+
+    let _searchTimeout = null;
     inputPesquisa.addEventListener('input', () => {
         termoPesquisa = inputPesquisa.value;
         btnLimpar.style.display = termoPesquisa ? 'block' : 'none';
-        renderizarLista();
+        clearTimeout(_searchTimeout);
+        _searchTimeout = setTimeout(renderizarLista, 300);
     });
 
     btnLimpar.addEventListener('click', () => {
@@ -1230,7 +1339,7 @@
 
     dbEscutarClientes((lista) => {
         clientes = lista;
-        renderizarLista();
+        agendarRenderizacao();
     });
 
     async function limparSelecesExpiradas(lista) {
@@ -1260,13 +1369,14 @@
 
     dbEscutarManutencoes((lista) => {
         manutencoes = lista;
+        _manutencoesRecebidas = true;
         limparSelecesExpiradas(lista);
-        renderizarLista();
+        agendarRenderizacao();
     });
 
     dbEscutarAtendimentos((lista) => {
         atendimentos = lista;
-        renderizarLista();
+        agendarRenderizacao();
     });
 </script>
 

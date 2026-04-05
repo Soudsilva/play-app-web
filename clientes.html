@@ -915,6 +915,7 @@
 
         clientes.sort((a, b) => parseInt(a.numero) - parseInt(b.numero));
 
+        const _fragment = document.createDocumentFragment();
         clientes.forEach(c => {
             const statusCadastro = String(c?.statusCadastro || "")
                 .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -1033,8 +1034,9 @@
                      ${acoesVisuaisHtml}
                  </div>
              `;
-            listaHTML.appendChild(card);
+            _fragment.appendChild(card);
         });
+        listaHTML.appendChild(_fragment);
 
         if (rotaFiltroAtivo) filtrarPorRota(rotaFiltroAtivo);
     }
