@@ -527,7 +527,7 @@
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
     // Importamos as ferramentas de banco de dados do seu arquivo externo
-    import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, dbEscutarSessaoRotas, storageSalvarFoto } from './database.js';
+    import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, dbEscutarSessaoRotas, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
 
     let maquinasDisponiveis = [];
     let clientesCadastrados = [];
@@ -2057,12 +2057,13 @@
                 const img = document.getElementById(`imgPreviewMaquinaInstalacao_${equipamento.rowId}`);
                 if (!(img && img.style.display === 'block' && img.src)) continue;
 
-                let url = null;
+                let url = null, thumbUrl = null;
                 try {
                     if (img.src.startsWith('data:')) {
-                        url = await storageSalvarFoto(img.src);
+                        const r = await storageSalvarFotoComThumb(img.src);
+                        url = r.url; thumbUrl = r.thumbUrl;
                     } else if (img.src.startsWith('http') && !img.src.includes('.html')) {
-                        url = img.src;
+                        url = img.src; thumbUrl = img.src;
                     }
                 } catch (e) {
                     console.warn("Falha ao salvar foto da maquina instalada", e);
@@ -2072,19 +2073,23 @@
                     fotosMaquinasInstalacao.push({
                         rowId: equipamento.rowId,
                         nome: equipamento.nome,
-                        url
+                        url,
+                        thumbUrl
                     });
                 }
             }
 
-            let fotoFichaInstalacao = "";
+            let fotoFichaInstalacao = "", fotoFichaInstalacaoThumb = "";
             const imgFichaInstalacao = document.getElementById('imgPreviewFichaInstalacao');
             if (imgFichaInstalacao && imgFichaInstalacao.style.display === 'block' && imgFichaInstalacao.src) {
                 try {
                     if (imgFichaInstalacao.src.startsWith('data:')) {
-                        fotoFichaInstalacao = await storageSalvarFoto(imgFichaInstalacao.src);
+                        const r = await storageSalvarFotoComThumb(imgFichaInstalacao.src);
+                        fotoFichaInstalacao = r.url;
+                        fotoFichaInstalacaoThumb = r.thumbUrl;
                     } else if (imgFichaInstalacao.src.startsWith('http') && !imgFichaInstalacao.src.includes('.html')) {
                         fotoFichaInstalacao = imgFichaInstalacao.src;
+                        fotoFichaInstalacaoThumb = imgFichaInstalacao.src;
                     }
                 } catch (e) {
                     console.warn("Falha ao salvar foto da ficha", e);
@@ -2144,6 +2149,7 @@
                     equip: listaEquipFinal.join(", "),
                     equipDetalhes: equipamentosDetalhados,
                     fotoFichaInstalacao,
+                    fotoFichaInstalacaoThumb,
                     fotosMaquinasInstalacao,
                     obs: document.getElementById("obs").value,
                     cadastradoPor,

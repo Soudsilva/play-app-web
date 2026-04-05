@@ -513,7 +513,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, storageSalvarFoto, dbObterSessaoRotas } from './database.js';
+    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas } from './database.js';
     import { enfileirarAtendimento } from './offline-sync.js';
 
     let listaClientes = [];
@@ -1453,9 +1453,12 @@
             try {
                 const imgFicha = document.getElementById('imgPreviewFicha');
                 if (imgFicha.style.display === 'block' && imgFicha.src && imgFicha.src.startsWith('data:')) {
-                    fotos.ficha = await storageSalvarFoto(imgFicha.src);
+                    const r = await storageSalvarFotoComThumb(imgFicha.src);
+                    fotos.ficha = r.url;
+                    fotos.fichaThumb = r.thumbUrl;
                 } else if (imgFicha.style.display === 'block' && imgFicha.src && imgFicha.src.startsWith('http')) {
-                    fotos.ficha = imgFicha.src; // Mantém URL do rascunho
+                    fotos.ficha = imgFicha.src;
+                    fotos.fichaThumb = imgFicha.src;
                 }
             } catch(e) { console.warn("Falha no upload da ficha. Salvando sem ela.", e); }
 
@@ -1468,12 +1471,16 @@
                     const nomeMaquinaEl = input.closest('.sub-card').querySelector('.titulo-sub');
                     const nomeMaquina = nomeMaquinaEl ? nomeMaquinaEl.innerText.replace('FOTO: ', '').trim() : `Maquina ${index}`;
                     
-                    let url = null;
+                    let url = null, thumbUrl = null;
                     try {
-                        if (img.src.startsWith('data:')) { url = await storageSalvarFoto(img.src); } 
-                        else if (img.src.startsWith('http') && !img.src.includes('.html')) { url = img.src; }
+                        if (img.src.startsWith('data:')) {
+                            const r = await storageSalvarFotoComThumb(img.src);
+                            url = r.url; thumbUrl = r.thumbUrl;
+                        } else if (img.src.startsWith('http') && !img.src.includes('.html')) {
+                            url = img.src; thumbUrl = img.src;
+                        }
                     } catch(e) { console.warn("Falha ao salvar foto da maquina", e); }
-                    if (url) { fotos.maquinas.push({ nome: nomeMaquina, url: url }); }
+                    if (url) { fotos.maquinas.push({ nome: nomeMaquina, url, thumbUrl }); }
                 }
             }
 
@@ -1486,12 +1493,16 @@
                     const numeroPixEl = input.closest('.sub-card').querySelector('.titulo-sub');
                     const numeroPix = numeroPixEl ? (numeroPixEl.innerText.match(/\d+/) || ['N/A'])[0] : `Pix ${index}`;
 
-                    let url = null;
+                    let url = null, thumbUrl = null;
                     try {
-                        if (img.src.startsWith('data:')) { url = await storageSalvarFoto(img.src); } 
-                        else if (img.src.startsWith('http') && !img.src.includes('.html')) { url = img.src; }
+                        if (img.src.startsWith('data:')) {
+                            const r = await storageSalvarFotoComThumb(img.src);
+                            url = r.url; thumbUrl = r.thumbUrl;
+                        } else if (img.src.startsWith('http') && !img.src.includes('.html')) {
+                            url = img.src; thumbUrl = img.src;
+                        }
                     } catch(e) { console.warn("Falha ao salvar foto do pix", e); }
-                    if (url) { fotos.pix.push({ numero: numeroPix, url: url }); }
+                    if (url) { fotos.pix.push({ numero: numeroPix, url, thumbUrl }); }
                 }
             }
 

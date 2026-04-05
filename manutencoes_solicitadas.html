@@ -471,6 +471,7 @@
             padding: 8px;
         }
 
+
         .lightbox {
             position: fixed;
             inset: 0;
@@ -1289,7 +1290,7 @@
                     <div class="acao-foto-row">
                         ${item.fotoSolicitacao ? `
                             <div class="foto-solicitacao">
-                                <img src="${escaparHtml(item.fotoSolicitacao)}" alt="Foto da solicitacao de ${escaparHtml(item.clienteNome)}" onclick="abrirLightbox(this.src)">
+                                <img src="${escaparHtml(item.fotoSolicitacaoThumb || item.fotoSolicitacao)}" alt="Foto da solicitacao de ${escaparHtml(item.clienteNome)}" onclick="abrirLightbox('${escaparHtml(item.fotoSolicitacao)}')" loading="lazy">
                             </div>
                         ` : ''}
                         <div class="bloco-acao-texto">${escaparHtml(item.observacoes || "Sem observacoes.")}</div>

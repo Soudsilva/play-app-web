@@ -338,17 +338,17 @@
             const ehImagemValida = (url) => url && (url.startsWith('data:') || url.includes('firebasestorage'));
             let temFoto = false;
             
-            if (fotos.ficha && ehImagemValida(fotos.ficha)) { 
-                htmlFotos += `<div class="foto-item"><a href="${fotos.ficha}" target="_blank"><img src="${fotos.ficha}"></a><div class="foto-legenda">FICHA</div></div>`; 
-                temFoto = true; 
+            if (fotos.ficha && ehImagemValida(fotos.ficha)) {
+                htmlFotos += `<div class="foto-item"><a href="${fotos.ficha}" target="_blank"><img src="${fotos.fichaThumb || fotos.ficha}" loading="lazy"></a><div class="foto-legenda">FICHA</div></div>`;
+                temFoto = true;
             }
-            
+
             if (fotos.maquinas && Array.isArray(fotos.maquinas)) {
-                fotos.maquinas.forEach(m => { if (ehImagemValida(m.url)) { htmlFotos += `<div class="foto-item"><a href="${m.url}" target="_blank"><img src="${m.url}"></a><div class="foto-legenda">${m.nome}</div></div>`; temFoto = true; }});
+                fotos.maquinas.forEach(m => { if (ehImagemValida(m.url)) { htmlFotos += `<div class="foto-item"><a href="${m.url}" target="_blank"><img src="${m.thumbUrl || m.url}" loading="lazy"></a><div class="foto-legenda">${m.nome}</div></div>`; temFoto = true; }});
             }
-            
+
             if (fotos.pix && Array.isArray(fotos.pix)) {
-                fotos.pix.forEach(p => { if (ehImagemValida(p.url)) { htmlFotos += `<div class="foto-item"><a href="${p.url}" target="_blank"><img src="${p.url}"></a><div class="foto-legenda">PIX ${p.numero}</div></div>`; temFoto = true; }});
+                fotos.pix.forEach(p => { if (ehImagemValida(p.url)) { htmlFotos += `<div class="foto-item"><a href="${p.url}" target="_blank"><img src="${p.thumbUrl || p.url}" loading="lazy"></a><div class="foto-legenda">PIX ${p.numero}</div></div>`; temFoto = true; }});
             }
             
             htmlFotos += `</div>`;

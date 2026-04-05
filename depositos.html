@@ -304,7 +304,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbListarAtendimentos, storageSalvarFoto } from './database.js';
+    import { dbListarAtendimentos, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
     import { dbSalvarDeposito, dbListarDepositos, dbAtualizarDeposito, dbExcluirDeposito } from './database.js';
 
     const usuarioLogado = localStorage.getItem('usuarioLogado') || '';
@@ -484,7 +484,7 @@
                     <div style="flex-shrink:0; width:56px; height:70px; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.3); cursor:${deposito.foto ? 'pointer' : 'default'};"
                         ${deposito.foto ? `onclick="abrirFoto('${deposito.foto}')"` : ''}>
                         ${deposito.foto
-                            ? `<img src="${deposito.foto}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="Envelope">`
+                            ? `<img src="${deposito.fotoThumb || deposito.foto}" style="width:100%;height:100%;object-fit:cover;display:block;" alt="Envelope" loading="lazy">`
                             : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,0.3);text-align:center;padding:4px;box-sizing:border-box;">Sem foto</div>`}
                     </div>
                     <div style="flex:1;">
@@ -723,9 +723,10 @@
         const btn = document.getElementById('btnConfirmarDep');
         btn.disabled = true;
         try {
-            let fotoUrl = null;
+            let fotoUrl = null, fotoThumbUrl = null;
             if (fotoEnvelopeBase64) {
-                fotoUrl = await storageSalvarFoto(fotoEnvelopeBase64, 'depositos');
+                const r = await storageSalvarFotoComThumb(fotoEnvelopeBase64, 'depositos');
+                fotoUrl = r.url; fotoThumbUrl = r.thumbUrl;
             }
             const obs = document.getElementById('inputObsDep')?.value?.trim() || '';
             const agora = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
@@ -733,7 +734,7 @@
             const dataFinal = (ano === anoAtual && mes === mesAtual)
                 ? agora.toISOString()
                 : new Date(ano, mes, 0, 23, 59, 59).toISOString(); // último dia do mês selecionado
-            await dbSalvarDeposito({ usuario: usuarioLogado, valor, obs, foto: fotoUrl, data: dataFinal });
+            await dbSalvarDeposito({ usuario: usuarioLogado, valor, obs, foto: fotoUrl, fotoThumb: fotoThumbUrl, data: dataFinal });
             fotoEnvelopeBase64 = null;
             valorInput.value = '';
             const obsInput = document.getElementById('inputObsDep');
@@ -822,11 +823,12 @@
         btn.disabled = true;
         btn.textContent = 'Salvando...';
         try {
-            let fotoUrl = dep.foto || null;
+            let fotoUrl = dep.foto || null, fotoThumbUrl = dep.fotoThumb || null;
             if (editFotoBase64) {
-                fotoUrl = await storageSalvarFoto(editFotoBase64, 'depositos');
+                const r = await storageSalvarFotoComThumb(editFotoBase64, 'depositos');
+                fotoUrl = r.url; fotoThumbUrl = r.thumbUrl;
             }
-            const atualizado = { ...dep, valor: novoValor, obs: document.getElementById('editDepObs').value.trim(), foto: fotoUrl };
+            const atualizado = { ...dep, valor: novoValor, obs: document.getElementById('editDepObs').value.trim(), foto: fotoUrl, fotoThumb: fotoThumbUrl };
             delete atualizado.firebaseUrl;
             await dbAtualizarDeposito(usuarioLogado, firebaseKey, atualizado);
             editFotoBase64 = null;

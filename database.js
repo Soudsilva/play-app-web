@@ -439,6 +439,44 @@ export async function storageSalvarFoto(base64String, pasta = 'atendimentos') {
     }
 }
 
+// Redimensiona uma imagem base64 para miniatura usando Canvas
+async function _redimensionarParaThumb(base64, maxPx = 200) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const ratio = Math.min(maxPx / img.width, maxPx / img.height, 1);
+            if (ratio >= 1) { resolve(base64); return; }
+            const w = Math.round(img.width * ratio);
+            const h = Math.round(img.height * ratio);
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.75));
+        };
+        img.onerror = () => resolve(base64);
+        img.src = base64;
+    });
+}
+
+// Salva foto original + miniatura. Retorna { url, thumbUrl }.
+// Offline: retorna base64 de ambas para sync posterior.
+export async function storageSalvarFotoComThumb(base64String, pasta = 'atendimentos') {
+    const thumbBase64 = await _redimensionarParaThumb(base64String, 200).catch(() => base64String);
+    if (!navigator.onLine) return { url: base64String, thumbUrl: thumbBase64 };
+    try {
+        const uploads = [storageSalvarFoto(base64String, pasta)];
+        if (thumbBase64 !== base64String) {
+            uploads.push(storageSalvarFoto(thumbBase64, pasta + '/thumbs'));
+        }
+        const [url, thumbUrl] = await Promise.all(uploads);
+        return { url, thumbUrl: thumbUrl || url };
+    } catch (error) {
+        console.error("Erro ao salvar foto com miniatura:", error);
+        throw error;
+    }
+}
+
 // [NOVO] Salvar o registro completo do atendimento
 export async function dbSalvarAtendimento(atendimento, idExistente = null) {
     try {

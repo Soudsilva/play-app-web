@@ -688,6 +688,28 @@
     .ponto-card-nome { font-size: 14px; font-weight: bold; margin-bottom: 4px; }
     .ponto-card-info { font-size: 12px; color: rgba(255,255,255,0.52); line-height: 1.5; }
     .escolha-lista-vazia { text-align: center; padding: 20px 0; font-size: 13px; color: rgba(255,255,255,0.38); }
+
+    .loading-clientes {
+        text-align: center;
+        padding: 32px 18px;
+    }
+    .loading-engrenagem-cli {
+        display: block;
+        margin: 0 auto 14px;
+        animation: girar-cli 2s linear infinite;
+        transform-origin: center;
+    }
+    @keyframes girar-cli {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+    }
+    .loading-msg-cli {
+        font-size: 15px;
+        color: rgba(255,255,255,0.75);
+        min-height: 22px;
+        transition: opacity 0.35s ease;
+    }
+    .loading-msg-cli.fade-out { opacity: 0; }
 </style>
 </head>
 <body>
@@ -720,7 +742,14 @@
     </div>
 
     <div id="listaClientes">
-        <p style="text-align:center">Conectando ao banco...</p>
+        <div class="loading-clientes">
+            <svg class="loading-engrenagem-cli" width="44" height="44" viewBox="0 0 24 24" fill="none"
+                 stroke="rgba(255,200,50,0.9)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <div id="loadingMsgCli" class="loading-msg-cli">Buscando os clientes...</div>
+        </div>
     </div>
 </div>
 
@@ -850,6 +879,38 @@
         }
     }
 
+    const _loadingMsgsCli = [
+        "Buscando os clientes...",
+        "Organizando por número...",
+        "Verificando a lista de rotas...",
+        "Consultando o cadastro...",
+        "Carregando equipamentos...",
+        "Buscando endereços...",
+        "Quase lá...",
+    ];
+    let _loadingIdxCli = 0;
+    let _loadingTimerCli = null;
+
+    function _iniciarLoadingCli() {
+        const el = document.getElementById('loadingMsgCli');
+        if (!el || _loadingTimerCli) return;
+        _loadingTimerCli = setInterval(() => {
+            el.classList.add('fade-out');
+            setTimeout(() => {
+                _loadingIdxCli = (_loadingIdxCli + 1) % _loadingMsgsCli.length;
+                el.textContent = _loadingMsgsCli[_loadingIdxCli];
+                el.classList.remove('fade-out');
+            }, 350);
+        }, 2200);
+    }
+
+    function _pararLoadingCli() {
+        clearInterval(_loadingTimerCli);
+        _loadingTimerCli = null;
+    }
+
+    _iniciarLoadingCli();
+
     let perfilUsuarioLogado = "";
     let nomeUsuarioLogado = "";
     let clientesSalvos = [];
@@ -904,6 +965,7 @@
     }
 
     function renderizarLista(clientes) {
+        _pararLoadingCli();
         const listaHTML = document.getElementById("listaClientes");
         listaHTML.innerHTML = "";
         clientesSalvos = clientes;
@@ -1264,8 +1326,8 @@
             if (podeVerFicha) {
                 const fotosficha = [];
                 const fichaInstalacao = cliente.fotoFichaInstalacao || cliente.fotosInstalacao?.ficha || "";
-                if (fichaInstalacao) fotosficha.push({ titulo: 'Ficha (instalação)', url: fichaInstalacao });
-                if (ultimoAtendimento?.fotos?.ficha) fotosficha.push({ titulo: 'Ficha (último atend.)', url: ultimoAtendimento.fotos.ficha });
+                if (fichaInstalacao) fotosficha.push({ titulo: 'Ficha (instalação)', url: fichaInstalacao, thumbUrl: cliente.fotoFichaInstalacaoThumb || fichaInstalacao });
+                if (ultimoAtendimento?.fotos?.ficha) fotosficha.push({ titulo: 'Ficha (último atend.)', url: ultimoAtendimento.fotos.ficha, thumbUrl: ultimoAtendimento.fotos.fichaThumb || ultimoAtendimento.fotos.ficha });
                 if (fotosficha.length > 0) secoes.push({ nome: 'Foto da Ficha', fotos: fotosficha });
             }
 
@@ -1274,12 +1336,12 @@
             if (Array.isArray(ultimoAtendimento?.fotos?.maquinas) && ultimoAtendimento.fotos.maquinas.length > 0) {
                 ultimoAtendimento.fotos.maquinas.forEach((f, i) => {
                     const u = f?.url || f?.src || "";
-                    if (u) fotosMaquinas.push({ titulo: f?.nome ? `Máq: ${f.nome}` : `Máquina ${i+1}`, url: u });
+                    if (u) fotosMaquinas.push({ titulo: f?.nome ? `Máq: ${f.nome}` : `Máquina ${i+1}`, url: u, thumbUrl: f?.thumbUrl || u });
                 });
             } else if (Array.isArray(cliente.fotosMaquinasInstalacao)) {
                 cliente.fotosMaquinasInstalacao.forEach((f, i) => {
                     const u = f?.url || f?.src || "";
-                    if (u) fotosMaquinas.push({ titulo: f?.nome ? `Máq: ${f.nome}` : `Máquina ${i+1}`, url: u });
+                    if (u) fotosMaquinas.push({ titulo: f?.nome ? `Máq: ${f.nome}` : `Máquina ${i+1}`, url: u, thumbUrl: f?.thumbUrl || u });
                 });
             }
             if (fotosMaquinas.length > 0) secoes.push({ nome: 'Fotos de Máquinas', fotos: fotosMaquinas });
@@ -1322,7 +1384,7 @@
                     <div class="fotos-grid">
                         ${s.fotos.map(f => `
                             <div class="foto-item" onclick="abrirLightbox('${f.url.replace(/'/g, "\\'")}')">
-                                <img src="${f.url}" alt="${f.titulo}" loading="lazy">
+                                <img src="${(f.thumbUrl || f.url).replace(/'/g, "\\'")}" alt="${f.titulo}" loading="lazy">
                                 <div class="foto-item-label">${f.titulo}</div>
                             </div>
                         `).join('')}

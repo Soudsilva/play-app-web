@@ -3,7 +3,9 @@
     "allow": [
       "Bash(find /c/Users/souds/play-app-web -type f -name *deposit* -o -name *deposito*)",
       "Bash(node --input-type=module)",
-      "Bash(grep -l \"dbEscutarClientes\\\\|dbListarClientes\\\\|dbSalvarCliente\\\\|dbExcluirCliente\" /c/Users/souds/play-app-web/*.html)"
+      "Bash(grep -l \"dbEscutarClientes\\\\|dbListarClientes\\\\|dbSalvarCliente\\\\|dbExcluirCliente\" /c/Users/souds/play-app-web/*.html)",
+      "Bash(grep -n \"storageSalvarFoto\\\\|fotos\\\\.ficha\\\\|fotos\\\\.maquinas\\\\|fotoSolicitacao\\\\|fotoFichaInstalacao\\\\|fotosMaquinasInstalacao\" /c/Users/souds/play-app-web/*.html)",
+      "Bash(grep -n \"fotos\\\\.pix\\\\|\\\\.foto.*=\" /c/Users/souds/play-app-web/*.html)"
     ]
   }
 }

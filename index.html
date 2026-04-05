@@ -176,7 +176,7 @@
                 <span class="seta-gestao" id="setaGestao">&#9660;</span>
             </div>
             <div class="submenu" id="submenuGestao">
-                <div class="botao-sub" onclick="abrirEnvios()">
+                <div class="botao-sub" id="btnVerificarEnvios" onclick="abrirEnvios()">
                     <span class="icone">&#128228;</span>
                     <span>Verificar Envios</span>
                 </div>
@@ -184,15 +184,15 @@
                     <span class="icone">&#128185;</span>
                     <span>Sa&uacute;de de Vendas</span>
                 </div>
-                <div class="botao-sub" onclick="window.location.href='balanco.html'">
+                <div class="botao-sub" id="btnBalanco" onclick="window.location.href='balanco.html'">
                     <span class="icone">&#128200;</span>
                     <span>Balan&ccedil;o</span>
                 </div>
-                <div class="botao-sub" onclick="abrirTela('checkin')">
+                <div class="botao-sub" id="btnCheckinRotas" onclick="abrirTela('checkin')">
                     <span class="icone">&#128205;</span>
                     <span>Check in de Rotas</span>
                 </div>
-                <div class="botao-sub" onclick="abrirTela('depositos')">
+                <div class="botao-sub" id="btnDepositos" onclick="abrirTela('depositos')">
                     <span class="icone">&#127974;</span>
                     <span>Dep&oacute;sitos</span>
                 </div>
@@ -410,7 +410,11 @@
             manutencao: document.getElementById('btnManutencao'),
             gestao: document.getElementById('btnGestao'),
             blocoGestao: document.getElementById('blocoGestao'),
+            verificarEnvios: document.getElementById('btnVerificarEnvios'),
             mediaVendas: document.getElementById('btnMediaVendas'),
+            balanco: document.getElementById('btnBalanco'),
+            checkinRotas: document.getElementById('btnCheckinRotas'),
+            depositos: document.getElementById('btnDepositos'),
             rotas: document.getElementById('btnRotas'),
             cadColab: document.getElementById('btnCadColaborador'),
             estoque: document.getElementById('btnEstoque'),
@@ -449,9 +453,10 @@
 
         // 2. PERFIL ATENDIMENTO
         } else if (perfil.includes('atendimento')) {
+            const ehAtendimentoNivel2 = perfil.includes('atendimento_2');
             
             // [ALTERADO] BotÃ£o Atendimento oculto para NÃ­vel 2
-            if (perfil.includes('atendimento_2')) {
+            if (ehAtendimentoNivel2) {
                 btns.atendimento.style.display = 'none';
             } else {
                 btns.atendimento.style.display = 'flex';
@@ -460,7 +465,9 @@
             btns.clientes.style.display = 'flex';
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'flex';
-            btns.mediaVendas.style.display = perfil.includes('atendimento_2') ? 'flex' : 'none';
+            btns.mediaVendas.style.display = ehAtendimentoNivel2 ? 'flex' : 'none';
+            btns.checkinRotas.style.display = ehAtendimentoNivel2 ? 'none' : 'flex';
+            btns.depositos.style.display = ehAtendimentoNivel2 ? 'none' : 'flex';
             
             // [ALTERADO] Rotas apenas para NÃ­vel 1
             if (perfil.includes('atendimento_1')) {
@@ -493,6 +500,8 @@
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'flex';
             btns.mediaVendas.style.display = 'flex';
+            btns.checkinRotas.style.display = 'flex';
+            btns.depositos.style.display = 'flex';
             
             // [ALTERADO] Rotas Ã© exclusivo de Atendimento 1
             btns.rotas.style.display = 'none'; 

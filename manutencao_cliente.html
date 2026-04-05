@@ -341,7 +341,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbListarAtendimentos, dbListarClientes, dbSalvarManutencao, storageSalvarFoto } from './database.js';
+    import { dbListarAtendimentos, dbListarClientes, dbSalvarManutencao, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
 
     let clienteAtual = null;
     let currentFileInputId = null;
@@ -655,11 +655,15 @@
 
         try {
             let fotoSolicitacao = "";
+            let fotoSolicitacaoThumb = "";
             if (img && img.src) {
                 if (img.src.startsWith('data:')) {
-                    fotoSolicitacao = await storageSalvarFoto(img.src, 'manutencoes');
+                    const r = await storageSalvarFotoComThumb(img.src, 'manutencoes');
+                    fotoSolicitacao = r.url;
+                    fotoSolicitacaoThumb = r.thumbUrl;
                 } else if (img.src.startsWith('http') && !img.src.includes('.html')) {
                     fotoSolicitacao = img.src;
+                    fotoSolicitacaoThumb = img.src;
                 }
             }
 
@@ -674,6 +678,7 @@
                 tipoAcao: String(tipo.value || "").trim(),
                 observacoes: String(observacoes.value || "").trim(),
                 fotoSolicitacao,
+                fotoSolicitacaoThumb,
                 fotosClienteReferencia: fotosClienteReferenciaAtuais,
                 status: "pendente",
                 cadastradoPor: localStorage.getItem('usuarioLogado') || "",
