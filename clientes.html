@@ -842,7 +842,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbListarClientes, dbEscutarVersaoClientes, dbExcluirCliente, dbEscutarColaboradores, dbListarAtendimentos, dbEscutarManutencoes } from './database.js';
+    import { dbEscutarClientes, dbExcluirCliente, dbEscutarColaboradores, dbListarAtendimentos, dbEscutarManutencoes } from './database.js';
 
     // --- CACHE LOCAL DE CLIENTES ---
     // Salva a lista e a versão no localStorage para acesso offline e economia de dados.
@@ -917,24 +917,6 @@
     let pontosNovos = [];
     const urlParamsClientes = new URLSearchParams(window.location.search);
     const abrirCadastroClienteAoEntrar = urlParamsClientes.get('abrirCadastroCliente') === '1';
-    let versaoClientesAtual = Number(localStorage.getItem(_CACHE_VERSAO_KEY) || 0);
-    let escutaVersaoInicializada = false;
-    let recargaClientesAgendada = false;
-
-    function mostrarAvisoAtualizacaoClientes(mensagem) {
-        const aviso = document.getElementById('avisoAtualizacaoClientes');
-        if (!aviso) return;
-        aviso.textContent = mensagem;
-        aviso.classList.add('visivel');
-    }
-
-    function agendarRecargaListaClientes() {
-        if (recargaClientesAgendada) return;
-        recargaClientesAgendada = true;
-        mostrarAvisoAtualizacaoClientes('Lista de clientes atualizada. Recarregando...');
-        setTimeout(() => window.location.reload(), 900);
-    }
-
     function normalizarTexto(valor) {
         return String(valor || "")
             .normalize("NFD")
@@ -1112,20 +1094,9 @@
 
     // Carrega cache imediatamente (funciona offline).
     // O try/catch garante que um erro aqui não impeça o resto do módulo de executar.
-    try {
-        const _cacheInicial = _carregarCacheClientes();
-        if (_cacheInicial && Array.isArray(_cacheInicial.clientes)) {
-            renderizarLista(_cacheInicial.clientes);
-        }
-    } catch (e) {
-        console.warn('Erro ao renderizar cache de clientes:', e);
-        localStorage.removeItem(_CACHE_CLIENTES_KEY);
-        localStorage.removeItem(_CACHE_VERSAO_KEY);
-    }
-
     // Escuta apenas o número de versão (pouquíssimos dados).
     // Só baixa a lista completa quando a versão mudar — ou se não houver cache.
-    dbEscutarVersaoClientes(async (versaoRemota) => {
+    false && dbEscutarVersaoClientes(async (versaoRemota) => {
         const cache = _carregarCacheClientes();
 
         if (!versaoRemota) {
@@ -1141,7 +1112,7 @@
     });
 
     let ultimaVersaoRemotaClientes = null;
-    dbEscutarVersaoClientes((versaoRemota) => {
+    false && dbEscutarVersaoClientes((versaoRemota) => {
         const versaoNormalizada = Number(versaoRemota || 0);
         if (ultimaVersaoRemotaClientes === null) {
             ultimaVersaoRemotaClientes = versaoNormalizada;
@@ -1155,6 +1126,11 @@
         }
 
         ultimaVersaoRemotaClientes = versaoNormalizada;
+    });
+
+    // Fonte única: clientes do Firebase com cache central em IndexedDB.
+    dbEscutarClientes((lista) => {
+        renderizarLista(Array.isArray(lista) ? [...lista] : []);
     });
 
     function abrirEscolhaCadastro() {

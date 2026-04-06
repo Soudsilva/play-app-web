@@ -30,11 +30,11 @@ function abrirDB() {
 
 // ─── CACHE DE CLIENTES ────────────────────────────────────────────────────────
 // Salva a lista no IndexedDB toda vez que o Firebase atualizar.
-export async function salvarCacheClientes(lista) {
+export async function salvarCacheClientes(lista, versao = Date.now()) {
     try {
         const db = await abrirDB();
         const tx = db.transaction(CLIENTES, 'readwrite');
-        tx.objectStore(CLIENTES).put({ id: 'lista', dados: lista, ts: Date.now() });
+        tx.objectStore(CLIENTES).put({ id: 'lista', dados: lista, versao, ts: Date.now() });
         return new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
     } catch(e) { console.warn('offline-sync: salvarCacheClientes falhou:', e); }
 }
@@ -49,6 +49,26 @@ export async function lerCacheClientes() {
             req.onerror  = () => reject(req.error);
         });
     } catch(e) { return []; }
+}
+
+export async function lerCacheClientesCompleto() {
+    try {
+        const db = await abrirDB();
+        return new Promise((resolve, reject) => {
+            const req = db.transaction(CLIENTES, 'readonly').objectStore(CLIENTES).get('lista');
+            req.onsuccess = () => {
+                const registro = req.result || null;
+                resolve({
+                    dados: registro?.dados || [],
+                    versao: Number(registro?.versao || 0),
+                    ts: Number(registro?.ts || 0)
+                });
+            };
+            req.onerror  = () => reject(req.error);
+        });
+    } catch(e) {
+        return { dados: [], versao: 0, ts: 0 };
+    }
 }
 
 // ─── CACHE DE ESTOQUE (PRODUTOS) ─────────────────────────────────────────────

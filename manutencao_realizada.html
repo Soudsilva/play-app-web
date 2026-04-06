@@ -550,7 +550,7 @@
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
 verificarAutenticacao();
-import { dbSalvarManutencao, dbBuscarClientePorId, dbMarcarClienteEncerrado, dbEscutarEstoque, storageSalvarFotoComThumb } from './database.js';
+import { dbSalvarManutencao, dbBuscarClientePorId, dbBuscarClientePorNumero, dbMarcarClienteEncerrado, dbEscutarEstoque, storageSalvarFotoComThumb } from './database.js';
 
 // ════════════════════════════════════════════════
 // DADOS DA MANUTENÇÃO
@@ -773,12 +773,25 @@ function inicializarHistoricoNavegador() {
 
 // ── Carrega equipamentos do cliente ──
 async function carregarEquipamentosDoCliente() {
-    const idFirebase = dadosManutencao.clienteFirebaseUrl;
-    if (!idFirebase) return;
+    const idFirebase = dadosManutencao.clienteFirebaseUrl || dadosManutencao.clienteId || dadosManutencao?.cliente?.id || '';
+    const numeroCliente = dadosManutencao.clienteNumero || dadosManutencao?.cliente?.numero || '';
+
+    equipamentosDoCliente = [];
+    clienteEncontrado = null;
 
     try {
-        clienteEncontrado = await dbBuscarClientePorId(idFirebase);
-        if (!clienteEncontrado) return;
+        if (idFirebase) {
+            clienteEncontrado = await dbBuscarClientePorId(idFirebase);
+        }
+
+        if (!clienteEncontrado && numeroCliente) {
+            clienteEncontrado = await dbBuscarClientePorNumero(numeroCliente);
+        }
+
+        if (!clienteEncontrado) {
+            renderizarEquipamentosSelecionar(equipamentosDoCliente);
+            return;
+        }
 
         // Formato novo: array equipDetalhes
         if (Array.isArray(clienteEncontrado.equipDetalhes) && clienteEncontrado.equipDetalhes.length > 0) {
@@ -798,8 +811,11 @@ async function carregarEquipamentosDoCliente() {
                 }))
                 .filter(e => e.nome);
         }
+
     } catch (e) {
         console.error('Erro ao carregar equipamentos:', e);
+    } finally {
+        renderizarEquipamentosSelecionar(equipamentosDoCliente);
     }
 }
 

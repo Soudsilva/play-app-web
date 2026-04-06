@@ -23,7 +23,7 @@ import {
     runTransaction
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-import { salvarCacheClientes, lerCacheClientes, salvarCacheEstoque, lerCacheEstoque } from './offline-sync.js';
+import { salvarCacheClientes, lerCacheClientes, lerCacheClientesCompleto, salvarCacheEstoque, lerCacheEstoque } from './offline-sync.js';
 
 // --- 2. CONFIGURAÇÃO (AS CHAVES DO COFRE) ---
 // Estas são as credenciais que permitem que seu site converse especificamente com o SEU banco de dados.
@@ -48,7 +48,60 @@ const storage = getStorage(app);
 // FUNÇÃO: ESCUTAR CLIENTES (Em Tempo Real)
 // O que faz: Fica "de ouvidos abertos". Sempre que alguém mudar algo no banco de dados,
 // essa função avisa o site instantaneamente para atualizar a tela sem precisar recarregar (F5).
-export function dbEscutarClientes(callback) {
+let clientesCacheMemoria = null;
+let clientesCacheVersaoMemoria = 0;
+
+function _normalizarListaClientes(data) {
+    if (!data) return [];
+    return Object.keys(data).map(key => ({ ...data[key], firebaseUrl: key }));
+}
+
+async function _lerRegistroCacheClientes() {
+    const registro = await lerCacheClientesCompleto();
+    const dados = Array.isArray(registro?.dados) ? registro.dados : [];
+    const versao = Number(registro?.versao || 0);
+
+    clientesCacheMemoria = dados;
+    clientesCacheVersaoMemoria = versao;
+
+    return { dados, versao };
+}
+
+async function _obterVersaoClientesRemota() {
+    try {
+        const snap = await get(ref(db, 'metadata/clientes_versao'));
+        return Number(snap.val() || 0);
+    } catch (error) {
+        console.warn("NÃ£o foi possÃ­vel ler versÃ£o dos clientes:", error);
+        return 0;
+    }
+}
+
+async function _baixarListaClientesDoServidor(versaoRemota = 0) {
+    const snapshot = await get(ref(db, 'clientes'));
+    const lista = snapshot.exists() ? _normalizarListaClientes(snapshot.val()) : [];
+    const versaoParaCache = Number(versaoRemota || Date.now());
+
+    clientesCacheMemoria = lista;
+    clientesCacheVersaoMemoria = versaoParaCache;
+    salvarCacheClientes(lista, versaoParaCache).catch(() => {});
+
+    return lista;
+}
+
+async function _obterListaClientesAtualizada({ forcarServidor = false } = {}) {
+    const cache = await _lerRegistroCacheClientes();
+    if (!navigator.onLine) return cache.dados;
+
+    const versaoRemota = await _obterVersaoClientesRemota();
+    if (!forcarServidor && cache.versao > 0 && versaoRemota > 0 && cache.versao === versaoRemota) {
+        return cache.dados;
+    }
+
+    return _baixarListaClientesDoServidor(versaoRemota);
+}
+
+function dbEscutarClientesLegacy(callback) {
     // Serve o cache do IndexedDB imediatamente (útil ao abrir offline após um reload)
     lerCacheClientes().then(cached => {
         if (cached.length > 0) callback(cached);
@@ -69,6 +122,55 @@ export function dbEscutarClientes(callback) {
 
 // FUNÇÃO INTERNA: Atualiza o timestamp de versão dos clientes no banco.
 // Usada após qualquer alteração na lista de clientes para avisar todos os dispositivos.
+export function dbEscutarClientes(callback) {
+    let ativo = true;
+    let ultimoPayload = null;
+
+    const emitir = (lista) => {
+        if (!ativo) return;
+        const payload = JSON.stringify(lista || []);
+        if (payload === ultimoPayload) return;
+        ultimoPayload = payload;
+        callback(lista || []);
+    };
+
+    _lerRegistroCacheClientes()
+        .then(({ dados }) => {
+            if (dados.length > 0) emitir(dados);
+        })
+        .catch(() => {});
+
+    const cancelarVersao = onValue(ref(db, 'metadata/clientes_versao'), async (snapshot) => {
+        if (!ativo) return;
+        const versaoRemota = Number(snapshot.val() || 0);
+
+        try {
+            if (!navigator.onLine) {
+                if (clientesCacheMemoria && clientesCacheMemoria.length > 0) emitir(clientesCacheMemoria);
+                return;
+            }
+
+            if (clientesCacheMemoria !== null && clientesCacheVersaoMemoria > 0 && versaoRemota > 0 && clientesCacheVersaoMemoria === versaoRemota) {
+                emitir(clientesCacheMemoria);
+                return;
+            }
+
+            const lista = await _obterListaClientesAtualizada({
+                forcarServidor: versaoRemota > 0 && clientesCacheVersaoMemoria > 0 && clientesCacheVersaoMemoria !== versaoRemota
+            });
+            emitir(lista);
+        } catch (error) {
+            console.error("ERRO AO SINCRONIZAR CLIENTES:", error);
+            if (clientesCacheMemoria && clientesCacheMemoria.length > 0) emitir(clientesCacheMemoria);
+        }
+    });
+
+    return () => {
+        ativo = false;
+        if (typeof cancelarVersao === 'function') cancelarVersao();
+    };
+}
+
 async function _atualizarVersaoClientes() {
     try {
         await set(ref(db, 'metadata/clientes_versao'), Date.now());
@@ -212,14 +314,7 @@ export async function dbExcluirCliente(id) {
 // Diferente do "Escutar", este não fica vigiando alterações futuras.
 export async function dbListarClientes() {
     try {
-        const snapshot = await get(ref(db, 'clientes'));
-        if (snapshot.exists()) {
-            const data = snapshot.val();
-            return Object.keys(data).map(key => ({ 
-                ...data[key], 
-                firebaseUrl: key 
-            }));
-        }
+        return await _obterListaClientesAtualizada();
     } catch (error) {
         console.error("ERRO AO LISTAR CLIENTES:", error);
     }
@@ -966,6 +1061,7 @@ export async function dbMarcarClienteEncerrado(firebaseUrlCliente, valorCobrado)
             valorEncerramento: valorCobrado || '',
             dataEncerramento: new Date().toISOString()
         });
+        await _atualizarVersaoClientes();
     } catch (erro) {
         console.error("ERRO AO MARCAR CLIENTE ENCERRADO:", erro);
         throw erro;
