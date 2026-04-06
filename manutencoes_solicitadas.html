@@ -954,6 +954,7 @@
                     ...manutencao,
                     clienteNome: cliente?.nome || manutencao?.clienteNome || "Cliente sem nome",
                     clienteNumero: cliente?.numero || manutencao?.clienteNumero || "",
+                    clienteFirebaseUrl: cliente?.firebaseUrl || "",
                     clienteCidade: cliente?.cidade || manutencao?.clienteCidade || "Nao informada",
                     clienteRota: cliente?.rota || manutencao?.clienteRota || "Nao informada",
                     clienteEndereco: cliente?.endereco || manutencao?.clienteEndereco || "",
@@ -1194,6 +1195,8 @@
         const estado = document.getElementById('estadoLista');
         const container = document.getElementById('listaManutencoes');
 
+        const _scrollPos = manutencaoPendenteAjuste ? window.scrollY : null;
+
         renderizarResumo(lista);
         container.innerHTML = "";
 
@@ -1307,6 +1310,10 @@
             _fragment.appendChild(card);
         });
         container.appendChild(_fragment);
+
+        if (_scrollPos !== null) {
+            window.scrollTo({ top: _scrollPos });
+        }
 
         manutencaoPendenteAjuste = "";
     }

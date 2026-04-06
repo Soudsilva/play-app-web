@@ -908,6 +908,72 @@ export async function dbSincronizarMediaDeVendasComClientes() {
 
 /* --- FUNCOES PARA MANUTENCAO --- */
 
+/**
+ * Busca os dados completos de um cliente diretamente pelo ID do Firebase (firebaseUrl).
+ * Mais rápido e não exige índice no banco — use este sempre que tiver o ID disponível.
+ */
+export async function dbBuscarClientePorId(firebaseId) {
+    try {
+        if (!firebaseId) return null;
+        const snapshot = await get(ref(db, `clientes/${firebaseId}`));
+        if (!snapshot.exists()) return null;
+        return { firebaseUrl: firebaseId, ...snapshot.val() };
+    } catch (erro) {
+        console.error("ERRO AO BUSCAR CLIENTE POR ID:", erro);
+        return null;
+    }
+}
+
+/**
+ * Busca os dados completos de um cliente usando o número único dele.
+ * Ex: dbBuscarClientePorNumero(42) retorna o objeto do cliente número 42.
+ * Retorna o objeto do cliente com a chave "firebaseUrl" (ID no banco), ou null se não encontrar.
+ */
+export async function dbBuscarClientePorNumero(numero) {
+    try {
+        const numeroNormalizado = String(numero || '').trim();
+        if (!numeroNormalizado) return null;
+
+        // Tenta buscar tanto como número quanto como string (o banco pode ter salvo de qualquer forma)
+        const valoresTentativa = [numeroNormalizado];
+        const comoNumero = Number(numeroNormalizado);
+        if (Number.isFinite(comoNumero)) valoresTentativa.unshift(comoNumero);
+
+        for (const valor of valoresTentativa) {
+            const resultado = await get(query(ref(db, 'clientes'), orderByChild('numero'), equalTo(valor)));
+            if (!resultado.exists()) continue;
+            const dados = resultado.val() || {};
+            const primeiroId = Object.keys(dados)[0];
+            if (primeiroId) return { firebaseUrl: primeiroId, ...dados[primeiroId] };
+        }
+        return null;
+    } catch (erro) {
+        console.error("ERRO AO BUSCAR CLIENTE POR NÚMERO:", erro);
+        return null;
+    }
+}
+
+/**
+ * Marca um cliente como encerrado no banco.
+ * Usado quando o técnico retira todos os equipamentos e confirma que o ponto foi encerrado.
+ * O card do cliente vai aparecer em vermelho na lista, aguardando revisão do gestor.
+ */
+export async function dbMarcarClienteEncerrado(firebaseUrlCliente, valorCobrado) {
+    try {
+        await update(ref(db, `clientes/${firebaseUrlCliente}`), {
+            encerrado: true,
+            aguardandoRevisao: true,
+            valorEncerramento: valorCobrado || '',
+            dataEncerramento: new Date().toISOString()
+        });
+    } catch (erro) {
+        console.error("ERRO AO MARCAR CLIENTE ENCERRADO:", erro);
+        throw erro;
+    }
+}
+
+
+
 export async function dbSalvarManutencao(manutencao, idExistente = null) {
     try {
         if (idExistente) {

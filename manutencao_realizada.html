@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manutenção Realizada</title>
+    <title>Registro de Manutenção</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
 
@@ -18,11 +18,11 @@
 
         .app {
             width: 100%;
-            max-width: 560px;
-            padding: 20px 16px 80px;
+            max-width: 520px;
+            padding: 20px 16px 100px;
             display: flex;
             flex-direction: column;
-            gap: 0;
+            gap: 14px;
         }
 
         /* ── HEADER ── */
@@ -30,7 +30,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 24px;
+            margin-bottom: 6px;
         }
         .btn-voltar {
             background: rgba(255,255,255,0.1);
@@ -41,31 +41,30 @@
             cursor: pointer; flex-shrink: 0;
         }
         .btn-voltar:active { background: rgba(255,255,255,0.2); transform: scale(0.92); }
-        .topo-titulo { font-size: 23px; font-weight: bold; }
+        .topo-titulo { font-size: 22px; font-weight: bold; }
 
         /* ── CARD DA MANUTENÇÃO ── */
-        .card-manut {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.12);
+        .card-info {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.14);
             border-radius: 16px;
             padding: 16px;
-            margin-bottom: 28px;
         }
-        .card-manut-cliente { font-size: 21px; font-weight: bold; margin-bottom: 4px; }
-        .card-manut-meta { font-size: 16px; color: #b0bbd4; margin-bottom: 10px; }
-        .card-manut-tipo {
+        .card-info-nome { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+        .card-info-meta { font-size: 15px; color: #b0bbd4; margin-bottom: 10px; }
+        .card-info-tipo {
             display: inline-block;
             background: rgba(255,235,59,0.12);
             border: 1px solid rgba(255,235,59,0.3);
             border-radius: 20px;
             padding: 4px 12px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             color: #ffeb3b;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
-        .card-manut-obs {
-            font-size: 16px;
+        .card-info-obs {
+            font-size: 15px;
             color: #cfd6e3;
             line-height: 1.5;
             background: rgba(0,0,0,0.2);
@@ -73,150 +72,340 @@
             padding: 10px 12px;
         }
 
-        /* ── CHAT ── */
-        .chat { display: flex; flex-direction: column; gap: 16px; }
-
-        .balao {
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
-            animation: entrar 0.3s ease;
+        /* ── SEÇÃO DE PERGUNTA ── */
+        .secao {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 18px;
+            display: none;
         }
-        @keyframes entrar {
-            from { opacity: 0; transform: translateY(8px); }
+        .secao.visivel {
+            display: block;
+            animation: surgir 0.3s ease;
+        }
+        @keyframes surgir {
+            from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
         }
-
-        .avatar {
-            width: 36px; height: 36px;
-            background: linear-gradient(135deg, #1565c0, #0d47a1);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 21px;
-            flex-shrink: 0;
-            align-self: flex-end;
-        }
-
-        .balao-texto {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 18px 18px 18px 4px;
-            padding: 12px 16px;
-            font-size: 15px;
-            line-height: 1.5;
-            max-width: calc(100% - 50px);
-        }
-
-        /* resposta do usuário */
-        .balao-usuario {
-            flex-direction: row-reverse;
-        }
-        .balao-usuario .balao-texto {
-            background: rgba(255,235,59,0.12);
+        .secao.respondida {
             border-color: rgba(255,235,59,0.25);
-            border-radius: 18px 18px 4px 18px;
-            color: #fff;
+            background: rgba(255,235,59,0.04);
         }
 
-        /* ── BOTÕES DE RESPOSTA ── */
-        .opcoes {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            padding-left: 46px;
-            animation: entrar 0.3s ease;
-        }
-        .btn-opcao {
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 22px;
-            padding: 10px 20px;
-            font-size: 15px;
-            color: white;
-            cursor: pointer;
-            transition: 0.15s;
+        .secao-titulo {
+            font-size: 17px;
             font-weight: bold;
+            margin-bottom: 14px;
+            color: #ffeb3b;
         }
-        .btn-opcao:active { transform: scale(0.96); }
-        .btn-opcao.sim  { background: rgba(76,175,80,0.15); border-color: rgba(76,175,80,0.4); color: #81c784; }
-        .btn-opcao.nao  { background: rgba(255,82,82,0.12); border-color: rgba(255,82,82,0.3);  color: #ef9a9a; }
-        .btn-opcao.sim:active { background: rgba(76,175,80,0.3); }
-        .btn-opcao.nao:active  { background: rgba(255,82,82,0.25); }
+        .resposta-confirmada {
+            font-size: 15px;
+            color: #cfd6e3;
+            font-style: italic;
+        }
 
-        /* ── ÁREA DE TEXTO (observação) ── */
-        .area-obs-wrap {
-            padding-left: 46px;
-            animation: entrar 0.3s ease;
+        /* ── BOTÕES DE OPÇÃO ── */
+        .grade-opcoes {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
-        .input-obs {
+        .grade-opcoes.horizontal {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+        .btn-opcao {
             width: 100%;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1.5px solid rgba(255,255,255,0.2);
             background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .btn-opcao:active { transform: scale(0.98); }
+        .btn-opcao.sim { border-color: rgba(76,175,80,0.35); color: #a5d6a7; }
+        .btn-opcao.nao { border-color: rgba(255,82,82,0.3);  color: #ef9a9a; }
+        .btn-opcao.sim:active  { background: rgba(76,175,80,0.15); }
+        .btn-opcao.nao:active  { background: rgba(255,82,82,0.12); }
+        .btn-opcao.selecionado {
+            background: rgba(255,235,59,0.15);
+            border-color: rgba(255,235,59,0.5);
+            color: #ffeb3b;
+        }
+
+        .linha-produto {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            animation: surgir 0.25s ease;
+        }
+        .col-prod { flex: 2; }
+        .col-qtd { flex: 1; }
+
+        .linha-equipamento-novo {
+            display: flex;
+            gap: 8px;
+            flex-wrap: nowrap;
+            align-items: center;
+        }
+        .lista-equipamentos-adicionados {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .linha-equipamento-novo .campo-texto {
+            margin: 0;
+            min-width: 0;
+        }
+        .equip-maquina { flex: 2.8 1 0; }
+        .equip-qtd { flex: 0.8 1 0; text-align: center; }
+        .equip-pix { flex: 0.8 1 0; text-align: center; }
+        .equip-cont { flex: 1 1 0; text-align: center; }
+
+        .aviso-obrigatorio {
+            display: none;
+            margin-bottom: 12px;
+            background: rgba(255, 235, 59, 0.12);
+            border: 1px solid rgba(255, 235, 59, 0.3);
             border-radius: 12px;
             padding: 12px 14px;
             font-size: 14px;
+            color: #fff2a8;
+            line-height: 1.5;
+        }
+        .aviso-obrigatorio.visivel { display: block; }
+        .secao.oculta-por-fluxo { display: none !important; }
+
+        .area-foto {
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+            margin-top: 14px;
+            cursor: pointer;
+            background: rgba(255,255,255,0.05);
+        }
+        .preview-img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            display: none;
+            margin: 0 auto;
+        }
+
+        /* ── INPUTS ── */
+        .campo-wrap { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+        .campo-label { font-size: 14px; color: #b0bbd4; }
+        .mensagem-produtos {
+            display: none;
+            margin: 2px 0 4px;
+            text-align: center;
+            font-size: 18px;
+            color: #cfd6e3;
+            font-weight: bold;
+            line-height: 1.15;
+        }
+        .campo-texto {
+            width: 100%;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 15px;
             color: white;
-            resize: vertical;
-            min-height: 90px;
             outline: none;
             font-family: Arial, sans-serif;
-            line-height: 1.5;
             user-select: text;
             -webkit-user-select: text;
         }
-        .input-obs::placeholder { color: rgba(255,255,255,0.3); }
-        .input-obs:focus { border-color: rgba(255,235,59,0.5); }
-        .btn-enviar-obs {
+        .campo-texto::placeholder { color: rgba(255,255,255,0.3); }
+        .campo-texto:focus { border-color: rgba(255,235,59,0.5); }
+        textarea.campo-texto { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+        /* ── LISTA DE EQUIPAMENTOS ── */
+        .equipamentos-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .equip-retirada-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(255,255,255,0.05);
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .equip-retirada-item.marcado {
+            background: rgba(255,82,82,0.12);
+            border-color: rgba(255,82,82,0.32);
+        }
+        .equip-retirada-check {
+            width: 18px;
+            height: 18px;
+            accent-color: #ff6b6b;
+            flex-shrink: 0;
+        }
+        .equip-retirada-texto {
+            flex: 1;
+            font-size: 15px;
+            color: #fff;
+            font-weight: 600;
+        }
+        .equip-retirada-item.marcado .equip-retirada-texto {
+            color: #ffd2d2;
+        }
+        .equip-retirada-selo {
+            display: none;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: rgba(255,82,82,0.18);
+            border: 1px solid rgba(255,82,82,0.28);
+            color: #ffb3b3;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .equip-retirada-item.marcado .equip-retirada-selo {
+            display: inline-flex;
+        }
+        .chip {
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.08);
+            color: #cfd6e3;
+        }
+        .chip.selecionavel { cursor: pointer; transition: 0.15s; }
+        .chip.selecionavel:active { transform: scale(0.95); }
+        .chip.marcado {
+            background: rgba(255,82,82,0.2);
+            border-color: rgba(255,82,82,0.5);
+            color: #ef9a9a;
+            font-weight: bold;
+        }
+        .chip.vazio { color: rgba(255,255,255,0.3); border-style: dashed; font-style: italic; }
+
+        /* ── SUB-SEÇÃO (abre dentro de uma seção) ── */
+        .sub-secao {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: none;
+        }
+        .sub-secao.visivel { display: block; animation: surgir 0.25s ease; }
+        .sub-titulo { font-size: 15px; color: #b0bbd4; margin-bottom: 10px; }
+        .card-fluxo {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 16px;
+            border-top: none;
+        }
+        .card-incluir {
+            background: rgba(76,175,80,0.08);
+            border: 1px solid rgba(76,175,80,0.28);
+        }
+        .card-retirar {
+            background: rgba(255,82,82,0.08);
+            border: 1px solid rgba(255,82,82,0.24);
+        }
+        .card-fluxo-cabeca {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+        .card-fluxo-chip {
+            display: inline-flex;
+            align-self: flex-start;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .card-incluir .card-fluxo-chip {
+            background: rgba(76,175,80,0.16);
+            color: #a5d6a7;
+            border: 1px solid rgba(76,175,80,0.28);
+        }
+        .card-retirar .card-fluxo-chip {
+            background: rgba(255,82,82,0.14);
+            color: #ef9a9a;
+            border: 1px solid rgba(255,82,82,0.24);
+        }
+        .card-fluxo-titulo {
+            font-size: 22px;
+            font-weight: bold;
+            line-height: 1.05;
+            color: #fff;
+        }
+        .card-fluxo-apoio {
+            font-size: 13px;
+            color: #cfd6e3;
+        }
+
+        /* ── BOTÃO FINALIZAR ── */
+        .btn-finalizar {
+            width: 100%;
+            padding: 16px;
             background: #ffeb3b;
             color: #0b2256;
             border: none;
-            border-radius: 12px;
-            padding: 13px;
-            font-size: 15px;
+            border-radius: 14px;
+            font-size: 17px;
             font-weight: bold;
             cursor: pointer;
+            display: none;
             transition: 0.15s;
         }
-        .btn-enviar-obs:active { transform: scale(0.98); background: #ffe100; }
+        .btn-finalizar.visivel { display: block; animation: surgir 0.3s ease; }
+        .btn-finalizar:active { transform: scale(0.98); background: #ffe100; }
+        .btn-finalizar:disabled { opacity: 0.5; cursor: default; }
 
-        /* ── DIGITANDO ── */
-        .digitando {
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
-            animation: entrar 0.25s ease;
+        /* ── LOADING / MENSAGEM ── */
+        .mensagem-status {
+            text-align: center;
+            font-size: 15px;
+            color: #b0bbd4;
+            padding: 12px;
+            display: none;
         }
-        .dots {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 18px 18px 18px 4px;
-            padding: 14px 18px;
-            display: flex;
-            gap: 5px;
-            align-items: center;
+        .mensagem-status.visivel { display: block; }
+
+        /* ── SUBSEÇÃO ENCERRAMENTO ── */
+        .aviso-encerramento {
+            background: rgba(255,82,82,0.1);
+            border: 1px solid rgba(255,82,82,0.3);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 14px;
+            color: #ef9a9a;
+            margin-top: 12px;
+            line-height: 1.5;
         }
-        .dot {
-            width: 7px; height: 7px;
-            background: #b0bbd4;
-            border-radius: 50%;
-            animation: piscar 1.2s infinite;
-        }
-        .dot:nth-child(2) { animation-delay: 0.2s; }
-        .dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes piscar {
-            0%, 60%, 100% { opacity: 0.3; transform: scale(0.85); }
-            30% { opacity: 1; transform: scale(1.1); }
-        }
+
     </style>
 </head>
 <body>
 <div class="app">
 
     <div class="topo">
-        <button class="btn-voltar" onclick="window.location.href='manutencoes_solicitadas.html'">
+        <button class="btn-voltar" onclick="desfazerUltimoPassoOuVoltar()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="15 18 9 12 15 6"/>
             </svg>
@@ -224,260 +413,1433 @@
         <div class="topo-titulo">Registro de Manutenção</div>
     </div>
 
-    <!-- Card com os dados da manutenção -->
-    <div class="card-manut" id="cardManut"></div>
+    <!-- Card com dados do cliente / manutenção -->
+    <div class="card-info" id="cardInfo"></div>
 
-    <!-- Conversa -->
-    <div class="chat" id="chat"></div>
+    <!-- ═══ PERGUNTA 1: O serviço foi realizado? ═══ -->
+    <div class="secao visivel" id="secaoServico">
+        <div class="secao-titulo">O serviço foi realizado?</div>
+        <div class="grade-opcoes">
+            <button class="btn-opcao sim" onclick="responderServico(true)">✅ Sim, tudo feito</button>
+            <button class="btn-opcao nao" onclick="responderServico(false)">⚠️ Não, ficou pendente</button>
+        </div>
+
+        <!-- Sub: observação pendente -->
+        <div class="sub-secao" id="subObsPendente">
+            <div class="sub-titulo">Descreva o que ficou pendente:</div>
+            <div class="campo-wrap">
+                <textarea id="campoObsPendente" class="campo-texto" placeholder="O que ficou faltando..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ PONTO NOVO: redirecionar para cadastro ═══ -->
+    <div class="secao" id="secaoPontoNovo">
+        <div class="secao-titulo">Ponto Novo cadastrado!</div>
+        <p style="font-size:15px; color:#cfd6e3; margin-bottom:16px; line-height:1.6;">
+            O serviço foi concluído. Agora vamos cadastrar este novo ponto no sistema.
+        </p>
+        <button class="btn-opcao sim" onclick="irParaCadastroPontoNovo()">➡️ Ir para o cadastro</button>
+    </div>
+
+    <!-- ═══ PERGUNTA 2: Situação das máquinas ═══ -->
+    <div class="secao" id="secaoMaquinas">
+        <div class="secao-titulo">Adicionou ou retirou máquinas?</div>
+        <div class="grade-opcoes horizontal" style="gap:10px;">
+            <button class="btn-opcao sim" style="flex:1;" onclick="responderTemMaquinas(true)">✅ Sim</button>
+            <button class="btn-opcao nao" style="flex:1;" onclick="responderTemMaquinas(false)">➡️ Não</button>
+        </div>
+
+        <div class="sub-secao" id="subAcoesMaquinas">
+            <div class="sub-titulo">Marque o que foi feito. Se precisar, pode marcar as duas opções.</div>
+            <div class="grade-opcoes horizontal" style="gap:10px;">
+                <button class="btn-opcao" id="btnAcaoMaquinaAdd" style="flex:1;" onclick="toggleAcaoMaquina('adicionou')">➕ Adicionou</button>
+                <button class="btn-opcao" id="btnAcaoMaquinaRet" style="flex:1;" onclick="toggleAcaoMaquina('retirou')">➖ Retirou</button>
+            </div>
+        </div>
+
+        <!-- Sub: adicionar equipamento -->
+        <div class="sub-secao card-fluxo card-incluir" id="subAdicionar">
+            <div class="card-fluxo-cabeca">
+                <span class="card-fluxo-chip">Incluir</span>
+                <div class="card-fluxo-titulo">Incluir máquinas</div>
+                <div class="card-fluxo-apoio">Preencha as máquinas instaladas</div>
+            </div>
+            <div class="campo-wrap">
+                <div id="containerEquipamentosAdicionados" class="lista-equipamentos-adicionados"></div>
+            </div>
+            <div id="hostProdutosObrigatorios"></div>
+            <div class="campo-wrap">
+                <label class="campo-label">Foto do equipamento adicionado:</label>
+                <div class="area-foto" onclick="abrirSeletorFoto('inputFotoEquipNovo')">
+                    <span id="textoFotoEquipNovo" style="font-size:14px; opacity:0.8;">Toque para adicionar</span>
+                    <img id="imgPreviewEquipNovo" class="preview-img" alt="Foto do equipamento adicionado">
+                    <input type="file" id="inputFotoEquipNovo" accept="image/*" style="display:none;" onchange="mostrarPreviewFotoManutencao(this, 'imgPreviewEquipNovo', 'textoFotoEquipNovo')">
+                </div>
+            </div>
+        </div>
+
+        <!-- Sub: retirar equipamento -->
+        <div class="sub-secao card-fluxo card-retirar" id="subRetirar">
+            <div class="card-fluxo-cabeca">
+                <span class="card-fluxo-chip">Retirar</span>
+                <div class="card-fluxo-titulo">Retirar máquinas</div>
+                <div class="card-fluxo-apoio">Selecione o que saiu do ponto</div>
+            </div>
+            <div class="equipamentos-lista" id="listaEquipamentosSelecionar"></div>
+            <div class="campo-wrap" id="campoEquipLivreWrap" style="display:none">
+                <label class="campo-label">Descreva o equipamento retirado:</label>
+                <input type="text" id="campoEquipLivre" class="campo-texto" placeholder="Nome do equipamento..." autocomplete="off">
+            </div>
+
+            <!-- Sub-sub: ponto encerrado? -->
+            <div class="sub-secao" id="subEncerramento">
+                <div class="aviso-encerramento">
+                    ⚠️ Você selecionou todos os equipamentos. O ponto foi encerrado?
+                </div>
+                <div class="grade-opcoes horizontal" style="margin-top:12px; gap:10px;">
+                    <button class="btn-opcao sim" style="flex:1;" onclick="responderEncerramento(true)">✅ Sim, encerrou</button>
+                    <button class="btn-opcao nao" style="flex:1;" onclick="responderEncerramento(false)">➡️ Não, só retirou</button>
+                </div>
+                <div class="sub-secao" id="subValorEncerramento">
+                    <div class="campo-wrap">
+                        <label class="campo-label">Valor cobrado pelas máquinas:</label>
+                        <input type="text" id="campoValorEncerramento" class="campo-texto" placeholder="Ex: R$ 500,00" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sub-secao" id="subConfirmarMaquinas">
+            <button class="btn-opcao sim" onclick="confirmarMaquinas()">✔️ Confirmar máquinas</button>
+        </div>
+    </div>
+
+    <!-- ═══ PERGUNTA 3: Reposição de produtos ═══ -->
+    <div class="secao" id="secaoProdutos">
+        <div class="secao-titulo" id="tituloSecaoProdutos">Teve reposição de produtos?</div>
+        <div class="aviso-obrigatorio" id="avisoProdutosObrigatorios">
+            Como houve adição de máquina, informe os produtos usados nessa instalação.
+        </div>
+        <div class="grade-opcoes horizontal" id="gradeOpcoesProdutos" style="gap:10px;">
+            <button class="btn-opcao sim" id="btnProdutosSim" style="flex:1;" onclick="responderProdutos(true)">📦 Sim</button>
+            <button class="btn-opcao nao" id="btnProdutosNao" style="flex:1;" onclick="responderProdutos(false)">➡️ Não</button>
+        </div>
+
+        <div id="hostProdutosPadrao">
+            <!-- Sub: produtos repostos -->
+            <div class="sub-secao" id="subProdutos">
+                <div class="mensagem-produtos" id="mensagemProdutosManutencao">Informe os produtos</div>
+                <div class="campo-wrap">
+                    <label class="campo-label" id="labelProdutosManutencao">Selecione os produtos e informe as quantidades:</label>
+                    <div id="containerProdutosManutencao"></div>
+                </div>
+                <button class="btn-opcao sim" id="btnConfirmarReposicao" style="margin-top:14px;" onclick="confirmarProdutos()">✔️ Confirmar reposição</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mensagem-status" id="mensagemStatus"></div>
+
+    <button class="btn-finalizar" id="btnFinalizar" onclick="finalizarRegistro()">
+        Salvar e Concluir ✓
+    </button>
 
 </div>
 
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
 verificarAutenticacao();
-import { dbSalvarManutencao } from './database.js';
+import { dbSalvarManutencao, dbBuscarClientePorId, dbMarcarClienteEncerrado, dbEscutarEstoque, storageSalvarFotoComThumb } from './database.js';
 
-const raw = sessionStorage.getItem('manutencao_realizando');
-if (!raw) { window.location.href = 'manutencoes_solicitadas.html'; }
+// ════════════════════════════════════════════════
+// DADOS DA MANUTENÇÃO
+// ════════════════════════════════════════════════
 
-const item = JSON.parse(raw);
-const chat = document.getElementById('chat');
-const ehPontoNovo = String(item?.tipoAcao || "").trim().toLowerCase() === 'ponto novo';
+const dadosManutencao = JSON.parse(sessionStorage.getItem('manutencao_realizando') || 'null');
+if (!dadosManutencao) { window.location.href = 'manutencoes_solicitadas.html'; }
 
-// ── Preenche card da manutenção ──
-(function renderCard() {
-    const el = document.getElementById('cardManut');
+const ehPontoNovo = String(dadosManutencao?.tipoAcao || '').trim().toLowerCase() === 'ponto novo';
+
+// Equipamentos carregados do Firebase
+let equipamentosDoCliente = [];
+
+// Cliente encontrado (guardado para não buscar duas vezes)
+let clienteEncontrado = null;
+
+// Conjunto de índices dos equipamentos marcados para retirada
+const indicesEquipamentosRetirados = new Set();
+
+// Produtos cadastrados no estoque para usar na reposição
+let listaProdutos = [];
+let produtosCarregados = false;
+let maquinasDisponiveis = [];
+
+// Respostas acumuladas para salvar no final
+const respostas = {
+    servicoRealizado: null,
+    observacaoPendente: '',
+    teveAlteracaoMaquinas: null,
+    acoesMaquinas: {
+        adicionou: false,
+        retirou: false,
+    },
+    pontoEncerrado: false,
+    valorEncerramento: '',
+    teveProdutos: null,
+    produtosConfirmados: false,
+};
+
+const respostasIniciais = clonarJson(respostas);
+let estadoInicial = null;
+
+// ════════════════════════════════════════════════
+// HISTÓRICO DE ESTADOS (para o botão voltar)
+// ════════════════════════════════════════════════
+
+const historicoEstados = [];
+let indiceHistoricoAtual = 0;
+
+function clonarJson(valor) {
+    return JSON.parse(JSON.stringify(valor));
+}
+
+function capturarValoresCampos() {
+    const valores = {};
+    document.querySelectorAll('.app input, .app textarea, .app select').forEach(campo => {
+        if (!campo.id) return;
+        if (campo.type === 'checkbox' || campo.type === 'radio') {
+            valores[campo.id] = !!campo.checked;
+        } else {
+            valores[campo.id] = campo.value;
+        }
+    });
+    return valores;
+}
+
+function aplicarValoresCampos(valores = {}) {
+    Object.entries(valores).forEach(([id, valor]) => {
+        const campo = document.getElementById(id);
+        if (!campo) return;
+        if (campo.type === 'checkbox' || campo.type === 'radio') {
+            campo.checked = !!valor;
+        } else {
+            campo.value = valor;
+        }
+    });
+}
+
+const ESTADO_HISTORICO_TELA = 'manutencao-realizada';
+
+function capturarSnapshotAtual() {
+    const app = document.querySelector('.app');
+    if (!app) return null;
+
+    return {
+        html: app.innerHTML,
+        respostas: clonarJson(respostas),
+        equipamentosDoCliente: clonarJson(equipamentosDoCliente),
+        clienteEncontrado: clienteEncontrado ? clonarJson(clienteEncontrado) : null,
+        indicesEquipamentosRetirados: [...indicesEquipamentosRetirados],
+        linhasProdutos: capturarLinhasProdutosManutencao(),
+        valoresCampos: capturarValoresCampos(),
+    };
+}
+
+function registrarNovoEstadoHistorico() {
+    const snapshot = capturarSnapshotAtual();
+    if (!snapshot) return false;
+
+    historicoEstados.splice(indiceHistoricoAtual + 1);
+    historicoEstados.push(snapshot);
+    indiceHistoricoAtual = historicoEstados.length - 1;
+
+    if (window.history?.pushState) {
+        window.history.pushState(
+            { tela: ESTADO_HISTORICO_TELA, indice: indiceHistoricoAtual },
+            '',
+            window.location.href
+        );
+    }
+
+    return true;
+}
+
+function aplicarSnapshot(snapshot) {
+    const app = document.querySelector('.app');
+    if (!app || !snapshot) return false;
+
+    app.innerHTML = snapshot.html;
+
+    Object.assign(respostas, snapshot.respostas);
+    equipamentosDoCliente = clonarJson(snapshot.equipamentosDoCliente);
+    clienteEncontrado = snapshot.clienteEncontrado ? clonarJson(snapshot.clienteEncontrado) : null;
+
+    indicesEquipamentosRetirados.clear();
+    snapshot.indicesEquipamentosRetirados.forEach(indice => indicesEquipamentosRetirados.add(indice));
+
+    aplicarValoresCampos(snapshot.valoresCampos);
+    reidratarEstadoRestaurado(snapshot);
+    return true;
+}
+
+function reidratarEstadoRestaurado(snapshot = null) {
+    if (respostas.teveAlteracaoMaquinas) {
+        sincronizarAcoesMaquinaUI();
+    }
+
+    if (respostas.acoesMaquinas.retirou) {
+        const listaSelecionar = document.getElementById('listaEquipamentosSelecionar');
+        const subRetirar = document.getElementById('subRetirar');
+        if (listaSelecionar && subRetirar?.classList.contains('visivel')) {
+            renderizarEquipamentosSelecionar(equipamentosDoCliente);
+        }
+    }
+
+    if (snapshot) {
+        restaurarLinhasProdutosManutencao(snapshot.linhasProdutos);
+    }
+}
+
+function restaurarEstadoDoHistorico(indice) {
+    const snapshot = historicoEstados[indice];
+    if (!snapshot) return false;
+    indiceHistoricoAtual = indice;
+    return aplicarSnapshot(clonarJson(snapshot));
+}
+
+function estaNoPrimeiroEstadoHistorico() {
+    return indiceHistoricoAtual <= 0;
+}
+
+window.desfazerUltimoPassoOuVoltar = function() {
+    if (!estaNoPrimeiroEstadoHistorico() && window.history?.back) {
+        window.history.back();
+        return;
+    }
+
+    window.location.href = 'manutencoes_solicitadas.html';
+};
+
+// Cada resposta confirmada cria uma entrada real no history do navegador.
+// Assim o botao voltar desfaz um passo por vez e, no primeiro estado,
+// volta naturalmente para a tela anterior do fluxo.
+if (window.history?.pushState) {
+    window.addEventListener('popstate', (evento) => {
+        if (evento.state?.tela !== ESTADO_HISTORICO_TELA) return;
+
+        const indiceDestino = Number.isInteger(evento.state?.indice)
+            ? evento.state.indice
+            : 0;
+        const indiceValido = Math.min(
+            Math.max(indiceDestino, 0),
+            Math.max(historicoEstados.length - 1, 0)
+        );
+
+        restaurarEstadoDoHistorico(indiceValido);
+    });
+}
+
+function inicializarHistoricoNavegador() {
+    historicoEstados.length = 0;
+    historicoEstados.push(clonarJson(estadoInicial));
+    indiceHistoricoAtual = 0;
+
+    if (window.history?.replaceState) {
+        window.history.replaceState(
+            { tela: ESTADO_HISTORICO_TELA, indice: 0 },
+            '',
+            window.location.href
+        );
+    }
+}
+
+// ── Preenche o card do topo ──
+(function preencherCardInfo() {
+    const el = document.getElementById('cardInfo');
     const meta = [
-        item.clienteRota  ? `Rota ${item.clienteRota}` : null,
-        item.clienteCidade ? item.clienteCidade : null,
-        item.solicitante   ? `Solicitado por ${item.solicitante}` : null,
+        dadosManutencao.clienteRota   ? `Rota ${dadosManutencao.clienteRota}` : null,
+        dadosManutencao.clienteCidade ? dadosManutencao.clienteCidade : null,
+        dadosManutencao.solicitante   ? `Solicitado por ${dadosManutencao.solicitante}` : null,
     ].filter(Boolean).join(' · ');
 
     el.innerHTML = `
-        <div class="card-manut-cliente">${item.clienteNumero ? 'N. ' + item.clienteNumero + ' — ' : ''}${item.clienteNome || '—'}</div>
-        <div class="card-manut-meta">${meta}</div>
-        ${item.tipoAcao ? `<div class="card-manut-tipo">${item.tipoAcao}</div>` : ''}
-        ${item.observacoes ? `<div class="card-manut-obs">${item.observacoes}</div>` : ''}
+        <div class="card-info-nome">${dadosManutencao.clienteNumero ? 'N. ' + dadosManutencao.clienteNumero + ' — ' : ''}${dadosManutencao.clienteNome || '—'}</div>
+        <div class="card-info-meta">${meta}</div>
+        ${dadosManutencao.tipoAcao    ? `<div class="card-info-tipo">${dadosManutencao.tipoAcao}</div>` : ''}
+        ${dadosManutencao.observacoes ? `<div class="card-info-obs">${dadosManutencao.observacoes}</div>` : ''}
     `;
 })();
 
-// ── Helpers de UI ──
-function addBotMsg(texto, delay = 0) {
-    return new Promise(resolve => {
-        // Mostra "digitando..."
-        const typing = document.createElement('div');
-        typing.className = 'digitando';
-        typing.innerHTML = `<div class="avatar">🔧</div><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
-        chat.appendChild(typing);
-        scrollDown();
-
-        setTimeout(() => {
-            typing.remove();
-            const balao = document.createElement('div');
-            balao.className = 'balao';
-            balao.innerHTML = `<div class="avatar">🔧</div><div class="balao-texto">${texto}</div>`;
-            chat.appendChild(balao);
-            scrollDown();
-            resolve();
-        }, delay || 900);
-    });
-}
-
-function addUserMsg(texto) {
-    const balao = document.createElement('div');
-    balao.className = 'balao balao-usuario';
-    balao.innerHTML = `<div class="balao-texto">${texto}</div>`;
-    chat.appendChild(balao);
-    scrollDown();
-}
-
-function mostrarOpcoes(opcoes) {
-    return new Promise(resolve => {
-        const wrap = document.createElement('div');
-        wrap.className = 'opcoes';
-        opcoes.forEach(({ label, classe, valor }) => {
-            const btn = document.createElement('button');
-            btn.className = `btn-opcao ${classe || ''}`;
-            btn.textContent = label;
-            btn.onclick = () => {
-                wrap.remove();
-                resolve(valor);
-            };
-            wrap.appendChild(btn);
-        });
-        chat.appendChild(wrap);
-        scrollDown();
-    });
-}
-
-function mostrarCampoObs(placeholder, valorInicial) {
-    return new Promise(resolve => {
-        const wrap = document.createElement('div');
-        wrap.className = 'area-obs-wrap';
-        wrap.innerHTML = `
-            <textarea class="input-obs" placeholder="${placeholder}">${valorInicial || ''}</textarea>
-            <button class="btn-enviar-obs">Confirmar →</button>
-        `;
-        const btn = wrap.querySelector('.btn-enviar-obs');
-        const ta  = wrap.querySelector('.input-obs');
-        btn.onclick = () => {
-            const val = ta.value.trim();
-            wrap.remove();
-            resolve(val);
-        };
-        chat.appendChild(wrap);
-        ta.focus();
-        scrollDown();
-    });
-}
-
-function mostrarBotaoAcao(label = 'OK') {
-    return new Promise(resolve => {
-        const wrap = document.createElement('div');
-        wrap.className = 'area-obs-wrap';
-        wrap.innerHTML = `<button class="btn-enviar-obs">${label}</button>`;
-        const btn = wrap.querySelector('.btn-enviar-obs');
-        btn.onclick = () => {
-            wrap.remove();
-            resolve();
-        };
-        chat.appendChild(wrap);
-        scrollDown();
-    });
-}
-
-function scrollDown() {
-    setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 50);
-}
-
-function voltarParaLista(delay = 1200) {
-    setTimeout(() => window.location.href = 'manutencoes_solicitadas.html', delay);
-}
-
-function irParaFluxoCadastroPontoNovo(delay = 1600) {
-    setTimeout(() => window.location.href = 'clientes.html?abrirCadastroCliente=1', delay);
-}
-
-// ── Fluxo da conversa ──
-async function iniciarConversa() {
-    await addBotMsg(`Olá! Vejo que você foi atender a manutenção de <strong>${item.clienteNome || 'cliente'}</strong>. 👍<br>Vamos registrar tudo direitinho!`, 600);
-
-    // PERGUNTA 1: todo serviço foi realizado?
-    await addBotMsg('Todo o serviço solicitado foi realizado?');
-    const tudoOk = await mostrarOpcoes([
-        { label: '✅ Sim, tudo feito!', classe: 'sim', valor: true  },
-        { label: '⚠️ Não, ficou pendente', classe: 'nao', valor: false },
-    ]);
-
-    if (!tudoOk) {
-        addUserMsg('⚠️ Não, ficou pendente');
-
-        if (item.observacoes) {
-            await addBotMsg(`Tudo bem! Aqui está o que estava anotado para este serviço:<br><br><em style="color:#cfd6e3; background:rgba(0,0,0,0.25); display:block; padding:10px 12px; border-radius:10px; border-left:3px solid rgba(255,235,59,0.4); line-height:1.6;">"${item.observacoes}"</em><br>Edite abaixo com o que ficou faltando:`);
-        } else {
-            await addBotMsg('Tudo bem! Não havia observação anterior. Descreva abaixo o que ficou pendente:');
-        }
-
-        const obsAtualizada = await mostrarCampoObs('Descreva o que ficou faltando...', item.observacoes);
-
-        if (!obsAtualizada) {
-            await addBotMsg('Hmm, você não escreveu nada. 🤔 Tudo bem, mas tente descrever o que ficou pendente para facilitar o próximo atendimento!');
-            return;
-        }
-
-        addUserMsg(obsAtualizada);
-
-        try {
-            const atualizado = { ...item, observacoes: obsAtualizada };
-            delete atualizado.firebaseUrl;
-            await dbSalvarManutencao(atualizado, item.firebaseUrl);
-            await addBotMsg('Anotado! ✅ Observação atualizada.');
-        } catch (e) {
-            await addBotMsg('⚠️ Não consegui salvar a observação agora. Verifique sua conexão e tente novamente.');
-            return;
-        }
-
-        if (ehPontoNovo) {
-            await addBotMsg('Obrigado! Já deixei a observação atualizada e vou te levar de volta.');
-            voltarParaLista();
-            return;
-        }
-
-        // Mesmo sem concluir, pode ter mexido em máquina
-        await addBotMsg('Mesmo sem concluir o serviço — adicionou ou retirou alguma máquina neste cliente?');
-        const mexeuMaquinaPendente = await mostrarOpcoes([
-            { label: '🔄 Sim', classe: 'sim', valor: true  },
-            { label: '➡️ Não', classe: 'nao', valor: false },
-        ]);
-
-        if (mexeuMaquinaPendente) {
-            addUserMsg('🔄 Sim');
-            await addBotMsg('Entendido! Vamos registrar a movimentação de máquina. <em>(Em breve 🚧)</em>');
-            // TODO: desenvolver fluxo de máquinas
-            return;
-        }
-
-        addUserMsg('➡️ Não');
-        await addBotMsg('Tudo registrado! Quando voltar para concluir o serviço, é só clicar em <strong>Realizada</strong> novamente. 👊');
-        return;
-    }
-
-    addUserMsg('✅ Sim, tudo feito!');
-    await addBotMsg('Ótimo! 🎉');
-
-    if (ehPontoNovo) {
-        await addBotMsg('Perfeito! Vou te levar para a tela certa de cadastro desse ponto novo, já na opção de cadastrar cliente, para você seguir com as informações.');
-        await addBotMsg('Toque em OK para continuar.');
-        await mostrarBotaoAcao('OK');
-        addUserMsg('OK');
-        irParaFluxoCadastroPontoNovo(250);
-        return;
-    }
-
-    // PERGUNTA 2: adicionou ou retirou máquina?
-    await addBotMsg('Adicionou ou retirou alguma máquina neste cliente?');
-    const mexeuMaquina = await mostrarOpcoes([
-        { label: '🔄 Sim', classe: 'sim', valor: true  },
-        { label: '➡️ Não', classe: 'nao', valor: false },
-    ]);
-
-    if (mexeuMaquina) {
-        addUserMsg('🔄 Sim');
-        await addBotMsg('Entendido! Vamos registrar a movimentação de máquina. <em>(Em breve 🚧)</em>');
-        // TODO: desenvolver fluxo de máquinas
-        return;
-    }
-
-    addUserMsg('➡️ Não');
-
-    // PERGUNTA 3: teve reposição de produtos?
-    await addBotMsg('Teve reposição de produtos nesta visita?');
-    const teveProdutos = await mostrarOpcoes([
-        { label: '📦 Sim', classe: 'sim', valor: true  },
-        { label: '➡️ Não', classe: 'nao', valor: false },
-    ]);
-
-    if (teveProdutos) {
-        addUserMsg('📦 Sim');
-        await addBotMsg('Ótimo! Vamos registrar a reposição. <em>(Próximo passo 🚧)</em>');
-        // TODO: desenvolver fluxo de produtos
-        return;
-    }
-
-    addUserMsg('➡️ Não');
+// ── Carrega equipamentos do cliente ──
+async function carregarEquipamentosDoCliente() {
+    const idFirebase = dadosManutencao.clienteFirebaseUrl;
+    if (!idFirebase) return;
 
     try {
-        const atualizado = { ...item, status: 'concluida', dataConclusao: new Date().toISOString() };
-        delete atualizado.firebaseUrl;
-        await dbSalvarManutencao(atualizado, item.firebaseUrl);
-        await addBotMsg('✅ Manutenção concluída!');
-        voltarParaLista();
+        clienteEncontrado = await dbBuscarClientePorId(idFirebase);
+        if (!clienteEncontrado) return;
+
+        // Formato novo: array equipDetalhes
+        if (Array.isArray(clienteEncontrado.equipDetalhes) && clienteEncontrado.equipDetalhes.length > 0) {
+            equipamentosDoCliente = clienteEncontrado.equipDetalhes
+                .map(e => ({ nome: String(e.nome || '').trim(), qtd: String(e.qtd || '1').trim() }))
+                .filter(e => e.nome);
+            return;
+        }
+
+        // Formato antigo: string "equip"
+        if (clienteEncontrado.equip) {
+            equipamentosDoCliente = String(clienteEncontrado.equip)
+                .split(', ')
+                .map(trecho => ({
+                    nome: trecho.replace(/\s*\[Pix:[^\]]*\]/g, '').replace(/\s*\([^)]*\)\s*$/, '').trim(),
+                    qtd: '1'
+                }))
+                .filter(e => e.nome);
+        }
     } catch (e) {
-        await addBotMsg('⚠️ Erro ao salvar. Verifique a conexão e tente novamente.');
+        console.error('Erro ao carregar equipamentos:', e);
     }
 }
 
-iniciarConversa();
+dbEscutarEstoque((lista) => {
+    const nomesVistos = new Set();
+    listaProdutos = [];
+    maquinasDisponiveis = lista.filter(item => item.categoria === 'maquina');
+
+    lista.forEach(item => {
+        if (item.categoria === 'produtos' && !nomesVistos.has(item.nome)) {
+            nomesVistos.add(item.nome);
+            listaProdutos.push(item);
+        }
+    });
+
+    produtosCarregados = true;
+    atualizarOpcoesProdutosManutencao();
+    renderizarSelectMaquinaNova();
+
+    if (document.getElementById('subProdutos')?.classList.contains('visivel')) {
+        ocultarStatus();
+    }
+
+    if (document.getElementById('subProdutos')?.classList.contains('visivel') && document.querySelectorAll('#containerProdutosManutencao .linha-produto').length === 0) {
+        adicionarLinhaProdutoManutencao();
+    }
+});
+
+document.addEventListener('input', (evento) => {
+    if (!evento.target.closest('#containerEquipamentosAdicionados .linha-equipamento-novo')) return;
+    normalizarLinhasEquipamentoAdicionado();
+});
+
+document.addEventListener('change', (evento) => {
+    if (!evento.target.closest('#containerEquipamentosAdicionados .linha-equipamento-novo')) return;
+    normalizarLinhasEquipamentoAdicionado();
+});
+
+document.addEventListener('input', (evento) => {
+    if (!evento.target.closest('#containerProdutosManutencao .linha-produto')) return;
+    normalizarLinhasProdutosManutencao();
+});
+
+document.addEventListener('change', (evento) => {
+    if (!evento.target.closest('#containerProdutosManutencao .linha-produto')) return;
+    normalizarLinhasProdutosManutencao();
+});
+
+// ════════════════════════════════════════════════
+// FUNÇÕES DE UI
+// ════════════════════════════════════════════════
+
+function mostrarSecao(idSecao) {
+    const secao = document.getElementById(idSecao);
+    if (!secao) return;
+    secao.classList.add('visivel');
+    setTimeout(() => secao.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+}
+
+function mostrarSubSecao(idSubSecao) {
+    const sub = document.getElementById(idSubSecao);
+    if (!sub) return;
+    sub.classList.add('visivel');
+}
+
+function marcarSecaoRespondida(idSecao, textoResposta) {
+    const secao = document.getElementById(idSecao);
+    if (!secao) return;
+    secao.classList.add('respondida');
+
+    // Deixa só o título e a resposta confirmada; esconde os botões de opção
+    const gradeOpcoes = secao.querySelector('.grade-opcoes');
+    if (gradeOpcoes) gradeOpcoes.style.display = 'none';
+
+    const tituloEl = secao.querySelector('.secao-titulo');
+    if (tituloEl && textoResposta) {
+        tituloEl.insertAdjacentHTML('afterend', `<div class="resposta-confirmada">→ ${textoResposta}</div>`);
+    }
+}
+
+function mostrarStatus(texto) {
+    const el = document.getElementById('mensagemStatus');
+    el.textContent = texto;
+    el.classList.add('visivel');
+}
+
+function ocultarStatus() {
+    document.getElementById('mensagemStatus').classList.remove('visivel');
+}
+
+function renderizarEquipamentosFixos(equipamentos) {
+    const lista = document.getElementById('listaEquipamentosFixos');
+    if (!lista) return;
+    if (equipamentos.length === 0) {
+        lista.innerHTML = `<span class="chip vazio">Nenhum equipamento cadastrado</span>`;
+    } else {
+        lista.innerHTML = equipamentos
+            .map(e => `<span class="chip">${e.nome}${e.qtd !== '1' ? ` (${e.qtd})` : ''}</span>`)
+            .join('');
+    }
+}
+
+function renderizarSelectMaquinasClienteAtual() {
+    const select = document.getElementById('selectMaquinasClienteAtual');
+    if (!select) return;
+
+    if (equipamentosDoCliente.length === 0) {
+        select.innerHTML = '<option value="">Nenhuma máquina cadastrada</option>';
+        select.value = '';
+        return;
+    }
+
+    select.innerHTML = equipamentosDoCliente
+        .map((equipamento, indice) => {
+            const pix = equipamento.pix ? ` | Pix ${equipamento.pix}` : '';
+            const contador = equipamento.contador ? ` | Cont. ${equipamento.contador}` : '';
+            const descricao = `${equipamento.nome}${equipamento.qtd !== '1' ? ` (${equipamento.qtd})` : ''}${pix}${contador}`;
+            return `<option value="${indice}">${descricao}</option>`;
+        })
+        .join('');
+    select.selectedIndex = 0;
+}
+
+function renderizarSelectMaquinaNovaLegacy() {
+    const select = document.getElementById('campoMaquinaNova');
+    if (!select) return;
+
+    const valorAtual = select.value || select.dataset.value || '';
+    let options = '<option value="">Selecione a máquina...</option>';
+    maquinasDisponiveis.forEach(maquina => {
+        options += `<option value="${maquina.nome}">${maquina.nome}</option>`;
+    });
+    select.innerHTML = options;
+    select.value = valorAtual;
+}
+
+function obterQuantidadeEquipNovoLegacy() {
+    const quantidadeBruta = (document.getElementById('campoQtdEquipNovo')?.value || '').trim();
+    return Math.max(Number.parseInt(quantidadeBruta, 10) || 0, 0);
+}
+
+function sincronizarCamposEquipamentoAdicionadoLegacy() {
+    const container = document.getElementById('containerPixContEquipNovo');
+    if (!container) return;
+
+    const quantidade = obterQuantidadeEquipNovoLegacy();
+    const valoresAtuais = Array.from(container.querySelectorAll('.linha-pix-cont')).map((linha, index) => ({
+        pix: linha.querySelector(`#campoPixEquipNovo_${index + 1}`)?.value || '',
+        contador: linha.querySelector(`#campoContEquipNovo_${index + 1}`)?.value || '',
+    }));
+
+    container.innerHTML = '';
+
+    for (let indice = 1; indice <= quantidade; indice += 1) {
+        const valores = valoresAtuais[indice - 1] || {};
+        const linha = document.createElement('div');
+        linha.className = 'linha-pix-cont';
+        linha.innerHTML = `
+            <span class="pix-cont-indice">Maq. ${indice}</span>
+            <input type="text" id="campoPixEquipNovo_${indice}" class="campo-texto equip-pix" placeholder="Pix" inputmode="numeric" maxlength="3" value="${String(valores.pix || '').replace(/"/g, '&quot;')}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3)">
+            <input type="text" id="campoContEquipNovo_${indice}" class="campo-texto equip-cont" placeholder="Cont." inputmode="numeric" maxlength="6" value="${String(valores.contador || '').replace(/"/g, '&quot;')}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)">
+        `;
+        container.appendChild(linha);
+    }
+}
+
+function coletarDetalhesEquipamentoAdicionadoLegacy() {
+    const quantidade = obterQuantidadeEquipNovoLegacy();
+    const detalhes = [];
+
+    for (let indice = 1; indice <= quantidade; indice += 1) {
+        const pix = (document.getElementById(`campoPixEquipNovo_${indice}`)?.value || '').trim();
+        const contador = (document.getElementById(`campoContEquipNovo_${indice}`)?.value || '').trim();
+
+        if (pix && !contador) {
+            throw new Error(`Se preencher o Pix da máquina ${indice}, informe também o contador.`);
+        }
+        if (contador && !pix) {
+            throw new Error(`O contador da máquina ${indice} só pode ser informado quando o Pix estiver preenchido.`);
+        }
+
+        detalhes.push({
+            indice,
+            pix,
+            contador,
+        });
+    }
+
+    return detalhes;
+}
+
+function obterLinhasEquipamentoAdicionado() {
+    return Array.from(document.querySelectorAll('#containerEquipamentosAdicionados .linha-equipamento-novo'));
+}
+
+function linhaEquipamentoAdicionadoEstaVazia(linha) {
+    if (!linha) return false;
+
+    const maquina = linha.querySelector('.equip-maquina')?.value.trim() || '';
+    const qtd = linha.querySelector('.equip-qtd')?.value.trim() || '';
+    const pix = linha.querySelector('.equip-pix')?.value.trim() || '';
+    const contador = linha.querySelector('.equip-cont')?.value.trim() || '';
+
+    return !maquina && !qtd && !pix && !contador;
+}
+
+function linhaEquipamentoAdicionadoCompleta(linha) {
+    if (!linha) return false;
+    const maquina = linha.querySelector('.equip-maquina')?.value.trim() || '';
+    const qtd = linha.querySelector('.equip-qtd')?.value.trim() || '';
+    return !!maquina && !!qtd;
+}
+
+function linhaEquipamentoAdicionadoSemMaquina(linha) {
+    if (!linha) return false;
+    const maquina = linha.querySelector('.equip-maquina')?.value.trim() || '';
+    return !maquina;
+}
+
+function criarHtmlOpcoesMaquina(nomeSelecionado = '') {
+    let options = '<option value="">Selecione a mÃ¡quina...</option>';
+    maquinasDisponiveis.forEach(maquina => {
+        const selected = maquina.nome === nomeSelecionado ? 'selected' : '';
+        options += `<option value="${maquina.nome}" ${selected}>${maquina.nome}</option>`;
+    });
+    return options;
+}
+
+function renderizarSelectsEquipamentoAdicionado() {
+    obterLinhasEquipamentoAdicionado().forEach(linha => {
+        const select = linha.querySelector('.equip-maquina');
+        if (!select) return;
+        const valorAtual = select.value || select.dataset.value || '';
+        select.innerHTML = criarHtmlOpcoesMaquina(valorAtual);
+        select.value = valorAtual;
+    });
+}
+
+function adicionarLinhaEquipamentoAdicionado(nome = '', qtd = '', pix = '', contador = '') {
+    const container = document.getElementById('containerEquipamentosAdicionados');
+    if (!container) return;
+
+    const indice = container.querySelectorAll('.linha-equipamento-novo').length + 1;
+    const linha = document.createElement('div');
+    linha.className = 'linha-equipamento-novo';
+    linha.innerHTML = `
+        <select id="equipAdicionadoMaquina_${indice}" class="campo-texto equip-maquina" data-value="${String(nome).replace(/"/g, '&quot;')}">
+            ${criarHtmlOpcoesMaquina(nome)}
+        </select>
+        <input id="equipAdicionadoQtd_${indice}" type="text" class="campo-texto equip-qtd" placeholder="Qtd" inputmode="numeric" maxlength="3" value="${String(qtd).replace(/"/g, '&quot;')}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3)">
+        <input id="equipAdicionadoPix_${indice}" type="text" class="campo-texto equip-pix" placeholder="Pix" inputmode="numeric" maxlength="3" value="${String(pix).replace(/"/g, '&quot;')}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3)">
+        <input id="equipAdicionadoCont_${indice}" type="text" class="campo-texto equip-cont" placeholder="Cont." inputmode="numeric" maxlength="6" value="${String(contador).replace(/"/g, '&quot;')}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)">
+    `;
+    container.appendChild(linha);
+}
+
+function normalizarLinhasEquipamentoAdicionado() {
+    const container = document.getElementById('containerEquipamentosAdicionados');
+    if (!container) return;
+
+    const linhas = obterLinhasEquipamentoAdicionado();
+    let encontrouLinhaVazia = false;
+
+    linhas.forEach(linha => {
+        if (!linhaEquipamentoAdicionadoEstaVazia(linha)) return;
+
+        if (!encontrouLinhaVazia) {
+            encontrouLinhaVazia = true;
+            return;
+        }
+
+        linha.remove();
+    });
+
+    const linhasRestantes = obterLinhasEquipamentoAdicionado();
+    const ultimaLinha = linhasRestantes[linhasRestantes.length - 1];
+    if (!ultimaLinha || linhaEquipamentoAdicionadoCompleta(ultimaLinha)) {
+        adicionarLinhaEquipamentoAdicionado();
+    }
+
+    const linhasSemMaquina = obterLinhasEquipamentoAdicionado()
+        .filter(linha => linhaEquipamentoAdicionadoSemMaquina(linha));
+
+    while (linhasSemMaquina.length > 1) {
+        const ultimaSemMaquina = linhasSemMaquina.pop();
+        ultimaSemMaquina?.remove();
+    }
+
+    renderizarSelectsEquipamentoAdicionado();
+}
+
+function sincronizarCamposEquipamentoAdicionado() {
+    normalizarLinhasEquipamentoAdicionado();
+}
+
+function renderizarSelectMaquinaNova() {
+    renderizarSelectsEquipamentoAdicionado();
+}
+
+function coletarEquipamentosAdicionadosParaSalvar() {
+    const linhasBrutas = obterLinhasEquipamentoAdicionado()
+        .map((linha, index) => ({
+            index,
+            nome: linha.querySelector('.equip-maquina')?.value.trim() || '',
+            qtd: linha.querySelector('.equip-qtd')?.value.trim() || '',
+            pix: linha.querySelector('.equip-pix')?.value.trim() || '',
+            contador: linha.querySelector('.equip-cont')?.value.trim() || '',
+        }));
+
+    const linhasSemMaquina = linhasBrutas.filter(item => !item.nome);
+    const indicesIgnorados = new Set();
+    if (linhasSemMaquina.length > 1) {
+        indicesIgnorados.add(linhasSemMaquina[linhasSemMaquina.length - 1].index);
+    }
+
+    const linhas = linhasBrutas
+        .filter(item => !indicesIgnorados.has(item.index))
+        .filter(item => item.nome || item.qtd || item.pix || item.contador)
+        .map(({ index, ...item }) => item);
+
+    if (linhas.length === 0) {
+        throw new Error('Informe pelo menos 1 equipamento adicionado.');
+    }
+
+    const linhaIncompleta = linhas.find(item => !item.nome || !item.qtd);
+    if (linhaIncompleta) {
+        throw new Error('Complete mÃ¡quina e quantidade em todos os equipamentos adicionados.');
+    }
+
+    const linhaPixSemContador = linhas.find(item => item.pix && !item.contador);
+    if (linhaPixSemContador) {
+        throw new Error('Se preencher o Pix, informe tambÃ©m o contador da mesma mÃ¡quina.');
+    }
+
+    const linhaContadorSemPix = linhas.find(item => item.contador && !item.pix);
+    if (linhaContadorSemPix) {
+        throw new Error('O contador sÃ³ pode ser informado quando o Pix estiver preenchido.');
+    }
+
+    return linhas;
+}
+
+function renderizarEquipamentosSelecionar(equipamentos) {
+    const lista = document.getElementById('listaEquipamentosSelecionar');
+
+    if (equipamentos.length === 0) {
+        // Sem equipamentos cadastrados: usa campo de texto livre
+        lista.style.display = 'none';
+        document.getElementById('campoEquipLivreWrap').style.display = 'flex';
+        return;
+    }
+
+    lista.style.display = 'flex';
+    document.getElementById('campoEquipLivreWrap').style.display = 'none';
+    lista.innerHTML = '';
+    equipamentos.forEach((equip, indice) => {
+        const item = document.createElement('label');
+        item.className = 'equip-retirada-item';
+        item.classList.toggle('marcado', indicesEquipamentosRetirados.has(indice));
+        item.innerHTML = `
+            <input type="checkbox" class="equip-retirada-check" ${indicesEquipamentosRetirados.has(indice) ? 'checked' : ''}>
+            <span class="equip-retirada-texto">${equip.nome}${equip.qtd !== '1' ? ` (${equip.qtd})` : ''}</span>
+            <span class="equip-retirada-selo">Retirado</span>
+        `;
+
+        const input = item.querySelector('.equip-retirada-check');
+        input.onchange = () => {
+            if (input.checked) {
+                indicesEquipamentosRetirados.add(indice);
+                item.classList.add('marcado');
+            } else {
+                indicesEquipamentosRetirados.delete(indice);
+                item.classList.remove('marcado');
+            }
+            // Se selecionou todos, pergunta encerramento
+            if (indicesEquipamentosRetirados.size === equipamentos.length) {
+                mostrarSubSecao('subEncerramento');
+            } else {
+                document.getElementById('subEncerramento').classList.remove('visivel');
+                document.getElementById('subValorEncerramento').classList.remove('visivel');
+                respostas.pontoEncerrado = false;
+                respostas.valorEncerramento = '';
+            }
+            atualizarBotaoFinalizar();
+            registrarNovoEstadoHistorico();
+        };
+        lista.appendChild(item);
+    });
+}
+
+function atualizarOpcoesProdutosManutencao() {
+    const selects = document.querySelectorAll('#containerProdutosManutencao .input-prod');
+    const selecionados = Array.from(selects).map(select => select.value).filter(Boolean);
+
+    selects.forEach(select => {
+        const valorAtual = select.value;
+        let opcoesHTML = '<option value="">Selecione o produto...</option>';
+
+        listaProdutos.forEach(produto => {
+            if (produto.firebaseUrl === valorAtual || !selecionados.includes(produto.firebaseUrl)) {
+                opcoesHTML += `<option value="${produto.firebaseUrl}">${produto.nome}</option>`;
+            }
+        });
+
+        select.innerHTML = opcoesHTML;
+        select.value = valorAtual;
+    });
+}
+
+function capturarLinhasProdutosManutencao() {
+    return Array.from(document.querySelectorAll('#containerProdutosManutencao .linha-produto')).map(linha => ({
+        produtoId: linha.querySelector('.input-prod')?.value || '',
+        quantidade: linha.querySelector('.input-qtd')?.value || '',
+    }));
+}
+
+function restaurarLinhasProdutosManutencao(linhas = []) {
+    const container = document.getElementById('containerProdutosManutencao');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (!linhas || linhas.length === 0) {
+        if (document.getElementById('subProdutos')?.classList.contains('visivel')) {
+            adicionarLinhaProdutoManutencao();
+        }
+        return;
+    }
+
+    linhas.forEach(linha => adicionarLinhaProdutoManutencao(null, linha.produtoId, linha.quantidade));
+    normalizarLinhasProdutosManutencao();
+}
+
+function obterLinhasProdutosManutencao() {
+    return Array.from(document.querySelectorAll('#containerProdutosManutencao .linha-produto'));
+}
+
+function linhaProdutoManutencaoEstaVazia(linha) {
+    if (!linha) return false;
+    const produtoId = (linha.querySelector('.input-prod')?.value || '').trim();
+    const quantidade = (linha.querySelector('.input-qtd')?.value || '').trim();
+    return !produtoId && !quantidade;
+}
+
+function linhaProdutoManutencaoSemProduto(linha) {
+    if (!linha) return false;
+    const produtoId = (linha.querySelector('.input-prod')?.value || '').trim();
+    return !produtoId;
+}
+
+function linhaProdutoManutencaoCompleta(linha) {
+    if (!linha) return false;
+    const produtoId = (linha.querySelector('.input-prod')?.value || '').trim();
+    const quantidade = (linha.querySelector('.input-qtd')?.value || '').trim();
+    return !!produtoId && !!quantidade;
+}
+
+function normalizarLinhasProdutosManutencao() {
+    const container = document.getElementById('containerProdutosManutencao');
+    if (!container) return;
+
+    const linhas = obterLinhasProdutosManutencao();
+    let encontrouLinhaVazia = false;
+
+    linhas.forEach(linha => {
+        if (!linhaProdutoManutencaoEstaVazia(linha)) return;
+
+        if (!encontrouLinhaVazia) {
+            encontrouLinhaVazia = true;
+            return;
+        }
+
+        linha.remove();
+    });
+
+    const linhasRestantes = obterLinhasProdutosManutencao();
+    const ultimaLinha = linhasRestantes[linhasRestantes.length - 1];
+    if (!ultimaLinha || linhaProdutoManutencaoCompleta(ultimaLinha)) {
+        adicionarLinhaProdutoManutencao();
+    }
+
+    const linhasSemProduto = obterLinhasProdutosManutencao()
+        .filter(linha => linhaProdutoManutencaoSemProduto(linha));
+
+    while (linhasSemProduto.length > 1) {
+        const ultimaSemProduto = linhasSemProduto.pop();
+        ultimaSemProduto?.remove();
+    }
+
+    atualizarOpcoesProdutosManutencao();
+}
+
+window.adicionarLinhaProdutoManutencao = function(inputAnterior = null, valorProd = '', valorQtd = '') {
+    const container = document.getElementById('containerProdutosManutencao');
+    if (!container) return;
+
+    if (inputAnterior && inputAnterior.value.trim() === '') return;
+
+    const linhasExistentes = container.querySelectorAll('.linha-produto');
+    if (!valorProd && !valorQtd && linhasExistentes.length > 0) {
+        const ultimaLinha = linhasExistentes[linhasExistentes.length - 1];
+        const ultimoProd = ultimaLinha.querySelector('.input-prod')?.value || '';
+        const ultimaQtd = ultimaLinha.querySelector('.input-qtd')?.value || '';
+        if (!ultimoProd && !ultimaQtd) return;
+    }
+
+    const linha = document.createElement('div');
+    linha.className = 'linha-produto';
+    linha.innerHTML = `
+        <div class="col-prod">
+            <select class="campo-texto input-prod" onchange="atualizarOpcoesProdutosManutencao()"></select>
+        </div>
+        <div class="col-qtd">
+            <input type="text" inputmode="numeric" class="campo-texto input-qtd" placeholder="Qtd" oninput="this.value = this.value.replace(/[^0-9]/g, ''); adicionarLinhaProdutoManutencao(this)">
+        </div>
+    `;
+
+    container.appendChild(linha);
+    atualizarOpcoesProdutosManutencao();
+
+    if (valorProd) {
+        linha.querySelector('.input-prod').value = valorProd;
+    }
+    if (valorQtd) {
+        linha.querySelector('.input-qtd').value = valorQtd;
+    }
+
+    normalizarLinhasProdutosManutencao();
+    atualizarOpcoesProdutosManutencao();
+};
+
+window.atualizarOpcoesProdutosManutencao = atualizarOpcoesProdutosManutencao;
+
+function coletarProdutosRepostosParaSalvar() {
+    const linhasBrutas = Array.from(document.querySelectorAll('#containerProdutosManutencao .linha-produto'))
+        .map((linha, index) => {
+            const produtoId = (linha.querySelector('.input-prod')?.value || '').trim();
+            const quantidadeBruta = (linha.querySelector('.input-qtd')?.value || '').trim();
+            const quantidade = Number.parseInt(quantidadeBruta, 10) || 0;
+            return { index, produtoId, quantidadeBruta, quantidade };
+        });
+
+    const linhasSemProduto = linhasBrutas.filter(item => item.produtoId === '');
+    const indicesIgnorados = new Set();
+    if (linhasSemProduto.length > 1) {
+        indicesIgnorados.add(linhasSemProduto[linhasSemProduto.length - 1].index);
+    }
+
+    const linhas = linhasBrutas
+        .filter(item => !indicesIgnorados.has(item.index))
+        .filter(item => item.produtoId !== '' || item.quantidadeBruta !== '');
+
+    if (linhas.length === 0) {
+        throw new Error('Informe pelo menos 1 produto na reposição.');
+    }
+
+    const incompletas = linhas.filter(item => item.produtoId === '' || item.quantidade <= 0);
+    if (incompletas.length > 0) {
+        throw new Error('Preencha produto e quantidade em todas as linhas da reposição.');
+    }
+
+    return linhas.map(item => {
+        const produtoInfo = listaProdutos.find(produto => produto.firebaseUrl === item.produtoId);
+        return {
+            nome: produtoInfo ? produtoInfo.nome : 'Produto não encontrado',
+            quantidade: item.quantidade
+        };
+    });
+}
+
+function produtosSaoObrigatorios() {
+    return respostas.acoesMaquinas.adicionou === true;
+}
+
+function sincronizarPosicaoProdutos() {
+    const subProdutos = document.getElementById('subProdutos');
+    const hostObrigatorio = document.getElementById('hostProdutosObrigatorios');
+    const hostPadrao = document.getElementById('hostProdutosPadrao');
+    const secaoProdutos = document.getElementById('secaoProdutos');
+    if (!subProdutos || !hostObrigatorio || !hostPadrao || !secaoProdutos) return;
+
+    if (produtosSaoObrigatorios()) {
+        if (subProdutos.parentElement !== hostObrigatorio) {
+            hostObrigatorio.appendChild(subProdutos);
+        }
+        secaoProdutos.classList.add('oculta-por-fluxo');
+    } else {
+        if (subProdutos.parentElement !== hostPadrao) {
+            hostPadrao.appendChild(subProdutos);
+        }
+        secaoProdutos.classList.remove('oculta-por-fluxo');
+    }
+}
+
+function sincronizarSecaoProdutosUI() {
+    const titulo = document.getElementById('tituloSecaoProdutos');
+    const aviso = document.getElementById('avisoProdutosObrigatorios');
+    const grade = document.getElementById('gradeOpcoesProdutos');
+    const secao = document.getElementById('secaoProdutos');
+
+    sincronizarPosicaoProdutos();
+
+    if (titulo) {
+        titulo.textContent = produtosSaoObrigatorios()
+            ? '📦 Reposição de produtos'
+            : 'Teve reposição de produtos?';
+    }
+
+    if (aviso) {
+        aviso.classList.toggle('visivel', produtosSaoObrigatorios());
+    }
+
+    if (grade && secao && !secao.classList.contains('respondida')) {
+        grade.style.display = produtosSaoObrigatorios() ? 'none' : 'flex';
+    }
+}
+
+function prepararSecaoProdutosObrigatoria() {
+    respostas.teveProdutos = true;
+    respostas.produtosConfirmados = false;
+    sincronizarSecaoProdutosUI();
+    mostrarSubSecao('subProdutos');
+    setTimeout(() => document.getElementById('subProdutos')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+
+    if (!produtosCarregados) {
+        mostrarStatus('Carregando produtos cadastrados...');
+    } else {
+        ocultarStatus();
+        if (document.querySelectorAll('#containerProdutosManutencao .linha-produto').length === 0) {
+            adicionarLinhaProdutoManutencao();
+        }
+    }
+}
+
+function sincronizarAcoesMaquinaUI() {
+    const botaoAdicionar = document.getElementById('btnAcaoMaquinaAdd');
+    const botaoRetirar = document.getElementById('btnAcaoMaquinaRet');
+    const subAdicionar = document.getElementById('subAdicionar');
+    const subRetirar = document.getElementById('subRetirar');
+    const subConfirmar = document.getElementById('subConfirmarMaquinas');
+
+    if (botaoAdicionar) {
+        botaoAdicionar.classList.toggle('selecionado', respostas.acoesMaquinas.adicionou);
+    }
+    if (botaoRetirar) {
+        botaoRetirar.classList.toggle('selecionado', respostas.acoesMaquinas.retirou);
+    }
+
+    if (subAdicionar) {
+        subAdicionar.classList.toggle('visivel', respostas.acoesMaquinas.adicionou);
+        if (respostas.acoesMaquinas.adicionou) {
+            renderizarSelectMaquinaNova();
+            sincronizarCamposEquipamentoAdicionado();
+        }
+    }
+
+    if (subRetirar) {
+        subRetirar.classList.toggle('visivel', respostas.acoesMaquinas.retirou);
+        if (respostas.acoesMaquinas.retirou) {
+            renderizarEquipamentosSelecionar(equipamentosDoCliente);
+        } else {
+            document.getElementById('subEncerramento').classList.remove('visivel');
+            document.getElementById('subValorEncerramento').classList.remove('visivel');
+            respostas.pontoEncerrado = false;
+            respostas.valorEncerramento = '';
+        }
+    }
+
+    if (subConfirmar) {
+        subConfirmar.classList.toggle('visivel', respostas.teveAlteracaoMaquinas === true);
+    }
+
+    sincronizarSecaoProdutosUI();
+}
+
+window.abrirSeletorFoto = function(inputId) {
+    const input = document.getElementById(inputId);
+    if (input) input.click();
+};
+
+window.mostrarPreviewFotoManutencao = function(input, imgId, textoId) {
+    if (!(input.files && input.files[0])) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evento) {
+        const imgObj = new Image();
+        imgObj.onload = function() {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 1600;
+            const MAX_HEIGHT = 1600;
+            let width = imgObj.width;
+            let height = imgObj.height;
+
+            if (width > height) {
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+            } else if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d').drawImage(imgObj, 0, 0, width, height);
+
+            const imgEl = document.getElementById(imgId);
+            const textoEl = document.getElementById(textoId);
+            if (imgEl) {
+                imgEl.src = canvas.toDataURL('image/jpeg', 0.8);
+                imgEl.style.display = 'block';
+            }
+            if (textoEl) {
+                textoEl.style.display = 'none';
+            }
+        };
+        imgObj.src = evento.target.result;
+    };
+    reader.readAsDataURL(input.files[0]);
+};
+
+function atualizarBotaoFinalizar() {
+    const botao = document.getElementById('btnFinalizar');
+    // Mostra o botão apenas quando todas as perguntas obrigatórias foram respondidas
+    const servicoRespondido = respostas.servicoRealizado !== null;
+    const maquinasRespondidas = respostas.teveAlteracaoMaquinas !== null;
+    const precisaProdutos = respostas.teveAlteracaoMaquinas === false || produtosSaoObrigatorios();
+    const produtosRespondidos = !precisaProdutos
+        ? true
+        : respostas.teveProdutos === true
+            ? respostas.produtosConfirmados
+            : respostas.teveProdutos === false;
+    const tudo = servicoRespondido && maquinasRespondidas && produtosRespondidos;
+
+    botao.classList.toggle('visivel', tudo);
+}
+
+// ════════════════════════════════════════════════
+// RESPOSTAS DO USUÁRIO
+// ════════════════════════════════════════════════
+
+window.responderServico = async function(foiRealizado) {
+    respostas.servicoRealizado = foiRealizado;
+
+    if (foiRealizado) {
+        marcarSecaoRespondida('secaoServico', 'Sim, tudo feito ✅');
+
+        if (ehPontoNovo) {
+            mostrarSecao('secaoPontoNovo');
+            registrarNovoEstadoHistorico();
+            return;
+        }
+
+        // Carrega equipamentos e mostra seção de máquinas
+        await carregarEquipamentosDoCliente();
+        mostrarSecao('secaoMaquinas');
+        registrarNovoEstadoHistorico();
+    } else {
+        const subObs = document.getElementById('subObsPendente');
+        subObs.classList.add('visivel');
+        marcarSecaoRespondida('secaoServico', 'Não, ficou pendente ⚠️');
+
+        const campo = document.getElementById('campoObsPendente');
+        if (dadosManutencao.observacoes) campo.value = dadosManutencao.observacoes;
+        await carregarEquipamentosDoCliente();
+        mostrarSecao('secaoMaquinas');
+        registrarNovoEstadoHistorico();
+    }
+};
+
+window.responderTemMaquinas = function(teveAlteracao) {
+    respostas.teveAlteracaoMaquinas = teveAlteracao;
+
+    if (!teveAlteracao) {
+        respostas.acoesMaquinas.adicionou = false;
+        respostas.acoesMaquinas.retirou = false;
+        respostas.pontoEncerrado = false;
+        respostas.valorEncerramento = '';
+        respostas.teveProdutos = null;
+        respostas.produtosConfirmados = false;
+        marcarSecaoRespondida('secaoMaquinas', 'Não mexi em máquinas ✔️');
+        sincronizarSecaoProdutosUI();
+        mostrarSecao('secaoProdutos');
+        atualizarBotaoFinalizar();
+        registrarNovoEstadoHistorico();
+        return;
+    }
+
+    document.querySelector('#secaoMaquinas .grade-opcoes').style.display = 'none';
+    mostrarSubSecao('subAcoesMaquinas');
+    sincronizarAcoesMaquinaUI();
+    registrarNovoEstadoHistorico();
+};
+
+window.toggleAcaoMaquina = function(tipo) {
+    respostas.acoesMaquinas[tipo] = !respostas.acoesMaquinas[tipo];
+    sincronizarAcoesMaquinaUI();
+    ocultarStatus();
+    registrarNovoEstadoHistorico();
+};
+
+window.responderEncerramento = function(encerrou) {
+    respostas.pontoEncerrado = encerrou;
+
+    const subValor = document.getElementById('subValorEncerramento');
+    const gradeEnc = document.querySelector('#subEncerramento .grade-opcoes');
+    if (gradeEnc) gradeEnc.style.display = 'none';
+
+    if (encerrou) {
+        mostrarSubSecao('subValorEncerramento');
+        document.getElementById('campoValorEncerramento').focus();
+    }
+
+    registrarNovoEstadoHistorico();
+};
+
+window.confirmarMaquinas = function() {
+    if (!respostas.acoesMaquinas.adicionou && !respostas.acoesMaquinas.retirou) {
+        mostrarStatus('Marque se adicionou, retirou ou as duas opções nas máquinas.');
+        return;
+    }
+
+    ocultarStatus();
+
+    const acoesConfirmadas = [];
+    if (respostas.acoesMaquinas.adicionou) acoesConfirmadas.push('adicionou');
+    if (respostas.acoesMaquinas.retirou) acoesConfirmadas.push('retirou');
+
+    marcarSecaoRespondida(
+        'secaoMaquinas',
+        acoesConfirmadas.length === 2 ? 'Adicionou e retirou máquinas ✔️' : `${acoesConfirmadas[0]} máquina(s) ✔️`
+    );
+    if (produtosSaoObrigatorios()) {
+        prepararSecaoProdutosObrigatoria();
+    }
+
+    atualizarBotaoFinalizar();
+    registrarNovoEstadoHistorico();
+};
+
+window.responderProdutos = function(teve) {
+    if (!teve && produtosSaoObrigatorios()) {
+        mostrarStatus('Como houve adição de máquina, informe os produtos usados antes de concluir.');
+        return;
+    }
+
+    respostas.teveProdutos = teve;
+    respostas.produtosConfirmados = false;
+    sincronizarSecaoProdutosUI();
+
+    if (teve) {
+        document.getElementById('gradeOpcoesProdutos').style.display = 'none';
+        document.getElementById('labelProdutosManutencao').style.display = 'none';
+        document.getElementById('mensagemProdutosManutencao').style.display = 'block';
+        document.querySelector('#secaoProdutos .secao-titulo').textContent = '📦 Reposição de produtos';
+        mostrarSubSecao('subProdutos');
+
+        if (!produtosCarregados) {
+            mostrarStatus('Carregando produtos cadastrados...');
+        } else {
+            ocultarStatus();
+        }
+
+        if (produtosCarregados && document.querySelectorAll('#containerProdutosManutencao .linha-produto').length === 0) {
+            adicionarLinhaProdutoManutencao();
+        }
+    } else {
+        document.getElementById('subProdutos')?.classList.remove('visivel');
+        document.getElementById('labelProdutosManutencao').style.display = '';
+        document.getElementById('mensagemProdutosManutencao').style.display = 'none';
+        marcarSecaoRespondida('secaoProdutos', 'Sem reposição ✔️');
+        atualizarBotaoFinalizar();
+    }
+
+    registrarNovoEstadoHistorico();
+};
+
+window.confirmarProdutos = function() {
+    try {
+        const produtos = coletarProdutosRepostosParaSalvar();
+        ocultarStatus();
+        respostas.teveProdutos = true;
+        respostas.produtosConfirmados = true;
+        marcarSecaoRespondida('secaoProdutos', `${produtos.length} produto(s) na reposição 📦`);
+        atualizarBotaoFinalizar();
+        registrarNovoEstadoHistorico();
+    } catch (erro) {
+        mostrarStatus(erro.message || 'Não foi possível confirmar a reposição.');
+    }
+};
+
+window.irParaCadastroPontoNovo = function() {
+    window.location.href = 'clientes.html?abrirCadastroCliente=1';
+};
+
+// ════════════════════════════════════════════════
+// SALVAR
+// ════════════════════════════════════════════════
+
+window.finalizarRegistro = async function() {
+    const botao = document.getElementById('btnFinalizar');
+    botao.disabled = true;
+    botao.textContent = 'Salvando...';
+    mostrarStatus('Salvando informações...');
+
+    try {
+        const tiposServico = [];
+        const camposExtras = {};
+
+        // ── Ação com máquinas ──
+        const mexeuMaquinas = respostas.teveAlteracaoMaquinas;
+
+        if (mexeuMaquinas) {
+            if (respostas.acoesMaquinas.adicionou) {
+                const equipamentosAdicionados = coletarEquipamentosAdicionadosParaSalvar();
+                const fotoEquip = document.getElementById('imgPreviewEquipNovo');
+
+                if (!(fotoEquip && fotoEquip.style.display === 'block' && fotoEquip.src)) {
+                    throw new Error('Adicione a foto do equipamento instalado.');
+                }
+
+                let fotoUrl = '';
+                let fotoThumbUrl = '';
+                if (fotoEquip.src.startsWith('data:')) {
+                    const fotoSalva = await storageSalvarFotoComThumb(fotoEquip.src, 'manutencoes');
+                    fotoUrl = fotoSalva.url;
+                    fotoThumbUrl = fotoSalva.thumbUrl;
+                } else if (fotoEquip.src.startsWith('http')) {
+                    fotoUrl = fotoEquip.src;
+                    fotoThumbUrl = fotoEquip.src;
+                }
+
+                camposExtras.equipamentoAdicionado = {
+                    nome: equipamentosAdicionados[0]?.nome || '',
+                    qtd: equipamentosAdicionados[0]?.qtd || '',
+                    pix: equipamentosAdicionados[0]?.pix || '',
+                    contador: equipamentosAdicionados[0]?.contador || '',
+                    detalhes: equipamentosAdicionados,
+                    fotoUrl,
+                    fotoThumbUrl
+                };
+                camposExtras.equipamentosAdicionados = equipamentosAdicionados.map((item, indice) => ({
+                    ...item,
+                    indice: indice + 1,
+                    fotoUrl,
+                    fotoThumbUrl
+                }));
+                tiposServico.push('adicionou');
+            }
+
+            if (respostas.acoesMaquinas.retirou) {
+                let equipamentosRetirados = [];
+
+                if (equipamentosDoCliente.length > 0) {
+                    equipamentosRetirados = [...indicesEquipamentosRetirados].map(i => equipamentosDoCliente[i].nome);
+                } else {
+                    const livre = document.getElementById('campoEquipLivre').value.trim();
+                    if (livre) equipamentosRetirados = [livre];
+                }
+
+                if (equipamentosRetirados.length === 0) {
+                    throw new Error('Selecione ou informe qual equipamento foi retirado.');
+                }
+
+                camposExtras.equipamentosRetirados = equipamentosRetirados;
+                tiposServico.push('retirou');
+
+                if (respostas.pontoEncerrado) {
+                    camposExtras.pontoEncerrado = true;
+                    camposExtras.valorEncerramento = document.getElementById('campoValorEncerramento').value.trim();
+                    tiposServico.push('encerrado');
+                }
+            }
+        }
+
+        // ── Produtos repostos ──
+        if (produtosSaoObrigatorios() && !respostas.produtosConfirmados) {
+            throw new Error('Confirme os produtos usados na instalação antes de concluir.');
+        }
+
+        if (respostas.teveProdutos) {
+            const produtos = coletarProdutosRepostosParaSalvar();
+            camposExtras.produtosRepostos = produtos;
+            tiposServico.push('reposicao');
+        }
+
+        if (tiposServico.length === 0) tiposServico.push('manutencao');
+
+        // ── Monta objeto final ──
+        const foiConcluido = respostas.servicoRealizado;
+        const dadosFinais = {
+            ...dadosManutencao,
+            status: foiConcluido ? 'concluida' : dadosManutencao.status,
+            tipoServico: tiposServico.join(' e '),
+            ...camposExtras,
+        };
+
+        if (!foiConcluido) {
+            const observacaoPendente = document.getElementById('campoObsPendente')?.value.trim() || '';
+            if (observacaoPendente) {
+                dadosFinais.observacoes = observacaoPendente;
+            }
+        }
+
+        if (foiConcluido) {
+            dadosFinais.dataConclusao = new Date().toISOString();
+        }
+
+        delete dadosFinais.firebaseUrl;
+        await dbSalvarManutencao(dadosFinais, dadosManutencao.firebaseUrl);
+
+        // ── Marca cliente encerrado se necessário ──
+        if (respostas.pontoEncerrado && clienteEncontrado?.firebaseUrl) {
+            await dbMarcarClienteEncerrado(clienteEncontrado.firebaseUrl, camposExtras.valorEncerramento || '');
+        }
+
+        ocultarStatus();
+        botao.textContent = '✅ Salvo com sucesso!';
+        setTimeout(() => window.location.href = 'manutencoes_solicitadas.html', 1200);
+
+    } catch (erro) {
+        console.error('Erro ao salvar:', erro);
+        botao.disabled = false;
+        botao.textContent = 'Salvar e Concluir ✓';
+        mostrarStatus(erro.message || '⚠️ Erro ao salvar. Verifique a conexão e tente novamente.');
+    }
+};
+
+estadoInicial = {
+    html: document.querySelector('.app')?.innerHTML || '',
+    respostas: clonarJson(respostasIniciais),
+    equipamentosDoCliente: [],
+    clienteEncontrado: null,
+    indicesEquipamentosRetirados: [],
+    linhasProdutos: [],
+    valoresCampos: {}
+};
+
+inicializarHistoricoNavegador();
 </script>
 </body>
 </html>
