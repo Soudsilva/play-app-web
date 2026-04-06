@@ -82,6 +82,11 @@
             justify-content: center;
             font-size: 25px;
         }
+        .icone svg {
+            width: 24px;
+            height: 24px;
+            display: block;
+        }
 
         /* O texto ocupa o centro real do botÃ£o */
         .botao span:last-child {
@@ -217,7 +222,7 @@
 
        <div class="botao" id="btnEstoque" onclick="abrirEstoque()">
           <span class="icone">&#128230;</span>
-           <span>Estoque</span>
+           <span>Cad.| Pro. Máq. Mat. </span>
        </div>
 
 
@@ -333,7 +338,7 @@
 
         // Se for Gestor, vai para a tela avanÃ§ada. Se for Estoque ou outro, vai para a padrÃ£o.
         if (usuario && usuario.nivel_completo && usuario.nivel_completo.includes('gestao')) {
-            window.location.href = 'estoque_gestor.html';
+            window.location.href = 'cadastro_produto_maquina_material.html';
         } else {
             window.location.href = 'estoque.html';
         }
@@ -398,10 +403,20 @@
         console.log("Abrindo tela genÃ©rica: " + tela);
     };
 
+    function atualizarRotuloBotaoEstoque(perfil) {
+        const btnEstoque = document.getElementById('btnEstoque');
+        const texto = btnEstoque?.querySelector('span:last-child');
+        if (!texto) return;
+        texto.textContent = String(perfil || '').includes('estoque')
+            ? 'Estoque'
+            : 'Cad. | Prod. Máq. Mat.';
+    }
+
     // Verifica permissÃµes baseado no nome selecionado
     function verificarPermissoes(nomeUsuario) {
         const usuario = listaColaboradores.find(c => c.nome === nomeUsuario);
         const perfil = usuario ? (usuario.nivel_completo || "") : "";
+        atualizarRotuloBotaoEstoque(perfil);
 
         // Mapeamento de todos os botÃµes para facilitar o controle
         const btns = {

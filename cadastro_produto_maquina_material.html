@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estoque (Gestor)</title>
+    <title>Cadastro de Produto, Máquina e Material</title>
     <style>
-        body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; }
+        body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; }
         .app { width:100%; max-width:420px; padding:15px; box-sizing:border-box; min-height: 100vh; }
         
-        .topo { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; position: relative; width: 100%; min-height: 45px; }
-        .titulo { font-size: 24px; font-weight: bold; text-align: center; }
-        .btn-home { background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 50%; cursor: pointer; display: flex; position: absolute; right: 0; }
+        .topo { display: flex; align-items: flex-start; justify-content: center; margin-bottom: 0; position: relative; width: 100%; min-height: 78px; }
+        .titulo { font-size: 24px; font-weight: bold; text-align: center; line-height: 1.15; max-width: calc(100% - 64px); }
+        .btn-home { background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 50%; cursor: pointer; display: flex; position: absolute; right: 2px; top: 38px; z-index: 2; }
         .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
 
-        .secao-lista { margin-bottom: 25px; max-height: 400px; overflow-y: auto; padding-right: 5px; border-radius: 8px; }
+        .secao-lista { margin-bottom: 25px; margin-top: -10px; max-height: 400px; overflow-y: auto; padding-right: 5px; border-radius: 8px; }
         .subtitulo { font-size: 16px; color: #ffeb3b; margin-bottom: 12px; font-weight: bold; text-align: center; text-transform: uppercase; }
         
         .card-estoque { background: white; color: #333; border-radius: 12px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
@@ -35,7 +35,7 @@
         .divisor span { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #042d86; padding: 0 10px; font-size: 11px; color: #ffeb3b; }
         .form-container { display: flex; flex-direction: column; gap: 10px; padding-bottom: 40px; }
         .label-focada { font-size: 12px; color: #ffeb3b; font-weight: bold; margin-bottom: 4px; display: block; }
-        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255,255,255,0.05); color: white; box-sizing:border-box; font-size: 14px; outline: none; }
+        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255,255,255,0.05); color: white; box-sizing:border-box; font-size: 14px; outline: none; user-select:text; -webkit-user-select:text; }
         input::placeholder { color: rgba(255,255,255,0.4); }
         select option { background: #042d86; color: white; }
         .btn-salvar { background:#4caf50; padding:14px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-top: 10px; border: none; color: white; width: 100%; font-size: 15px; transition: 0.3s; }
@@ -48,13 +48,16 @@
         #campoPesquisa::placeholder {
             color: #888;
         }
+        .linha-categoria-valor { display: flex; gap: 10px; align-items: flex-end; }
+        .linha-categoria-valor > div { flex: 1; }
+        #wrapValorEquipamento { display: none; }
     </style>
 </head>
 <body>
 
 <div class="app">
     <div class="topo">
-        <div class="titulo">Estoque (Gestor)</div>
+        <div class="titulo">+ Produto, Máquina e Material</div>
         <div class="btn-home" onclick="window.location.href='index.html'">
             <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
         </div>
@@ -78,13 +81,19 @@
             <input type="text" id="nomeItem" placeholder="Ex: Pelúcia 20cm, Motor, Grua..." required>
         </div>
 
-        <div>
-            <label class="label-focada">Categoria</label>
-            <select id="categoriaItem">
-                <option value="produtos">Produtos</option>
-                <option value="peca">Peças</option>
-                <option value="maquina">Máquinas</option>
-            </select>
+        <div class="linha-categoria-valor">
+            <div>
+                <label class="label-focada">Categoria</label>
+                <select id="categoriaItem">
+                    <option value="produtos">Produtos</option>
+                    <option value="peca">Peças</option>
+                    <option value="maquina">Máquinas</option>
+                </select>
+            </div>
+            <div id="wrapValorEquipamento">
+                <label class="label-focada">Valor do Equip.</label>
+                <input type="number" id="valorEquipamento" placeholder="0,00" min="0" step="0.01" inputmode="decimal">
+            </div>
         </div>
 
         <div style="display: flex; gap: 10px;">
@@ -109,6 +118,23 @@
     verificarAutenticacao();
     import { dbEscutarEstoque, dbSalvarItemEstoque, dbExcluirItemEstoque } from './database.js';
 
+    function formatarValorEquipamento(valor) {
+        const numero = Number(valor || 0);
+        if (!Number.isFinite(numero) || numero <= 0) return '';
+        return numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function atualizarCampoValorEquipamento() {
+        const categoria = document.getElementById('categoriaItem')?.value || '';
+        const wrap = document.getElementById('wrapValorEquipamento');
+        const input = document.getElementById('valorEquipamento');
+        if (!wrap || !input) return;
+
+        const visivel = categoria === 'maquina';
+        wrap.style.display = visivel ? 'block' : 'none';
+        if (!visivel) input.value = '';
+    }
+
     document.getElementById('campoPesquisa').addEventListener('input', function(e) {
         const termo = e.target.value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         const cards = document.querySelectorAll('.card-estoque');
@@ -129,7 +155,11 @@
                 let classeCor = "bg-produtos", nomeCategoria = "Produtos";
                 if(item.categoria === "maquina") { classeCor = "bg-maquina"; nomeCategoria = "Máquina"; }
                 if(item.categoria === "peca") { classeCor = "bg-peca"; nomeCategoria = "Peça"; }
-                card.innerHTML = `<div class="info-estoque" style="flex:1;"><b>${item.nome}</b><span class="badge ${classeCor}">${nomeCategoria}</span><div style="font-size:11px; margin-top:5px; color:#999;">Mínimo ideal: ${item.minimo || 0}</div></div><div class="qtd-destaque">${item.quantidade}</div><div class="acoes-card"><div class="btn-editar-card" onclick="prepararEdicao('${item.firebaseUrl}', '${item.nome}', '${item.categoria}', ${item.quantidade}, ${item.minimo})">EDITAR</div><div class="btn-excluir-card" onclick="excluirItem('${item.firebaseUrl}')">EXCLUIR</div></div>`;
+                const valorEquipamento = Number(item.valorEquipamento || 0);
+                const valorHtml = item.categoria === "maquina" && valorEquipamento > 0
+                    ? `<div style="font-size:11px; margin-top:5px; color:#999;">Valor: ${formatarValorEquipamento(valorEquipamento)}</div>`
+                    : '';
+                card.innerHTML = `<div class="info-estoque" style="flex:1;"><b>${item.nome}</b><span class="badge ${classeCor}">${nomeCategoria}</span><div style="font-size:11px; margin-top:5px; color:#999;">Mínimo ideal: ${item.minimo || 0}</div>${valorHtml}</div><div class="qtd-destaque">${item.quantidade}</div><div class="acoes-card"><div class="btn-editar-card" onclick="prepararEdicao('${item.firebaseUrl}', '${item.nome}', '${item.categoria}', ${item.quantidade}, ${item.minimo}, ${valorEquipamento || 0})">EDITAR</div><div class="btn-excluir-card" onclick="excluirItem('${item.firebaseUrl}')">EXCLUIR</div></div>`;
                 container.appendChild(card);
             });
             if(document.getElementById('campoPesquisa').value) { document.getElementById('campoPesquisa').dispatchEvent(new Event('input')); }
@@ -139,19 +169,41 @@
     document.getElementById('formEstoque').onsubmit = async function(e) {
         e.preventDefault();
         const id = document.getElementById('idItem').value;
-        const dados = { nome: document.getElementById('nomeItem').value, categoria: document.getElementById('categoriaItem').value, quantidade: parseInt(document.getElementById('qtdItem').value), minimo: parseInt(document.getElementById('minimoItem').value) || 0, dataAtualizacao: new Date().toISOString() };
+        const categoria = document.getElementById('categoriaItem').value;
+        const valorEquipamento = Number(document.getElementById('valorEquipamento').value || 0);
+        if (categoria === 'maquina' && valorEquipamento <= 0) {
+            if (window.playAlert) {
+                await window.playAlert('Informe o valor do equipamento.');
+            } else {
+                alert('Informe o valor do equipamento.');
+            }
+            document.getElementById('valorEquipamento').focus();
+            return;
+        }
+        const dados = {
+            nome: document.getElementById('nomeItem').value,
+            categoria,
+            quantidade: parseInt(document.getElementById('qtdItem').value),
+            minimo: parseInt(document.getElementById('minimoItem').value) || 0,
+            valorEquipamento: categoria === 'maquina' ? valorEquipamento : 0,
+            dataAtualizacao: new Date().toISOString()
+        };
         try { await dbSalvarItemEstoque(dados, id); cancelarEdicao(); } catch (err) { alert("Erro ao salvar."); }
     };
 
-    window.prepararEdicao = function(id, nome, categoria, qtd, minimo) {
-        document.getElementById('idItem').value = id; document.getElementById('nomeItem').value = nome; document.getElementById('categoriaItem').value = categoria; document.getElementById('qtdItem').value = qtd; document.getElementById('minimoItem').value = minimo;
+    window.prepararEdicao = function(id, nome, categoria, qtd, minimo, valorEquipamento = 0) {
+        document.getElementById('idItem').value = id; document.getElementById('nomeItem').value = nome; document.getElementById('categoriaItem').value = categoria; document.getElementById('qtdItem').value = qtd; document.getElementById('minimoItem').value = minimo; document.getElementById('valorEquipamento').value = valorEquipamento || '';
+        atualizarCampoValorEquipamento();
         const btn = document.getElementById('btnSalvarEstoque'); btn.innerText = "Atualizar Item"; btn.style.background = "#ff9800"; document.getElementById('btnCancelarEdicao').style.display = "block"; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     };
     window.cancelarEdicao = function() {
         document.getElementById('formEstoque').reset(); document.getElementById('idItem').value = "";
+        atualizarCampoValorEquipamento();
         const btn = document.getElementById('btnSalvarEstoque'); btn.innerText = "+ Adicionar ao Estoque"; btn.style.background = "#4caf50"; document.getElementById('btnCancelarEdicao').style.display = "none";
     };
     window.excluirItem = async function(id) { if(await window.playConfirm("Deseja realmente excluir este item?")) { await dbExcluirItemEstoque(id); } };
+    document.getElementById('categoriaItem').addEventListener('change', atualizarCampoValorEquipamento);
+    atualizarCampoValorEquipamento();
     carregarEstoque();
 </script>
 </body>

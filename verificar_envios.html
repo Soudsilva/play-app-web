@@ -161,6 +161,41 @@
         return envio.perfilAutor || envio.autorPerfil || envio.perfil || obterPerfilPorNome(obterNomeAutorEnvio(envio));
     }
 
+    function ehRegistroManutencao(envio) {
+        return envio?.origemRegistro === 'manutencao' || !!envio?.manutencao;
+    }
+
+    function temFinanceiroNoEnvio(envio) {
+        const fin = envio?.financeiro || {};
+        return (
+            (Array.isArray(fin.pix) && fin.pix.length > 0)
+            || (fin.dinheiro ?? '') !== ''
+            || Number(fin.totalGeral || 0) !== 0
+            || Number(fin.comissaoValor || 0) !== 0
+            || Number(fin.saldoFinal || 0) !== 0
+            || Number(fin.saldoDepositar || 0) !== 0
+        );
+    }
+
+    function montarHtmlManutencao(envio) {
+        const info = envio?.manutencao || {};
+        let linhas = '';
+        if (info.tipoServico) linhas += `<div class="info-linha"><span>Tipo</span><strong>${info.tipoServico}</strong></div>`;
+        if (Array.isArray(info.equipamentosAdicionados) && info.equipamentosAdicionados.length > 0) {
+            linhas += `<div class="info-linha"><span>Máquinas adicionadas</span><strong>${info.equipamentosAdicionados.map(item => item.nome).join(', ')}</strong></div>`;
+        }
+        if (Array.isArray(info.equipamentosRetirados) && info.equipamentosRetirados.length > 0) {
+            linhas += `<div class="info-linha"><span>Máquinas retiradas</span><strong>${info.equipamentosRetirados.join(', ')}</strong></div>`;
+        }
+        if (info.pontoEncerrado) {
+            linhas += `<div class="info-linha"><span>Ponto</span><strong>Encerrado em análise</strong></div>`;
+        }
+        if (info.observacoes) {
+            linhas += `<div class="info-linha"><span>Obs.</span><strong>${info.observacoes}</strong></div>`;
+        }
+        return linhas ? `<div class="secao-titulo">Manutenção</div>${linhas}` : '';
+    }
+
     function ehMesmoDiaAtual(dataIso) {
         if (!dataIso) return false;
         const dataEnvio = new Date(dataIso);
@@ -239,6 +274,9 @@
                     a.cliente?.nome,
                     a.cliente?.numero,
                     ...(a.produtos || []).map(p => p.nome),
+                    a.manutencao?.tipoServico || '',
+                    ...(a.manutencao?.equipamentosAdicionados || []).map(m => m.nome),
+                    ...(a.manutencao?.equipamentosRetirados || []),
                     new Date(a.data).toLocaleString('pt-BR'),
                     fotos.ficha ? 'ficha' : '',
                     ...(fotos.maquinas || []).map(m => m.nome),
@@ -263,6 +301,7 @@
             const dataFormatada = new Date(envio.data).toLocaleString('pt-BR');
             const clienteNome = envio.cliente?.nome || 'Cliente Desconhecido';
             const clienteNumero = envio.cliente?.numero || 'S/N';
+            const htmlManutencao = ehRegistroManutencao(envio) ? montarHtmlManutencao(envio) : '';
 
             // --- 1. PRODUTOS ---
             let htmlProdutos = '';
@@ -274,61 +313,61 @@
             }
 
             // --- 2. FINANCEIRO ---
-            let htmlFin = `<div class="secao-titulo">Financeiro</div>`;
+            let htmlFin = '';
             const fin = envio.financeiro || {};
-            const totalPix = Array.isArray(fin.pix)
-                ? fin.pix.reduce((soma, pix) => soma + converterParaNumero(pix?.valor), 0)
-                : 0;
-            const saldoDepositar = (fin.saldoDepositar != null)
-                ? converterParaNumero(fin.saldoDepositar)
-                : (((fin.dinheiro ?? '') !== '' || fin.comissaoValor != null)
-                    ? (converterParaNumero(fin.dinheiro) - converterParaNumero(fin.comissaoValor))
-                    : converterParaNumero(fin.saldoFinal));
+            if (!ehRegistroManutencao(envio) || temFinanceiroNoEnvio(envio)) {
+                const totalPix = Array.isArray(fin.pix)
+                    ? fin.pix.reduce((soma, pix) => soma + converterParaNumero(pix?.valor), 0)
+                    : 0;
+                const saldoDepositar = (fin.saldoDepositar != null)
+                    ? converterParaNumero(fin.saldoDepositar)
+                    : (((fin.dinheiro ?? '') !== '' || fin.comissaoValor != null)
+                        ? (converterParaNumero(fin.dinheiro) - converterParaNumero(fin.comissaoValor))
+                        : converterParaNumero(fin.saldoFinal));
 
-            // Total geral logo abaixo do título
-            htmlFin += `
-                <div style="background: rgba(255,255,255,0.04); border-left: 3px solid #4caf50; padding: 8px 10px; border-radius: 6px; margin-top: 10px; margin-bottom: 8px;">
-                    <div class="info-linha" style="margin: 0;">
-                        <span style="font-weight: 600; color: #ffffff;">Total Geral</span>
-                        <strong style="color: #ffffff; font-size: 18px;">${formatarMoeda(converterParaNumero(fin.totalGeral))}</strong>
-                    </div>
-                </div>
-            `;
-
-            // Ãrea Pix do Card
-            if (fin.pix && fin.pix.length > 0) {
-                fin.pix.forEach(p => {
-                    htmlFin += `
-                        <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-bottom: 5px; font-size: 13px;">
-                            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; white-space:nowrap;">
-                                <span>
-                                    <strong style="color: #ffeb3b;">&#128179; Pix ${p.numero}</strong>
-                                    &nbsp;|&nbsp; Cont: <strong>${p.contAnt}</strong> &rarr; <strong>${p.contAtual}</strong>
-                                </span>
-                                <span style="color:#64b5f6; font-weight:bold; font-size:15px;">${formatarMoeda(converterParaNumero(p.valor))}</span>
-                            </div>
+                htmlFin = `<div class="secao-titulo">Financeiro</div>`;
+                htmlFin += `
+                    <div style="background: rgba(255,255,255,0.04); border-left: 3px solid #4caf50; padding: 8px 10px; border-radius: 6px; margin-top: 10px; margin-bottom: 8px;">
+                        <div class="info-linha" style="margin: 0;">
+                            <span style="font-weight: 600; color: #ffffff;">Total Geral</span>
+                            <strong style="color: #ffffff; font-size: 18px;">${formatarMoeda(converterParaNumero(fin.totalGeral))}</strong>
                         </div>
+                    </div>
+                `;
+
+                if (fin.pix && fin.pix.length > 0) {
+                    fin.pix.forEach(p => {
+                        htmlFin += `
+                            <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-bottom: 5px; font-size: 13px;">
+                                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; white-space:nowrap;">
+                                    <span>
+                                        <strong style="color: #ffeb3b;">&#128179; Pix ${p.numero}</strong>
+                                        &nbsp;|&nbsp; Cont: <strong>${p.contAnt}</strong> &rarr; <strong>${p.contAtual}</strong>
+                                    </span>
+                                    <span style="color:#64b5f6; font-weight:bold; font-size:15px;">${formatarMoeda(converterParaNumero(p.valor))}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                if ((fin.dinheiro ?? '') !== '') {
+                    htmlFin += `
+                        <div class="info-linha"><span>Dinheiro em Espécie</span> <strong style="color:#4caf50;">${formatarMoeda(converterParaNumero(fin.dinheiro))}</strong></div>
                     `;
-                });
-            }
+                }
 
-            // Totais
-            if ((fin.dinheiro ?? '') !== '') {
+                if (totalPix > 0) {
+                    htmlFin += `
+                        <div class="info-linha"><span>Pix</span> <strong style="color:#64b5f6;">${formatarMoeda(totalPix)}</strong></div>
+                    `;
+                }
+
                 htmlFin += `
-                    <div class="info-linha"><span>Dinheiro em Espécie</span> <strong style="color:#4caf50;">${formatarMoeda(converterParaNumero(fin.dinheiro))}</strong></div>
+                    <div class="info-linha"><span>Comissão (${fin.comissaoPorcentagem || 0}%)</span> <strong style="color:#f44336;">- ${formatarMoeda(converterParaNumero(fin.comissaoValor))}</strong></div>
+                    <div class="info-linha"><span>Saldo Depositar</span> <strong style="color:#4caf50; font-size:18px;">${formatarMoeda(saldoDepositar)}</strong></div>
                 `;
             }
-
-            if (totalPix > 0) {
-                htmlFin += `
-                    <div class="info-linha"><span>Pix</span> <strong style="color:#64b5f6;">${formatarMoeda(totalPix)}</strong></div>
-                `;
-            }
-
-            htmlFin += `
-                <div class="info-linha"><span>Comissão (${fin.comissaoPorcentagem || 0}%)</span> <strong style="color:#f44336;">- ${formatarMoeda(converterParaNumero(fin.comissaoValor))}</strong></div>
-                <div class="info-linha"><span>Saldo Depositar</span> <strong style="color:#4caf50; font-size:18px;">${formatarMoeda(saldoDepositar)}</strong></div>
-            `;
 
             // --- 3. FOTOS ---
             let htmlFotos = `<div class="secao-titulo">Imagens (Toque para ampliar)</div><div class="foto-grid">`;
@@ -353,7 +392,7 @@
             
             htmlFotos += `</div>`;
             if (!temFoto) {
-                htmlFotos = `<div class="secao-titulo">Imagens</div><div style="font-size:12px; color:#aaa; font-style: italic;">Nenhuma foto foi anexada neste envio.</div>`;
+                htmlFotos = '';
             }
 
             const liberado = podeAlterarEnvio(envio);
@@ -366,7 +405,7 @@
                 </div>
             ` : '';
 
-            card.innerHTML = `<div class="envio-header"><div class="envio-data">&#128197; Recebido em ${dataFormatada}</div><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}`;
+            card.innerHTML = `<div class="envio-header"><div class="envio-data">&#128197; Recebido em ${dataFormatada}</div><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>${htmlManutencao}${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}`;
             if (liberado) {
                 card.querySelector('.btn-editar-envio')?.addEventListener('click', () => window.editarEnvio(envio));
                 card.querySelector('.btn-excluir-envio')?.addEventListener('click', () => window.excluirEnvio(envio.firebaseUrl));

@@ -1048,6 +1048,142 @@ export async function dbBuscarClientePorNumero(numero) {
     }
 }
 
+function _normalizarEquipDetalhesCliente(cliente) {
+    if (Array.isArray(cliente?.equipDetalhes) && cliente.equipDetalhes.length > 0) {
+        return cliente.equipDetalhes
+            .map((item, index) => ({
+                rowId: String(item?.rowId || `equip_${index + 1}`),
+                nome: String(item?.nome || "").trim(),
+                qtd: String(item?.qtd || item?.quantidade || "1").trim() || "1",
+                pix: String(item?.pix || "").trim(),
+                contador: String(item?.contador || "").trim(),
+                manutencaoPendente: String(item?.manutencaoPendente || "").trim(),
+                aguardandoConfirmacao: item?.aguardandoConfirmacao === true,
+                manutencaoPendenteEm: item?.manutencaoPendenteEm || "",
+                manutencaoPendentePor: item?.manutencaoPendentePor || ""
+            }))
+            .filter(item => item.nome);
+    }
+
+    if (!cliente?.equip) return [];
+
+    return String(cliente.equip)
+        .split(', ')
+        .map((item, index) => {
+            let nome = item;
+            let qtd = "1";
+            let pix = "";
+
+            const regexQtd = /\s*\(([^)]+)\)$/;
+            const matchQtd = nome.match(regexQtd);
+            if (matchQtd) {
+                qtd = matchQtd[1];
+                nome = nome.replace(regexQtd, "");
+            }
+
+            const regexPix = /\s*\[Pix:\s*([^\]]+)\]$/;
+            const matchPix = nome.match(regexPix);
+            if (matchPix) {
+                pix = matchPix[1];
+                nome = nome.replace(regexPix, "");
+            }
+
+            return {
+                rowId: `equip_${index + 1}`,
+                nome: String(nome || "").trim(),
+                qtd: String(qtd || "1").trim() || "1",
+                pix: String(pix || "").trim(),
+                contador: "",
+                manutencaoPendente: "",
+                aguardandoConfirmacao: false,
+                manutencaoPendenteEm: "",
+                manutencaoPendentePor: ""
+            };
+        })
+        .filter(item => item.nome);
+}
+
+function _serializarEquipTextoCliente(equipDetalhes) {
+    return (Array.isArray(equipDetalhes) ? equipDetalhes : [])
+        .filter(item => String(item?.nome || "").trim())
+        .map(item => {
+            const nome = String(item?.nome || "").trim();
+            const qtd = String(item?.qtd || "1").trim() || "1";
+            const pix = String(item?.pix || "").trim();
+            const base = `${nome}${qtd !== '1' ? ` (${qtd})` : ''}`;
+            return pix ? `${base} [Pix: ${pix}]` : base;
+        })
+        .join(', ');
+}
+
+export async function dbAplicarPendenciasManutencaoCliente(firebaseUrlCliente, payload = {}) {
+    try {
+        if (!firebaseUrlCliente) return null;
+
+        const clienteRef = ref(db, `clientes/${firebaseUrlCliente}`);
+        const snapshot = await get(clienteRef);
+        if (!snapshot.exists()) return null;
+
+        const clienteAtual = snapshot.val() || {};
+        const agoraIso = new Date().toISOString();
+        const atendente = String(payload?.atendente || "").trim();
+        const equipamentosBase = _normalizarEquipDetalhesCliente(clienteAtual);
+        const equipamentosAtualizados = equipamentosBase.map(item => ({ ...item }));
+
+        const adicionados = Array.isArray(payload?.equipamentosAdicionados) ? payload.equipamentosAdicionados : [];
+        adicionados.forEach((item, index) => {
+            const nome = String(item?.nome || "").trim();
+            if (!nome) return;
+            equipamentosAtualizados.push({
+                rowId: String(item?.rowId || `pend_add_${Date.now()}_${index + 1}`),
+                nome,
+                qtd: String(item?.qtd || "1").trim() || "1",
+                pix: String(item?.pix || "").trim(),
+                contador: String(item?.contador || "").trim(),
+                manutencaoPendente: 'adicao',
+                aguardandoConfirmacao: true,
+                manutencaoPendenteEm: agoraIso,
+                manutencaoPendentePor: atendente
+            });
+        });
+
+        const retirados = Array.isArray(payload?.equipamentosRetiradosDetalhes) ? payload.equipamentosRetiradosDetalhes : [];
+        retirados.forEach((item) => {
+            const nome = String(item?.nome || "").trim();
+            if (!nome) return;
+
+            const alvo = equipamentosAtualizados.find(equip => {
+                if (String(equip?.nome || "").trim() !== nome) return false;
+                const pixAlvo = String(item?.pix || "").trim();
+                if (pixAlvo && String(equip?.pix || "").trim() !== pixAlvo) return false;
+                return true;
+            });
+
+            if (!alvo) return;
+            alvo.manutencaoPendente = 'retirada';
+            alvo.aguardandoConfirmacao = true;
+            alvo.manutencaoPendenteEm = agoraIso;
+            alvo.manutencaoPendentePor = atendente;
+        });
+
+        const patch = {
+            equipDetalhes: equipamentosAtualizados,
+            equip: _serializarEquipTextoCliente(equipamentosAtualizados),
+            aguardandoRevisao: payload?.pontoEncerrado ? true : (clienteAtual?.aguardandoRevisao === true),
+            encerrado: payload?.pontoEncerrado ? true : (clienteAtual?.encerrado === true),
+            valorEncerramento: payload?.pontoEncerrado ? String(payload?.valorEncerramento || '') : (clienteAtual?.valorEncerramento || ''),
+            dataEncerramento: payload?.pontoEncerrado ? agoraIso : (clienteAtual?.dataEncerramento || '')
+        };
+
+        await update(clienteRef, patch);
+        await _atualizarVersaoClientes();
+        return { firebaseUrl: firebaseUrlCliente, ...clienteAtual, ...patch };
+    } catch (erro) {
+        console.error("ERRO AO APLICAR PENDENCIAS DE MANUTENCAO NO CLIENTE:", erro);
+        throw erro;
+    }
+}
+
 /**
  * Marca um cliente como encerrado no banco.
  * Usado quando o técnico retira todos os equipamentos e confirma que o ponto foi encerrado.

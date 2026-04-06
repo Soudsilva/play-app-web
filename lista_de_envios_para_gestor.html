@@ -145,90 +145,8 @@
         return Number(fin.saldoFinal || 0);
     }
 
-    function formatarDataVenda(valor) {
-        if (!valor) return '—';
-        const data = new Date(valor);
-        if (Number.isNaN(data.getTime())) return '—';
-        return data.toLocaleDateString('pt-BR');
-    }
-
-    function obterDatasVendaCliente(envio) {
-        const numeroCliente = String(envio?.cliente?.numero ?? '').trim();
-        if (!numeroCliente) return { ultimaVenda: null, penultimaVenda: null, antepenultimaVenda: null };
-        const dataReferencia = Date.parse(envio?.data || '');
-
-        const vendasValidas = atendimentosSalvos
-            .filter(item => String(item?.cliente?.numero ?? '').trim() === numeroCliente)
-            .filter(item => {
-                const saldo = Number(item?.financeiro?.totalGeral) || 0;
-                const data = Date.parse(item?.data || '');
-                if (saldo <= 0 || Number.isNaN(data)) return false;
-                if (Number.isNaN(dataReferencia)) return true;
-                // Mantém o contexto histórico do envio: nunca usa uma venda "do futuro".
-                return data <= dataReferencia;
-            })
-            .sort((a, b) => Date.parse(b.data) - Date.parse(a.data));
-
-        return {
-            ultimaVenda: vendasValidas[0]?.data || null,
-            penultimaVenda: vendasValidas[1]?.data || null,
-            antepenultimaVenda: vendasValidas[2]?.data || null
-        };
-    }
-
-    function calcularIndicadorVendaDiaHistorico(envio) {
-        const numeroCliente = String(envio?.cliente?.numero ?? '').trim();
-        if (!numeroCliente) {
-            return { venda_por_dia: null, msg: "aguardando mais atendimentos para a media por dia", baseTotal: 0, diasEntre: 0, usados: [] };
-        }
-
-        const dataReferencia = Date.parse(envio?.data || '');
-        const validos = atendimentosSalvos
-            .filter(item => String(item?.cliente?.numero ?? '').trim() === numeroCliente)
-            .filter(item => {
-                const total = Number(item?.financeiro?.totalGeral) || 0;
-                const saldo = Number(item?.financeiro?.totalGeral) || 0;
-                const data = Date.parse(item?.data || '');
-                if (total <= 0 || saldo <= 0 || Number.isNaN(data)) return false;
-                if (Number.isNaN(dataReferencia)) return true;
-                return data <= dataReferencia;
-            })
-            .map(item => ({
-                data: item.data,
-                totalGeral: Number(item?.financeiro?.totalGeral) || 0,
-                saldoFinal: Number(item?.financeiro?.saldoFinal) || 0
-            }))
-            .sort((a, b) => Date.parse(b.data) - Date.parse(a.data));
-
-        const usadosBase = validos.slice(0, 3);
-        const usados = usadosBase.length >= 3 ? usadosBase : usadosBase.slice(0, 2);
-
-        if (usados.length < 2) {
-            return {
-                venda_por_dia: null,
-                msg: "aguardando mais atendimentos para a media por dia",
-                baseTotal: usados.length === 1 ? (Number(usados[0]?.totalGeral) || 0) : 0,
-                diasEntre: 0,
-                usados
-            };
-        }
-
-        const baseTotal = usados.reduce((soma, item) => soma + (Number(item.totalGeral) || 0), 0);
-        const maisRecente = new Date(usados[0].data);
-        const maisAntigo = new Date(usados[usados.length - 1].data);
-        maisRecente.setHours(0, 0, 0, 0);
-        maisAntigo.setHours(0, 0, 0, 0);
-        const diasEntre = Math.abs(Math.round((maisRecente - maisAntigo) / 86400000));
-        const dias = diasEntre > 0 ? diasEntre : 1;
-        const vendaPorDia = Math.round(((baseTotal / dias) + Number.EPSILON) * 100) / 100;
-
-        return {
-            venda_por_dia: vendaPorDia,
-            msg: null,
-            baseTotal,
-            diasEntre,
-            usados
-        };
+    function obterOrigemEnvio(envio) {
+        return ehRegistroManutencao(envio) ? 'Serviços realizados' : 'Atendimento ao cliente';
     }
 
     function obterPerfilPorNome(nome) {
@@ -237,6 +155,41 @@
 
     function obterNomeAutorEnvio(envio) {
         return envio.enviadoPor || envio.autor || envio.responsavel || envio.atendente || "";
+    }
+
+    function ehRegistroManutencao(envio) {
+        return envio?.origemRegistro === 'manutencao' || !!envio?.manutencao;
+    }
+
+    function temFinanceiroNoEnvio(envio) {
+        const fin = envio?.financeiro || {};
+        return (
+            (Array.isArray(fin.pix) && fin.pix.length > 0)
+            || (fin.dinheiro ?? '') !== ''
+            || Number(fin.totalGeral || 0) !== 0
+            || Number(fin.comissaoValor || 0) !== 0
+            || Number(fin.saldoFinal || 0) !== 0
+            || Number(fin.saldoDepositar || 0) !== 0
+        );
+    }
+
+    function montarHtmlManutencao(envio) {
+        const info = envio?.manutencao || {};
+        let html = `<div class="secao-titulo">Manutenção</div>`;
+        if (info.tipoServico) html += `<div class="info-linha"><span>Tipo</span><strong>${info.tipoServico}</strong></div>`;
+        if (Array.isArray(info.equipamentosAdicionados) && info.equipamentosAdicionados.length > 0) {
+            html += `<div class="info-linha"><span>Máquinas adicionadas</span><strong>${info.equipamentosAdicionados.map(item => item.nome).join(', ')}</strong></div>`;
+        }
+        if (Array.isArray(info.equipamentosRetirados) && info.equipamentosRetirados.length > 0) {
+            html += `<div class="info-linha"><span>Máquinas retiradas</span><strong>${info.equipamentosRetirados.join(', ')}</strong></div>`;
+        }
+        if (info.pontoEncerrado) {
+            html += `<div class="info-linha"><span>Ponto</span><strong>Encerrado em análise</strong></div>`;
+        }
+        if (info.observacoes) {
+            html += `<div class="info-linha"><span>Obs.</span><strong>${info.observacoes}</strong></div>`;
+        }
+        return html;
     }
 
     function garantirPermissaoGestao() {
@@ -306,6 +259,9 @@
                     a.cliente?.nome,
                     a.cliente?.numero,
                     ...(a.produtos || []).map(p => p.nome),
+                    a.manutencao?.tipoServico || '',
+                    ...(a.manutencao?.equipamentosAdicionados || []).map(m => m.nome),
+                    ...(a.manutencao?.equipamentosRetirados || []),
                     new Date(a.data).toLocaleString('pt-BR'),
                     fotos.ficha ? 'ficha' : '',
                     ...(fotos.maquinas || []).map(m => m.nome),
@@ -331,6 +287,8 @@
             const clienteNome = envio.cliente?.nome || 'Cliente Desconhecido';
             const clienteNumero = envio.cliente?.numero || 'S/N';
             const autorEnvio = obterNomeAutorEnvio(envio) || 'N/A';
+            const origemEnvio = obterOrigemEnvio(envio);
+            const htmlManutencao = ehRegistroManutencao(envio) ? montarHtmlManutencao(envio) : '';
 
             // --- 1. PRODUTOS ---
             let htmlProdutos = '';
@@ -342,72 +300,44 @@
             }
 
             // --- 2. FINANCEIRO ---
-            let htmlFin = `<div class="secao-titulo">Financeiro</div>`;
+            let htmlFin = '';
             const fin = envio.financeiro || {};
-            const saldoDepositar = obterSaldoDepositar(fin);
+            const mostrarFinanceiro = !ehRegistroManutencao(envio) || envio?.manutencao?.pontoEncerrado === true;
 
-            // Área Pix do Card
-            if (fin.pix && fin.pix.length > 0) {
-                fin.pix.forEach(p => {
+            if (mostrarFinanceiro) {
+                const saldoDepositar = obterSaldoDepositar(fin);
+                htmlFin = `<div class="secao-titulo">Financeiro</div>`;
+
+                // Área Pix do Card
+                if (fin.pix && fin.pix.length > 0) {
+                    fin.pix.forEach(p => {
+                        htmlFin += `
+                            <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-bottom: 5px; font-size: 13px;">
+                                <strong style="color: #ffeb3b;">💠 Pix ${p.numero}:</strong>
+                                Cont: <strong>${p.contAnt}</strong> ➔ <strong>${p.contAtual}</strong>
+                                &nbsp;|&nbsp; Valor: <span style="color:#4caf50; font-weight:bold; font-size:15px;">${formatarMoeda(p.valor)}</span>
+                            </div>
+                        `;
+                    });
+                }
+
+                // Dinheiro em espécie — destacado
+                if ((fin.dinheiro ?? '') !== '') {
                     htmlFin += `
                         <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-bottom: 5px; font-size: 13px;">
-                            <strong style="color: #ffeb3b;">💠 Pix ${p.numero}:</strong>
-                            Cont: <strong>${p.contAnt}</strong> ➔ <strong>${p.contAtual}</strong>
-                            &nbsp;|&nbsp; Valor: <span style="color:#4caf50; font-weight:bold; font-size:15px;">${formatarMoeda(p.valor)}</span>
+                            <strong style="color: #ffeb3b;">💵 Dinheiro em Espécie:</strong>
+                            &nbsp;<span style="color:white; font-weight:bold; font-size:15px;">${formatarMoeda(fin.dinheiro)}</span>
                         </div>
                     `;
-                });
-            }
+                }
 
-            // Dinheiro em espécie — destacado
-            if ((fin.dinheiro ?? '') !== '') {
+                // Totais
                 htmlFin += `
-                    <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-bottom: 5px; font-size: 13px;">
-                        <strong style="color: #ffeb3b;">💵 Dinheiro em Espécie:</strong>
-                        &nbsp;<span style="color:white; font-weight:bold; font-size:15px;">${formatarMoeda(fin.dinheiro)}</span>
-                    </div>
+                    <div class="info-linha" style="margin-top: 10px;"><span>Total Geral</span> <strong>${formatarMoeda(fin.totalGeral)}</strong></div>
+                    <div class="info-linha"><span>Comissão (${fin.comissaoPorcentagem || 0}%)</span> <strong style="color:#f44336;">- ${formatarMoeda(fin.comissaoValor)}</strong></div>
+                    <div class="info-linha"><span>Saldo Depositar</span> <strong style="color:#4caf50; font-size:18px;">${formatarMoeda(saldoDepositar)}</strong></div>
                 `;
             }
-
-            // Totais
-            htmlFin += `
-                <div class="info-linha" style="margin-top: 10px;"><span>Total Geral</span> <strong>${formatarMoeda(fin.totalGeral)}</strong></div>
-                <div class="info-linha"><span>Comissão (${fin.comissaoPorcentagem || 0}%)</span> <strong style="color:#f44336;">- ${formatarMoeda(fin.comissaoValor)}</strong></div>
-                <div class="info-linha"><span>Saldo Depositar</span> <strong style="color:#4caf50; font-size:18px;">${formatarMoeda(saldoDepositar)}</strong></div>
-            `;
-
-            // --- 2.1 VENDA/DIA (MÉDIA) ---
-            // Observação: este indicador é salvo apenas nos atendimentos NOVOS.
-            const indHistorico = calcularIndicadorVendaDiaHistorico(envio);
-            const vendaPorDia = indHistorico.venda_por_dia;
-            const vendaMsg = indHistorico.msg;
-            const baseTotal = indHistorico.baseTotal;
-            const diasEntre = indHistorico.diasEntre;
-            const qtdUsados = Array.isArray(indHistorico.usados) ? indHistorico.usados.length : null;
-            const datasVenda = obterDatasVendaCliente(envio);
-
-            let htmlVendaDia = `<div class="secao-titulo">Venda/dia (média)</div>`;
-            if (vendaMsg) {
-                htmlVendaDia += `<div class="info-linha"><span>Status</span><strong>${vendaMsg}</strong></div>`;
-                if (qtdUsados !== null) {
-                    htmlVendaDia += `<div class="info-linha"><span>Atendimentos usados</span><strong>${qtdUsados}</strong></div>`;
-                }
-            } else if (vendaPorDia === null) {
-                htmlVendaDia += `<div style="font-size:12px; color:#aaa; font-style: italic;">Não calculado (apenas atendimentos novos).</div>`;
-            } else {
-                htmlVendaDia += `
-                    <div class="info-linha"><span>Resultado</span> <strong>${formatarMoeda(vendaPorDia)}</strong></div>
-                    <div class="info-linha"><span>Soma (total)</span> <strong>${formatarMoeda(baseTotal)}</strong></div>
-                    <div class="info-linha"><span>Dias (antigo → recente)</span> <strong>${diasEntre}</strong></div>
-                `;
-                if (qtdUsados !== null) {
-                    htmlVendaDia += `<div class="info-linha"><span>Atendimentos usados</span><strong>${qtdUsados}</strong></div>`;
-                }
-            }
-
-            htmlVendaDia += `<div class="info-linha"><span>Última venda</span><strong>${formatarDataVenda(datasVenda.ultimaVenda)}</strong></div>`;
-            htmlVendaDia += `<div class="info-linha"><span>Penúltima venda</span><strong>${formatarDataVenda(datasVenda.penultimaVenda)}</strong></div>`;
-            htmlVendaDia += `<div class="info-linha"><span>Antepenúltima venda</span><strong>${formatarDataVenda(datasVenda.antepenultimaVenda)}</strong></div>`;
 
             // --- 3. FOTOS ---
             let htmlFotos = `<div class="secao-titulo">Imagens (Toque para ampliar)</div><div class="foto-grid">`;
@@ -432,7 +362,7 @@
             
             htmlFotos += `</div>`;
             if (!temFoto) {
-                htmlFotos = `<div class="secao-titulo">Imagens</div><div style="font-size:12px; color:#aaa; font-style: italic;">Nenhuma foto foi anexada neste envio.</div>`;
+                htmlFotos = ``;
             }
 
             const desabilitadoOffline = !navigator.onLine;
@@ -445,7 +375,7 @@
                 </div>
             `;
 
-            card.innerHTML = `<div class="envio-header"><div class="envio-data">📅 Recebido em ${dataFormatada}</div><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div><div class="envio-meta"><strong>Enviado por:</strong> ${autorEnvio}</div></div>${htmlProdutos}${htmlFin}${htmlVendaDia}${htmlFotos}${htmlAcoes}`;
+            card.innerHTML = `<div class="envio-header"><div class="envio-data">📅 Recebido em ${dataFormatada}</div><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div><div class="envio-meta"><strong>Enviado por:</strong> ${autorEnvio}</div><div class="envio-meta"><strong>Origem:</strong> ${origemEnvio}</div></div>${htmlManutencao}${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}`;
             card.querySelector('.btn-editar-envio')?.addEventListener('click', () => window.editarEnvio(envio));
             card.querySelector('.btn-excluir-envio')?.addEventListener('click', () => window.excluirEnvio(envio.firebaseUrl));
             container.appendChild(card);

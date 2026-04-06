@@ -50,9 +50,48 @@
         }
 
         /* Estilo para os filtros de checkbox */
-        .filtros-container { text-align: center; margin-bottom: 15px; font-size: 13px; color: white; display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .filtros-container label { cursor: pointer; display: flex; align-items: center; gap: 3px; }
-        .filtros-container input { width: auto; margin: 0; } /* Reseta estilo global de input para checkbox */
+        .filtros-container {
+            position: sticky;
+            top: 8px;
+            z-index: 5;
+            margin: 0 0 15px;
+            padding: 8px;
+            font-size: 13px;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: nowrap;
+            background: rgba(4, 45, 134, 0.92);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+        }
+        .filtros-titulo { display: none; }
+        .filtro-opcao {
+            cursor: pointer;
+            display: flex;
+            flex: 1 1 0;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+            padding: 10px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.22);
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.8);
+            font-weight: bold;
+            white-space: nowrap;
+            transition: 0.15s ease;
+        }
+        .filtro-opcao.ativo {
+            background: rgba(255,235,59,0.18);
+            border-color: rgba(255,235,59,0.52);
+            color: #fff2a8;
+        }
+        .filtro-opcao input { display: none; }
     </style>
 </head>
 <body>
@@ -70,10 +109,10 @@
         <input type="text" id="campoPesquisa" placeholder="🔍 Buscar item...">
         
         <div class="filtros-container">
-            <span style="font-weight: bold; color: #ffeb3b;">Filtrar por Tipo:</span>
-            <label><input type="checkbox" class="filtro-tipo" value="produtos" checked onchange="aplicarFiltros()"> Produtos</label>
-            <label><input type="checkbox" class="filtro-tipo" value="peca" checked onchange="aplicarFiltros()"> Peças</label>
-            <label><input type="checkbox" class="filtro-tipo" value="maquina" checked onchange="aplicarFiltros()"> Máquinas</label>
+            <div class="filtros-titulo">Mostrar no estoque</div>
+            <label class="filtro-opcao"><input type="checkbox" class="filtro-tipo" value="produtos" checked onchange="aplicarFiltros()"> Produtos</label>
+            <label class="filtro-opcao"><input type="checkbox" class="filtro-tipo" value="peca" onchange="aplicarFiltros()"> Peças</label>
+            <label class="filtro-opcao"><input type="checkbox" class="filtro-tipo" value="maquina" onchange="aplicarFiltros()"> Máquinas</label>
         </div>
 
         <div id="containerEstoque">
@@ -87,6 +126,19 @@
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
     import { dbEscutarEstoque } from './database.js';
+
+    function formatarValorEquipamento(valor) {
+        const numero = Number(valor || 0);
+        if (!Number.isFinite(numero) || numero <= 0) return '';
+        return numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function atualizarVisualFiltros() {
+        document.querySelectorAll('.filtro-opcao').forEach((label) => {
+            const input = label.querySelector('.filtro-tipo');
+            label.classList.toggle('ativo', !!input?.checked);
+        });
+    }
 
     // [NOVO] LÓGICA DE FILTRAGEM UNIFICADA (Pesquisa + Checkboxes)
     window.aplicarFiltros = function() {
@@ -107,6 +159,7 @@
 
             card.style.display = (correspondePesquisa && correspondeTipo) ? 'flex' : 'none';
         });
+        atualizarVisualFiltros();
     };
 
     // Aciona o filtro também ao digitar
@@ -132,12 +185,17 @@
                 let nomeCategoria = "Produtos";
                 if(item.categoria === "maquina") { classeCor = "bg-maquina"; nomeCategoria = "Máquina"; }
                 if(item.categoria === "peca") { classeCor = "bg-peca"; nomeCategoria = "Peça"; }
+                const valorEquipamento = Number(item.valorEquipamento || 0);
+                const valorHtml = item.categoria === "maquina" && valorEquipamento > 0
+                    ? `<div style="font-size:11px; margin-top:5px; color:#999;">Valor: ${formatarValorEquipamento(valorEquipamento)}</div>`
+                    : '';
 
                 card.innerHTML = `
                     <div class="info-estoque" style="flex:1;">
                         <b>${item.nome}</b>
                         <span class="badge ${classeCor}">${nomeCategoria}</span>
                         <div style="font-size:11px; margin-top:5px; color:#999;">Mínimo ideal: ${item.minimo || 0}</div>
+                        ${valorHtml}
                     </div>
                     <div class="qtd-destaque">${item.quantidade}</div>
                 `;
@@ -150,6 +208,7 @@
     }
 
     carregarEstoque();
+    atualizarVisualFiltros();
 </script>
 </body>
 </html>

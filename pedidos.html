@@ -251,6 +251,13 @@
             .form-fixo { left: 50%; transform: translateX(-50%); max-width: 440px; }
         }
 
+        .form-fixo-topo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
         .form-fixo-titulo {
             font-size: 13px;
             font-weight: bold;
@@ -258,6 +265,37 @@
             text-transform: uppercase;
             color: #ffeb3b;
             text-align: center;
+        }
+        .form-fixo-categoria {
+            min-width: 88px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.18);
+        }
+        .form-fixo-categoria.vazia {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.18);
+            color: #9fb4d7;
+        }
+        .form-fixo-categoria.produtos {
+            background: rgba(76,175,80,0.18);
+            border-color: rgba(76,175,80,0.55);
+            color: #bfe5c4;
+        }
+        .form-fixo-categoria.peca {
+            background: rgba(255,152,0,0.18);
+            border-color: rgba(255,152,0,0.55);
+            color: #ffd79b;
+        }
+        .form-fixo-categoria.maquina {
+            background: rgba(156,39,176,0.2);
+            border-color: rgba(156,39,176,0.55);
+            color: #dfb1ea;
         }
 
         .input-glass {
@@ -340,6 +378,59 @@
         .estado-vazio .icone-vazio { font-size: 48px; margin-bottom: 12px; }
         .estado-vazio p { font-size: 17px; margin: 0; }
 
+        .barra-topo-filtros {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 10px 0 18px;
+        }
+        .linha-resumo-filtros {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .linha-resumo-filtros .contador-total {
+            margin: 0;
+            flex-shrink: 0;
+        }
+        .linha-resumo-filtros .contador-total span {
+            min-height: 40px;
+            padding: 8px 16px;
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            line-height: 1;
+        }
+        .linha-resumo-filtros .chip-filtro {
+            min-height: 40px;
+            padding: 8px 16px;
+            font-size: 15px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .filtros-secundarios {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 0;
+            overflow: visible;
+            padding-bottom: 0;
+        }
+        .filtros-secundarios .chip-filtro {
+            flex: 1 1 0;
+            min-width: 0;
+            padding: 8px 4px;
+            font-size: 12px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
         input[type="hidden"] { display: none; }
     </style>
 </head>
@@ -355,15 +446,21 @@
         </div>
     </div>
 
-    <div class="contador-total">
-        <span id="textoContador">0 pendentes</span>
-    </div>
+    <div class="barra-topo-filtros">
+        <div class="linha-resumo-filtros">
+            <div class="contador-total">
+                <span id="textoContador">0 pendentes</span>
+            </div>
 
-    <div class="filtros" id="filtros">
-        <div class="chip-filtro ativo" data-filtro="todos" onclick="setFiltro('todos')">Todos</div>
+            <div class="chip-filtro ativo" data-filtro="todos" onclick="setFiltro('todos')">Todos</div>
+        </div>
+
+        <div class="filtros filtros-secundarios" id="filtros">
         <div class="chip-filtro" data-filtro="produtos" onclick="setFiltro('produtos')">🟢 Produtos</div>
         <div class="chip-filtro" data-filtro="peca" onclick="setFiltro('peca')">🟠 Peças</div>
         <div class="chip-filtro" data-filtro="maquina" onclick="setFiltro('maquina')">🟣 Máquinas</div>
+        </div>
+
     </div>
 
     <div id="listaPedidos">
@@ -376,7 +473,10 @@
 
 <!-- Formulário Fixo -->
 <div class="form-fixo">
-    <div class="form-fixo-titulo">Novo Pedido</div>
+    <div class="form-fixo-topo">
+        <div class="form-fixo-titulo">Novo Pedido</div>
+        <div id="formCategoriaAtual" class="form-fixo-categoria vazia">Selecione</div>
+    </div>
     <button id="btnCancelar" onclick="cancelarEdicao()">✕ Cancelar edição</button>
     <input type="hidden" id="idPedido">
 
@@ -401,14 +501,34 @@
     const usuarioLogado = localStorage.getItem('usuarioLogado') || "Desconhecido";
 
     // Categoria selecionada no form
-    let catAtual = 'produtos';
+    let catAtual = '';
+    function atualizarCategoriaTituloForm() {
+        const categoriaEl = document.getElementById('formCategoriaAtual');
+        if (!categoriaEl) return;
+        const rotulos = {
+            produtos: 'Produtos',
+            peca: 'Peças',
+            maquina: 'Máquinas'
+        };
+        categoriaEl.className = `form-fixo-categoria ${catAtual || 'vazia'}`;
+        categoriaEl.textContent = rotulos[catAtual] || 'Selecione';
+    }
     window.selecionarCat = function(val) {
         catAtual = val;
         document.querySelectorAll('.chip-cat').forEach(c => {
             c.className = 'chip-cat';
             if (c.dataset.val === val) c.classList.add('selecionado-' + val);
         });
+        atualizarCategoriaTituloForm();
     };
+
+    function limparSelecaoCategoria() {
+        catAtual = '';
+        document.querySelectorAll('.chip-cat').forEach(c => {
+            c.className = 'chip-cat';
+        });
+        atualizarCategoriaTituloForm();
+    }
 
     // Filtro ativo
     let filtroAtivo = 'todos';
@@ -419,6 +539,18 @@
         });
         aplicarFiltroVisual();
     };
+
+    function ajustarRotulosFiltrosTopo() {
+        const rotulos = {
+            todos: 'Todos',
+            produtos: '🟢 Produtos',
+            peca: '🟠 Peças',
+            maquina: '🟣 Máquinas'
+        };
+        document.querySelectorAll('.chip-filtro').forEach(chip => {
+            chip.textContent = rotulos[chip.dataset.filtro] || chip.textContent;
+        });
+    }
 
     function aplicarFiltroVisual() {
         document.querySelectorAll('.card-pedido').forEach(card => {
@@ -521,6 +653,7 @@
         const id   = document.getElementById('idPedido').value;
         const desc = document.getElementById('descPedido').value.trim();
         if (!desc) { await window.playAlert('Digite o que precisa comprar.'); return; }
+        if (!catAtual) { await window.playAlert('Selecione a categoria do pedido.'); return; }
 
         await dbSalvarPedido({
             descricao:   desc,
@@ -549,7 +682,7 @@
         document.getElementById('btnEnviar').innerText      = 'ENVIAR';
         document.getElementById('btnCancelar').style.display = 'none';
         document.querySelector('.form-fixo-titulo').textContent = 'Novo Pedido';
-        selecionarCat('produtos');
+        limparSelecaoCategoria();
     };
 
     // 5. CONFIRMAR COMPRA
@@ -558,6 +691,9 @@
             await dbExcluirPedido(id);
         }
     };
+
+    ajustarRotulosFiltrosTopo();
+    limparSelecaoCategoria();
 
 </script>
 </body>

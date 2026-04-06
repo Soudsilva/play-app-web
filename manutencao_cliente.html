@@ -12,6 +12,8 @@
         display: flex;
         justify-content: center;
         color: white;
+        -webkit-user-select: none;
+        user-select: none;
     }
     .app {
         width: 100%;
@@ -102,6 +104,8 @@
         box-sizing: border-box;
         font-size: 16px;
         outline: none;
+        -webkit-user-select: text;
+        user-select: text;
     }
     textarea {
         min-height: 120px;
@@ -307,7 +311,6 @@
         </div>
 
         <div id="btnSalvar" class="botao">Enviar Solicitação</div>
-        <div id="btnVoltar" class="botao botao-secundario">Voltar</div>
     </div>
 </div>
 
@@ -445,7 +448,9 @@
                     if (mQtd) { qtd = mQtd[1]; nome = nome.replace(/\s*\(([^)]+)\)$/, '').trim(); }
                     const mPix = nome.match(/\s*\[Pix:\s*([^\]]+)\]$/);
                     if (mPix) { pix = mPix[1]; nome = nome.replace(/\s*\[Pix:\s*([^\]]+)\]$/, '').trim(); }
-                    if (nome) equipsToShow.push(nome + ' ' + qtd + (pix ? ' Pix ' + pix : ''));
+                    if (!nome) return;
+                    const qtdTexto = String(qtd || '1').trim() === '1' ? '' : ` ${qtd}`;
+                    equipsToShow.push(nome + qtdTexto + (pix ? ' Pix ' + pix : ''));
                 });
                 return equipsToShow.join(', ');
             })() }
@@ -697,7 +702,6 @@
     }
 
     document.getElementById('btnSalvar').addEventListener('click', salvarManutencao);
-    document.getElementById('btnVoltar').addEventListener('click', voltarParaClientes);
     document.getElementById('btnHomeTopo').addEventListener('click', () => {
         window.location.href = 'index.html';
     });

@@ -749,6 +749,7 @@
     let clientes = [];
     let manutencoes = [];
     let atendimentos = [];
+    let manutencoesPendentesEnriquecidas = [];
     let termoPesquisa = "";
     let filtroMinhasSelecoes = false;
     let manutencaoPendenteAjuste = "";
@@ -859,20 +860,8 @@
         return "baixa";
     }
 
-    function obterUltimaVisita(clienteId, clienteNumero) {
-        const atendimento = atendimentos
-            .filter(a => {
-                if (a?.cliente?.id && clienteId) return a.cliente.id === clienteId;
-                return a?.cliente?.numero == clienteNumero;
-            })
-            .sort((a, b) => {
-                const tA = Date.parse(a?.ultimaEdicao || a?.data || "") || 0;
-                const tB = Date.parse(b?.ultimaEdicao || b?.data || "") || 0;
-                return tB - tA;
-            })[0] || null;
-
+    function montarUltimaVisita(atendimento) {
         if (!atendimento) return null;
-
         const dataBase = atendimento.ultimaEdicao || atendimento.data || "";
         const data = new Date(dataBase);
         const dataOk = !Number.isNaN(data.getTime());
@@ -888,16 +877,16 @@
         };
     }
 
-    function obterClienteRelacionado(manutencao) {
-        return clientes.find(cliente => {
-            if (manutencao?.clienteId && cliente?.firebaseUrl) {
-                return manutencao.clienteId === cliente.firebaseUrl;
-            }
-            return manutencao?.clienteNumero == cliente?.numero;
-        }) || null;
+    function atualizarIndicesClientes() {
+        clientesPorId = new Map(clientes.filter(c => c?.firebaseUrl).map(c => [c.firebaseUrl, c]));
+        clientesPorNumero = new Map(
+            clientes
+                .filter(c => c?.numero != null && c?.numero !== "")
+                .map(c => [String(c.numero), c])
+        );
     }
 
-    function obterManutencoesPendentesEnriquecidas() {
+    function atualizarIndicesAtendimentos() {
         // Índices para O(1) em vez de O(n) por item
         const clientesPorId = new Map(clientes.filter(c => c.firebaseUrl).map(c => [c.firebaseUrl, c]));
         const clientesPorNumero = new Map(clientes.filter(c => c.numero != null).map(c => [String(c.numero), c]));
@@ -972,12 +961,79 @@
             });
     }
 
+    function obterManutencoesPendentesEnriquecidas() {
+        const clientesPorId = new Map(clientes.filter(c => c?.firebaseUrl).map(c => [c.firebaseUrl, c]));
+        const clientesPorNumero = new Map(
+            clientes
+                .filter(c => c?.numero != null && c?.numero !== "")
+                .map(c => [String(c.numero), c])
+        );
+
+        const ultimoAtendPorId = new Map();
+        const ultimoAtendPorNumero = new Map();
+        atendimentos.forEach(a => {
+            const ts = Date.parse(a?.ultimaEdicao || a?.data || "") || 0;
+            if (a?.cliente?.id) {
+                const atual = ultimoAtendPorId.get(a.cliente.id);
+                const tsAtual = atual ? (Date.parse(atual?.ultimaEdicao || atual?.data || "") || 0) : -1;
+                if (ts > tsAtual) ultimoAtendPorId.set(a.cliente.id, a);
+            }
+            if (a?.cliente?.numero != null) {
+                const num = String(a.cliente.numero);
+                const atual = ultimoAtendPorNumero.get(num);
+                const tsAtual = atual ? (Date.parse(atual?.ultimaEdicao || atual?.data || "") || 0) : -1;
+                if (ts > tsAtual) ultimoAtendPorNumero.set(num, a);
+            }
+        });
+
+        return manutencoes
+            .filter(manutencao => {
+                const status = String(manutencao?.status || "pendente").toLowerCase();
+                return status !== 'concluida' && status !== 'concluido';
+            })
+            .map(manutencao => {
+                const cliente = (manutencao?.clienteId && clientesPorId.get(manutencao.clienteId))
+                    || (manutencao?.clienteNumero != null && clientesPorNumero.get(String(manutencao.clienteNumero)))
+                    || null;
+
+                const atendimento = (manutencao?.clienteId && ultimoAtendPorId.get(manutencao.clienteId))
+                    || (manutencao?.clienteNumero != null && ultimoAtendPorNumero.get(String(manutencao.clienteNumero)))
+                    || null;
+
+                const diasEmAberto = calcularDiasEmAberto(manutencao?.dataRegistro);
+
+                return {
+                    ...manutencao,
+                    clienteNome: cliente?.nome || manutencao?.clienteNome || "Cliente sem nome",
+                    clienteNumero: cliente?.numero || manutencao?.clienteNumero || "",
+                    clienteFirebaseUrl: cliente?.firebaseUrl || "",
+                    clienteCidade: cliente?.cidade || manutencao?.clienteCidade || "Nao informada",
+                    clienteRota: cliente?.rota || manutencao?.clienteRota || "Nao informada",
+                    clienteEndereco: cliente?.endereco || manutencao?.clienteEndereco || "",
+                    solicitante: manutencao?.cadastradoPor || "Nao informado",
+                    diasEmAberto,
+                    classeUrgencia: obterClasseUrgencia(diasEmAberto),
+                    dataFormatada: formatarData(manutencao?.dataRegistro),
+                    ultimaVisita: montarUltimaVisita(atendimento)
+                };
+            })
+            .sort((a, b) => {
+                const dataA = parseData(a?.dataRegistro)?.getTime() || 0;
+                const dataB = parseData(b?.dataRegistro)?.getTime() || 0;
+                return dataA - dataB;
+            });
+    }
+
     function renderizarResumo(lista) {
         const resumoGrid = document.getElementById('resumoGrid');
         const pendentesEl = document.getElementById('resumoPendentes');
 
         resumoGrid.style.display = 'flex';
         pendentesEl.textContent = String(lista.length);
+    }
+
+    function atualizarCacheManutencoesPendentes() {
+        manutencoesPendentesEnriquecidas = obterManutencoesPendentesEnriquecidas();
     }
 
     function obterCardPorId(id) {
@@ -1191,7 +1247,7 @@
     }
 
     function renderizarLista() {
-        const lista = obterManutencoesPendentesEnriquecidas();
+        const lista = manutencoesPendentesEnriquecidas;
         const estado = document.getElementById('estadoLista');
         const container = document.getElementById('listaManutencoes');
 
@@ -1232,7 +1288,7 @@
         }
 
         let listaFiltrada = termoPesquisa
-            ? lista.filter(item => itemBatePesquisa(item, normalizar(termoPesquisa)))
+            ? lista.filter(item => itemBatePesquisa(item, termoPesquisa))
             : lista;
 
         if (filtroMinhasSelecoes) {
@@ -1331,7 +1387,7 @@
 
     let _searchTimeout = null;
     inputPesquisa.addEventListener('input', () => {
-        termoPesquisa = inputPesquisa.value;
+        termoPesquisa = normalizar(inputPesquisa.value);
         btnLimpar.style.display = termoPesquisa ? 'block' : 'none';
         clearTimeout(_searchTimeout);
         _searchTimeout = setTimeout(renderizarLista, 300);
@@ -1347,43 +1403,118 @@
 
     dbEscutarClientes((lista) => {
         clientes = lista;
+        atualizarCacheManutencoesPendentes();
         agendarRenderizacao();
     });
 
+    const TIMEZONE_BRASILIA = 'America/Sao_Paulo';
+    let _limpezaSelecoesEmExecucao = false;
+
+    function obterPartesDataNoFuso(data, timeZone) {
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        }).formatToParts(data).reduce((acc, parte) => {
+            if (parte.type !== 'literal') acc[parte.type] = parte.value;
+            return acc;
+        }, {});
+    }
+
+    function obterOffsetFusoEmMs(data, timeZone) {
+        const partes = obterPartesDataNoFuso(data, timeZone);
+        const utcEquivalente = Date.UTC(
+            Number(partes.year),
+            Number(partes.month) - 1,
+            Number(partes.day),
+            Number(partes.hour),
+            Number(partes.minute),
+            Number(partes.second)
+        );
+        return utcEquivalente - data.getTime();
+    }
+
+    function criarDataNoFuso(timeZone, ano, mes, dia, hora = 0, minuto = 0, segundo = 0) {
+        const tentativaUtc = Date.UTC(ano, mes - 1, dia, hora, minuto, segundo);
+        let offset = obterOffsetFusoEmMs(new Date(tentativaUtc), timeZone);
+        let resultado = tentativaUtc - offset;
+        const offsetFinal = obterOffsetFusoEmMs(new Date(resultado), timeZone);
+        if (offsetFinal !== offset) {
+            resultado = tentativaUtc - offsetFinal;
+        }
+        return resultado;
+    }
+
+    function obterExpiracaoSelecaoBrasilia(dataSelecionado) {
+        const ts = Date.parse(dataSelecionado || '');
+        if (Number.isNaN(ts)) return null;
+
+        const partes = obterPartesDataNoFuso(new Date(ts), TIMEZONE_BRASILIA);
+        const proximoDia = new Date(Date.UTC(
+            Number(partes.year),
+            Number(partes.month) - 1,
+            Number(partes.day) + 1
+        ));
+
+        return criarDataNoFuso(
+            TIMEZONE_BRASILIA,
+            proximoDia.getUTCFullYear(),
+            proximoDia.getUTCMonth() + 1,
+            proximoDia.getUTCDate(),
+            20,
+            0,
+            0
+        );
+    }
+
     async function limparSelecesExpiradas(lista) {
-        const hoje = new Date();
-        const inicioHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()).getTime();
+        if (_limpezaSelecoesEmExecucao) return;
+        _limpezaSelecoesEmExecucao = true;
 
-        const expirados = lista.filter(m => {
-            if (!m.selecionadoPor) return false;
-            if (!m.dataSelecionado) return true; // sem timestamp = registro antigo, desmarcar
-            const ts = Date.parse(m.dataSelecionado);
-            if (Number.isNaN(ts)) return true;
-            const d = new Date(ts);
-            const inicioDiaSel = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-            return Math.floor((inicioHoje - inicioDiaSel) / 86400000) >= 2;
-        });
+        try {
+            const agora = Date.now();
+            const expirados = (Array.isArray(lista) ? lista : []).filter(m => {
+                if (!m?.selecionadoPor) return false;
+                if (!m.dataSelecionado) return true;
+                const expiracao = obterExpiracaoSelecaoBrasilia(m.dataSelecionado);
+                if (!expiracao) return true;
+                return agora >= expiracao;
+            });
 
-        for (const m of expirados) {
-            const atualizado = { ...m };
-            delete atualizado.firebaseUrl;
-            delete atualizado.selecionadoPor;
-            delete atualizado.dataSelecionado;
-            try {
-                await dbSalvarManutencao(atualizado, m.firebaseUrl);
-            } catch (_) {}
+            for (const m of expirados) {
+                const atualizado = { ...m };
+                delete atualizado.firebaseUrl;
+                delete atualizado.selecionadoPor;
+                delete atualizado.dataSelecionado;
+                try {
+                    await dbSalvarManutencao(atualizado, m.firebaseUrl);
+                } catch (_) {}
+            }
+        } finally {
+            _limpezaSelecoesEmExecucao = false;
         }
     }
 
     dbEscutarManutencoes((lista) => {
         manutencoes = lista;
         _manutencoesRecebidas = true;
+        atualizarCacheManutencoesPendentes();
         limparSelecesExpiradas(lista);
         agendarRenderizacao();
     });
 
+    setInterval(() => {
+        limparSelecesExpiradas(manutencoes);
+    }, 15000);
+
     dbEscutarAtendimentos((lista) => {
         atendimentos = lista;
+        atualizarCacheManutencoesPendentes();
         agendarRenderizacao();
     });
 </script>
