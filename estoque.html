@@ -127,10 +127,13 @@
     verificarAutenticacao();
     import { dbEscutarEstoque } from './database.js';
 
-    function formatarValorEquipamento(valor) {
+    function formatarValorEquipamento(valor, categoria) {
         const numero = Number(valor || 0);
         if (!Number.isFinite(numero) || numero <= 0) return '';
-        return numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        if (categoria === 'produtos') {
+            return numero.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        return numero.toLocaleString('pt-BR');
     }
 
     function atualizarVisualFiltros() {
@@ -186,8 +189,8 @@
                 if(item.categoria === "maquina") { classeCor = "bg-maquina"; nomeCategoria = "Máquina"; }
                 if(item.categoria === "peca") { classeCor = "bg-peca"; nomeCategoria = "Peça"; }
                 const valorEquipamento = Number(item.valorEquipamento || 0);
-                const valorHtml = item.categoria === "maquina" && valorEquipamento > 0
-                    ? `<div style="font-size:11px; margin-top:5px; color:#999;">Valor: ${formatarValorEquipamento(valorEquipamento)}</div>`
+                const valorHtml = valorEquipamento > 0
+                    ? `<div style="font-size:11px; margin-top:5px; color:#999;">Valor: ${formatarValorEquipamento(valorEquipamento, item.categoria)}</div>`
                     : '';
 
                 card.innerHTML = `

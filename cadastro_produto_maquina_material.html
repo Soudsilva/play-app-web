@@ -1,35 +1,42 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro de Produto, Máquina e Material</title>
+    <title>Cadastro de Produto, MÃ¡quina e Material</title>
     <style>
         body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; }
-        .app { width:100%; max-width:420px; padding:15px; box-sizing:border-box; min-height: 100vh; }
+        .app { width:100%; max-width:420px; padding:10px 15px 15px; box-sizing:border-box; min-height: 100vh; }
         
-        .topo { display: flex; align-items: flex-start; justify-content: center; margin-bottom: 0; position: relative; width: 100%; min-height: 78px; }
-        .titulo { font-size: 24px; font-weight: bold; text-align: center; line-height: 1.15; max-width: calc(100% - 64px); }
-        .btn-home { background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 50%; cursor: pointer; display: flex; position: absolute; right: 2px; top: 38px; z-index: 2; }
+        .topo { display: flex; align-items: center; justify-content: center; margin-bottom: 2px; position: relative; width: 100%; min-height: 48px; }
+        .titulo { font-size: 22px; font-weight: bold; text-align: center; line-height: 1.05; max-width: calc(100% - 56px); }
+        .btn-home { background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 50%; cursor: pointer; display: flex; position: absolute; right: 0; top: 6px; z-index: 2; }
         .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
 
-        .secao-lista { margin-bottom: 25px; margin-top: -10px; max-height: 400px; overflow-y: auto; padding-right: 5px; border-radius: 8px; }
-        .subtitulo { font-size: 16px; color: #ffeb3b; margin-bottom: 12px; font-weight: bold; text-align: center; text-transform: uppercase; }
+        .secao-lista { margin-bottom: 25px; margin-top: 0; max-height: 430px; overflow-y: auto; padding-right: 5px; border-radius: 8px; }
+        .subtitulo { font-size: 16px; color: #ffeb3b; margin-bottom: 8px; font-weight: bold; text-align: center; text-transform: uppercase; }
         
-        .card-estoque { background: white; color: #333; border-radius: 12px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
-        .info-estoque b { color: #042d86; font-size: 16px; display: block; }
-        .info-estoque div { color: #666; font-size: 13px; font-weight: 500; }
+        .card-estoque { background: white; color: #333; border-radius: 12px; padding: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: stretch; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .info-estoque { min-width: 0; }
+        .linha-topo-estoque { display:flex; align-items:flex-start; justify-content:space-between; gap: 8px; }
+        .titulo-item-estoque { min-width: 0; flex: 1; }
+        .topo-direita-estoque { display:flex; align-items:center; gap: 6px; flex-shrink: 0; }
+        .info-estoque b { color: #042d86; font-size: 20px; display: block; line-height: 1.05; }
+        .qtd-inline { display:inline-flex; align-items:center; justify-content:center; min-width: 40px; padding: 5px 10px; border-radius: 999px; background: #dfe9ff; color: #042d86; font-size: 15px; font-weight: 900; }
+        .rodape-estoque { display:flex; align-items:center; justify-content:space-between; gap: 8px; margin-top: 9px; }
+        .meta-estoque { display:flex; flex-direction:column; align-items:flex-start; gap: 4px; min-width: 0; }
+        .meta-estoque div { color: #666; font-size: 12px; font-weight: 600; line-height: 1.05; }
         
-        .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; color: white; margin-top: 5px;}
+        .badge { display: inline-block; padding: 5px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; color: white; white-space: nowrap; flex-shrink: 0; }
         .bg-maquina { background: #9c27b0; }
         .bg-produtos { background: #4caf50; }
         .bg-peca { background: #ff9800; }
 
-        .qtd-destaque { font-size: 20px; font-weight: bold; color: #042d86; text-align: center; background: #f0f0f0; padding: 8px 15px; border-radius: 8px; min-width: 40px; }
-
-        .acoes-card { display: flex; flex-direction: column; gap: 5px; margin-left: 12px; }
-        .btn-editar-card { background: #e3f2fd; color: #1976d2; padding: 6px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; text-align: center; border: 1px solid #1976d2; }
-        .btn-excluir-card { background: #ffebee; color: #c62828; padding: 6px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; cursor: pointer; text-align: center; border: 1px solid #c62828; }
+        .lado-card { display:flex; align-items:center; flex-shrink: 0; }
+        .acoes-card { display: flex; gap: 4px; }
+        .btn-editar-card, .btn-excluir-card { width: 28px; height: 28px; display:flex; align-items:center; justify-content:center; border-radius: 7px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
+        .btn-editar-card { background: #e3f2fd; color: #1976d2; border: 1px solid #1976d2; }
+        .btn-excluir-card { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
 
         .divisor { border-top: 1px solid rgba(255,255,255,0.3); margin: 25px 0; position: relative; text-align: center; }
         .divisor span { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #042d86; padding: 0 10px; font-size: 11px; color: #ffeb3b; }
@@ -40,14 +47,22 @@
         select option { background: #042d86; color: white; }
         .btn-salvar { background:#4caf50; padding:14px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-top: 10px; border: none; color: white; width: 100%; font-size: 15px; transition: 0.3s; }
 
-        /* Personalização do Campo de Busca */
+        /* PersonalizaÃ§Ã£o do Campo de Busca */
         #campoPesquisa {
-            background: #fff; color: #333; width: 75%; display: block; margin: 0 auto 15px auto;
-            padding: 8px;
+            background: #fff; color: #333; width: 100%; display: block; margin: 0 0 12px;
+            padding: 9px 12px; font-size: 14px;
         }
         #campoPesquisa::placeholder {
             color: #888;
         }
+        .barra-topo-filtros { display:flex; flex-direction:column; gap:8px; margin:0 0 14px; position:sticky; top:0; z-index:5; background:linear-gradient(180deg, rgba(4,45,134,0.98), rgba(4,45,134,0.88)); padding-bottom:8px; }
+        .filtros-secundarios { display:flex; gap:6px; }
+        .chip-filtro { flex:1 1 0; min-width:0; padding:8px 4px; border-radius:999px; border:1px solid rgba(255,255,255,0.22); background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.85); font-size:12px; font-weight:bold; text-align:center; white-space:nowrap; cursor:pointer; transition:0.15s ease; }
+        .chip-filtro.ativo { color:#fff; }
+        .chip-filtro[data-filtro="todos"].ativo { border-color: rgba(255,235,59,0.52); background: rgba(255,235,59,0.18); color: #fff2a8; }
+        .chip-filtro[data-filtro="produtos"].ativo { border-color: #4caf50; background: rgba(76,175,80,0.2); color: #b9f6ca; }
+        .chip-filtro[data-filtro="peca"].ativo { border-color: #ff9800; background: rgba(255,152,0,0.2); color: #ffe0b2; }
+        .chip-filtro[data-filtro="maquina"].ativo { border-color: #9c27b0; background: rgba(156,39,176,0.2); color: #e1bee7; }
         .linha-categoria-valor { display: flex; gap: 10px; align-items: flex-end; }
         .linha-categoria-valor > div { flex: 1; }
         #wrapValorEquipamento { display: none; }
@@ -57,7 +72,7 @@
 
 <div class="app">
     <div class="topo">
-        <div class="titulo">+ Produto, Máquina e Material</div>
+        <div class="titulo">Cadastrar Itens</div>
         <div class="btn-home" onclick="window.location.href='index.html'">
             <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
         </div>
@@ -65,7 +80,15 @@
 
     <div class="secao-lista">
         <div class="subtitulo">Itens Registrados</div>
-        <input type="text" id="campoPesquisa" placeholder="🔍 Buscar item...">
+        <div class="barra-topo-filtros">
+        <input type="text" id="campoPesquisa" placeholder="Buscar item...">
+            <div class="filtros-secundarios">
+                <div class="chip-filtro ativo" data-filtro="todos" onclick="setFiltro('todos')">Todos</div>
+                <div class="chip-filtro" data-filtro="produtos" onclick="setFiltro('produtos')">Produtos</div>
+                <div class="chip-filtro" data-filtro="peca" onclick="setFiltro('peca')">Peças</div>
+                <div class="chip-filtro" data-filtro="maquina" onclick="setFiltro('maquina')">Máquinas</div>
+            </div>
+        </div>
         <div id="containerEstoque">
             <p style='text-align:center; opacity:0.5; font-size:12px;'>Carregando itens...</p>
         </div>
@@ -91,8 +114,8 @@
                 </select>
             </div>
             <div id="wrapValorEquipamento">
-                <label class="label-focada">Valor do Equip.</label>
-                <input type="number" id="valorEquipamento" placeholder="0,00" min="0" step="0.01" inputmode="decimal">
+                <label class="label-focada" id="labelValorEquipamento">Valor</label>
+                <input type="text" id="valorEquipamento" placeholder="0" maxlength="10" inputmode="numeric">
             </div>
         </div>
 
@@ -102,13 +125,13 @@
                 <input type="number" id="qtdItem" placeholder="0" required>
             </div>
             <div style="flex: 1;">
-                <label class="label-focada">Estoque Mínimo</label>
+                <label class="label-focada">Estoque MÃ­nimo</label>
                 <input type="number" id="minimoItem" placeholder="Avisar com...">
             </div>
         </div>
 
         <button type="submit" class="btn-salvar" id="btnSalvarEstoque">+ Adicionar ao Estoque</button>
-        <button type="button" id="btnCancelarEdicao" style="display:none; background:transparent; color:white; border:none; font-size:12px; cursor:pointer; margin-top:5px;" onclick="cancelarEdicao()">Cancelar Edição</button>
+        <button type="button" id="btnCancelarEdicao" style="display:none; background:transparent; color:white; border:none; font-size:12px; cursor:pointer; margin-top:5px;" onclick="cancelarEdicao()">Cancelar EdiÃ§Ã£o</button>
     </form>
 </div>
 
@@ -118,31 +141,115 @@
     verificarAutenticacao();
     import { dbEscutarEstoque, dbSalvarItemEstoque, dbExcluirItemEstoque } from './database.js';
 
-    function formatarValorEquipamento(valor) {
-        const numero = Number(valor || 0);
-        if (!Number.isFinite(numero) || numero <= 0) return '';
-        return numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    function limparValorMilhar(valor) {
+        return String(valor || '').replace(/\D/g, '');
+    }
+
+    function limparValorProduto(valor) {
+        let texto = String(valor || '').replace(/[^\d,]/g, '');
+        const partes = texto.split(',');
+        if (partes.length > 2) {
+            texto = `${partes[0]},${partes.slice(1).join('')}`;
+        }
+        if (texto.includes(',')) {
+            const [inteira, decimal] = texto.split(',');
+            return `${inteira.slice(0, 6)},${(decimal || '').slice(0, 2)}`;
+        }
+        return texto.slice(0, 6);
+    }
+
+    function formatarValorItem(valor, categoria) {
+        if (categoria === 'produtos') {
+            if (valor === null || valor === undefined || valor === '') return '';
+            const numero = typeof valor === 'number'
+                ? valor
+                : Number(String(valor).trim().replace(/\./g, '').replace(',', '.'));
+            if (!Number.isFinite(numero) || numero <= 0) return '';
+            return numero.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        const limpo = limparValorMilhar(valor);
+        if (!limpo) return '';
+        return Number(limpo).toLocaleString('pt-BR');
+    }
+
+    function obterValorNumerico(categoria, valor) {
+        if (categoria === 'produtos') {
+            const texto = String(valor || '').trim();
+            if (!texto) return 0;
+            const numero = Number(texto.replace(/\./g, '').replace(',', '.'));
+            return Number.isFinite(numero) ? numero : 0;
+        }
+        const limpo = limparValorMilhar(valor);
+        return limpo ? Number(limpo) : 0;
     }
 
     function atualizarCampoValorEquipamento() {
         const categoria = document.getElementById('categoriaItem')?.value || '';
         const wrap = document.getElementById('wrapValorEquipamento');
         const input = document.getElementById('valorEquipamento');
-        if (!wrap || !input) return;
+        const label = document.getElementById('labelValorEquipamento');
+        if (!wrap || !input || !label) return;
 
-        const visivel = categoria === 'maquina';
-        wrap.style.display = visivel ? 'block' : 'none';
-        if (!visivel) input.value = '';
+        wrap.style.display = 'block';
+        if (categoria === 'maquina') {
+            label.textContent = 'Valor da Máquina';
+            input.placeholder = '1.000';
+        } else if (categoria === 'peca') {
+            label.textContent = 'Valor da Peça';
+            input.placeholder = '1.000';
+        } else {
+            label.textContent = 'Valor do Produto';
+            input.placeholder = '0,35';
+        }
+        if (input.value) {
+            input.value = formatarValorItem(input.value, categoria);
+        }
     }
 
-    document.getElementById('campoPesquisa').addEventListener('input', function(e) {
-        const termo = e.target.value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    function conectarCampoValor() {
+        const input = document.getElementById('valorEquipamento');
+        if (!input) return;
+        input.addEventListener('focus', () => {
+            const categoria = document.getElementById('categoriaItem')?.value || '';
+            input.value = categoria === 'produtos'
+                ? limparValorProduto(input.value)
+                : limparValorMilhar(input.value);
+        });
+        input.addEventListener('input', () => {
+            const categoria = document.getElementById('categoriaItem')?.value || '';
+            input.value = categoria === 'produtos'
+                ? limparValorProduto(input.value)
+                : formatarValorItem(input.value, categoria);
+        });
+        input.addEventListener('blur', () => {
+            const categoria = document.getElementById('categoriaItem')?.value || '';
+            input.value = formatarValorItem(input.value, categoria);
+        });
+    }
+
+    let filtroAtivo = 'todos';
+
+    window.setFiltro = function(filtro) {
+        filtroAtivo = filtro;
+        document.querySelectorAll('.chip-filtro').forEach(chip => {
+            chip.classList.toggle('ativo', chip.dataset.filtro === filtro);
+        });
+        aplicarFiltros();
+    };
+
+    function aplicarFiltros() {
+        const termo = document.getElementById('campoPesquisa').value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         const cards = document.querySelectorAll('.card-estoque');
         cards.forEach(card => {
             const nome = card.querySelector('.info-estoque b').innerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-            card.style.display = nome.includes(termo) ? 'flex' : 'none';
+            const categoria = card.dataset.categoria || '';
+            const correspondePesquisa = nome.includes(termo);
+            const correspondeFiltro = filtroAtivo === 'todos' || categoria === filtroAtivo;
+            card.style.display = (correspondePesquisa && correspondeFiltro) ? 'flex' : 'none';
         });
-    });
+    }
+
+    document.getElementById('campoPesquisa').addEventListener('input', aplicarFiltros);
 
     function carregarEstoque() {
         const container = document.getElementById('containerEstoque');
@@ -152,17 +259,19 @@
             lista.forEach((item) => {
                 const card = document.createElement('div');
                 card.className = 'card-estoque';
+                card.dataset.categoria = item.categoria;
                 let classeCor = "bg-produtos", nomeCategoria = "Produtos";
                 if(item.categoria === "maquina") { classeCor = "bg-maquina"; nomeCategoria = "Máquina"; }
                 if(item.categoria === "peca") { classeCor = "bg-peca"; nomeCategoria = "Peça"; }
                 const valorEquipamento = Number(item.valorEquipamento || 0);
-                const valorHtml = item.categoria === "maquina" && valorEquipamento > 0
-                    ? `<div style="font-size:11px; margin-top:5px; color:#999;">Valor: ${formatarValorEquipamento(valorEquipamento)}</div>`
+                const valorHtml = valorEquipamento > 0
+                    ? `<div>Valor: ${formatarValorItem(valorEquipamento, item.categoria)}</div>`
                     : '';
-                card.innerHTML = `<div class="info-estoque" style="flex:1;"><b>${item.nome}</b><span class="badge ${classeCor}">${nomeCategoria}</span><div style="font-size:11px; margin-top:5px; color:#999;">Mínimo ideal: ${item.minimo || 0}</div>${valorHtml}</div><div class="qtd-destaque">${item.quantidade}</div><div class="acoes-card"><div class="btn-editar-card" onclick="prepararEdicao('${item.firebaseUrl}', '${item.nome}', '${item.categoria}', ${item.quantidade}, ${item.minimo}, ${valorEquipamento || 0})">EDITAR</div><div class="btn-excluir-card" onclick="excluirItem('${item.firebaseUrl}')">EXCLUIR</div></div>`;
+                card.innerHTML = `<div class="info-estoque" style="flex:1;"><div class="linha-topo-estoque"><div class="titulo-item-estoque"><b>${item.nome}</b></div><div class="topo-direita-estoque"><span class="qtd-inline">${item.quantidade}</span><span class="badge ${classeCor}">${nomeCategoria}</span></div></div><div class="rodape-estoque"><div class="meta-estoque"><div>Mínimo: ${item.minimo || 0}</div>${valorHtml}</div><div class="lado-card"><div class="acoes-card"><div class="btn-editar-card" title="Editar" onclick="prepararEdicao('${item.firebaseUrl}', '${item.nome}', '${item.categoria}', ${item.quantidade}, ${item.minimo}, ${valorEquipamento || 0})">✎</div><div class="btn-excluir-card" title="Excluir" onclick="excluirItem('${item.firebaseUrl}')">🗑</div></div></div></div></div>`;
                 container.appendChild(card);
             });
             if(document.getElementById('campoPesquisa').value) { document.getElementById('campoPesquisa').dispatchEvent(new Event('input')); }
+            aplicarFiltros();
         });
     }
 
@@ -170,12 +279,12 @@
         e.preventDefault();
         const id = document.getElementById('idItem').value;
         const categoria = document.getElementById('categoriaItem').value;
-        const valorEquipamento = Number(document.getElementById('valorEquipamento').value || 0);
-        if (categoria === 'maquina' && valorEquipamento <= 0) {
+        const valorEquipamento = obterValorNumerico(categoria, document.getElementById('valorEquipamento').value || 0);
+        if (valorEquipamento <= 0) {
             if (window.playAlert) {
-                await window.playAlert('Informe o valor do equipamento.');
+                await window.playAlert('Informe o valor do item.');
             } else {
-                alert('Informe o valor do equipamento.');
+                alert('Informe o valor do item.');
             }
             document.getElementById('valorEquipamento').focus();
             return;
@@ -185,14 +294,14 @@
             categoria,
             quantidade: parseInt(document.getElementById('qtdItem').value),
             minimo: parseInt(document.getElementById('minimoItem').value) || 0,
-            valorEquipamento: categoria === 'maquina' ? valorEquipamento : 0,
+            valorEquipamento,
             dataAtualizacao: new Date().toISOString()
         };
         try { await dbSalvarItemEstoque(dados, id); cancelarEdicao(); } catch (err) { alert("Erro ao salvar."); }
     };
 
     window.prepararEdicao = function(id, nome, categoria, qtd, minimo, valorEquipamento = 0) {
-        document.getElementById('idItem').value = id; document.getElementById('nomeItem').value = nome; document.getElementById('categoriaItem').value = categoria; document.getElementById('qtdItem').value = qtd; document.getElementById('minimoItem').value = minimo; document.getElementById('valorEquipamento').value = valorEquipamento || '';
+        document.getElementById('idItem').value = id; document.getElementById('nomeItem').value = nome; document.getElementById('categoriaItem').value = categoria; document.getElementById('qtdItem').value = qtd; document.getElementById('minimoItem').value = minimo; document.getElementById('valorEquipamento').value = formatarValorItem(valorEquipamento || '', categoria);
         atualizarCampoValorEquipamento();
         const btn = document.getElementById('btnSalvarEstoque'); btn.innerText = "Atualizar Item"; btn.style.background = "#ff9800"; document.getElementById('btnCancelarEdicao').style.display = "block"; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     };
@@ -203,6 +312,7 @@
     };
     window.excluirItem = async function(id) { if(await window.playConfirm("Deseja realmente excluir este item?")) { await dbExcluirItemEstoque(id); } };
     document.getElementById('categoriaItem').addEventListener('change', atualizarCampoValorEquipamento);
+    conectarCampoValor();
     atualizarCampoValorEquipamento();
     carregarEstoque();
 </script>

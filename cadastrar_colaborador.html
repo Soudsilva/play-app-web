@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -46,10 +46,32 @@
         .divisor { border-top: 1px solid rgba(255,255,255,0.3); margin: 25px 0; position: relative; text-align: center; }
         .divisor span { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #042d86; padding: 0 10px; font-size: 11px; color: #ffeb3b; }
         .form-container { display: flex; flex-direction: column; gap: 10px; padding-bottom: 40px; }
-        .label-focada { font-size: 12px; color: #ffeb3b; font-weight: bold; margin-bottom: 4px; display: block; }
+        .linha-campos { display:flex; gap:10px; align-items:flex-end; }
+        .linha-campos .campo { min-width: 0; display: flex; flex-direction: column; }
+        .campo-nome { flex: 2.3; }
+        .campo-cargo { flex: 1; max-width: 120px; }
+        .campo-senha { flex: 1; max-width: 120px; }
+        .campo-perfil { flex: 1.4; }
+        .campo-nivel { flex: 0.8; max-width: 78px; }
+        .campo-curto { flex: 1; min-width: 0; }
+        .label-focada { font-size: 12px; color: #ffeb3b; font-weight: bold; margin-bottom: 4px; display: block; width: 100%; box-sizing: border-box; text-align: center; }
         input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255,255,255,0.05); color: white; box-sizing:border-box; font-size: 14px; outline: none; }
         input::placeholder { color: rgba(255,255,255,0.4); }
         select option { background: #042d86; color: white; }
+        .bloco-remuneracao { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; padding: 12px; }
+        .titulo-remuneracao { font-size: 16px; margin-bottom: 6px !important; }
+        .remuneracao-grid { display: grid; gap: 10px; }
+        .linha-remuneracao-topo { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: end; }
+        .campo-remuneracao { display: flex; flex-direction: column; }
+        .campo-remuneracao .label-focada { font-size: 14px; text-align: center; }
+        .campo-remuneracao input { font-size: 16px; }
+        .linha-remuneracao { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .linha-remuneracao .label-focada { margin: 0; min-width: 72px; }
+        .linha-remuneracao input { flex: 1; }
+        .checks-remuneracao { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .check-remuneracao { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); }
+        .check-remuneracao input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: #4caf50; flex-shrink: 0; }
+        .check-remuneracao span { font-size: 13px; color: white; font-weight: bold; }
         .btn-salvar { background:#4caf50; padding:14px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-top: 10px; border: none; color: white; width: 100%; font-size: 15px; transition: 0.3s; }
     </style>
 </head>
@@ -79,7 +101,7 @@
 
         <div style="display: flex; gap: 10px;">
             <div style="flex: 2;"><label class="label-focada">Cargo</label><input type="text" id="cargoColaborador" placeholder="Ex: Técnico"></div>
-            <div style="flex: 1;"><label class="label-focada">Comissão %</label><input type="text" id="comissaoColaborador" placeholder="0%" inputmode="numeric"></div>
+            <div style="flex: 1;"><label class="label-focada">Comissão</label><input type="text" id="comissaoColaborador" placeholder="0%" inputmode="numeric"></div>
         </div>
 
         <div style="display: flex; gap: 10px;">
@@ -97,6 +119,31 @@
                 </select>
             </div>
         </div>
+        <div class="bloco-remuneracao">
+            <label class="label-focada titulo-remuneracao">Remuneração Complementar</label>
+            <div class="remuneracao-grid">
+                <label class="check-remuneracao">
+                <div class="linha-remuneracao">
+                    <label class="label-focada">Comissão</label>
+                    <input type="text" id="comissaoColaboradorCard" class="comissao-no-card" placeholder="0%" inputmode="numeric">
+                </div>
+                    <input type="checkbox" id="producaoProdutosColaborador">
+                    <span>Produção de Produtos</span>
+                </label>
+                <label class="check-remuneracao">
+                    <input type="checkbox" id="producaoEquipamentosColaborador">
+                    <span>Produção de Equipamentos</span>
+                </label>
+                <label class="check-remuneracao">
+                    <input type="checkbox" id="producaoPecasColaborador">
+                    <span>Produção de Peças</span>
+                </label>
+                <div>
+                    <label class="label-focada">Fixo</label>
+                    <input type="text" id="fixoColaborador" placeholder="Valor combinado" inputmode="decimal">
+                </div>
+            </div>
+        </div>
         <button type="submit" class="btn-salvar" id="btnSalvar">+ Salvar Dados</button>
     </form>
 </div>
@@ -108,6 +155,242 @@
   import { dbEscutarColaboradores, dbSalvarColaborador, dbExcluirColaborador, dbAtualizarOrdemColaborador } from './database.js';
 
   let listaColaboradores = [];
+
+  function formatarResumoRepresentante(valor) {
+      if (valor === true) return 'Representante';
+      const texto = limparValorPercentual(valor).replace(',', '.');
+      const numero = Number(texto);
+      if (!texto || Number.isNaN(numero) || numero <= 0) return '';
+      return `Repres.: ${String(valor).trim()}`;
+  }
+
+  function temValorMonetario(valor) {
+      const limpo = limparValorInteiro(valor);
+      return !!limpo && Number(limpo) > 0;
+  }
+
+  function formatarResumoComissao(valor) {
+      const texto = limparValorPercentual(valor).replace(',', '.');
+      const numero = Number(texto);
+      if (!texto || Number.isNaN(numero) || numero <= 0) return '';
+      return `Comissão: ${String(valor).trim()}%`;
+  }
+
+  function limparValorPercentual(valor) {
+      return String(valor || '').replace(/%/g, '').replace(/\s+/g, '').trim();
+  }
+
+  function limparValorInteiro(valor) {
+      return String(valor || '').replace(/\D/g, '');
+  }
+
+  function formatarMilhar(valor) {
+      const limpo = limparValorInteiro(valor);
+      if (!limpo) return '';
+      return Number(limpo).toLocaleString('pt-BR');
+  }
+
+  function conectarCampoPercentual(id) {
+      const input = document.getElementById(id);
+      if (!input) return;
+      input.addEventListener('focus', () => {
+          input.value = limparValorPercentual(input.value);
+      });
+      input.addEventListener('input', () => {
+          let valor = limparValorPercentual(input.value).replace(/[^0-9,]/g, '');
+          const partes = valor.split(',');
+          if (partes.length > 2) {
+              valor = `${partes[0]},${partes.slice(1).join('')}`;
+          }
+          if (valor.includes(',')) {
+              const [inteira, decimal] = valor.split(',');
+              valor = `${inteira.slice(0, 2)},${(decimal || '').slice(0, 1)}`;
+          } else {
+              valor = valor.slice(0, 2);
+          }
+          input.value = valor;
+      });
+      input.addEventListener('blur', () => {
+          const limpo = limparValorPercentual(input.value);
+          input.value = limpo ? `${limpo}%` : '';
+      });
+  }
+
+  function conectarCampoValor(id) {
+      const input = document.getElementById(id);
+      if (!input) return;
+      input.addEventListener('focus', () => {
+          input.value = limparValorInteiro(input.value);
+      });
+      input.addEventListener('input', () => {
+          input.value = formatarMilhar(input.value);
+      });
+      input.addEventListener('blur', () => {
+          input.value = formatarMilhar(input.value);
+      });
+  }
+
+  function configurarBlocoRemuneracao() {
+      const form = document.getElementById('formColaborador');
+      if (!form) return;
+
+      form.innerHTML = `
+        <input type="hidden" id="idEdicao" value="">
+
+        <div class="linha-campos">
+            <div class="campo campo-nome">
+                <label class="label-focada">Nome do Colaborador</label>
+                <input type="text" id="nomeColaborador" placeholder="Nome Completo" maxlength="20" required>
+            </div>
+            <div class="campo campo-cargo">
+                <label class="label-focada">Cargo</label>
+                <input type="text" id="cargoColaborador" placeholder="Cargo" maxlength="10">
+            </div>
+        </div>
+
+        <div class="linha-campos">
+            <div class="campo campo-senha">
+                <label class="label-focada">Senha Global</label>
+                <input type="text" id="senhaColaborador" placeholder="1234A" maxlength="5" autocomplete="off" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);">
+            </div>
+            <div class="campo campo-perfil">
+                <label class="label-focada">Perfil</label>
+                <select id="nivelAcesso">
+                    <option value="gestao">Gestão</option>
+                    <option value="atendimento">Atendimento</option>
+                    <option value="estoque">Estoque</option>
+                </select>
+            </div>
+            <div class="campo campo-nivel">
+                <label class="label-focada">Nível</label>
+                <select id="nivelNumero">
+                    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="bloco-remuneracao">
+            <label class="label-focada titulo-remuneracao">Remuneração</label>
+            <div class="remuneracao-grid">
+                <div class="linha-remuneracao-topo">
+                    <div class="campo campo-curto campo-remuneracao">
+                        <label class="label-focada">Comissão</label>
+                        <input type="text" id="comissaoColaborador" placeholder="0%" maxlength="5" inputmode="decimal">
+                    </div>
+                    <div class="campo campo-curto campo-remuneracao">
+                        <label class="label-focada">Repres.</label>
+                        <input type="text" id="representanteComissaoColaborador" placeholder="5%" maxlength="5" inputmode="decimal">
+                    </div>
+                    <div class="campo campo-curto campo-remuneracao">
+                        <label class="label-focada">Fixo</label>
+                        <input type="text" id="fixoColaborador" placeholder="Valor" maxlength="5" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5);">
+                    </div>
+                    <div class="campo campo-curto campo-remuneracao">
+                        <label class="label-focada">Bônus Fixo</label>
+                        <input type="text" id="bonusFixoColaborador" placeholder="Valor" maxlength="5" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5);">
+                    </div>
+                </div>
+                <div class="checks-remuneracao">
+                    <label class="check-remuneracao">
+                        <input type="checkbox" id="producaoProdutosColaborador">
+                        <span>Produção de Produtos</span>
+                    </label>
+                    <label class="check-remuneracao">
+                        <input type="checkbox" id="producaoEquipamentosColaborador">
+                        <span>Produção de Equipamentos</span>
+                    </label>
+                    <label class="check-remuneracao">
+                        <input type="checkbox" id="producaoPecasColaborador">
+                        <span>Produção de Peças</span>
+                    </label>
+                    <label class="check-remuneracao">
+                        <input type="checkbox" id="prestacaoServicoColaborador">
+                        <span>Prestação de Serviço</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn-salvar" id="btnSalvar">+ Salvar Dados</button>
+      `;
+      conectarCampoPercentual('comissaoColaborador');
+      conectarCampoPercentual('representanteComissaoColaborador');
+      conectarCampoValor('fixoColaborador');
+      conectarCampoValor('bonusFixoColaborador');
+      return;
+
+      const bloco = document.querySelector('.bloco-remuneracao');
+      if (!bloco) return;
+
+      const titulo = bloco.querySelector('.label-focada');
+      if (titulo) titulo.textContent = 'Remuneração';
+
+      const campoComissaoTopo = document.getElementById('comissaoColaborador');
+      const grupoComissaoTopo = campoComissaoTopo?.closest('div');
+      if (grupoComissaoTopo) grupoComissaoTopo.style.display = 'none';
+
+      const grid = bloco.querySelector('.remuneracao-grid');
+      let campoComissaoCard = document.getElementById('comissaoColaboradorCard');
+      if (!campoComissaoCard && grid) {
+          const linhaComissao = document.createElement('div');
+          linhaComissao.className = 'linha-remuneracao';
+          linhaComissao.innerHTML = `
+              <label class="label-focada">Comissão</label>
+              <input type="text" id="comissaoColaboradorCard" class="comissao-no-card" placeholder="0%" inputmode="numeric">
+          `;
+          grid.prepend(linhaComissao);
+          campoComissaoCard = linhaComissao.querySelector('#comissaoColaboradorCard');
+      } else if (campoComissaoCard && grid && !campoComissaoCard.closest('.linha-remuneracao')) {
+          const linhaComissao = document.createElement('div');
+          linhaComissao.className = 'linha-remuneracao';
+          const label = document.createElement('label');
+          label.className = 'label-focada';
+          label.textContent = 'Comissão';
+          campoComissaoCard.parentElement?.removeChild(campoComissaoCard);
+          linhaComissao.appendChild(label);
+          linhaComissao.appendChild(campoComissaoCard);
+          grid.prepend(linhaComissao);
+      }
+
+      const fixo = document.getElementById('fixoColaborador');
+      if (fixo?.parentElement) {
+          fixo.parentElement.classList.add('linha-remuneracao');
+      }
+
+      const opcoesExtras = [
+          { id: 'prestacaoServicoColaborador', label: 'Prestação de Serviço' }
+      ];
+      opcoesExtras.forEach(({ id, label }) => {
+          if (!grid || document.getElementById(id)) return;
+          const linha = document.createElement('label');
+          linha.className = 'check-remuneracao';
+          linha.innerHTML = `
+              <input type="checkbox" id="${id}">
+              <span>${label}</span>
+          `;
+          const linhaFixo = fixo?.closest('.linha-remuneracao') || fixo?.parentElement || null;
+          if (linhaFixo) grid.insertBefore(linha, linhaFixo);
+          else grid.appendChild(linha);
+      });
+
+      if (grid && !document.getElementById('representanteComissaoColaborador')) {
+          const linhaRepresentante = document.createElement('div');
+          linhaRepresentante.className = 'linha-remuneracao';
+          linhaRepresentante.innerHTML = `
+              <label class="label-focada">Representante</label>
+              <input type="text" id="representanteComissaoColaborador" placeholder="5%" inputmode="numeric">
+          `;
+          const linhaFixo = fixo?.closest('.linha-remuneracao') || fixo?.parentElement || null;
+          if (linhaFixo) grid.insertBefore(linhaRepresentante, linhaFixo);
+          else grid.appendChild(linhaRepresentante);
+      }
+
+      if (campoComissaoCard && campoComissaoTopo) {
+          campoComissaoCard.value = campoComissaoTopo.value || '';
+          campoComissaoCard.addEventListener('input', () => {
+              campoComissaoTopo.value = campoComissaoCard.value;
+          });
+      }
+  }
 
   // CARREGAR LISTA
   function carregarGaleria() {
@@ -132,7 +415,16 @@
                   <div class="info-colab" style="flex:1;">
                       <b>${c.nome}</b>
                       <div>${c.cargo || 'Geral'} | ${nivelExibir}</div>
-                      <div style="font-size:11px; color:#999;">Comissão: ${c.comissao || 0}%</div>
+                      <div style="font-size:11px; color:#999;">${[
+                          c.producaoProdutos ? 'Prod. Produtos' : '',
+                          c.producaoEquipamentos ? 'Prod. Equip.' : '',
+                          c.prestacaoServico ? 'Prest. Serviço' : '',
+                          formatarResumoComissao(c.comissao),
+                          formatarResumoRepresentante(c.representanteComissao),
+                          c.producaoPecas ? 'Prod. Peças' : '',
+                          temValorMonetario(c.fixo) ? `Fixo: ${formatarMilhar(c.fixo)}` : '',
+                          temValorMonetario(c.bonusFixo) ? `Bônus: ${formatarMilhar(c.bonusFixo)}` : ''
+                      ].filter(Boolean).join(' | ')}</div>
                   </div>
                   <div class="acoes-card">
                       <div class="btn-editar-card" id="edit-${c.firebaseUrl}">Editar</div>
@@ -175,8 +467,18 @@
       document.getElementById('idEdicao').value = c.firebaseUrl;
       document.getElementById('nomeColaborador').value = c.nome;
       document.getElementById('cargoColaborador').value = c.cargo || "";
-      document.getElementById('comissaoColaborador').value = c.comissao || "";
+      document.getElementById('comissaoColaborador').value = c.comissao ? `${limparValorPercentual(c.comissao)}%` : "";
       document.getElementById('senhaColaborador').value = c.senha || "";
+      document.getElementById('producaoProdutosColaborador').checked = !!c.producaoProdutos;
+      document.getElementById('producaoEquipamentosColaborador').checked = !!c.producaoEquipamentos;
+      document.getElementById('producaoPecasColaborador').checked = !!c.producaoPecas;
+      document.getElementById('prestacaoServicoColaborador').checked = !!c.prestacaoServico;
+      document.getElementById('representanteComissaoColaborador').value = c.representanteComissao ? `${limparValorPercentual(c.representanteComissao)}%` : '';
+      document.getElementById('fixoColaborador').value = formatarMilhar(c.fixo || "");
+      document.getElementById('bonusFixoColaborador').value = formatarMilhar(c.bonusFixo || "");
+      const partesNivel = String(c.nivel_completo || 'gestao_1').split('_');
+      document.getElementById('nivelAcesso').value = partesNivel[0] || 'gestao';
+      document.getElementById('nivelNumero').value = partesNivel[1] || '1';
       document.getElementById('btnSalvar').innerText = "Atualizar na Nuvem";
       document.getElementById('btnSalvar').style.background = "#ff9800";
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -189,7 +491,14 @@
       const dados = {
           nome: document.getElementById('nomeColaborador').value,
           cargo: document.getElementById('cargoColaborador').value,
-          comissao: document.getElementById('comissaoColaborador').value,
+          comissao: limparValorPercentual(document.getElementById('comissaoColaborador').value),
+          producaoProdutos: document.getElementById('producaoProdutosColaborador').checked,
+          producaoEquipamentos: document.getElementById('producaoEquipamentosColaborador').checked,
+          producaoPecas: document.getElementById('producaoPecasColaborador').checked,
+          prestacaoServico: document.getElementById('prestacaoServicoColaborador').checked,
+          representanteComissao: limparValorPercentual(document.getElementById('representanteComissaoColaborador').value),
+          fixo: limparValorInteiro(document.getElementById('fixoColaborador').value),
+          bonusFixo: limparValorInteiro(document.getElementById('bonusFixoColaborador').value),
           senha: document.getElementById('senhaColaborador').value,
           nivel_completo: document.getElementById('nivelAcesso').value + "_" + document.getElementById('nivelNumero').value,
           dataAtualizacao: new Date().toISOString()
@@ -252,11 +561,14 @@
           document.getElementById('idEdicao').value = "";
           document.getElementById('btnSalvar').innerText = "+ Salvar Dados";
           document.getElementById('btnSalvar').style.background = "#4caf50";
+          document.getElementById('nivelAcesso').value = "gestao";
+          document.getElementById('nivelNumero').value = "1";
       } catch (err) {
           console.error("Erro:", err);
       }
   };
 
+  configurarBlocoRemuneracao();
   carregarGaleria();
 </script>
 </body>
