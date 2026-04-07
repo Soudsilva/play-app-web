@@ -191,6 +191,28 @@
             color: #7eb3ff;
             white-space: nowrap;
         }
+        .pix-badge {
+            font-size: 13px;
+            font-weight: bold;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .pix-badge-instalado {
+            background: #1a4730;
+            color: #4ade80;
+            border: 1.5px solid #4ade80;
+        }
+        .pix-badge-retirado {
+            background: #4a1f0a;
+            color: #fb923c;
+            border: 1.5px solid #fb923c;
+        }
+        .pix-numero-instalado { color: #4ade80; }
         .pix-numero-retirado { color: #f87171; }
         .pix-status-badge {
             display: inline-flex;
@@ -512,6 +534,46 @@
             transition: filter 0.15s;
         }
         .btn-confirmar-pix:active { filter: brightness(0.85); transform: translateY(1px); }
+
+        /* ── RETIRADA INLINE NOS CARDS ── */
+        .btn-retirar-card {
+            margin-top: 10px;
+            width: 100%;
+            background: rgba(251,146,60,0.1);
+            border: 1.5px solid rgba(251,146,60,0.35);
+            border-radius: 20px;
+            padding: 7px 14px;
+            color: #fb923c;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: Arial, Helvetica, sans-serif;
+            transition: background 0.15s;
+        }
+        .btn-retirar-card:active { background: rgba(251,146,60,0.22); }
+        .btn-instalar-card {
+            margin-top: 10px;
+            width: 100%;
+            background: rgba(250,204,21,0.1);
+            border: 1.5px solid rgba(250,204,21,0.35);
+            border-radius: 20px;
+            padding: 7px 14px;
+            color: #facc15;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: Arial, Helvetica, sans-serif;
+            transition: background 0.15s;
+        }
+        .btn-instalar-card:active { background: rgba(250,204,21,0.22); }
+        .card-ret-form {
+            display: none;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 12px;
+            padding-top: 12px;
+            animation: surgirForm 0.2s ease;
+        }
+        .card-ret-form.aberto { display: block; }
     </style>
 </head>
 
@@ -583,30 +645,6 @@
         </div>
     </div>
 
-    <!-- ══════════════════════════════════════
-         SEÇÃO 3 — RETIREI O PIX
-    ══════════════════════════════════════ -->
-    <div class="secao">
-        <div class="secao-header" id="hdr-retirar" onclick="toggleSecao('retirar')"
-             style="background:#7a2e0e; border-color:#fb923c;">
-            <span class="secao-icone">&#8593;&#128160;</span>
-            <span class="secao-titulo">Retirei o Pix</span>
-            <span class="secao-seta" id="seta-retirar" style="color:#fb923c;">&#9660;</span>
-        </div>
-        <div class="secao-corpo" id="corpo-retirar" style="border-color:#fb923c;">
-            <div class="busca-row">
-                <input type="text" id="ret-busca"
-                       class="busca-geral-input"
-                       placeholder="&#128269; Buscar cliente ou equipamento"
-                       oninput="renderizarRetirarPix()">
-            </div>
-            <div class="add-vazio" id="ret-carregando">Carregando clientes...</div>
-            <div class="add-vazio" id="ret-sem-pix" style="display:none">
-                Nenhum equipamento com Pix instalado
-            </div>
-            <div id="ret-lista-clientes"></div>
-        </div>
-    </div>
 
 </div><!-- /app -->
 
@@ -636,13 +674,18 @@ window._clientesPixData    = {};
 window._atendimentosData   = [];
 window._motivoSelecionado  = null;
 window._condicaoSelecionada = null;
-let _maquinaAberta        = null; // add
-let _maquinaRetiradaAberta = null; // ret
+let _maquinaAberta        = null;
+let _maquinaRetiradaAberta = null;
+let _retEstado            = {};
+let _cardRetiradaAberta   = null;
+let _retCardEstado        = {};
+let _cardInstalacaoAberta = null;
 
 // ──────────────────────────────────────────────
 // ACCORDION — só uma seção aberta por vez
 // ──────────────────────────────────────────────
 window.toggleSecao = function(secao) {
+    let abrindoSecao = false;
     ['locais','adicionar','retirar'].forEach(s => {
         const hdr   = document.getElementById('hdr-'  + s);
         const corpo = document.getElementById('corpo-' + s);
@@ -652,12 +695,15 @@ window.toggleSecao = function(secao) {
             corpo.classList.toggle('aberto',  abrindo);
             hdr.classList.toggle('aberta',    abrindo);
             seta.classList.toggle('girada',   abrindo);
+            if (abrindo) abrindoSecao = s;
         } else {
             corpo.classList.remove('aberto');
             hdr.classList.remove('aberta');
             seta.classList.remove('girada');
         }
     });
+    if (abrindoSecao === 'adicionar') renderizarAdicionarPix();
+    if (abrindoSecao === 'retirar')   renderizarRetirarPix();
 };
 
 // ──────────────────────────────────────────────
@@ -902,7 +948,10 @@ function mapearPixDosClientes(clientes) {
                 tecnico: nomeResponsavel,
                 data: dataReferencia,
                 situacao: retirado ? 'retirado' : 'instalado',
-                origem: 'clientes'
+                origem: 'clientes',
+                clienteId: String(cliente?.firebaseUrl || '').trim(),
+                rowId: String(item?.rowId || '').trim(),
+                contador: String(item?.contador || '').trim()
             };
         });
     });
@@ -1009,40 +1058,58 @@ window.renderizarCards = function(data) {
         const instalado   = p.situacao === 'instalado';
         const situacaoTxt = instalado ? 'Instalado' : 'Retirado';
         const situacaoCls = instalado ? 'situacao-txt-instalado' : 'situacao-txt-retirado';
-        const statusBadgeCls = instalado ? 'instalado' : 'retirado';
-        const statusBadgeTxt = instalado ? '+' : '-';
-        const responsavel = instalado
-            ? (p.tecnico || '')
-            : (p.tecnico_retirada || p.tecnico || '');
-        const dataBase = instalado
-            ? p.data
-            : (p.data_retirada || p.data);
+        const responsavel = instalado ? (p.tecnico || '') : (p.tecnico_retirada || p.tecnico || '');
+        const dataBase    = instalado ? p.data : (p.data_retirada || p.data);
         const dataExib    = dataBase ? formatarData(dataBase) : '—';
-        const rotuloResponsavel = instalado ? 'T&#233;cnico:' : 'Informado por:';
+        const rotuloResp  = instalado ? 'T&#233;cnico:' : 'Informado por:';
+        const pixKey      = String(p.numero_pix || 'x').replace(/\W/g,'_');
+        const contador    = p.contador || '';
+
+        const btnRetirar = instalado && p.clienteId && p.rowId ? `
+            <button class="btn-retirar-card" id="btnret-${pixKey}"
+                    onclick="toggleRetiradaCard('${pixKey}')">
+                &#8593; Retirar Pix
+            </button>
+            <div class="card-ret-form" id="retform-${pixKey}">
+                <div class="pix-erro" id="crderro-${pixKey}" style="display:none;margin-top:0;margin-bottom:8px;"></div>
+                <button class="btn-confirmar-pix" style="background:#7a2e0e;margin-top:0;"
+                        onclick="confirmarRetiradaCard('${p.clienteId}','${p.rowId}','${p.numero_pix}','${pixKey}')">
+                    &#128463;&#65039; Confirmar Retirada
+                </button>
+            </div>` : '';
+
+        const btnInstalar = !instalado && p.clienteId && p.rowId ? `
+            <button class="btn-instalar-card" id="btnins-${pixKey}"
+                    onclick="toggleInstalacaoCard('${pixKey}')">
+                + Instalar Pix
+            </button>
+            <div class="card-ret-form" id="insform-${pixKey}">
+                <button class="btn-confirmar-pix" style="background:#ca8a04;margin-top:0;"
+                        onclick="confirmarInstalacaoCard('${p.clienteId}','${p.rowId}','${p.numero_pix}','${pixKey}')">
+                    + Confirmar Instala&#231;&#227;o
+                </button>
+            </div>` : '';
+
         return `
-        <div class="pix-card">
+        <div class="pix-card" id="pixcard-${pixKey}">
             <div class="pix-linha1">
-                <span class="pix-numero ${instalado ? '' : 'pix-numero-retirado'}">Pix ${esc(p.numero_pix) || '—'}</span>
-                <span class="pix-status-badge ${statusBadgeCls}">${statusBadgeTxt}</span>
+                <span class="pix-numero">Pix ${esc(p.numero_pix) || '—'}</span>
+                <span class="pix-badge ${instalado ? 'pix-badge-instalado' : 'pix-badge-retirado'}">${instalado ? '+' : '−'}</span>
                 <span class="pix-equipamento-nome">${esc(p.equipamento)}</span>
             </div>
             <div class="pix-identificacao">${esc(p.identificacao)}</div>
             <div class="pix-rodape">
                 <div class="pix-rodape-linha">
-                    <span class="pix-rodape-item">
-                        <span class="lbl">Situa&#231;&#227;o:</span>
-                        <span class="${situacaoCls}"> ${situacaoTxt}</span>
-                    </span>
-                    <span class="pix-rodape-item">
-                        <span class="lbl">${rotuloResponsavel}</span> ${esc(responsavel)}
-                    </span>
+                    <span class="pix-rodape-item"><span class="lbl">Situa&#231;&#227;o:</span><span class="${situacaoCls}"> ${situacaoTxt}</span></span>
+                    <span class="pix-rodape-item"><span class="lbl">${rotuloResp}</span> ${esc(responsavel)}</span>
                 </div>
                 <div class="pix-rodape-linha">
-                    <span class="pix-rodape-item">
-                        <span class="lbl">Data:</span> ${dataExib}
-                    </span>
+                    <span class="pix-rodape-item"><span class="lbl">Data:</span> ${dataExib}</span>
+                    ${contador ? `<span class="pix-rodape-item"><span class="lbl">Contador:</span> ${esc(contador)}</span>` : ''}
                 </div>
             </div>
+            ${btnRetirar}
+            ${btnInstalar}
         </div>`;
     }).join('');
 };
@@ -1180,9 +1247,9 @@ window.renderizarAdicionarPix = function() {
                                id="pixcnt-${chave}" placeholder="Contador">
                     </div>
                     <div class="pix-erro" id="pixerro-${chave}" style="display:none"></div>
-                    <button class="btn-confirmar-pix"
+                    <button class="btn-confirmar-pix" style="background:#16a34a;"
                             onclick="confirmarPixMaquina('${cId}','${e.rowId}','${chave}')">
-                        &#9989; Confirmar instala&#231;&#227;o
+                        + Confirmar Instala&#231;&#227;o
                     </button>
                 </div>
             </div>`;
@@ -1209,15 +1276,7 @@ function obterBuscaAdicionarPix() {
 }
 
 function validarBuscaAdicionarPixObrigatoria() {
-    const busca = obterBuscaAdicionarPix();
-    if (busca) return true;
-    if (window.playAlert) {
-        window.playAlert('Pesquise e filtre pelo cliente primeiro antes de cadastrar o Pix.');
-    } else {
-        alert('Pesquise e filtre pelo cliente primeiro antes de cadastrar o Pix.');
-    }
-    document.getElementById('add-busca')?.focus();
-    return false;
+    return true;
 }
 
 function obterBuscaRetiradaPix() {
@@ -1225,15 +1284,7 @@ function obterBuscaRetiradaPix() {
 }
 
 function validarBuscaRetiradaPixObrigatoria() {
-    const busca = obterBuscaRetiradaPix();
-    if (busca) return true;
-    if (window.playAlert) {
-        window.playAlert('Pesquise e filtre pelo cliente primeiro antes de retirar o Pix.');
-    } else {
-        alert('Pesquise e filtre pelo cliente primeiro antes de retirar o Pix.');
-    }
-    document.getElementById('ret-busca')?.focus();
-    return false;
+    return true;
 }
 
 window.toggleMaquinaForm = function(chave) {
@@ -1322,7 +1373,7 @@ window.confirmarPixMaquina = async function(clienteId, rowId, chave) {
 // ──────────────────────────────────────────────
 // RETIREI PIX — LISTA DE CLIENTES/MÁQUINAS
 // ──────────────────────────────────────────────
-function renderizarRetirarPix() {
+window.renderizarRetirarPix = function renderizarRetirarPix() {
     const container  = document.getElementById('ret-lista-clientes');
     const carregando = document.getElementById('ret-carregando');
     const semPix     = document.getElementById('ret-sem-pix');
@@ -1525,6 +1576,246 @@ window.confirmarRetiradaMaquina = async function(clienteId, rowId, pixNum, chave
             window.playAlert(`Retirada do Pix ${pixNum} registrada e marcada em análise.`);
         } else {
             alert(`Retirada do Pix ${pixNum} registrada e marcada em análise.`);
+        }
+    } catch (e) {
+        console.error('Erro ao confirmar retirada do Pix:', e);
+        const detalhe = descreverErroFirebase(e, 'Erro ao salvar a retirada.');
+        if (window.playAlert) {
+            window.playAlert(detalhe);
+        } else {
+            alert(detalhe);
+        }
+    }
+};
+
+// ──────────────────────────────────────────────
+// RETIRADA INLINE NOS CARDS DE LOCAIS COM PIX
+// ──────────────────────────────────────────────
+window.toggleRetiradaCard = function(pixKey) {
+    const form = document.getElementById('retform-' + pixKey);
+    if (!form) return;
+    if (_cardRetiradaAberta && _cardRetiradaAberta !== pixKey) {
+        const ant = document.getElementById('retform-' + _cardRetiradaAberta);
+        if (ant) ant.classList.remove('aberto');
+    }
+    const abrindo = !form.classList.contains('aberto');
+    form.classList.toggle('aberto', abrindo);
+    _cardRetiradaAberta = abrindo ? pixKey : null;
+};
+
+window.toggleInstalacaoCard = function(pixKey) {
+    const form = document.getElementById('insform-' + pixKey);
+    if (!form) return;
+    if (_cardInstalacaoAberta && _cardInstalacaoAberta !== pixKey) {
+        const ant = document.getElementById('insform-' + _cardInstalacaoAberta);
+        if (ant) ant.classList.remove('aberto');
+    }
+    const abrindo = !form.classList.contains('aberto');
+    form.classList.toggle('aberto', abrindo);
+    _cardInstalacaoAberta = abrindo ? pixKey : null;
+};
+
+window.confirmarInstalacaoCard = async function(clienteId, rowId, pixNum, pixKey) {
+    const usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
+    const dataInstalacao = new Date().toISOString();
+
+    const cliente = (window._clientesData || []).find(c => c.firebaseUrl === clienteId);
+    if (!cliente) {
+        if (window.playAlert) {
+            window.playAlert('Cliente n\u00e3o encontrado.');
+        } else {
+            alert('Cliente n\u00e3o encontrado.');
+        }
+        return;
+    }
+
+    let equips = Array.isArray(cliente?.equipDetalhes) && cliente.equipDetalhes.length > 0
+        ? JSON.parse(JSON.stringify(cliente.equipDetalhes))
+        : obterEquipamentosDetalhadosCliente(cliente).map(e => ({ ...e }));
+
+    const idx = equips.findIndex(e => String(e?.rowId || '') === rowId);
+    if (idx !== -1) {
+        equips[idx].pix = pixNum;
+        equips[idx].manutencaoPendente = '';
+        equips[idx].aguardandoConfirmacao = false;
+        equips[idx].manutencaoPendenteEm = '';
+        equips[idx].manutencaoPendentePor = '';
+    }
+
+    const nomeEquipamento = idx !== -1 ? String(equips[idx]?.nome || '').trim() : '';
+
+    try {
+        try {
+            await update(ref(db, `clientes/${clienteId}`), { equipDetalhes: equips });
+        } catch (erroCliente) {
+            throw new Error(descreverErroFirebase(erroCliente, 'Falha ao atualizar o cliente.'));
+        }
+
+        const chaveFirebase = Object.keys(window._pixData).find(
+            k => String(window._pixData[k].numero_pix) === String(pixNum)
+        );
+
+        if (chaveFirebase) {
+            try {
+                await update(ref(db, `${PATH}/${chaveFirebase}`), {
+                    situacao      : 'instalado',
+                    tecnico       : usuarioLogado,
+                    data          : dataInstalacao,
+                    equipamento   : nomeEquipamento,
+                    identificacao : montarIdentificacaoCliente(cliente)
+                });
+            } catch (erroPixExistente) {
+                throw new Error(descreverErroFirebase(erroPixExistente, 'Falha ao atualizar o cadastro do Pix.'));
+            }
+        } else {
+            try {
+                await push(ref(db, PATH), {
+                    numero_pix    : pixNum,
+                    cliente       : String(cliente.nome || '').trim(),
+                    identificacao : montarIdentificacaoCliente(cliente),
+                    equipamento   : nomeEquipamento,
+                    situacao      : 'instalado',
+                    tecnico       : usuarioLogado,
+                    data          : dataInstalacao,
+                    criado_em     : new Date().toISOString()
+                });
+            } catch (erroPixNovo) {
+                throw new Error(descreverErroFirebase(erroPixNovo, 'Falha ao registrar o Pix instalado.'));
+            }
+        }
+
+        try {
+            await set(ref(db, 'metadata/clientes_versao'), Date.now());
+        } catch (erroVersao) {
+            throw new Error(descreverErroFirebase(erroVersao, 'Falha ao atualizar a vers\u00e3o dos clientes.'));
+        }
+
+        if (window.playAlert) {
+            window.playAlert(`Pix ${pixNum} marcado como instalado.`);
+        } else {
+            alert(`Pix ${pixNum} marcado como instalado.`);
+        }
+    } catch (e) {
+        console.error('Erro ao confirmar instala\u00e7\u00e3o do Pix:', e);
+        const detalhe = descreverErroFirebase(e, 'Erro ao salvar a instala\u00e7\u00e3o.');
+        if (window.playAlert) {
+            window.playAlert(detalhe);
+        } else {
+            alert(detalhe);
+        }
+    }
+};
+
+window.selecionarMotivoCard = function(pixKey, el) {
+    document.querySelectorAll(`#crdmotivos-${pixKey} .motivo-btn`).forEach(b => b.classList.remove('ativo'));
+    el.classList.add('ativo');
+    _retCardEstado[pixKey] = _retCardEstado[pixKey] || {};
+    _retCardEstado[pixKey].motivo = el.dataset.valor;
+};
+
+window.selecionarCondicaoCard = function(pixKey, el) {
+    document.querySelectorAll(`#crdcond-${pixKey} .condicao-btn`).forEach(b => b.className = 'condicao-btn');
+    el.classList.add(el.dataset.cls);
+    _retCardEstado[pixKey] = _retCardEstado[pixKey] || {};
+    _retCardEstado[pixKey].condicao = el.dataset.valor;
+};
+
+window.confirmarRetiradaCard = async function(clienteId, rowId, pixNum, pixKey) {
+    if (!validarBuscaRetiradaPixObrigatoria()) return;
+    const usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
+    const dataRetirada = new Date().toISOString();
+
+    const cliente = (window._clientesData || []).find(c => c.firebaseUrl === clienteId);
+    if (!cliente) {
+        if (window.playAlert) {
+            window.playAlert('Cliente n\u00e3o encontrado.');
+        } else {
+            alert('Cliente n\u00e3o encontrado.');
+        }
+        return;
+    }
+
+    const equips = obterEquipamentosDetalhadosCliente(cliente);
+    const itemSelecionado = equips.find(e => String(e?.rowId || '') === rowId);
+    if (!itemSelecionado) {
+        if (window.playAlert) {
+            window.playAlert('M\u00e1quina do Pix n\u00e3o encontrada no cliente.');
+        } else {
+            alert('M\u00e1quina do Pix n\u00e3o encontrada no cliente.');
+        }
+        return;
+    }
+
+    const nomeEquipamento = String(itemSelecionado?.nome || '').trim();
+
+    try {
+        try {
+            await dbAplicarPendenciasManutencaoCliente(clienteId, {
+                atendente: usuarioLogado,
+                equipamentosRetiradosDetalhes: [{
+                    nome: nomeEquipamento,
+                    pix: String(pixNum || '').trim()
+                }]
+            });
+        } catch (erroCliente) {
+            throw new Error(descreverErroFirebase(erroCliente, 'Falha ao marcar a m\u00e1quina do cliente.'));
+        }
+
+        try {
+            await update(ref(db, `clientes/${clienteId}`), { statusCadastro: 'em_analise' });
+        } catch (erroStatus) {
+            throw new Error(descreverErroFirebase(erroStatus, 'Falha ao marcar o cliente em an\u00e1lise.'));
+        }
+
+        const chaveFirebase = Object.keys(window._pixData).find(
+            k => String(window._pixData[k].numero_pix) === String(pixNum)
+        );
+
+        if (chaveFirebase) {
+            try {
+                await update(ref(db, `${PATH}/${chaveFirebase}`), {
+                    situacao         : 'retirado',
+                    tecnico_retirada : usuarioLogado,
+                    data_retirada    : dataRetirada,
+                    equipamento      : nomeEquipamento,
+                    identificacao    : montarIdentificacaoCliente(cliente),
+                    motivo_retirada  : 'manutencao',
+                    condicao_retirada: 'analise',
+                    destino_retirada : 'analise'
+                });
+            } catch (erroPixExistente) {
+                throw new Error(descreverErroFirebase(erroPixExistente, 'Falha ao atualizar o cadastro do Pix.'));
+            }
+        } else {
+            try {
+                await push(ref(db, PATH), {
+                    numero_pix       : pixNum,
+                    cliente          : String(cliente.nome || '').trim(),
+                    identificacao    : montarIdentificacaoCliente(cliente),
+                    equipamento      : nomeEquipamento,
+                    situacao         : 'retirado',
+                    tecnico_retirada : usuarioLogado,
+                    data_retirada    : dataRetirada,
+                    motivo_retirada  : 'manutencao',
+                    condicao_retirada: 'analise',
+                    destino_retirada : 'analise',
+                    criado_em        : new Date().toISOString()
+                });
+            } catch (erroPixNovo) {
+                throw new Error(descreverErroFirebase(erroPixNovo, 'Falha ao registrar um novo cadastro de Pix retirado.'));
+            }
+        }
+
+        try {
+            await set(ref(db, 'metadata/clientes_versao'), Date.now());
+        } catch (erroVersao) {
+            throw new Error(descreverErroFirebase(erroVersao, 'Falha ao atualizar a vers\u00e3o dos clientes.'));
+        }
+
+        if (window.playAlert) {
+            window.playAlert(`Retirada do Pix ${pixNum} registrada e marcada em an\u00e1lise.`);
+        } else {
+            alert(`Retirada do Pix ${pixNum} registrada e marcada em an\u00e1lise.`);
         }
     } catch (e) {
         console.error('Erro ao confirmar retirada do Pix:', e);
