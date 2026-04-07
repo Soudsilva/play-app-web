@@ -120,6 +120,7 @@
         .accent-produtos  { background: linear-gradient(90deg, #4caf50, #81c784); }
         .accent-peca      { background: linear-gradient(90deg, #ff9800, #ffb74d); }
         .accent-maquina   { background: linear-gradient(90deg, #9c27b0, #ce93d8); }
+        .accent-materiais { background: linear-gradient(90deg, #00acc1, #4dd0e1); }
 
         /* Urgência sobrescreve a cor */
         .urgencia-alta  .card-accent { background: linear-gradient(90deg, #f44336, #ef9a9a) !important; }
@@ -162,6 +163,7 @@
         .badge-produtos { background: rgba(76,175,80,0.25);  border: 1.5px solid #4caf50; color: #c8e6c9; }
         .badge-peca     { background: rgba(255,152,0,0.25);  border: 1.5px solid #ff9800; color: #ffe0b2; }
         .badge-maquina  { background: rgba(156,39,176,0.25); border: 1.5px solid #9c27b0; color: #e1bee7; }
+        .badge-materiais{ background: rgba(0,172,193,0.22); border: 1.5px solid #00acc1; color: #b2ebf2; }
 
         .badge-tempo {
             font-size: 13px;
@@ -205,31 +207,34 @@
         }
 
         .btn-acao {
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: bold;
-            border: 1.5px solid #4a5a7a;
-            background: transparent;
+            background: none;
+            border: none;
             cursor: not-allowed;
-            color: #6a7fa0;
+            font-size: 20px;
+            line-height: 1;
+            padding: 2px 3px;
+            border-radius: 6px;
             transition: 0.15s;
-            white-space: nowrap;
+            opacity: 0.25;
+            flex-shrink: 0;
         }
-        .btn-acao.ativo-editar {
-            color: #90caf9;
-            border-color: #90caf9;
-            cursor: pointer;
-        }
-        .btn-acao.ativo-editar:active { background: rgba(33,150,243,0.2); }
-
-        .btn-acao.ativo-confirmar {
-            color: #c8e6c9;
-            border-color: #4caf50;
-            background: rgba(76,175,80,0.12);
-            cursor: pointer;
-        }
+        .btn-acao.ativo-editar  { opacity: 0.75; cursor: pointer; }
+        .btn-acao.ativo-editar:active  { opacity: 1; background: rgba(33,150,243,0.2); }
+        .btn-acao.ativo-confirmar { opacity: 0.9; cursor: pointer; }
         .btn-acao.ativo-confirmar:active { background: rgba(76,175,80,0.28); }
+
+        .btn-excluir {
+            background: rgba(244,67,54,0.15);
+            border: 1.5px solid rgba(244,67,54,0.5);
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            padding: 2px 5px;
+            border-radius: 6px;
+            transition: 0.15s;
+            flex-shrink: 0;
+        }
+        .btn-excluir:active { background: rgba(244,67,54,0.35); }
 
         /* ── FORM FIXO ── */
         .form-fixo {
@@ -297,6 +302,11 @@
             border-color: rgba(156,39,176,0.55);
             color: #dfb1ea;
         }
+        .form-fixo-categoria.materiais {
+            background: rgba(0,172,193,0.18);
+            border-color: rgba(0,172,193,0.55);
+            color: #b2ebf2;
+        }
 
         .input-glass {
             width: 100%;
@@ -315,20 +325,25 @@
         .linha-enviar {
             display: flex;
             gap: 8px;
-            align-items: stretch;
+            align-items: center;
+        }
+        .linha-enviar .input-glass {
+            flex: 1;
+            margin: 0;
         }
         .chips-cat {
-            flex: 1;
             display: flex;
             gap: 6px;
         }
         .chip-cat {
             flex: 1;
-            padding: 10px 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 8px 4px;
             border-radius: 10px;
-            font-size: 14px;
-            font-weight: bold;
-            text-align: center;
             cursor: pointer;
             border: 1.5px solid rgba(255,255,255,0.25);
             background: rgba(255,255,255,0.06);
@@ -336,9 +351,12 @@
             transition: 0.15s;
             user-select: none;
         }
+        .chip-cat .chip-icon { font-size: 18px; line-height: 1; }
+        .chip-cat .chip-label { font-size: 11px; font-weight: bold; color: #ffffff; }
         .chip-cat.selecionado-produtos { border-color: #4caf50; background: rgba(76,175,80,0.2);  color: #a5d6a7; }
         .chip-cat.selecionado-peca     { border-color: #ff9800; background: rgba(255,152,0,0.2);  color: #ffcc80; }
         .chip-cat.selecionado-maquina  { border-color: #9c27b0; background: rgba(156,39,176,0.2); color: #ce93d8; }
+        .chip-cat.selecionado-materiais { border-color: #00acc1; background: rgba(0,172,193,0.2); color: #b2ebf2; }
         .chip-cat:active { transform: scale(0.96); }
 
         #btnCancelar {
@@ -459,6 +477,7 @@
         <div class="chip-filtro" data-filtro="produtos" onclick="setFiltro('produtos')">🟢 Produtos</div>
         <div class="chip-filtro" data-filtro="peca" onclick="setFiltro('peca')">🟠 Peças</div>
         <div class="chip-filtro" data-filtro="maquina" onclick="setFiltro('maquina')">🟣 Máquinas</div>
+        <div class="chip-filtro" data-filtro="materiais" onclick="setFiltro('materiais')">🔵 Materiais</div>
         </div>
 
     </div>
@@ -480,14 +499,15 @@
     <button id="btnCancelar" onclick="cancelarEdicao()">✕ Cancelar edição</button>
     <input type="hidden" id="idPedido">
 
-    <input class="input-glass" type="text" id="descPedido" placeholder="O que precisa comprar?">
+    <div class="chips-cat" id="chipsCat">
+        <div class="chip-cat selecionado-produtos" data-val="produtos" onclick="selecionarCat('produtos')"><span class="chip-icon">🟢</span><span class="chip-label">Produtos</span></div>
+        <div class="chip-cat" data-val="peca" onclick="selecionarCat('peca')"><span class="chip-icon">🟠</span><span class="chip-label">Peças</span></div>
+        <div class="chip-cat" data-val="maquina" onclick="selecionarCat('maquina')"><span class="chip-icon">🟣</span><span class="chip-label">Máquinas</span></div>
+        <div class="chip-cat" data-val="materiais" onclick="selecionarCat('materiais')"><span class="chip-icon">🔵</span><span class="chip-label">Materiais</span></div>
+    </div>
 
     <div class="linha-enviar">
-        <div class="chips-cat" id="chipsCat">
-            <div class="chip-cat selecionado-produtos" data-val="produtos" onclick="selecionarCat('produtos')">🟢 Produtos</div>
-            <div class="chip-cat" data-val="peca" onclick="selecionarCat('peca')">🟠 Peças</div>
-            <div class="chip-cat" data-val="maquina" onclick="selecionarCat('maquina')">🟣 Máquinas</div>
-        </div>
+        <input class="input-glass" type="text" id="descPedido" placeholder="O que precisa comprar?">
         <button id="btnEnviar" onclick="salvarPedido()">ENVIAR</button>
     </div>
 </div>
@@ -500,6 +520,11 @@
 
     const usuarioLogado = localStorage.getItem('usuarioLogado') || "Desconhecido";
 
+    const _cacheColab = localStorage.getItem('cache_colaboradores');
+    const _listaColab = _cacheColab ? JSON.parse(_cacheColab) : [];
+    const _usuarioObj = _listaColab.find(c => c.nome === usuarioLogado);
+    const isGestor = _usuarioObj ? (_usuarioObj.nivel_completo || '').includes('gestao') : false;
+
     // Categoria selecionada no form
     let catAtual = '';
     function atualizarCategoriaTituloForm() {
@@ -508,7 +533,8 @@
         const rotulos = {
             produtos: 'Produtos',
             peca: 'Peças',
-            maquina: 'Máquinas'
+            maquina: 'Máquinas',
+            materiais: 'Materiais'
         };
         categoriaEl.className = `form-fixo-categoria ${catAtual || 'vazia'}`;
         categoriaEl.textContent = rotulos[catAtual] || 'Selecione';
@@ -545,7 +571,8 @@
             todos: 'Todos',
             produtos: '🟢 Produtos',
             peca: '🟠 Peças',
-            maquina: '🟣 Máquinas'
+            maquina: '🟣 Máquinas',
+            materiais: '🔵 Materiais'
         };
         document.querySelectorAll('.chip-filtro').forEach(chip => {
             chip.textContent = rotulos[chip.dataset.filtro] || chip.textContent;
@@ -573,16 +600,20 @@
         return Math.max(0, Math.floor((hoje - d) / 86400000));
     }
 
-    function badgeTempo(dias) {
-        if (dias === 0) return { cls: 'tempo-hoje',   txt: 'Hoje' };
-        if (dias <= 3)  return { cls: 'tempo-fresco', txt: `${dias}d atrás` };
-        if (dias <= 7)  return { cls: 'tempo-alerta', txt: `${dias}d atrás ⚠️` };
-        return             { cls: 'tempo-urgente',txt: `${dias}d atrás 🔥` };
+    function txtDias(dias) {
+        return dias === 1 ? '1 dia atrás' : `${dias} dias atrás`;
     }
 
-    function urgenciaClass(dias) {
-        if (dias > 7)  return 'urgencia-alta';
-        if (dias > 3)  return 'urgencia-media';
+    function badgeTempo(dias, media) {
+        if (dias === 0)          return { cls: 'tempo-hoje',    txt: 'Hoje' };
+        if (dias <= media * 0.5) return { cls: 'tempo-fresco',  txt: txtDias(dias) };
+        if (dias <= media)       return { cls: 'tempo-alerta',  txt: `${txtDias(dias)} ⚠️` };
+        return                          { cls: 'tempo-urgente', txt: `${txtDias(dias)} 🔥` };
+    }
+
+    function urgenciaClass(dias, media) {
+        if (dias > media)        return 'urgencia-alta';
+        if (dias > media * 0.5)  return 'urgencia-media';
         return '';
     }
 
@@ -605,13 +636,16 @@
             return;
         }
 
+        const todosDias = lista.map(p => calcularDias(p.data));
+        const media = todosDias.length ? todosDias.reduce((a, b) => a + b, 0) / todosDias.length : 7;
+
         lista.slice().reverse().forEach(p => {
             const dias = calcularDias(p.data);
-            const tempo = badgeTempo(dias);
-            const urgencia = urgenciaClass(dias);
+            const tempo = badgeTempo(dias, media);
+            const urgencia = urgenciaClass(dias, media);
             const souDono = (p.solicitante === usuarioLogado);
 
-            const catMap = { produtos: 'Produtos', peca: 'Peças', maquina: 'Máquinas' };
+            const catMap = { produtos: 'Produtos', peca: 'Peças', maquina: 'Máquinas', materiais: 'Materiais' };
             const nomeCat = catMap[p.categoria] || p.categoria;
 
             const classeConfirmar = souDono ? 'ativo-confirmar' : '';
@@ -637,8 +671,9 @@
                     <div class="card-rodape">
                         <div class="avatar">${inicialAvatar(p.solicitante)}</div>
                         <span class="nome-sol">${p.solicitante}</span>
-                        <button class="btn-acao ${classeEditar}" onclick='${acaoEditar}'>✏ Editar</button>
-                        <button class="btn-acao ${classeConfirmar}" onclick="${acaoConfirmar}">${textoConfirmar}</button>
+                        <button class="btn-acao ${classeEditar}" onclick='${acaoEditar}'>✏️</button>
+                        <button class="btn-acao ${classeConfirmar}" onclick="${acaoConfirmar}">${souDono ? '✅' : '⏳'}</button>
+                        ${isGestor ? `<button class="btn-excluir" onclick="excluirPedido('${p.firebaseUrl}')">🗑️</button>` : ''}
                     </div>
                 </div>`;
 
@@ -688,6 +723,13 @@
     // 5. CONFIRMAR COMPRA
     window.confirmarCompra = async function(id) {
         if (await window.playConfirm('Confirmar que este item foi comprado e recebido? Ele sairá da lista.')) {
+            await dbExcluirPedido(id);
+        }
+    };
+
+    // 6. EXCLUIR PEDIDO (gestor)
+    window.excluirPedido = async function(id) {
+        if (await window.playConfirm('Excluir este pedido da lista?')) {
             await dbExcluirPedido(id);
         }
     };

@@ -853,7 +853,7 @@
         const listaUnica = [];
         
         lista.forEach(item => {
-            if (item.categoria === 'produtos' && !nomesVistos.has(item.nome)) {
+            if ((item.categoria === 'produtos' || item.categoria === 'materiais') && !nomesVistos.has(item.nome)) {
                 nomesVistos.add(item.nome);
                 listaUnica.push(item);
             }

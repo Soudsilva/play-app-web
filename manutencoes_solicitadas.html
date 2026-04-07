@@ -1295,6 +1295,21 @@
             listaFiltrada = listaFiltrada.filter(item => item.selecionadoPor === usuarioLogado);
         }
 
+        // Perfil estoque: exibe apenas "adicionar" e "ponto novo"
+        let isEstoque = false;
+        try {
+            const cache = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
+            const userObj = cache.find(c => c.nome === usuarioLogado);
+            const perfil = userObj?.nivel_completo || '';
+            isEstoque = perfil.includes('estoque') && !perfil.includes('gestao');
+            if (isEstoque) {
+                listaFiltrada = listaFiltrada.filter(item => {
+                    const tipo = String(item.tipoAcao || '').toLowerCase();
+                    return tipo.includes('adicionar') || tipo.includes('ponto novo');
+                });
+            }
+        } catch (_) {}
+
         if (listaFiltrada.length === 0) {
             estado.style.display = 'block';
             estado.textContent = termoPesquisa ? "Nenhum resultado encontrado." : "Nenhuma manutencao pendente no momento.";
@@ -1312,10 +1327,11 @@
                 : 'Marcar que farei este serviço';
 
             card.innerHTML = `
+                ${!isEstoque ? `
                 <label class="card-selecao${estaSelecionado ? ' selecionado' : ''}">
                     <input type="checkbox" ${estaSelecionado ? 'checked' : ''} onchange="alternarSelecao('${escaparHtml(item.firebaseUrl)}', this.checked, this)">
                     <span class="card-selecao-texto">${selecaoLabel}</span>
-                </label>
+                </label>` : ''}
 
                 <div class="card-info-linhas">
                     <div class="linha-nome">${item.clienteNumero ? 'N. ' + escaparHtml(item.clienteNumero) + ' - ' : ''}${escaparHtml(item.clienteNome)}</div>
@@ -1324,6 +1340,7 @@
                             <div><b>Rota:</b> ${escaparHtml(item.clienteRota)}</div>
                             <div><b>Cidade:</b> ${escaparHtml(item.clienteCidade)}</div>
                         </div>
+                        ${!isEstoque ? `
                         <div class="icones-acao">
                             <div class="icone-btn-wrap" onclick="abrirLocalizacao('${escaparHtml(item.clienteEndereco || item.clienteCidade)}')">
                                 <div class="icone-btn">
@@ -1339,7 +1356,7 @@
                                 </div>
                                 <span class="icone-label">Realizada</span>
                             </div>
-                        </div>
+                        </div>` : ''}
                     </div>
                     <div class="linha-solicitado"><b>Solicitado:</b> ${escaparHtml(item.solicitante)} &nbsp;&nbsp; solicitação feita há ${escaparHtml(formatarDiasEmAberto(item.diasEmAberto).toLowerCase())}</div>
                 </div>
@@ -1356,7 +1373,7 @@
                     </div>
                 </div>
 
-                ${item.ultimaVisita ? `
+                ${!isEstoque && item.ultimaVisita ? `
                     <div class="ultima-visita">
                         Visita: <b>${escaparHtml(item.ultimaVisita.atendente)}</b> ${escaparHtml(item.ultimaVisita.dataFormatada)}${item.ultimaVisita.dias !== null ? ` &nbsp;Dias: <b>${item.ultimaVisita.dias}</b>` : ''}
                     </div>

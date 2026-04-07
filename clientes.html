@@ -268,6 +268,10 @@
         color: #ffb3ad;
     }
 
+    .equip-pix-pendente-ret {
+        color: #ffb3ad;
+    }
+
     .equip-text-card.pendente-add::after,
     .equip-text-card.pendente-ret::after {
         display: inline-flex;
@@ -292,6 +296,24 @@
 
     .equip-text-card.pendente-ret::after {
         content: "-";
+        background: rgba(244, 67, 54, 0.16);
+        color: #ffb3ad;
+        border: 1px solid rgba(244, 67, 54, 0.42);
+    }
+
+    .equip-pix-pendente-ret::after {
+        content: "-";
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 15px;
+        height: 15px;
+        margin-left: 5px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 1;
+        white-space: nowrap;
         background: rgba(244, 67, 54, 0.16);
         color: #ffb3ad;
         border: 1px solid rgba(244, 67, 54, 0.42);
@@ -1064,8 +1086,12 @@
         if (equipamentos.length === 0) return '';
 
         return `<span class="equip-lista-card">${equipamentos.map(item => {
-            const base = `${item.nome}${item.qtd !== '1' ? ` (${item.qtd})` : ''}${item.pix ? ` Pix ${item.pix}` : ''}`;
+            const nomeBase = `${item.nome}${item.qtd !== '1' ? ` (${item.qtd})` : ''}`;
+            const base = `${nomeBase}${item.pix ? ` Pix ${item.pix}` : ''}`;
             if (item.manutencaoPendente === 'retirada') {
+                if (item.pix) {
+                    return `<span class="equip-text-card">${nomeBase} <span class="equip-pix-pendente-ret">Pix ${item.pix}</span></span>`;
+                }
                 return `<span class="equip-text-card pendente-ret">${base}</span>`;
             }
             if (item.manutencaoPendente === 'adicao' || item.aguardandoConfirmacao) {

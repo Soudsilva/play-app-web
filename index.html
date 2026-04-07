@@ -220,11 +220,11 @@
 
 
 
-       <div class="botao" id="btnEstoque" onclick="abrirEstoque()">
-          <span class="icone">&#128230;</span>
-           <span>Cad.| Pro. Máq. Mat. </span>
-       </div>
 
+       <div class="botao" id="btnCadastroItens" onclick="window.location.href='cadastro_produto_maquina_material.html'" style="display:none;">
+          <span class="icone">&#128218;</span>
+           <span>Cadastro Itens</span>
+       </div>
 
        <div class="botao" id="btnMovimentacao" onclick="window.location.href='movimentacao_estoq.html'">
           <span class="icone">&#128260;</span>
@@ -331,18 +331,6 @@
 
     let listaColaboradores = [];
 
-    // Redirecionamento inteligente do Estoque
-    window.abrirEstoque = function() {
-        const nome = localStorage.getItem('usuarioLogado') || '';
-        const usuario = listaColaboradores.find(c => c.nome === nome);
-
-        // Se for Gestor, vai para a tela avanÃ§ada. Se for Estoque ou outro, vai para a padrÃ£o.
-        if (usuario && usuario.nivel_completo && usuario.nivel_completo.includes('gestao')) {
-            window.location.href = 'cadastro_produto_maquina_material.html';
-        } else {
-            window.location.href = 'estoque.html';
-        }
-    };
 
     // Redirecionamento inteligente do Atendimento
     window.abrirAtendimento = function() {
@@ -400,24 +388,17 @@
             window.location.href = 'fluxo_caixa.html';
             return;
         }
+        if (tela === 'pix') {
+            window.location.href = 'cadastro_pix.html';
+            return;
+        }
         console.log("Abrindo tela genÃ©rica: " + tela);
     };
-
-    function atualizarRotuloBotaoEstoque(perfil) {
-        const btnEstoque = document.getElementById('btnEstoque');
-        const texto = btnEstoque?.querySelector('span:last-child');
-        if (!texto) return;
-        texto.textContent = String(perfil || '').includes('estoque')
-            ? 'Estoque'
-            : 'Cad. | Prod. Máq. Mat.';
-    }
 
     // Verifica permissÃµes baseado no nome selecionado
     function verificarPermissoes(nomeUsuario) {
         const usuario = listaColaboradores.find(c => c.nome === nomeUsuario);
         const perfil = usuario ? (usuario.nivel_completo || "") : "";
-        atualizarRotuloBotaoEstoque(perfil);
-
         // Mapeamento de todos os botÃµes para facilitar o controle
         const btns = {
             atendimento: document.getElementById('btnAtendimento'),
@@ -432,7 +413,7 @@
             depositos: document.getElementById('btnDepositos'),
             rotas: document.getElementById('btnRotas'),
             cadColab: document.getElementById('btnCadColaborador'),
-            estoque: document.getElementById('btnEstoque'),
+            cadastroItens: document.getElementById('btnCadastroItens'),
             movimentacao: document.getElementById('btnMovimentacao'),
             pedidos: document.getElementById('btnPedidos'),
             financeiro: document.getElementById('btnFinanceiro'),
@@ -445,6 +426,12 @@
 
         // 1. PERFIL ESTOQUE
         if (perfil.includes('estoque')) {
+            // Estoque nível 3: acesso restrito apenas ao financeiro
+            if (perfil.includes('estoque_3')) {
+                Object.values(btns).forEach(b => { if (b) b.style.display = 'none'; });
+                btns.blocoGestao.style.display = 'none';
+                btns.financeiro.style.display = 'flex';
+            } else {
             btns.atendimento.style.display = 'none';
             btns.clientes.style.display = 'none';
             btns.rotas.style.display = 'none';
@@ -452,19 +439,17 @@
             btns.pix.style.display = 'none';
             btns.fluxoCaixa.style.display = 'none';
             btns.mediaVendas.style.display = 'none';
-            
+
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'none';
             btns.blocoGestao.style.display = 'none';
-            
-            // Perfil Estoque tambÃ©m pode acessar a tela padrÃ£o de estoque.
-            btns.estoque.style.display = 'flex'; 
-            
-            // [MANTIDO] BotÃ£o 'Entr. SaÃ­das' para perfil Estoque
+
             btns.movimentacao.style.display = 'flex';
-            
+            btns.cadastroItens.style.display = 'none';
+
             btns.pedidos.style.display = 'flex';
             btns.financeiro.style.display = 'flex';
+            }
 
         // 2. PERFIL ATENDIMENTO
         } else if (perfil.includes('atendimento')) {
@@ -503,8 +488,8 @@
             
             // Oculta o restante
             btns.cadColab.style.display = 'none';
-            btns.estoque.style.display = 'none';
             btns.movimentacao.style.display = 'none';
+            btns.cadastroItens.style.display = 'none';
             btns.pedidos.style.display = 'none';
             btns.financeiro.style.display = 'none';
 
@@ -522,8 +507,8 @@
             btns.rotas.style.display = 'none'; 
             
             btns.cadColab.style.display = 'flex';
-            btns.estoque.style.display = 'flex';
-            
+            btns.cadastroItens.style.display = 'flex';
+
             // [ALTERADO] MovimentaÃ§Ã£o (Entr. SaÃ­das) fica para o perfil Estoque
             btns.movimentacao.style.display = 'none';
             

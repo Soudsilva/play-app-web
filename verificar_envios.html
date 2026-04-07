@@ -38,6 +38,14 @@
         .info-linha { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; align-items: center;}
         .info-linha span { color: #cfd6e3; }
         .info-linha strong { color: white; font-size: 15px;}
+        .item-estoque-nome { color: white !important; font-size: 18px !important; font-weight: bold; }
+        .envio-rodape-estoque {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 12px; padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.25);
+            font-size: 13px; color: white; font-weight: bold;
+        }
+        .envio-rodape-estoque strong { color: #ffeb3b; }
 
         /* Galeria de Fotos Interna */
         .foto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
@@ -46,6 +54,11 @@
         .foto-legenda { font-size: 10px; color: #ccc; font-weight: bold; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .sem-envios { text-align: center; opacity: 0.6; margin-top: 50px; font-size: 16px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px;}
+        .grupo-data-label {
+            font-size: 12px; font-weight: bold; text-transform: uppercase;
+            letter-spacing: 1.5px; color: #aac4f5;
+            padding: 14px 2px 6px;
+        }
 
         /* Barra de busca */
         .barra-busca { position: sticky; top: 0; z-index: 100; background: #042d86; padding: 10px 0 12px; margin-bottom: 14px; }
@@ -165,6 +178,10 @@
         return envio?.origemRegistro === 'manutencao' || !!envio?.manutencao;
     }
 
+    function ehRetiradaEstoque(envio) {
+        return envio?.origemRegistro === 'retirada_estoque';
+    }
+
     function temFinanceiroNoEnvio(envio) {
         const fin = envio?.financeiro || {};
         return (
@@ -255,6 +272,27 @@
         };
     }
 
+    const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+    function dataLocalYMD(isoStr) {
+        const d = new Date(isoStr);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function rotuloData(ymd) {
+        const hoje = new Date(); hoje.setHours(0,0,0,0);
+        const data = new Date(ymd + 'T00:00:00');
+        const diff = Math.round((hoje - data) / 86400000);
+        if (diff === 0) return 'Hoje';
+        if (diff === 1) return 'Ontem';
+        if (diff < 7) {
+            const nome = data.toLocaleDateString('pt-BR', { weekday: 'long' });
+            return nome.charAt(0).toUpperCase() + nome.slice(1);
+        }
+        const mes = MESES[data.getMonth()];
+        return data.getFullYear() === hoje.getFullYear() ? mes : `${mes} ${data.getFullYear()}`;
+    }
+
     function renderizarEnvios() {
         const container = document.getElementById('listaEnvios');
         container.innerHTML = '';
@@ -293,29 +331,50 @@
             return;
         }
 
-        // ConstrÃ³i os Cards
+        // Agrupa por data e insere rótulos
+        let ultimoGrupo = null;
         meusEnvios.forEach(envio => {
+            const grupoKey = dataLocalYMD(envio.data);
+            if (grupoKey !== ultimoGrupo) {
+                ultimoGrupo = grupoKey;
+                const label = document.createElement('div');
+                label.className = 'grupo-data-label';
+                label.textContent = rotuloData(grupoKey);
+                container.appendChild(label);
+            }
             const card = document.createElement('div');
             card.className = 'card-envio';
 
             const dataFormatada = new Date(envio.data).toLocaleString('pt-BR');
-            const clienteNome = envio.cliente?.nome || 'Cliente Desconhecido';
-            const clienteNumero = envio.cliente?.numero || 'S/N';
             const htmlManutencao = ehRegistroManutencao(envio) ? montarHtmlManutencao(envio) : '';
+
+            // Cabeçalho
+            let htmlHeader;
+            if (ehRetiradaEstoque(envio)) {
+                htmlHeader = `<div class="envio-header"><div class="envio-cliente">📦 Retirada de Estoque</div></div>`;
+            } else {
+                const clienteNome = envio.cliente?.nome || 'Cliente Desconhecido';
+                const clienteNumero = envio.cliente?.numero || 'S/N';
+                htmlHeader = `<div class="envio-header"><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>`;
+            }
 
             // --- 1. PRODUTOS ---
             let htmlProdutos = '';
             if (envio.produtos && envio.produtos.length > 0) {
                 htmlProdutos += `<div class="secao-titulo">Produtos</div>`;
                 envio.produtos.forEach(p => {
-                    htmlProdutos += `<div class="info-linha"><span>${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
+                    if (ehRetiradaEstoque(envio)) {
+                        htmlProdutos += `<div class="info-linha"><span class="item-estoque-nome">${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
+                    } else {
+                        htmlProdutos += `<div class="info-linha"><span>${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
+                    }
                 });
             }
 
             // --- 2. FINANCEIRO ---
             let htmlFin = '';
             const fin = envio.financeiro || {};
-            if (!ehRegistroManutencao(envio) || temFinanceiroNoEnvio(envio)) {
+            if (!ehRetiradaEstoque(envio) && (!ehRegistroManutencao(envio) || temFinanceiroNoEnvio(envio))) {
                 const totalPix = Array.isArray(fin.pix)
                     ? fin.pix.reduce((soma, pix) => soma + converterParaNumero(pix?.valor), 0)
                     : 0;
@@ -395,7 +454,7 @@
                 htmlFotos = '';
             }
 
-            const liberado = podeAlterarEnvio(envio);
+            const liberado = !ehRetiradaEstoque(envio) && podeAlterarEnvio(envio);
             const htmlAcoes = liberado ? `
                 <div class="envio-acoes">
                     <div class="acoes-linha">
@@ -405,7 +464,18 @@
                 </div>
             ` : '';
 
-            card.innerHTML = `<div class="envio-header"><div class="envio-data">&#128197; Recebido em ${dataFormatada}</div><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>${htmlManutencao}${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}`;
+            // Rodapé universal: data + registrado por (só se diferente do usuário logado)
+            const autorEnvio = ehRetiradaEstoque(envio)
+                ? envio.autorizadoPor
+                : obterNomeAutorEnvio(envio);
+            const mostrarAutor = autorEnvio && autorEnvio !== usuarioLogado;
+            const htmlRodape = `
+                <div class="envio-rodape-estoque">
+                    <span>${dataFormatada}</span>
+                    ${mostrarAutor ? `<span>Registrado por: <strong>${autorEnvio}</strong></span>` : ''}
+                </div>`;
+
+            card.innerHTML = `${htmlHeader}${htmlManutencao}${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}${htmlRodape}`;
             if (liberado) {
                 card.querySelector('.btn-editar-envio')?.addEventListener('click', () => window.editarEnvio(envio));
                 card.querySelector('.btn-excluir-envio')?.addEventListener('click', () => window.excluirEnvio(envio.firebaseUrl));

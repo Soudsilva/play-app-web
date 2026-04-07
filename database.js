@@ -268,6 +268,18 @@ export async function dbSalvarHistorico(movimento) {
 }
 
 // Escuta apenas os últimos 20 movimentos para exibir na tela
+export async function dbListarHistorico() {
+    try {
+        const snapshot = await get(ref(db, 'historico_estoque'));
+        if (!snapshot.exists()) return [];
+        const data = snapshot.val();
+        return Object.keys(data).map(key => ({ firebaseUrl: key, ...data[key] }));
+    } catch (error) {
+        console.error("Erro ao listar histÃ³rico:", error);
+        return [];
+    }
+}
+
 export function dbEscutarHistorico(callback) {
     const histRef = ref(db, 'historico_estoque');
     const ultimosQuery = query(histRef, limitToLast(20));
@@ -573,6 +585,134 @@ export async function storageSalvarFotoComThumb(base64String, pasta = 'atendimen
 }
 
 // [NOVO] Salvar o registro completo do atendimento
+function _obterTimestampOrdenacaoAtendimento(atendimento) {
+    const dataBase = atendimento?.ultimaEdicao || atendimento?.data || "";
+    const timestamp = Date.parse(dataBase);
+    return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function _extrairPixValidosAtendimento(atendimento) {
+    return (Array.isArray(atendimento?.financeiro?.pix) ? atendimento.financeiro.pix : [])
+        .map(item => {
+            const numero = _normalizarNumeroPix(item?.numero);
+            const bruto = item?.contAtual;
+            if (!numero || bruto === null || bruto === undefined || bruto === "") return null;
+
+            const contAtual = typeof bruto === "number"
+                ? bruto
+                : Number(String(bruto).replace(/\D/g, ""));
+
+            if (!Number.isFinite(contAtual)) return null;
+            return { numero, contAtual: String(contAtual) };
+        })
+        .filter(Boolean);
+}
+
+async function _listarAtendimentosDoCliente(clienteRef = {}) {
+    const resultados = new Map();
+    const clienteId = String(clienteRef?.id || clienteRef?.firebaseUrl || "").trim();
+    const numeroCliente = _normalizarNumeroCliente(clienteRef?.numero);
+
+    const adicionarSnapshot = (snapshot) => {
+        if (!snapshot.exists()) return;
+        const data = snapshot.val() || {};
+        Object.keys(data).forEach(key => {
+            resultados.set(key, { firebaseUrl: key, ...data[key] });
+        });
+    };
+
+    if (clienteId) {
+        const snapPorId = await get(query(ref(db, 'atendimentos'), orderByChild('cliente/id'), equalTo(clienteId)));
+        adicionarSnapshot(snapPorId);
+    }
+
+    if (numeroCliente) {
+        const valoresTentativa = [numeroCliente];
+        const numeroComoNumero = Number(numeroCliente);
+        if (Number.isFinite(numeroComoNumero)) valoresTentativa.unshift(numeroComoNumero);
+
+        for (const valor of valoresTentativa) {
+            const snapPorNumero = await get(query(ref(db, 'atendimentos'), orderByChild('cliente/numero'), equalTo(valor)));
+            adicionarSnapshot(snapPorNumero);
+        }
+    }
+
+    return Array.from(resultados.values());
+}
+
+async function _sincronizarContadorAtualClientePorAtendimento(atendimento) {
+    try {
+        if (atendimento?._teste) return;
+
+        const pixValidos = _extrairPixValidosAtendimento(atendimento);
+        if (pixValidos.length === 0) return;
+
+        const clienteRef = atendimento?.cliente || {};
+        const clienteId = String(clienteRef?.id || clienteRef?.firebaseUrl || "").trim();
+        let cliente = clienteId
+            ? await dbBuscarClientePorId(clienteId)
+            : await dbBuscarClientePorNumero(clienteRef?.numero);
+
+        if (!cliente && clienteRef?.numero != null) {
+            cliente = await dbBuscarClientePorNumero(clienteRef.numero);
+        }
+        if (!cliente?.firebaseUrl) return;
+
+        const equipamentos = _normalizarEquipDetalhesCliente(cliente);
+        if (equipamentos.length === 0) return;
+
+        const numerosAlvo = new Set(pixValidos.map(item => item.numero));
+        if (!equipamentos.some(item => numerosAlvo.has(_normalizarNumeroPix(item?.pix)))) return;
+
+        let ultimosContadores = {};
+        try {
+            const atendimentosCliente = await _listarAtendimentosDoCliente({
+                id: cliente.firebaseUrl,
+                numero: cliente.numero
+            });
+
+            atendimentosCliente
+                .sort((a, b) => _obterTimestampOrdenacaoAtendimento(b) - _obterTimestampOrdenacaoAtendimento(a))
+                .forEach(item => {
+                    _extrairPixValidosAtendimento(item).forEach(pix => {
+                        if (!numerosAlvo.has(pix.numero) || ultimosContadores[pix.numero] != null) return;
+                        ultimosContadores[pix.numero] = pix.contAtual;
+                    });
+                });
+        } catch (erroBusca) {
+            console.warn("NÃO FOI POSSÍVEL REPROCESSAR CONTADORES DO CLIENTE:", erroBusca);
+        }
+
+        pixValidos.forEach(item => {
+            if (ultimosContadores[item.numero] == null) {
+                ultimosContadores[item.numero] = item.contAtual;
+            }
+        });
+
+        let houveMudanca = false;
+        const equipamentosAtualizados = equipamentos.map(item => {
+            const numeroPix = _normalizarNumeroPix(item?.pix);
+            if (!numeroPix || ultimosContadores[numeroPix] == null) return item;
+
+            const contadorAtualizado = String(ultimosContadores[numeroPix]).trim();
+            if (String(item?.contador || "").trim() === contadorAtualizado) return item;
+
+            houveMudanca = true;
+            return { ...item, contador: contadorAtualizado };
+        });
+
+        if (!houveMudanca) return;
+
+        await update(ref(db, `clientes/${cliente.firebaseUrl}`), {
+            equipDetalhes: equipamentosAtualizados,
+            equip: _serializarEquipTextoCliente(equipamentosAtualizados)
+        });
+        await _atualizarVersaoClientes();
+    } catch (erro) {
+        console.error("ERRO AO SINCRONIZAR CONTADOR DO CLIENTE PELO ATENDIMENTO:", erro);
+    }
+}
+
 export async function dbSalvarAtendimento(atendimento, idExistente = null) {
     try {
         if (idExistente) {
@@ -582,6 +722,7 @@ export async function dbSalvarAtendimento(atendimento, idExistente = null) {
             const atendimentosRef = ref(db, 'atendimentos');
             await push(atendimentosRef, atendimento);
         }
+        await _sincronizarContadorAtualClientePorAtendimento(atendimento);
         // Atualiza a base "Media_de_Vendas" (tempo real, sem depender do cache offline)
         await _upsertMediaDeVendasPorAtendimento(atendimento);
         await _atualizarVersaoMediaDeVendas();
@@ -612,6 +753,37 @@ export async function dbListarAtendimentosRecentes(limite = 800) {
 export function dbEscutarAtendimentos(callback) {
     const atendimentosRef = ref(db, 'atendimentos');
     onValue(atendimentosRef, (snapshot) => {
+        const data = snapshot.val();
+        const lista = [];
+        if (data) {
+            Object.keys(data).forEach(key => {
+                lista.push({ firebaseUrl: key, ...data[key] });
+            });
+        }
+        callback(lista);
+    });
+}
+
+export function dbEscutarHistoricoDoUsuario(nomeUsuario, callback) {
+    const histRef = ref(db, 'historico_estoque');
+    const consulta = query(histRef, orderByChild('responsavel'), equalTo(nomeUsuario || ''));
+
+    return onValue(consulta, (snapshot) => {
+        const data = snapshot.val();
+        const lista = [];
+        if (data) {
+            Object.keys(data).forEach(key => {
+                lista.push({ ...data[key], firebaseUrl: key });
+            });
+        }
+        callback(lista);
+    });
+}
+
+export function dbEscutarAtendimentosDoUsuario(nomeUsuario, callback) {
+    const atendimentosRef = ref(db, 'atendimentos');
+    const consulta = query(atendimentosRef, orderByChild('atendente'), equalTo(nomeUsuario || ''));
+    return onValue(consulta, (snapshot) => {
         const data = snapshot.val();
         const lista = [];
         if (data) {
@@ -1116,6 +1288,141 @@ function _serializarEquipTextoCliente(equipDetalhes) {
         .join(', ');
 }
 
+function _normalizarNumeroPix(valor) {
+    return String(valor || "").trim();
+}
+
+function _obterTimestampRegistroPix(registro) {
+    const dataBase = registro?.data_retirada || registro?.data || registro?.criado_em || registro?.atualizado_em || "";
+    const t = Date.parse(dataBase);
+    return Number.isNaN(t) ? 0 : t;
+}
+
+function _formatarIdentificacaoPixCliente(cliente) {
+    const numeroBruto = String(cliente?.numero || "").trim();
+    const nome = String(cliente?.nome || "").trim();
+    if (numeroBruto && nome) {
+        const numeroFmt = /^\d+$/.test(numeroBruto) ? numeroBruto.padStart(2, "0") : numeroBruto;
+        return `N. ${numeroFmt} - ${nome}`;
+    }
+    return nome || numeroBruto || "";
+}
+
+function _encontrarRegistroPixPorNumero(registros, numeroPix) {
+    const alvo = _normalizarNumeroPix(numeroPix);
+    if (!alvo) return null;
+
+    const candidatos = Object.entries(registros || {})
+        .filter(([, registro]) => _normalizarNumeroPix(registro?.numero_pix) === alvo)
+        .map(([key, registro]) => ({ key, registro }));
+
+    if (candidatos.length === 0) return null;
+
+    candidatos.sort((a, b) => {
+        const aInstalado = a.registro?.situacao === "instalado" ? 1 : 0;
+        const bInstalado = b.registro?.situacao === "instalado" ? 1 : 0;
+        if (aInstalado !== bInstalado) return bInstalado - aInstalado;
+        return _obterTimestampRegistroPix(b.registro) - _obterTimestampRegistroPix(a.registro);
+    });
+
+    return candidatos[0];
+}
+
+export async function dbSincronizarCadastrosPixPorManutencao(cliente, payload = {}) {
+    try {
+        const clienteBase = cliente || {};
+        const atendente = String(payload?.atendente || "").trim();
+        const observacoes = String(payload?.observacoes || "").trim();
+        const dataEvento = payload?.data || new Date().toISOString();
+        const identificacao = _formatarIdentificacaoPixCliente(clienteBase);
+        const clienteNome = String(clienteBase?.nome || "").trim();
+
+        const equipamentosAdicionados = Array.isArray(payload?.equipamentosAdicionados) ? payload.equipamentosAdicionados : [];
+        const equipamentosRetirados = Array.isArray(payload?.equipamentosRetiradosDetalhes) ? payload.equipamentosRetiradosDetalhes : [];
+        const alteracoes = [
+            ...equipamentosAdicionados.filter(item => _normalizarNumeroPix(item?.pix)).map(item => ({ tipo: "instalado", item })),
+            ...equipamentosRetirados.filter(item => _normalizarNumeroPix(item?.pix)).map(item => ({ tipo: "retirado", item }))
+        ];
+
+        if (alteracoes.length === 0) return;
+
+        const cadastrosRef = ref(db, "cadastros_pix");
+        const snapshot = await get(cadastrosRef);
+        const registrosAtuais = snapshot.exists() ? (snapshot.val() || {}) : {};
+
+        for (const alteracao of alteracoes) {
+            const numeroPix = _normalizarNumeroPix(alteracao?.item?.pix);
+            if (!numeroPix) continue;
+
+            const encontrado = _encontrarRegistroPixPorNumero(registrosAtuais, numeroPix);
+            const keyExistente = encontrado?.key || null;
+            const registroBase = encontrado?.registro || {};
+            const agoraIso = new Date().toISOString();
+
+            if (alteracao.tipo === "instalado") {
+                const patchInstalacao = {
+                    numero_pix: numeroPix,
+                    cliente: clienteNome || String(registroBase?.cliente || "").trim(),
+                    equipamento: String(alteracao.item?.nome || registroBase?.equipamento || "").trim(),
+                    identificacao: identificacao || String(registroBase?.identificacao || "").trim(),
+                    tecnico: atendente || String(registroBase?.tecnico || "").trim(),
+                    data: dataEvento,
+                    obs: observacoes || String(registroBase?.obs || "").trim(),
+                    situacao: "instalado",
+                    tecnico_retirada: "",
+                    data_retirada: "",
+                    motivo_retirada: "",
+                    condicao_retirada: "",
+                    destino_retirada: "",
+                    obs_retirada: "",
+                    origem: "manutencao",
+                    atualizado_em: agoraIso
+                };
+
+                if (keyExistente) {
+                    await update(ref(db, `cadastros_pix/${keyExistente}`), patchInstalacao);
+                    registrosAtuais[keyExistente] = { ...registroBase, ...patchInstalacao };
+                } else {
+                    const novoRegistro = { ...patchInstalacao, criado_em: agoraIso };
+                    const novoRef = await push(cadastrosRef, novoRegistro);
+                    registrosAtuais[novoRef.key] = novoRegistro;
+                }
+                continue;
+            }
+
+            const patchRetirada = {
+                numero_pix: numeroPix,
+                cliente: clienteNome || String(registroBase?.cliente || "").trim(),
+                equipamento: String(alteracao.item?.nome || registroBase?.equipamento || "").trim(),
+                identificacao: String(registroBase?.identificacao || identificacao || "").trim(),
+                tecnico: String(registroBase?.tecnico || "").trim(),
+                data: registroBase?.data || dataEvento,
+                situacao: "retirado",
+                tecnico_retirada: atendente || String(registroBase?.tecnico_retirada || "").trim(),
+                data_retirada: dataEvento,
+                motivo_retirada: payload?.pontoEncerrado ? "encerrado" : "manutencao",
+                condicao_retirada: payload?.pontoEncerrado ? "analise" : String(registroBase?.condicao_retirada || "").trim(),
+                destino_retirada: payload?.pontoEncerrado ? "analise" : String(registroBase?.destino_retirada || "").trim(),
+                obs_retirada: observacoes || String(registroBase?.obs_retirada || "").trim(),
+                origem: String(registroBase?.origem || "manutencao"),
+                atualizado_em: agoraIso
+            };
+
+            if (keyExistente) {
+                await update(ref(db, `cadastros_pix/${keyExistente}`), patchRetirada);
+                registrosAtuais[keyExistente] = { ...registroBase, ...patchRetirada };
+            } else {
+                const novoRegistro = { ...patchRetirada, criado_em: agoraIso };
+                const novoRef = await push(cadastrosRef, novoRegistro);
+                registrosAtuais[novoRef.key] = novoRegistro;
+            }
+        }
+    } catch (erro) {
+        console.error("ERRO AO SINCRONIZAR CADASTROS PIX POR MANUTENCAO:", erro);
+        throw erro;
+    }
+}
+
 export async function dbAplicarPendenciasManutencaoCliente(firebaseUrlCliente, payload = {}) {
     try {
         if (!firebaseUrlCliente) return null;
@@ -1333,6 +1640,18 @@ export async function dbLerPosseAcumulada(nomeUsuario) {
     }
 }
 
+export function dbEscutarPosseAcumulada(nomeUsuario, callback) {
+    const chave = _normalizarChaveUsuario(nomeUsuario);
+    if (!chave) {
+        callback({ produtos: {}, maquinas: {} });
+        return () => {};
+    }
+
+    return onValue(ref(db, `posse_acumulada/${chave}`), (snapshot) => {
+        callback(snapshot.val() || { produtos: {}, maquinas: {} });
+    });
+}
+
 /**
  * Incrementa o acumulador de posse com os dados de UM atendimento.
  * DEVE ser chamada ANTES de excluir um atendimento para não perder os dados.
@@ -1347,10 +1666,14 @@ export async function dbAcumularPosse(nomeUsuario, atendimento) {
         const snap = await get(posseRef);
         const atual = snap.val() || { produtos: {}, maquinas: {} };
 
+        const deltaProdutos = atendimento?.origemRegistro === 'retirada_estoque' ? 1 : -1;
+
         // Acumula produtos do atendimento
         (atendimento.produtos || []).forEach(p => {
             if (!p.nome) return;
-            atual.produtos[p.nome] = (atual.produtos[p.nome] || 0) + Number(p.quantidade || 0);
+            const proximoTotal = (atual.produtos[p.nome] || 0) + (Number(p.quantidade || 0) * deltaProdutos);
+            if (proximoTotal > 0) atual.produtos[p.nome] = proximoTotal;
+            else delete atual.produtos[p.nome];
         });
 
         // Acumula máquinas do atendimento (salvas dentro de fotos.maquinas)
@@ -1410,6 +1733,22 @@ export async function dbListarDepositos(nomeUsuario) {
         console.error("ERRO AO LISTAR DEPOSITOS:", error);
     }
     return [];
+}
+
+export function dbEscutarDepositos(nomeUsuario, callback) {
+    const chave = _normalizarChaveUsuario(nomeUsuario);
+    if (!chave) {
+        callback([]);
+        return () => {};
+    }
+
+    return onValue(ref(db, `depositos/${chave}`), (snapshot) => {
+        const data = snapshot.val();
+        const lista = data
+            ? Object.keys(data).map(key => ({ ...data[key], firebaseUrl: key }))
+            : [];
+        callback(lista);
+    });
 }
 
 export async function dbListarManutencoes() {

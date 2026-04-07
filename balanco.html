@@ -251,19 +251,30 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbListarAtendimentos, dbListarColaboradores, dbListarClientes } from './database.js';
-    import { dbListarDepositos } from './database.js';
+    import {
+        dbListarAtendimentos,
+        dbListarColaboradores,
+        dbListarClientes,
+        dbListarDepositos,
+        dbListarHistorico,
+        dbLerPosseAcumulada,
+        dbEscutarAtendimentosDoUsuario,
+        dbEscutarDepositos,
+        dbEscutarHistoricoDoUsuario,
+        dbEscutarPosseAcumulada
+    } from './database.js';
     // dbLerPosseAcumulada: lê o contador persistente de produtos/máquinas acumulados
     // de atendimentos já excluídos do Firebase. Sem isso, ao excluir atendimentos antigos
     // os totais de posse ficariam incorretos (menores do que o real).
-    import { dbLerPosseAcumulada } from './database.js';
-
     const usuarioLogado = localStorage.getItem('usuarioLogado') || '';
     let todosAtendimentos = [];
     let todosDepositos = [];
+    let historicoEstoque = [];
     let datasComAtendimento = new Set();
     let comissaoUsuario = 0; // % de comissão do colaborador logado (calculado por mês)
     let colaboradorObj  = null;
+    let mapaRotas = {};
+
     function dataLocalStr(date) {
         const d = (date instanceof Date) ? date : new Date(date || 0);
         if (isNaN(d)) return null;
@@ -417,6 +428,19 @@
         });
     }
 
+    function atualizarDatasComAtendimento() {
+        datasComAtendimento = new Set(
+            todosAtendimentos
+                .filter(a => {
+                    const dataStr = dataLocalStr(a.data || a.dataHora || 0);
+                    if (!dataStr) return false;
+                    const total = Number(a.financeiro?.totalGeral || 0);
+                    return dataStr <= hoje && total > 0;
+                })
+                .map(a => dataLocalStr(a.data || a.dataHora || 0))
+        );
+    }
+
     /**
      * Soma os produtos de todos os atendimentos passados.
      * @param {Array}  atendimentos - Lista de atendimentos ativos no Firebase
@@ -435,6 +459,44 @@
                 mapa[p.nome] = (mapa[p.nome] || 0) + Number(p.quantidade || 0);
             });
         });
+        return Object.entries(mapa).sort((a, b) => b[1] - a[1]);
+    }
+
+    function normalizarTexto(valor) {
+        return String(valor || '').trim().toLowerCase();
+    }
+
+    function aplicarDeltaMapa(mapa, nome, delta) {
+        const nomeItem = String(nome || '').trim();
+        if (!nomeItem || !Number.isFinite(delta) || delta === 0) return;
+        const proximoTotal = Number(mapa[nomeItem] || 0) + delta;
+        if (proximoTotal > 0) mapa[nomeItem] = proximoTotal;
+        else delete mapa[nomeItem];
+    }
+
+    function somarProdutosEmPosse(atendimentos, movimentosEstoque, nomeUsuario, acumulado = {}) {
+        const mapa = { ...acumulado };
+        const usuarioNorm = normalizarTexto(nomeUsuario);
+
+        movimentosEstoque.forEach(mov => {
+            if (normalizarTexto(mov?.responsavel) !== usuarioNorm) return;
+            const qtd = Number(mov?.qtd || 0);
+            if (!qtd) return;
+
+            if (mov.tipo === 'saida') {
+                aplicarDeltaMapa(mapa, mov.itemNome, qtd);
+            } else if (mov.tipo === 'entrada') {
+                aplicarDeltaMapa(mapa, mov.itemNome, -qtd);
+            }
+        });
+
+        atendimentos.forEach(a => {
+            if (a?.origemRegistro === 'retirada_estoque') return;
+            (a.produtos || []).forEach(p => {
+                aplicarDeltaMapa(mapa, p.nome, -Number(p.quantidade || 0));
+            });
+        });
+
         return Object.entries(mapa).sort((a, b) => b[1] - a[1]);
     }
 
@@ -554,7 +616,12 @@
         // Posse total = atendimentos ativos + acumulado dos excluídos (lido na inicialização)
         // window._posseAcumuladaProdutos e window._posseAcumuladaMaquinas são populados
         // via dbLerPosseAcumulada no bloco de inicialização lá embaixo.
-        const produtosPosse = somarProdutos(todosAtendimentos, window._posseAcumuladaProdutos || {});
+        const produtosPosse = somarProdutosEmPosse(
+            todosAtendimentos,
+            historicoEstoque,
+            usuarioLogado,
+            window._posseAcumuladaProdutos || {}
+        );
         const maquinasPosse = somarMaquinas(todosAtendimentos, window._posseAcumuladaMaquinas || {});
         const maxProd       = produtosPosse[0]?.[1] || 1;   // usado para calcular a barra de progresso
         const maxMaqPosse   = maquinasPosse[0]?.[1] || 1;
@@ -590,7 +657,7 @@
                                     <div class="item-barra" style="width:${Math.round((qtd / maxProd) * 100)}%"></div>
                                 </div>
                             </div>
-                            <div class="item-badge${i === 0 ? ' destaque' : ''}">-${qtd}</div>
+                            <div class="item-badge${i === 0 ? ' destaque' : ''}">${qtd}</div>
                         </div>`).join('')}
                 </div>
             </div>` : ''}
@@ -618,7 +685,7 @@
                                     <div class="item-barra" style="width:${Math.round((qtd / maxMaqPosse) * 100)}%;background:${i === 0 ? '#4caf50' : 'rgba(76,175,80,0.6)'}"></div>
                                 </div>
                             </div>
-                            <div class="item-badge${i === 0 ? ' destaque' : ''}" style="${i === 0 ? 'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;' : ''}">-${qtd}</div>
+                            <div class="item-badge${i === 0 ? ' destaque' : ''}" style="${i === 0 ? 'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;' : ''}">${qtd}</div>
                         </div>`).join('')}
                 </div>
             </div>` : ''}
@@ -835,18 +902,20 @@
     // Todas as chamadas ao Firebase rodam em paralelo para carregar mais rápido.
     // posseAcumulada: dados de produtos/máquinas de atendimentos já excluídos.
     // Sem isso, ao excluir atendimentos antigos o balanço de material ficaria errado.
-    const [todos, posseAcumulada, colaboradores, clientes, depositos] = await Promise.all([
+    const [todos, posseAcumulada, colaboradores, clientes, depositos, historico] = await Promise.all([
         dbListarAtendimentos(),
         dbLerPosseAcumulada(usuarioLogado),   // ← acumulado dos atendimentos excluídos
         dbListarColaboradores(),
         dbListarClientes(),
-        dbListarDepositos(usuarioLogado)
+        dbListarDepositos(usuarioLogado),
+        dbListarHistorico()
     ]);
     todosDepositos = depositos;
+    historicoEstoque = historico;
     colaboradorObj  = colaboradores.find(c => c.nome === usuarioLogado) || null;
 
     // Mapa para cruzar cliente do atendimento → rota atual
-    const mapaRotas = {};
+    mapaRotas = {};
     clientes.forEach(c => {
         if (!c.rota) return;
         if (c.firebaseUrl) mapaRotas[c.firebaseUrl] = c.rota;
@@ -871,6 +940,29 @@
     window._posseAcumuladaMaquinas = posseAcumulada.maquinas || {};
 
     renderizar();
+
+    // Atualiza em tempo real apenas os dados do usuÃ¡rio logado.
+    dbEscutarAtendimentosDoUsuario(usuarioLogado, (lista) => {
+        todosAtendimentos = lista;
+        atualizarDatasComAtendimento();
+        renderizar();
+    });
+
+    dbEscutarDepositos(usuarioLogado, (lista) => {
+        todosDepositos = lista;
+        renderizar();
+    });
+
+    dbEscutarHistoricoDoUsuario(usuarioLogado, (lista) => {
+        historicoEstoque = lista;
+        renderizar();
+    });
+
+    dbEscutarPosseAcumulada(usuarioLogado, (posseAcumuladaAtual) => {
+        window._posseAcumuladaProdutos = posseAcumuladaAtual.produtos || {};
+        window._posseAcumuladaMaquinas = posseAcumuladaAtual.maquinas || {};
+        renderizar();
+    });
 </script>
 </body>
 </html>

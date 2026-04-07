@@ -562,7 +562,7 @@
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
 verificarAutenticacao();
-import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbAplicarPendenciasManutencaoCliente, dbEscutarClientes, dbListarClientes, dbEscutarEstoque, storageSalvarFotoComThumb } from './database.js';
+import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbListarClientes, dbEscutarEstoque, storageSalvarFotoComThumb } from './database.js';
 
 // ════════════════════════════════════════════════
 // DADOS DA MANUTENÇÃO
@@ -838,7 +838,7 @@ dbEscutarEstoque((lista) => {
     maquinasDisponiveis = lista.filter(item => item.categoria === 'maquina');
 
     lista.forEach(item => {
-        if (item.categoria === 'produtos' && !nomesVistos.has(item.nome)) {
+        if ((item.categoria === 'produtos' || item.categoria === 'materiais') && !nomesVistos.has(item.nome)) {
             nomesVistos.add(item.nome);
             listaProdutos.push(item);
         }
@@ -2183,6 +2183,21 @@ window.finalizarRegistro = async function() {
                 equipamentosRetiradosDetalhes: camposExtras.equipamentosRetiradosDetalhes || [],
                 pontoEncerrado: camposExtras.pontoEncerrado === true,
                 valorEncerramento: camposExtras.valorEncerramento || ''
+            });
+        }
+
+        const temAlteracaoPix = Boolean(
+            (camposExtras.equipamentosAdicionados || []).some(item => String(item?.pix || '').trim())
+            || (camposExtras.equipamentosRetiradosDetalhes || []).some(item => String(item?.pix || '').trim())
+        );
+        if (temAlteracaoPix) {
+            await dbSincronizarCadastrosPixPorManutencao(clienteSnapshotAtendimento, {
+                atendente: usuarioLogado,
+                data: new Date().toISOString(),
+                observacoes: dadosFinais.observacoes || '',
+                equipamentosAdicionados: camposExtras.equipamentosAdicionados || [],
+                equipamentosRetiradosDetalhes: camposExtras.equipamentosRetiradosDetalhes || [],
+                pontoEncerrado: camposExtras.pontoEncerrado === true
             });
         }
 

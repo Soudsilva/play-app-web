@@ -31,6 +31,7 @@
         .bg-maquina { background: #9c27b0; }
         .bg-produtos { background: #4caf50; }
         .bg-peca { background: #ff9800; }
+        .bg-materiais { background: #00acc1; }
 
         .lado-card { display:flex; align-items:center; flex-shrink: 0; }
         .acoes-card { display: flex; gap: 4px; }
@@ -63,6 +64,7 @@
         .chip-filtro[data-filtro="produtos"].ativo { border-color: #4caf50; background: rgba(76,175,80,0.2); color: #b9f6ca; }
         .chip-filtro[data-filtro="peca"].ativo { border-color: #ff9800; background: rgba(255,152,0,0.2); color: #ffe0b2; }
         .chip-filtro[data-filtro="maquina"].ativo { border-color: #9c27b0; background: rgba(156,39,176,0.2); color: #e1bee7; }
+        .chip-filtro[data-filtro="materiais"].ativo { border-color: #00acc1; background: rgba(0,172,193,0.2); color: #b2ebf2; }
         .linha-categoria-valor { display: flex; gap: 10px; align-items: flex-end; }
         .linha-categoria-valor > div { flex: 1; }
         #wrapValorEquipamento { display: none; }
@@ -87,6 +89,7 @@
                 <div class="chip-filtro" data-filtro="produtos" onclick="setFiltro('produtos')">Produtos</div>
                 <div class="chip-filtro" data-filtro="peca" onclick="setFiltro('peca')">Peças</div>
                 <div class="chip-filtro" data-filtro="maquina" onclick="setFiltro('maquina')">Máquinas</div>
+                <div class="chip-filtro" data-filtro="materiais" onclick="setFiltro('materiais')">Materiais</div>
             </div>
         </div>
         <div id="containerEstoque">
@@ -111,6 +114,7 @@
                     <option value="produtos">Produtos</option>
                     <option value="peca">Peças</option>
                     <option value="maquina">Máquinas</option>
+                    <option value="materiais">Materiais</option>
                 </select>
             </div>
             <div id="wrapValorEquipamento">
@@ -197,6 +201,9 @@
         } else if (categoria === 'peca') {
             label.textContent = 'Valor da Peça';
             input.placeholder = '1.000';
+        } else if (categoria === 'materiais') {
+            label.textContent = 'Valor do Material';
+            input.placeholder = '1.000';
         } else {
             label.textContent = 'Valor do Produto';
             input.placeholder = '0,35';
@@ -263,6 +270,7 @@
                 let classeCor = "bg-produtos", nomeCategoria = "Produtos";
                 if(item.categoria === "maquina") { classeCor = "bg-maquina"; nomeCategoria = "Máquina"; }
                 if(item.categoria === "peca") { classeCor = "bg-peca"; nomeCategoria = "Peça"; }
+                if(item.categoria === "materiais") { classeCor = "bg-materiais"; nomeCategoria = "Materiais"; }
                 const valorEquipamento = Number(item.valorEquipamento || 0);
                 const valorHtml = valorEquipamento > 0
                     ? `<div>Valor: ${formatarValorItem(valorEquipamento, item.categoria)}</div>`
@@ -280,15 +288,6 @@
         const id = document.getElementById('idItem').value;
         const categoria = document.getElementById('categoriaItem').value;
         const valorEquipamento = obterValorNumerico(categoria, document.getElementById('valorEquipamento').value || 0);
-        if (valorEquipamento <= 0) {
-            if (window.playAlert) {
-                await window.playAlert('Informe o valor do item.');
-            } else {
-                alert('Informe o valor do item.');
-            }
-            document.getElementById('valorEquipamento').focus();
-            return;
-        }
         const dados = {
             nome: document.getElementById('nomeItem').value,
             categoria,

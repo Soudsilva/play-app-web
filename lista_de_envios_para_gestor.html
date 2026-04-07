@@ -19,7 +19,7 @@
             border-radius: 12px; 
             padding: 15px; 
             margin-bottom: 20px; 
-            border: 1px solid rgba(255,255,255,0.2); 
+            border: 2px solid rgba(255,255,255,0.7);
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
         
@@ -46,6 +46,7 @@
         .foto-legenda { font-size: 10px; color: #ccc; font-weight: bold; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         .sem-envios { text-align: center; opacity: 0.6; margin-top: 50px; font-size: 16px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px;}
+        .grupo-data-label { font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; color: #aac4f5; padding: 14px 2px 6px; }
 
         /* Barra de busca */
         .barra-busca { position: sticky; top: 0; z-index: 100; background: #042d86; padding: 10px 0 12px; margin-bottom: 14px; }
@@ -56,26 +57,59 @@
         .busca-input::placeholder { color: rgba(255,255,255,0.4); font-size: 15px; }
         .busca-limpar { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 18px; cursor: pointer; padding: 0; line-height: 1; display: none; }
         .busca-limpar.visivel { display: block; }
-        .envio-acoes { margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.2); }
-        .acoes-linha { display: flex; gap: 10px; }
+        .filtro-colab {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.22);
+            border-radius: 14px; color: white; font-size: 13px;
+            padding: 0 10px; outline: none; cursor: pointer;
+            flex: 0 0 110px; width: 110px; height: 47px;
+            box-sizing: border-box;
+        }
+        .filtro-colab option { background: #042d86; color: white; }
+        .barra-busca-linha { display: flex; gap: 8px; align-items: center; }
+        .busca-wrap { min-width: 0; }
+        .busca-input { font-size: 14px; }
+        .envio-acoes { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.15); }
+        .acoes-linha { display: flex; gap: 8px; justify-content: flex-end; }
         .btn-acao {
-            flex: 1;
-            border: none;
-            border-radius: 10px;
-            padding: 11px 12px;
-            color: white;
+            border-radius: 6px;
+            padding: 5px 14px;
+            font-size: 12px;
             font-weight: bold;
             cursor: pointer;
+            background: transparent;
         }
-        .btn-editar { background: #ff9800; }
-        .btn-excluir { background: #f44336; }
-        .btn-acao:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-        }
+        .btn-editar { border: 1px solid rgba(255,152,0,0.6); color: rgba(255,152,0,0.85); }
+        .btn-excluir { border: 1px solid rgba(244,67,54,0.6); color: rgba(244,67,54,0.85); }
+        .btn-acao:disabled { opacity: 0.35; cursor: not-allowed; }
 
         .envio-meta { font-size: 13px; color: #cfd6e3; margin-top: 6px; }
         .envio-meta strong { color: white; }
+        .envio-rodape {
+            margin-top: 12px; padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.25);
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .envio-rodape-data {
+            font-size: 12px; color: white;
+        }
+        .envio-rodape-pessoas {
+            display: flex; justify-content: space-between; align-items: center; gap: 8px;
+        }
+        .envio-rodape-item {
+            display: flex; flex-direction: column; gap: 2px;
+        }
+        .envio-rodape-label {
+            font-size: 10px; font-weight: bold; letter-spacing: 1.2px;
+            color: #ccc; text-transform: uppercase;
+        }
+        .envio-rodape-valor {
+            font-size: 14px; font-weight: bold; color: white;
+        }
+        .envio-rodape-simples {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 13px; color: white; font-weight: bold;
+        }
+        .envio-rodape-simples strong { color: #ffeb3b; }
     </style>
 </head>
 <body>
@@ -89,10 +123,15 @@
     </div>
 
     <div class="barra-busca">
-        <div class="busca-wrap">
-            <span class="busca-icone">🔍</span>
-            <input class="busca-input" id="inputBusca" type="search" placeholder="Buscar cliente, produto..." autocomplete="off">
-            <button class="busca-limpar" id="btnLimparBusca" onclick="limparBusca()">✕</button>
+        <div class="barra-busca-linha">
+            <div class="busca-wrap" style="flex:1;">
+                <span class="busca-icone">🔍</span>
+                <input class="busca-input" id="inputBusca" type="search" placeholder="Buscar cliente, produto..." autocomplete="off">
+                <button class="busca-limpar" id="btnLimparBusca" onclick="limparBusca()">✕</button>
+            </div>
+            <select class="filtro-colab" id="filtroColab">
+                <option value="">Colaborador</option>
+            </select>
         </div>
     </div>
 
@@ -113,7 +152,29 @@
     let colaboradoresSalvos = [];
     let colaboradoresCarregados = false;
     let termoBusca = '';
+    let filtroColabSelecionado = '';
     let gestorAutorizado = false;
+
+    const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+    function dataLocalYMD(isoStr) {
+        const d = new Date(isoStr);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function rotuloData(ymd) {
+        const hoje = new Date(); hoje.setHours(0,0,0,0);
+        const data = new Date(ymd + 'T00:00:00');
+        const diff = Math.round((hoje - data) / 86400000);
+        if (diff === 0) return 'Hoje';
+        if (diff === 1) return 'Ontem';
+        if (diff < 7) {
+            const nome = data.toLocaleDateString('pt-BR', { weekday: 'long' });
+            return nome.charAt(0).toUpperCase() + nome.slice(1);
+        }
+        const mes = MESES[data.getMonth()];
+        return data.getFullYear() === hoje.getFullYear() ? mes : `${mes} ${data.getFullYear()}`;
+    }
 
     function normalizarTexto(txt) {
         return String(txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -131,6 +192,25 @@
         document.getElementById('btnLimparBusca').classList.toggle('visivel', this.value.length > 0);
         renderizarEnvios();
     });
+
+    document.getElementById('filtroColab').addEventListener('change', function() {
+        filtroColabSelecionado = this.value;
+        renderizarEnvios();
+    });
+
+    function popularFiltroColab(atendimentos) {
+        const select = document.getElementById('filtroColab');
+        const nomes = [...new Set(atendimentos.map(a => obterNomeAutorEnvio(a)).filter(Boolean))].sort();
+        const valorAtual = select.value;
+        select.innerHTML = '<option value="">Colaborador</option>';
+        nomes.forEach(nome => {
+            const opt = document.createElement('option');
+            opt.value = nome;
+            opt.textContent = nome;
+            select.appendChild(opt);
+        });
+        if (valorAtual) select.value = valorAtual;
+    }
 
     function formatarMoeda(valor) {
         return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -159,6 +239,10 @@
 
     function ehRegistroManutencao(envio) {
         return envio?.origemRegistro === 'manutencao' || !!envio?.manutencao;
+    }
+
+    function ehRetiradaEstoque(envio) {
+        return envio?.origemRegistro === 'retirada_estoque';
     }
 
     function temFinanceiroNoEnvio(envio) {
@@ -251,6 +335,7 @@
         // Lista todos os atendimentos e ordena da data mais recente (maior) para a mais velha (menor)
         const enviosVisiveis = atendimentosSalvos
             .filter(a => {
+                if (filtroColabSelecionado && obterNomeAutorEnvio(a) !== filtroColabSelecionado) return false;
                 if (!termoBusca) return true;
                 const fotos = a.fotos || {};
                 const autor = obterNomeAutorEnvio(a);
@@ -278,8 +363,17 @@
             return;
         }
 
-        // Constrói os Cards
+        // Constrói os Cards com rótulos de data
+        let ultimoGrupo = null;
         enviosVisiveis.forEach(envio => {
+            const grupoKey = dataLocalYMD(envio.data);
+            if (grupoKey !== ultimoGrupo) {
+                ultimoGrupo = grupoKey;
+                const label = document.createElement('div');
+                label.className = 'grupo-data-label';
+                label.textContent = rotuloData(grupoKey);
+                container.appendChild(label);
+            }
             const card = document.createElement('div');
             card.className = 'card-envio';
 
@@ -295,14 +389,18 @@
             if (envio.produtos && envio.produtos.length > 0) {
                 htmlProdutos += `<div class="secao-titulo">Produtos</div>`;
                 envio.produtos.forEach(p => {
-                    htmlProdutos += `<div class="info-linha"><span>${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
+                    if (ehRetiradaEstoque(envio)) {
+                        htmlProdutos += `<div class="info-linha"><strong style="color:white; font-size:16px;">${p.nome}</strong> <strong>Qtd: ${p.quantidade}</strong></div>`;
+                    } else {
+                        htmlProdutos += `<div class="info-linha"><span>${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
+                    }
                 });
             }
 
             // --- 2. FINANCEIRO ---
             let htmlFin = '';
             const fin = envio.financeiro || {};
-            const mostrarFinanceiro = !ehRegistroManutencao(envio) || envio?.manutencao?.pontoEncerrado === true;
+            const mostrarFinanceiro = !ehRetiradaEstoque(envio) && (!ehRegistroManutencao(envio) || envio?.manutencao?.pontoEncerrado === true);
 
             if (mostrarFinanceiro) {
                 const saldoDepositar = obterSaldoDepositar(fin);
@@ -375,7 +473,38 @@
                 </div>
             `;
 
-            card.innerHTML = `<div class="envio-header"><div class="envio-data">📅 Recebido em ${dataFormatada}</div><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div><div class="envio-meta"><strong>Enviado por:</strong> ${autorEnvio}</div><div class="envio-meta"><strong>Origem:</strong> ${origemEnvio}</div></div>${htmlManutencao}${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}`;
+            const htmlTituloCliente = ehRetiradaEstoque(envio)
+                ? `<div class="envio-cliente">📦 Retirada de Estoque</div>`
+                : `<div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div>`;
+
+            const nomeEnviador = ehRetiradaEstoque(envio)
+                ? (envio.autorizadoPor || autorEnvio)
+                : autorEnvio;
+
+            const htmlRodape = ehRetiradaEstoque(envio) ? `
+                <div class="envio-rodape">
+                    <div class="envio-rodape-data">${dataFormatada}</div>
+                    <div class="envio-rodape-pessoas">
+                        <div class="envio-rodape-item">
+                            <span class="envio-rodape-label">Registrado por</span>
+                            <span class="envio-rodape-valor">${nomeEnviador}</span>
+                        </div>
+                        <div class="envio-rodape-item" style="text-align:right;">
+                            <span class="envio-rodape-label">Responsável</span>
+                            <span class="envio-rodape-valor">${autorEnvio}</span>
+                        </div>
+                    </div>
+                </div>` : `
+                <div class="envio-rodape">
+                    <div class="envio-rodape-simples">
+                        <span>${dataFormatada}</span>
+                        <span>Enviado por: <strong>${nomeEnviador}</strong></span>
+                    </div>
+                </div>`;
+
+            const htmlOrigem = ehRetiradaEstoque(envio) ? '' : `<div class="envio-meta"><strong>Origem:</strong> ${origemEnvio}</div>`;
+
+            card.innerHTML = `<div class="envio-header">${htmlTituloCliente}${htmlOrigem}</div>${htmlManutencao}${htmlProdutos}${htmlFin}${htmlFotos}${htmlRodape}${htmlAcoes}`;
             card.querySelector('.btn-editar-envio')?.addEventListener('click', () => window.editarEnvio(envio));
             card.querySelector('.btn-excluir-envio')?.addEventListener('click', () => window.excluirEnvio(envio.firebaseUrl));
             container.appendChild(card);
@@ -397,6 +526,7 @@
 
     dbEscutarAtendimentos((atendimentos) => {
         atendimentosSalvos = atendimentos;
+        popularFiltroColab(atendimentos);
         renderizarEnvios();
     });
 

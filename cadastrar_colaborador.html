@@ -49,7 +49,7 @@
         .linha-campos { display:flex; gap:10px; align-items:flex-end; }
         .linha-campos .campo { min-width: 0; display: flex; flex-direction: column; }
         .campo-nome { flex: 2.3; }
-        .campo-cargo { flex: 1; max-width: 120px; }
+        .campo-cargo { flex: 1; max-width: 170px; }
         .campo-senha { flex: 1; max-width: 120px; }
         .campo-perfil { flex: 1.4; }
         .campo-nivel { flex: 0.8; max-width: 78px; }
@@ -105,7 +105,7 @@
         </div>
 
         <div style="display: flex; gap: 10px;">
-            <div style="flex: 1.5;"><label class="label-focada">Senha Global</label><input type="text" id="senhaColaborador" placeholder="Ex: 1234A" maxlength="5" autocomplete="off" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);"></div>
+            <div style="flex: 1.5;"><label class="label-focada">Senha Global</label><input type="text" id="senhaColaborador" placeholder="Ex: 1234A" maxlength="5" autocomplete="off" required oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);"></div>
             <div style="flex: 2;"><label class="label-focada">Perfil</label>
                 <select id="nivelAcesso">
                     <option value="gestao">Gestão</option>
@@ -244,14 +244,14 @@
             </div>
             <div class="campo campo-cargo">
                 <label class="label-focada">Cargo</label>
-                <input type="text" id="cargoColaborador" placeholder="Cargo" maxlength="10">
+                <input type="text" id="cargoColaborador" placeholder="Cargo" maxlength="15">
             </div>
         </div>
 
         <div class="linha-campos">
             <div class="campo campo-senha">
                 <label class="label-focada">Senha Global</label>
-                <input type="text" id="senhaColaborador" placeholder="1234A" maxlength="5" autocomplete="off" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);">
+                <input type="text" id="senhaColaborador" placeholder="1234A" maxlength="5" autocomplete="off" required oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);">
             </div>
             <div class="campo campo-perfil">
                 <label class="label-focada">Perfil</label>
@@ -499,7 +499,7 @@
           representanteComissao: limparValorPercentual(document.getElementById('representanteComissaoColaborador').value),
           fixo: limparValorInteiro(document.getElementById('fixoColaborador').value),
           bonusFixo: limparValorInteiro(document.getElementById('bonusFixoColaborador').value),
-          senha: document.getElementById('senhaColaborador').value,
+          senha: document.getElementById('senhaColaborador').value.trim(),
           nivel_completo: document.getElementById('nivelAcesso').value + "_" + document.getElementById('nivelNumero').value,
           dataAtualizacao: new Date().toISOString()
       };
@@ -519,13 +519,16 @@
           dados.comissaoHistorico = historico;
       }
 
-      if (dados.senha) {
-          const digitos = (dados.senha.match(/[0-9]/g) || []).length;
-          const letras = (dados.senha.match(/[A-Za-z]/g) || []).length;
-          if (digitos !== 4 || letras !== 1 || dados.senha.length !== 5) {
-              await window.playAlert('A senha deve ter exatamente 4 números e 1 letra (ex: 1234A).');
-              return;
-          }
+      if (!dados.senha) {
+          await window.playAlert('Preencha a senha do colaborador antes de salvar.');
+          return;
+      }
+
+      const digitos = (dados.senha.match(/[0-9]/g) || []).length;
+      const letras = (dados.senha.match(/[A-Za-z]/g) || []).length;
+      if (digitos !== 4 || letras !== 1 || dados.senha.length !== 5) {
+          await window.playAlert('A senha deve ter exatamente 4 números e 1 letra (ex: 1234A).');
+          return;
       }
 
       try {

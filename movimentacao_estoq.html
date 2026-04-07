@@ -23,40 +23,96 @@
         .saida.ativo { background: #f44336; }   /* Vermelho */
 
         /* Card de Formulário */
-        .card-form { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); }
+        .card-form { background: rgba(255,255,255,0.07); padding: 20px; border-radius: 18px; border: 2px solid rgba(255,255,255,0.85); }
 
-        /* Linha dos Inputs (Ajustada para caber tudo) */
-        .linha-inputs { display: flex; gap: 5px; align-items: center; margin-bottom: 15px; }
-        
-        select, input { 
-            padding: 10px 5px; 
-            border-radius: 8px; 
-            border: 1px solid #ccc; 
-            background: white; 
-            color: #333; 
-            font-size: 13px; 
-            outline: none; 
-            height: 45px;
+        /* Grade 2×2 dos campos */
+        .card-grid {
+            display: grid;
+            grid-template-columns: 115px 1fr;
+            gap: 6px 10px;
+            margin-bottom: 16px;
+        }
+        .campo-form { display: flex; flex-direction: column; gap: 5px; }
+        .campo-form label {
+            font-size: 10px; font-weight: bold; letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.45); text-transform: uppercase;
+        }
+
+        /* Separador entre as duas linhas */
+        .card-separador {
+            grid-column: 1 / -1;
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+            margin: 2px 0;
+        }
+
+        select, input {
+            padding: 11px 8px;
+            border-radius: 10px;
+            border: 1.5px solid #bbb;
+            background: white;
+            color: #222;
+            font-size: 15px;
+            outline: none;
+            height: 48px;
+            width: 100%;
             box-sizing: border-box;
         }
-        
-        /* Larguras Proporcionais */
-        .sel-tipo { width: 34%; }   /* Categoria (Reduzido) */
-        .sel-item { width: 60%; }   /* Nome do Item (Aumentado para caber nomes longos) */
-        .inp-qtd  { width:20%; text-align: center; } /* Qtd (Canto Direito compacto) */
 
-        .btn-confirmar { 
-            width: 100%; padding: 15px; border: none; border-radius: 30px; 
-            font-size: 16px; font-weight: bold; color: white; cursor: pointer; 
-            transition: 0.2s; margin-top: 10px;
+        /* Quantidade com leve destaque */
+        .inp-qtd {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            background: #fffde7;
+            border-color: #f9a825;
         }
 
-        .info-atual { text-align: center; font-size: 12px; color: #ccc; margin-top: 10px; }
-        .destaque-qtd { color: #ffeb3b; font-weight: bold; font-size: 16px; }
+        /* Linha de Saldo Atual */
+        .saldo-box {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .saldo-box-titulo {
+            font-size: 10px; font-weight: bold; letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.4); text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .info-atual { font-size: 18px; color: rgba(255,235,59,0.85); font-weight: bold; }
+        .destaque-qtd { color: rgba(255,235,59,0.85); font-weight: bold; font-size: 18px; }
+
+        .btn-confirmar {
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: bold; color: white; cursor: pointer;
+            letter-spacing: 0.5px; transition: 0.2s;
+        }
+
         .label-pequena { font-size: 11px; color: #ccc; margin-bottom: 4px; display: block; margin-top: 10px; }
 
-        /* Estilo do Histórico */
-        .secao-historico { margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; }
+        /* Input de busca padronizado */
+        .input-busca {
+            width: 100%;
+            margin-bottom: 14px;
+            text-align: center;
+            background: rgba(255,255,255,0.18) !important;
+            color: white !important;
+            border: 1.5px solid rgba(255,255,255,0.55) !important;
+            box-sizing: border-box;
+        }
+        .input-busca::placeholder { color: rgba(255,255,255,0.65); }
+
+        /* Seções */
+        .secao-historico { margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; border-radius: 16px; transition: border 0.3s, padding 0.3s; }
+        .secao-historico:has(.titulo-hist.aberto) { border: 3px solid rgba(76,175,80,0.75); padding: 15px; }
+
+        .secao-itens:has(.titulo-hist.aberto) { border: 3px solid rgba(33,150,243,0.75); border-radius: 16px; padding: 15px; }
 
         @keyframes shimmer-btn {
             0%   { background-position: -200% center; }
@@ -109,13 +165,37 @@
             outline: 2px solid #ffeb3b;
             outline-offset: 3px;
         }
-        .titulo-hist.aberto {
+        /* Movimentações aberto — verde */
+        .secao-historico .titulo-hist.aberto {
             background: rgba(76,175,80,0.07);
             border-color: rgba(76,175,80,0.55);
             border-left-color: #4caf50;
             animation: none;
         }
-        .titulo-hist.aberto::before { display: none; }
+        .secao-historico .titulo-hist.aberto::before { display: none; }
+        .secao-historico .titulo-hist.aberto .titulo-hist-olho {
+            background: rgba(76,175,80,0.2);
+            border-color: rgba(76,175,80,0.55);
+        }
+        .secao-historico .titulo-hist.aberto .titulo-hist-label { color: #81c784; }
+        .secao-historico .titulo-hist.aberto .titulo-hist-seta { transform: rotate(180deg); }
+        .secao-historico .titulo-hist.aberto .titulo-hist-seta svg { stroke: #81c784; }
+
+        /* Itens aberto — azul */
+        .secao-itens .titulo-hist.aberto {
+            background: rgba(33,150,243,0.07);
+            border-color: rgba(33,150,243,0.55);
+            border-left-color: #2196f3;
+            animation: none;
+        }
+        .secao-itens .titulo-hist.aberto::before { display: none; }
+        .secao-itens .titulo-hist.aberto .titulo-hist-olho {
+            background: rgba(33,150,243,0.2);
+            border-color: rgba(33,150,243,0.55);
+        }
+        .secao-itens .titulo-hist.aberto .titulo-hist-label { color: #64b5f6; }
+        .secao-itens .titulo-hist.aberto .titulo-hist-seta { transform: rotate(180deg); }
+        .secao-itens .titulo-hist.aberto .titulo-hist-seta svg { stroke: #64b5f6; }
 
         /* Ícone olho */
         .titulo-hist-olho {
@@ -130,14 +210,11 @@
             justify-content: center;
             font-size: 20px;
             line-height: 1;
-            transition: background 0.3s, border-color 0.3s, transform 0.3s;
-            animation: blink-eye 4s ease-in-out infinite;
+            transition: background 0.3s, border-color 0.3s;
         }
         .titulo-hist.aberto .titulo-hist-olho {
             background: rgba(76,175,80,0.2);
             border-color: rgba(76,175,80,0.55);
-            animation: none;
-            transform: scale(1.08);
         }
 
         .titulo-hist-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
@@ -151,7 +228,6 @@
             align-items: center;
             gap: 8px;
         }
-        .titulo-hist.aberto .titulo-hist-label { color: #81c784; }
         .titulo-hist-badge {
             display: inline-flex;
             align-items: center;
@@ -167,10 +243,8 @@
             letter-spacing: 0;
             text-transform: none;
         }
-        .titulo-hist.aberto .titulo-hist-badge {
-            background: #4caf50;
-            color: #fff;
-        }
+        .secao-historico .titulo-hist.aberto .titulo-hist-badge { background: #4caf50; color: #fff; }
+        .secao-itens .titulo-hist.aberto .titulo-hist-badge { background: #2196f3; color: #fff; }
         .titulo-hist-subtexto {
             font-size: 11px;
             color: rgba(255,255,255,0.55);
@@ -201,13 +275,10 @@
             stroke-linejoin: round;
             transition: stroke 0.3s;
         }
-        .titulo-hist.aberto .titulo-hist-seta {
-            transform: rotate(180deg);
-            background: rgba(76,175,80,0.15);
-        }
-        .titulo-hist.aberto .titulo-hist-seta svg { stroke: #81c784; }
+        .secao-historico .titulo-hist.aberto .titulo-hist-seta { background: rgba(76,175,80,0.15); }
+        .secao-itens .titulo-hist.aberto .titulo-hist-seta { background: rgba(33,150,243,0.15); }
         .oculto { display: none; }
-        .item-hist { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .item-hist { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid; }
         .hist-esq { display: flex; flex-direction: column; gap: 2px; }
         .hist-dir { text-align: right; font-weight: bold; }
         
@@ -268,6 +339,7 @@
         .bg-maquina-est { background: #9c27b0; }
         .bg-produtos-est { background: #4caf50; }
         .bg-peca-est { background: #ff9800; }
+        .bg-materiais-est { background: #00acc1; }
         .card-est-rodape {
             display: flex;
             align-items: center;
@@ -301,19 +373,22 @@
             cursor: pointer;
             flex: 1;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 9px 6px;
-            border-radius: 999px;
+            gap: 3px;
+            padding: 8px 4px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.22);
             background: rgba(255,255,255,0.08);
             color: rgba(255,255,255,0.8);
             font-weight: bold;
-            font-size: 12px;
-            white-space: nowrap;
+            font-size: 11px;
             transition: 0.15s;
         }
-        .filtro-est.ativo { background: rgba(255,235,59,0.18); border-color: rgba(255,235,59,0.52); color: #fff2a8; }
+        .filtro-est .f-icon { font-size: 18px; line-height: 1; }
+        .filtro-est .f-label { color: #ffffff; }
+        .filtro-est.ativo { background: rgba(255,235,59,0.18); border-color: rgba(255,235,59,0.52); }
         .filtro-est input { display: none; }
     </style>
 </head>
@@ -333,38 +408,49 @@
     </div>
 
     <div class="card-form">
-        <label style="display:block; margin-bottom:8px; font-size:11px; opacity:0.8; text-align: center;">TIPO | ITEM | QTD</label>
-        
-        <div class="linha-inputs">
-            <select id="filtroCategoria" class="sel-tipo" onchange="filtrarItens()">
-                <option value="maquina">Máquina</option>
-                <option value="peca">Peça</option>
-                <option value="produtos">Produtos</option>
-            </select>
+        <div class="card-grid">
+            <div class="campo-form">
+                <label>Tipo</label>
+                <select id="filtroCategoria" onchange="filtrarItens()">
+                    <option value="">Tipo</option>
+                    <option value="maquina">Máquina</option>
+                    <option value="peca">Peça</option>
+                    <option value="produtos">Produtos</option>
+                    <option value="materiais">Materiais</option>
+                </select>
+            </div>
+            <div class="campo-form">
+                <label>Item</label>
+                <select id="selectItem" onchange="mostrarSaldoAtual()">
+                    <option value="">Item</option>
+                </select>
+            </div>
 
-            <select id="selectItem" class="sel-item" onchange="mostrarSaldoAtual()">
-                <option value="">Carregando...</option>
-            </select>
+            <div class="card-separador"></div>
 
-            <input type="number" id="qtdInput" class="inp-qtd" placeholder="0" min="1">
+            <div class="campo-form">
+                <label>Quantidade</label>
+                <input type="number" id="qtdInput" class="inp-qtd" placeholder="0" min="1">
+            </div>
+            <div class="campo-form">
+                <label>Responsável</label>
+                <select id="responsavel">
+                    <option value="">Selecione...</option>
+                </select>
+            </div>
         </div>
 
-        <label class="label-pequena">Responsável pela ação:</label>
-        <select id="responsavel" style="width: 100%; margin-bottom: 5px;">
-            <option value="">Selecione...</option>
-        </select>
-
-        <label class="label-pequena">Observação:</label>
-        <input type="text" id="observacao" placeholder="Ex: Quebrou, Reposição, Cliente X..." style="width: 100%;">
-
-        <div class="info-atual" id="textoSaldo">Selecione um item.</div>
+        <div class="saldo-box" id="saldoBox" style="display:none;">
+            <div class="saldo-box-titulo">Saldo Atual</div>
+            <div class="info-atual" id="textoSaldo">—</div>
+        </div>
 
         <button class="btn-confirmar" id="btnAcao" style="background:#f44336;" onclick="salvarMovimentacao()">CONFIRMAR SAÍDA</button>
     </div>
 
     <div class="secao-historico">
         <div class="titulo-hist">Últimas Movimentações</div>
-        <input type="text" id="filtroHistorico" placeholder="🔍 Pesquisar no histórico..." oninput="filtrarHistorico()" style="width: 100%; margin-bottom: 15px; text-align: center;">
+        <input type="text" id="filtroHistorico" class="input-busca" placeholder="Pesquisar no histórico..." oninput="filtrarHistorico()">
         <div id="listaHistorico">
             <p style="text-align:center; font-size:11px; opacity:0.5;">Carregando...</p>
         </div>
@@ -376,13 +462,12 @@
              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleItens();}">
         </div>
         <div id="conteudoItens" class="oculto">
-            <input type="text" id="filtroItens" placeholder="🔍 Buscar item no estoque..."
-                   oninput="filtrarItensLista()"
-                   style="width:100%; margin-bottom:12px; text-align:center; background:rgba(255,255,255,0.08); color:white; border-color:rgba(255,255,255,0.2);">
+            <input type="text" id="filtroItens" class="input-busca" placeholder="Buscar item no estoque..." oninput="filtrarItensLista()">
             <div class="filtros-est">
-                <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="produtos" checked onchange="filtrarItensLista()"> Produtos</label>
-                <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="peca" onchange="filtrarItensLista()"> Peças</label>
-                <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="maquina" onchange="filtrarItensLista()"> Máquinas</label>
+                <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="produtos" checked onclick="selecionarFiltroTipo(this)"><span class="f-icon">🟢</span><span class="f-label">Produtos</span></label>
+                <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="peca" onclick="selecionarFiltroTipo(this)"><span class="f-icon">🟠</span><span class="f-label">Peças</span></label>
+                <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="maquina" onclick="selecionarFiltroTipo(this)"><span class="f-icon">🟣</span><span class="f-label">Máquinas</span></label>
+                <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="materiais" onclick="selecionarFiltroTipo(this)"><span class="f-icon">🔵</span><span class="f-label">Materiais</span></label>
             </div>
             <div id="listaItens"></div>
         </div>
@@ -393,7 +478,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbSalvarHistorico, dbEscutarHistorico, dbExcluirHistorico } from './database.js';
+    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbSalvarHistorico, dbEscutarHistorico, dbExcluirHistorico, dbSalvarAtendimento } from './database.js';
 
     let listaGlobal = [];
     let historicoGlobal = [];
@@ -412,10 +497,10 @@
         const total = historicoGlobal.length;
         const badgeTexto = total > 0 ? total : '';
         tituloHistorico.innerHTML = `
-            <span class="titulo-hist-olho">${historicoVisivel ? '🙈' : '👁️'}</span>
+            <span class="titulo-hist-olho"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></span>
             <span class="titulo-hist-info">
                 <span class="titulo-hist-label">
-                    ${historicoVisivel ? 'Histórico aberto' : 'Movimentações'}
+                    Movimentações
                     ${badgeTexto ? `<span class="titulo-hist-badge">${badgeTexto}</span>` : ''}
                 </span>
                 <span class="titulo-hist-subtexto">${historicoVisivel ? 'Toque para ocultar' : 'Toque para ver todas as movimentações'}</span>
@@ -459,6 +544,13 @@
     window.toggleHistorico = function() {
         historicoVisivel = !historicoVisivel;
 
+        // Fecha itens se estiver abrindo o histórico
+        if (historicoVisivel && itensVisivelEstoque) {
+            itensVisivelEstoque = false;
+            document.getElementById('conteudoItens').classList.add('oculto');
+            atualizarBotaoItens();
+        }
+
         filtroHistoricoEl.classList.toggle('oculto', !historicoVisivel);
         listaHistoricoEl.classList.toggle('oculto', !historicoVisivel);
         atualizarBotaoHistorico();
@@ -497,18 +589,22 @@
             
             const div = document.createElement('div');
             div.className = 'item-hist';
-            div.style.flexDirection = 'column'; // Para acomodar os botões embaixo se necessário
+            div.style.flexDirection = 'column';
             div.style.alignItems = 'stretch';
+            div.style.borderColor = mov.tipo === 'entrada' ? 'rgba(76,175,80,0.6)' : 'rgba(244,67,54,0.6)';
 
             div.innerHTML = `
-                <div style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; margin-bottom: 8px;">
-                    <span class="hist-tipo-label" style="color:${mov.tipo === 'entrada' ? '#4caf50' : '#f44336'}">${textoTipo}</span> 
-                    <span style="font-size: 16px; color: #ccc; margin-left: 5px;">- ${dataFormatada}</span>
+                <div style="text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; margin-bottom: 8px;">
+                    <span class="hist-tipo-label" style="color:${mov.tipo === 'entrada' ? '#4caf50' : '#f44336'}">${textoTipo}</span>
+                    <span style="font-size: 13px; color: #ccc; margin-left: 6px;">${dataFormatada}</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div class="hist-esq">
-                        <span class="hist-nome-item">${mov.itemNome}</span>
-                        <span class="hist-resp-label">Resp: ${mov.responsavel}</span>
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            <span class="hist-nome-item">${mov.itemNome}</span>
+                            <span class="hist-resp-label" style="color:rgba(255,255,255,0.7);">· ${mov.responsavel}</span>
+                        </div>
+                        ${mov.registradoPor && mov.registradoPor !== mov.responsavel ? `<span class="hist-resp-label" style="color:rgba(255,255,255,0.55);">Reg. por: ${mov.registradoPor}</span>` : ''}
                         ${mov.obs ? `<span class="hist-obs-label">Obs: ${mov.obs}</span>` : ''}
                     </div>
                     <div class="hist-dir ${classeCor}">
@@ -517,15 +613,17 @@
                 </div>
             `;
 
-            // ADICIONA OS BOTÕES SOMENTE SE FOR O PRIMEIRO (ÍNDICE 0)
-            // Exibe apenas se for o movimento mais recente global (para evitar exclusão de item antigo filtrado)
-            if (historicoGlobal.length > 0 && mov === historicoGlobal[0]) {
+            // Botão excluir: só para quem registrou e dentro de 3 horas
+            const usuarioAtual = localStorage.getItem('usuarioLogado') || '';
+            const foiRegistradoPorMim = mov.registradoPor
+                ? mov.registradoPor === usuarioAtual
+                : mov === historicoGlobal[0]; // registros antigos sem campo: mantém comportamento original
+            const dentroDe3h = (Date.now() - new Date(mov.data).getTime()) < 3 * 60 * 60 * 1000;
+
+            if (foiRegistradoPorMim && dentroDe3h) {
                 const divAcoes = document.createElement('div');
                 divAcoes.className = 'acoes-hist';
-                
-                // Convertemos o objeto mov para string para passar na função
                 const movString = encodeURIComponent(JSON.stringify(mov));
-
                 divAcoes.innerHTML = `
                     <button class="btn-hist btn-excluir-hist" onclick="excluirUltimo('${movString}')">EXCLUIR</button>
                 `;
@@ -544,14 +642,22 @@
 
     function renderizarResponsaveis() {
         const select = document.getElementById('responsavel');
-        select.innerHTML = '<option value="">Selecione o Responsável...</option>';
+        select.innerHTML = '<option value="">Responsável</option>';
         
-        // [NOVO] Adiciona "Fornecedor" apenas se for ENTRADA
+        // Adiciona "Fornecedor" e usuário logado apenas se for ENTRADA
         if (modoAtual === 'entrada') {
             const optForn = document.createElement('option');
             optForn.value = "Fornecedor";
             optForn.innerText = "Fornecedor";
             select.appendChild(optForn);
+
+            const nomeLogado = localStorage.getItem('usuarioLogado');
+            if (nomeLogado) {
+                const optUser = document.createElement('option');
+                optUser.value = nomeLogado;
+                optUser.innerText = nomeLogado;
+                select.appendChild(optUser);
+            }
         }
 
         // Filtra apenas colaboradores que tenham "atendimento" no perfil
@@ -569,30 +675,30 @@
     window.filtrarItens = function() {
         const categoriaSelecionada = document.getElementById('filtroCategoria').value;
         const selectItem = document.getElementById('selectItem');
-        const valorAnterior = selectItem.value; // Salva o que estava selecionado antes de limpar
-        
-        selectItem.innerHTML = "";
+        const valorAnterior = selectItem.value;
+
+        selectItem.innerHTML = '<option value="">Item</option>';
+
+        if (!categoriaSelecionada) {
+            mostrarSaldoAtual();
+            return;
+        }
 
         const itensFiltrados = listaGlobal.filter(item => item.categoria === categoriaSelecionada);
 
         if (itensFiltrados.length === 0) {
-            const opt = document.createElement('option');
-            opt.value = "";
-            opt.innerText = "Vazio";
-            selectItem.appendChild(opt);
-            document.getElementById('textoSaldo').innerText = "Nenhum item nesta categoria.";
+            mostrarSaldoAtual();
             return;
         }
 
         itensFiltrados.forEach(item => {
             const option = document.createElement('option');
-            option.value = item.firebaseUrl; 
+            option.value = item.firebaseUrl;
             option.innerText = item.nome;
             option.dataset.qtdAtual = item.quantidade || 0;
             selectItem.appendChild(option);
         });
 
-        // Se o item que estava selecionado ainda existe na lista, seleciona ele de volta
         if (valorAnterior && [...selectItem.options].some(o => o.value === valorAnterior)) {
             selectItem.value = valorAnterior;
         }
@@ -604,10 +710,14 @@
     window.mostrarSaldoAtual = function() {
         const select = document.getElementById('selectItem');
         const itemSelecionado = select.options[select.selectedIndex];
-        
+        const saldoBox = document.getElementById('saldoBox');
+
         if (itemSelecionado && itemSelecionado.value) {
             const qtd = itemSelecionado.dataset.qtdAtual;
-            document.getElementById('textoSaldo').innerHTML = `Saldo atual: <span class="destaque-qtd">${qtd}</span>`;
+            document.getElementById('textoSaldo').innerHTML = `<span class="destaque-qtd">${qtd}</span>`;
+            saldoBox.style.display = 'flex';
+        } else {
+            saldoBox.style.display = 'none';
         }
     };
 
@@ -635,8 +745,6 @@
         const idItem = document.getElementById('selectItem').value;
         const qtdMovimento = parseInt(document.getElementById('qtdInput').value);
         const responsavel = document.getElementById('responsavel').value;
-        const obs = document.getElementById('observacao').value;
-
         if (!idItem) return alert("Selecione um item.");
         if (isNaN(qtdMovimento) || qtdMovimento <= 0) return alert("Informe a quantidade.");
         if (!responsavel) return alert("Selecione o responsável.");
@@ -663,27 +771,39 @@
             minimo: itemOriginal.minimo || 0,
             dataAtualizacao: new Date().toISOString(),
             // Salvamos quem mexeu por último para controle
-            ultimo_responsavel: responsavel,
-            ultima_obs: obs
+            ultimo_responsavel: responsavel
         };
 
         // Objeto para o Histórico (Registro Eterno)
         const registroHistorico = {
             data: new Date().toISOString(),
             tipo: modoAtual,
-            itemUrl: idItem, // SALVAMOS O ID PARA PODER REVERTER DEPOIS
+            itemUrl: idItem,
             itemNome: itemOriginal.nome,
             qtd: qtdMovimento,
             responsavel: responsavel,
-            obs: obs
+            registradoPor: localStorage.getItem('usuarioLogado') || ''
         };
 
         try {
             await dbSalvarItemEstoque(itemParaSalvar, idItem);
-            await dbSalvarHistorico(registroHistorico); // Salva no histórico também
+            await dbSalvarHistorico(registroHistorico);
+
+            // Saída: registra no atendimento do responsável para aparecer em Meus Envios e no Balanço
+            if (modoAtual === 'saida') {
+                const registroEnvio = {
+                    data: new Date().toISOString(),
+                    atendente: responsavel,
+                    autorizadoPor: localStorage.getItem('usuarioLogado') || '',
+                    origemRegistro: 'retirada_estoque',
+                    cliente: { nome: 'Retirada de Estoque', numero: '' },
+                    produtos: [{ nome: itemOriginal.nome, quantidade: qtdMovimento }]
+                };
+                await dbSalvarAtendimento(registroEnvio);
+            }
+
             alert("Sucesso! Novo saldo: " + novaQtd);
-            document.getElementById('qtdInput').value = ""; // Limpa a quantidade após salvar
-            document.getElementById('observacao').value = ""; // Limpa obs
+            document.getElementById('qtdInput').value = "";
         } catch (error) {
             alert("Erro ao salvar.");
             console.error(error);
@@ -700,10 +820,10 @@
         const total = listaGlobal.length;
         const badgeTexto = total > 0 ? total : '';
         btn.innerHTML = `
-            <span class="titulo-hist-olho">${itensVisivelEstoque ? '🙈' : '👁️'}</span>
+            <span class="titulo-hist-olho"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg></span>
             <span class="titulo-hist-info">
                 <span class="titulo-hist-label">
-                    ${itensVisivelEstoque ? 'Estoque aberto' : 'Itens do Estoque'}
+                    Itens do Estoque
                     ${badgeTexto ? `<span class="titulo-hist-badge">${badgeTexto}</span>` : ''}
                 </span>
                 <span class="titulo-hist-subtexto">${itensVisivelEstoque ? 'Toque para ocultar' : 'Toque para ver todos os itens'}</span>
@@ -716,6 +836,15 @@
 
     window.toggleItens = function() {
         itensVisivelEstoque = !itensVisivelEstoque;
+
+        // Fecha histórico se estiver abrindo os itens
+        if (itensVisivelEstoque && historicoVisivel) {
+            historicoVisivel = false;
+            filtroHistoricoEl.classList.add('oculto');
+            listaHistoricoEl.classList.add('oculto');
+            atualizarBotaoHistorico();
+        }
+
         document.getElementById('conteudoItens').classList.toggle('oculto', !itensVisivelEstoque);
         atualizarBotaoItens();
         if (itensVisivelEstoque) {
@@ -731,13 +860,20 @@
         });
     }
 
+    window.selecionarFiltroTipo = function(cb) {
+        document.querySelectorAll('.filtro-tipo-est').forEach(el => { el.checked = false; });
+        cb.checked = true;
+        filtrarItensLista();
+    };
+
     window.filtrarItensLista = function() {
         if (!itensVisivelEstoque) return;
         const termo = document.getElementById('filtroItens').value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         const tiposMarcados = Array.from(document.querySelectorAll('.filtro-tipo-est:checked')).map(cb => cb.value);
         const filtrados = listaGlobal.filter(item => {
             const nome = item.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-            return nome.includes(termo) && tiposMarcados.includes(item.categoria);
+            if (!nome.includes(termo)) return false;
+            return termo ? true : tiposMarcados.includes(item.categoria);
         });
         renderizarItensEstoque(filtrados);
         atualizarVisualFiltrosItens();
@@ -754,6 +890,7 @@
             let classeCor = 'bg-produtos-est', nomeCat = 'Produto';
             if (item.categoria === 'maquina') { classeCor = 'bg-maquina-est'; nomeCat = 'Máquina'; }
             if (item.categoria === 'peca')    { classeCor = 'bg-peca-est';    nomeCat = 'Peça'; }
+            if (item.categoria === 'materiais') { classeCor = 'bg-materiais-est'; nomeCat = 'Materiais'; }
             const div = document.createElement('div');
             div.className = 'card-est';
             div.innerHTML = `
