@@ -43,10 +43,10 @@
         /* Personalização do Campo de Busca (Branco e Centralizado) */
         #campoPesquisa {
             background: #fff; color: #333; width: 75%; display: block; margin: 0 auto 15px auto;
-            padding: 8px; /* <--- MUDE AQUI (Quanto menor o número, mais fino o campo) */
+            padding: 8px;
         }
         #campoPesquisa::placeholder {
-            color: #888; /* Cor cinza para o texto de ajuda ficar visível no fundo branco */
+            color: #888;
         }
 
         /* Estilo para os filtros de checkbox */
@@ -107,7 +107,7 @@
     <div class="secao-lista">
         <div class="subtitulo">Itens Registrados</div>
         <input type="text" id="campoPesquisa" placeholder="🔍 Buscar item...">
-        
+
         <div class="filtros-container">
             <div class="filtros-titulo">Mostrar no estoque</div>
             <label class="filtro-opcao"><input type="checkbox" class="filtro-tipo" value="produtos" checked onchange="aplicarFiltros()"> Produtos</label>
@@ -173,7 +173,7 @@
         const container = document.getElementById('containerEstoque');
         
         dbEscutarEstoque((lista) => {
-            container.innerHTML = ""; 
+            container.innerHTML = "";
             if (lista.length === 0) {
                 container.innerHTML = "<p style='text-align:center; opacity:0.5; font-size:12px;'>Estoque vazio.</p>";
                 return;
