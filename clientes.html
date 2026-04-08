@@ -272,6 +272,11 @@
         color: #ffb3ad;
     }
 
+    .equip-pix-pendente-add {
+        color: #7ef0a6;
+        font-weight: 700;
+    }
+
     .equip-text-card.pendente-add::after,
     .equip-text-card.pendente-ret::after {
         display: inline-flex;
@@ -317,6 +322,24 @@
         background: rgba(244, 67, 54, 0.16);
         color: #ffb3ad;
         border: 1px solid rgba(244, 67, 54, 0.42);
+    }
+
+    .equip-pix-pendente-add::after {
+        content: "+";
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 15px;
+        height: 15px;
+        margin-left: 5px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 1;
+        white-space: nowrap;
+        background: rgba(126, 240, 166, 0.16);
+        color: #7ef0a6;
+        border: 1px solid rgba(126, 240, 166, 0.42);
     }
 
     .cliente-corpo {
@@ -1047,7 +1070,10 @@
                     nome: String(item?.nome || '').trim(),
                     qtd: String(item?.qtd || item?.quantidade || '1').trim() || '1',
                     pix: String(item?.pix || '').trim(),
+                    pixRetiradoPendente: String(item?.pixRetiradoPendente || '').trim(),
+                    retiradaPendenteEm: String(item?.retiradaPendenteEm || '').trim(),
                     manutencaoPendente: String(item?.manutencaoPendente || '').trim().toLowerCase(),
+                    manutencaoPendenteEm: String(item?.manutencaoPendenteEm || '').trim(),
                     aguardandoConfirmacao: item?.aguardandoConfirmacao === true
                 }))
                 .filter(item => item.nome);
@@ -1076,7 +1102,7 @@
                 }
                 nome = nome.trim();
                 if (!nome) return null;
-                return { nome, qtd, pix, manutencaoPendente: '', aguardandoConfirmacao: false };
+                return { nome, qtd, pix, pixRetiradoPendente: '', retiradaPendenteEm: '', manutencaoPendente: '', manutencaoPendenteEm: '', aguardandoConfirmacao: false };
             })
             .filter(Boolean);
     }
@@ -1088,16 +1114,43 @@
         return `<span class="equip-lista-card">${equipamentos.map(item => {
             const nomeBase = `${item.nome}${item.qtd !== '1' ? ` (${item.qtd})` : ''}`;
             const base = `${nomeBase}${item.pix ? ` Pix ${item.pix}` : ''}`;
-            if (item.manutencaoPendente === 'retirada') {
-                if (item.pix) {
-                    return `<span class="equip-text-card">${nomeBase} <span class="equip-pix-pendente-ret">Pix ${item.pix}</span></span>`;
+            const pixRetirado = item.pixRetiradoPendente || (item.manutencaoPendente === 'retirada' ? item.pix : '');
+            const pixAtual = item.pixRetiradoPendente ? item.pix : item.pix;
+            const duplicadoMesmoPix = pixRetirado && pixAtual && pixRetirado === pixAtual;
+
+            if (duplicadoMesmoPix) {
+                const dataRetirada = Date.parse(item.retiradaPendenteEm || item.manutencaoPendenteEm || '') || 0;
+                const dataAtual = Date.parse(item.manutencaoPendenteEm || '') || 0;
+                if (dataAtual >= dataRetirada) {
+                    if (item.manutencaoPendente === 'adicao' || item.aguardandoConfirmacao) {
+                        return `<span class="equip-text-card">${nomeBase} <span class="equip-pix-pendente-add">Pix ${pixAtual}</span></span>`;
+                    }
+                    return `<span class="equip-text-card">${nomeBase} Pix ${pixAtual}</span>`;
                 }
-                return `<span class="equip-text-card pendente-ret">${base}</span>`;
+                return `<span class="equip-text-card">${nomeBase} <span class="equip-pix-pendente-ret">Pix ${pixRetirado}</span></span>`;
             }
-            if (item.manutencaoPendente === 'adicao' || item.aguardandoConfirmacao) {
-                return `<span class="equip-text-card pendente-add">${base}</span>`;
+
+            if (pixRetirado && pixAtual) {
+                const pixAtualClasse = item.manutencaoPendente === 'adicao' || item.aguardandoConfirmacao
+                    ? 'equip-pix-pendente-add'
+                    : '';
+                return `<span class="equip-text-card">${nomeBase} <span class="equip-pix-pendente-ret">Pix ${pixRetirado}</span> <span class="${pixAtualClasse}">Pix ${pixAtual}</span></span>`;
             }
-            return `<span class="equip-text-card">${base}</span>`;
+
+            if (pixRetirado) {
+                return `<span class="equip-text-card">${nomeBase} <span class="equip-pix-pendente-ret">Pix ${pixRetirado}</span></span>`;
+            }
+
+            if (item.pix) {
+                if (item.manutencaoPendente === 'adicao' || item.aguardandoConfirmacao) {
+                    return `<span class="equip-text-card pendente-add">${base}</span>`;
+                }
+                if (item.manutencaoPendente !== 'retirada') {
+                    return `<span class="equip-text-card">${base}</span>`;
+                }
+            }
+
+            return `<span class="equip-text-card">${nomeBase}</span>`;
         }).join('')}</span>`;
     }
 

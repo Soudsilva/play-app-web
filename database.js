@@ -1229,6 +1229,10 @@ function _normalizarEquipDetalhesCliente(cliente) {
                 qtd: String(item?.qtd || item?.quantidade || "1").trim() || "1",
                 pix: String(item?.pix || "").trim(),
                 contador: String(item?.contador || "").trim(),
+                pixRetiradoPendente: String(item?.pixRetiradoPendente || "").trim(),
+                contadorRetiradoPendente: String(item?.contadorRetiradoPendente || "").trim(),
+                retiradaPendenteEm: item?.retiradaPendenteEm || "",
+                retiradaPendentePor: item?.retiradaPendentePor || "",
                 manutencaoPendente: String(item?.manutencaoPendente || "").trim(),
                 aguardandoConfirmacao: item?.aguardandoConfirmacao === true,
                 manutencaoPendenteEm: item?.manutencaoPendenteEm || "",
@@ -1266,6 +1270,10 @@ function _normalizarEquipDetalhesCliente(cliente) {
                 qtd: String(qtd || "1").trim() || "1",
                 pix: String(pix || "").trim(),
                 contador: "",
+                pixRetiradoPendente: "",
+                contadorRetiradoPendente: "",
+                retiradaPendenteEm: "",
+                retiradaPendentePor: "",
                 manutencaoPendente: "",
                 aguardandoConfirmacao: false,
                 manutencaoPendenteEm: "",
@@ -1467,6 +1475,15 @@ export async function dbAplicarPendenciasManutencaoCliente(firebaseUrlCliente, p
             });
 
             if (!alvo) return;
+            const pixAtual = String(alvo?.pix || "").trim();
+            if (pixAtual && !String(alvo?.pixRetiradoPendente || "").trim()) {
+                alvo.pixRetiradoPendente = pixAtual;
+                alvo.contadorRetiradoPendente = String(alvo?.contador || "").trim();
+                alvo.retiradaPendenteEm = agoraIso;
+                alvo.retiradaPendentePor = atendente;
+                alvo.pix = "";
+                alvo.contador = "";
+            }
             alvo.manutencaoPendente = 'retirada';
             alvo.aguardandoConfirmacao = true;
             alvo.manutencaoPendenteEm = agoraIso;

@@ -574,6 +574,54 @@
             animation: surgirForm 0.2s ease;
         }
         .card-ret-form.aberto { display: block; }
+
+        /* ── SEÇÃO GESTOR ── */
+        .gestor-item {
+            background: rgba(124,58,237,0.1);
+            border: 1px solid rgba(124,58,237,0.3);
+            border-radius: 14px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .gestor-cliente-nome {
+            font-weight: bold;
+            font-size: 14px;
+            color: #c4b5fd;
+            margin-bottom: 8px;
+        }
+        .gestor-equip-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+        .gestor-badge-tipo {
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 20px;
+            padding: 2px 10px;
+            white-space: nowrap;
+        }
+        .gestor-badge-adicao  { background: #16a34a; color: white; }
+        .gestor-badge-retirada { background: #b91c1c; color: white; }
+        .gestor-equip-nome { flex: 1; font-size: 13px; color: #e2e8f0; min-width: 80px; }
+        .gestor-pix-nr { color: #7eb3ff; font-weight: bold; font-size: 13px; white-space: nowrap; }
+        .btn-gestor-confirmar {
+            background: #6d28d9;
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 6px 14px;
+            font: bold 13px Arial;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: filter 0.15s;
+        }
+        .btn-gestor-confirmar:active { filter: brightness(0.85); transform: translateY(1px); }
     </style>
 </head>
 
@@ -646,6 +694,23 @@
     </div>
 
 
+    <!-- SEÇÃO GESTOR — CONFIRMAR PIX -->
+    <div class="secao" id="secao-gestor" style="display:none">
+        <div class="secao-header" id="hdr-gestor" onclick="toggleSecao('gestor')"
+             style="background:#4c1d95; border-color:#a78bfa;">
+            <span class="secao-icone">&#10003;&#65039;</span>
+            <span class="secao-titulo">Confirmar Gestor</span>
+            <span class="badge-count" id="count-gestor" style="display:none">0</span>
+            <span class="secao-seta" id="seta-gestor" style="color:#a78bfa;">&#9660;</span>
+        </div>
+        <div class="secao-corpo" id="corpo-gestor" style="border-color:#a78bfa;">
+            <div class="add-vazio" id="gestor-vazio" style="display:none">
+                &#9989; Nenhuma pend&#234;ncia para confirmar
+            </div>
+            <div id="gestor-lista"></div>
+        </div>
+    </div>
+
 </div><!-- /app -->
 
 <script src="assets/js/play-dialogs.js"></script>
@@ -658,7 +723,8 @@ import {
     app,
     dbEscutarClientes,
     dbEscutarAtendimentos,
-    dbAplicarPendenciasManutencaoCliente
+    dbAplicarPendenciasManutencaoCliente,
+    dbEscutarColaboradores
 } from './database.js';
 
 verificarAutenticacao();
@@ -674,22 +740,41 @@ window._clientesPixData    = {};
 window._atendimentosData   = [];
 window._motivoSelecionado  = null;
 window._condicaoSelecionada = null;
+let _listaColaboradores    = [];
 let _maquinaAberta        = null;
 let _maquinaRetiradaAberta = null;
 let _retEstado            = {};
 let _cardRetiradaAberta   = null;
 let _retCardEstado        = {};
 let _cardInstalacaoAberta = null;
+let _isGestor = false;
+
+function aplicarPermissaoGestorRapida(lista = []) {
+    _listaColaboradores = Array.isArray(lista) ? lista : [];
+    const nome = String(localStorage.getItem('usuarioLogado') || '').trim();
+    const usuario = _listaColaboradores.find(c => String(c?.nome || '').trim() === nome);
+    const perfil = normalizarTexto(usuario ? (usuario.nivel_completo || '') : '');
+    _isGestor = perfil.includes('gestao');
+    const secao = document.getElementById('secao-gestor');
+    if (secao) secao.style.display = _isGestor ? '' : 'none';
+    if (_isGestor && typeof window.renderizarGestorPix === 'function') {
+        window.renderizarGestorPix();
+    }
+}
 
 // ──────────────────────────────────────────────
 // ACCORDION — só uma seção aberta por vez
 // ──────────────────────────────────────────────
 window.toggleSecao = function(secao) {
+    if (secao === 'gestor' && typeof window.renderizarGestorPix === 'function') {
+        window.renderizarGestorPix();
+    }
     let abrindoSecao = false;
-    ['locais','adicionar','retirar'].forEach(s => {
+    ['locais','adicionar','retirar','gestor'].forEach(s => {
         const hdr   = document.getElementById('hdr-'  + s);
         const corpo = document.getElementById('corpo-' + s);
         const seta  = document.getElementById('seta-'  + s);
+        if (!hdr || !corpo || !seta) return;
         if (s === secao) {
             const abrindo = !corpo.classList.contains('aberto');
             corpo.classList.toggle('aberto',  abrindo);
@@ -830,6 +915,29 @@ function escolherRegistroPix(atual, proximo) {
         return tsProximo > tsAtual ? proximo : atual;
     }
 
+    const mesmoPix = normalizarPix(atual?.numero_pix) === normalizarPix(proximo?.numero_pix);
+    const mesmaIdentificacao = normalizarTexto(atual?.identificacao) === normalizarTexto(proximo?.identificacao);
+    const mesmoEquipamento = normalizarTexto(atual?.equipamento) === normalizarTexto(proximo?.equipamento);
+    const atualEhAdicao = (atual?.situacao === 'instalado') || (atual?.situacao === 'em_analise' && atual?.pendenciaTipo === 'adicao');
+    const proximoEhAdicao = (proximo?.situacao === 'instalado') || (proximo?.situacao === 'em_analise' && proximo?.pendenciaTipo === 'adicao');
+    const atualEhRetirada = (atual?.situacao === 'retirado') || (atual?.situacao === 'em_analise' && atual?.pendenciaTipo === 'retirada');
+    const proximoEhRetirada = (proximo?.situacao === 'retirado') || (proximo?.situacao === 'em_analise' && proximo?.pendenciaTipo === 'retirada');
+
+    if (mesmoPix && mesmaIdentificacao && mesmoEquipamento) {
+        if (atualEhAdicao !== proximoEhAdicao) {
+            return proximoEhAdicao ? proximo : atual;
+        }
+        if (atualEhRetirada !== proximoEhRetirada) {
+            return proximoEhRetirada ? proximo : atual;
+        }
+    }
+
+    const atualEmAnalise = atual?.situacao === 'em_analise';
+    const proximoEmAnalise = proximo?.situacao === 'em_analise';
+    if (atualEmAnalise !== proximoEmAnalise) {
+        return proximoEmAnalise ? proximo : atual;
+    }
+
     const atualManual = atual?.origem !== 'clientes';
     const proximoManual = proximo?.origem !== 'clientes';
     if (atualManual !== proximoManual) {
@@ -854,6 +962,10 @@ function obterEquipamentosDetalhadosCliente(cliente) {
                 qtd: String(item?.qtd || item?.quantidade || '1').trim() || '1',
                 pix: normalizarPix(item?.pix),
                 contador: String(item?.contador || '').trim(),
+                pixRetiradoPendente: normalizarPix(item?.pixRetiradoPendente),
+                contadorRetiradoPendente: String(item?.contadorRetiradoPendente || '').trim(),
+                retiradaPendenteEm: String(item?.retiradaPendenteEm || '').trim(),
+                retiradaPendentePor: String(item?.retiradaPendentePor || '').trim(),
                 manutencaoPendente: String(item?.manutencaoPendente || '').trim().toLowerCase(),
                 aguardandoConfirmacao: item?.aguardandoConfirmacao === true,
                 manutencaoPendenteEm: String(item?.manutencaoPendenteEm || '').trim(),
@@ -891,6 +1003,10 @@ function obterEquipamentosDetalhadosCliente(cliente) {
                 qtd: String(qtd || '1').trim() || '1',
                 pix: normalizarPix(pix),
                 contador: '',
+                pixRetiradoPendente: '',
+                contadorRetiradoPendente: '',
+                retiradaPendenteEm: '',
+                retiradaPendentePor: '',
                 manutencaoPendente: '',
                 aguardandoConfirmacao: false,
                 manutencaoPendenteEm: '',
@@ -926,30 +1042,56 @@ function mapearPixDosClientes(clientes) {
     const registros = {};
 
     (Array.isArray(clientes) ? clientes : []).forEach(cliente => {
-        obterEquipamentosDetalhadosCliente(cliente)
-            .filter(item => item.pix)
-            .forEach((item, index) => {
-            const numeroPix = normalizarPix(item.pix);
-            if (!numeroPix) return;
-            const retirado = item.manutencaoPendente === 'retirada';
-            const nomeResponsavel = retirado
+        obterEquipamentosDetalhadosCliente(cliente).forEach((item, index) => {
+            const idBase = cliente?.firebaseUrl || cliente?.numero || cliente?.nome || 'cliente';
+            const equipamento = String(item?.nome || '').trim();
+            const clienteId = String(cliente?.firebaseUrl || '').trim();
+            const identificacao = montarIdentificacaoCliente(cliente);
+            const tipoPendencia = item.aguardandoConfirmacao
+                ? String(item?.manutencaoPendente || '').trim().toLowerCase()
+                : '';
+
+            const numeroPixRetirado = normalizarPix(item?.pixRetiradoPendente || '');
+            if (numeroPixRetirado) {
+                registros[`cliente:${idBase}:ret:${numeroPixRetirado}:${index}`] = {
+                    numero_pix: numeroPixRetirado,
+                    cliente: String(cliente?.nome || '').trim(),
+                    equipamento,
+                    identificacao,
+                    tecnico: String(item?.retiradaPendentePor || item?.manutencaoPendentePor || '').trim(),
+                    data: String(item?.retiradaPendenteEm || item?.manutencaoPendenteEm || '').trim(),
+                    situacao: 'em_analise',
+                    pendenciaTipo: 'retirada',
+                    origem: 'clientes',
+                    clienteId,
+                    rowId: String(item?.rowId || '').trim(),
+                    contador: String(item?.contadorRetiradoPendente || '').trim()
+                };
+            }
+
+            const numeroPixAtual = normalizarPix(item?.pix);
+            if (!numeroPixAtual) return;
+
+            const emAnalise = tipoPendencia === 'adicao' || tipoPendencia === 'retirada';
+            const pendenciaTipoAtual = emAnalise ? tipoPendencia : '';
+            const nomeResponsavel = emAnalise
                 ? String(item?.manutencaoPendentePor || '').trim()
                 : String(cliente?.cadastradoPor || cliente?.ponto_aberto || '').trim();
-            const dataReferencia = retirado
+            const dataReferencia = emAnalise
                 ? String(item?.manutencaoPendenteEm || '').trim()
                 : (cliente?.dataCadastro || cliente?.dataCadastroDia || '');
 
-            const idBase = cliente?.firebaseUrl || cliente?.numero || cliente?.nome || 'cliente';
-            registros[`cliente:${idBase}:${numeroPix}:${index}`] = {
-                numero_pix: numeroPix,
+            registros[`cliente:${idBase}:atual:${numeroPixAtual}:${index}`] = {
+                numero_pix: numeroPixAtual,
                 cliente: String(cliente?.nome || '').trim(),
-                equipamento: String(item?.nome || '').trim(),
-                identificacao: montarIdentificacaoCliente(cliente),
+                equipamento,
+                identificacao,
                 tecnico: nomeResponsavel,
                 data: dataReferencia,
-                situacao: retirado ? 'retirado' : 'instalado',
+                situacao: emAnalise ? 'em_analise' : 'instalado',
+                pendenciaTipo: pendenciaTipoAtual,
                 origem: 'clientes',
-                clienteId: String(cliente?.firebaseUrl || '').trim(),
+                clienteId,
                 rowId: String(item?.rowId || '').trim(),
                 contador: String(item?.contador || '').trim()
             };
@@ -960,22 +1102,7 @@ function mapearPixDosClientes(clientes) {
 }
 
 function obterPixParaExibicao() {
-    const combinadosPorNumero = new Map();
-
-    Object.entries(window._clientesPixData || {}).forEach(([id, pix]) => {
-        const numero = normalizarPix(pix?.numero_pix);
-        if (!numero) return;
-        combinadosPorNumero.set(numero, { id, ...pix });
-    });
-
-    Object.entries(window._pixData || {}).forEach(([id, pix]) => {
-        const numero = normalizarPix(pix?.numero_pix);
-        if (!numero) return;
-        if (combinadosPorNumero.has(numero)) return;
-        combinadosPorNumero.set(numero, escolherRegistroPix(combinadosPorNumero.get(numero), { id, ...pix, origem: pix?.origem || 'cadastros_pix' }));
-    });
-
-    return Array.from(combinadosPorNumero.values());
+    return Object.entries(window._clientesPixData || {}).map(([id, pix]) => ({ id, ...pix }));
 }
 
 function sincronizarTelaPix() {
@@ -998,6 +1125,19 @@ dbEscutarClientes((lista) => {
     sincronizarTelaPix();
     renderizarAdicionarPix();
     renderizarRetirarPix();
+    renderizarGestorPix();
+});
+
+const cacheColab = localStorage.getItem('cache_colaboradores');
+if (cacheColab) {
+    try {
+        aplicarPermissaoGestorRapida(JSON.parse(cacheColab));
+    } catch (_) {}
+}
+
+dbEscutarColaboradores((lista) => {
+    localStorage.setItem('cache_colaboradores', JSON.stringify(Array.isArray(lista) ? lista : []));
+    aplicarPermissaoGestorRapida(lista);
 });
 
 dbEscutarAtendimentos((lista) => {
@@ -1036,8 +1176,6 @@ window.renderizarCards = function(data) {
 
     // Instalados primeiro, depois por número
     registros.sort((a, b) => {
-        if (a.situacao === 'instalado' && b.situacao !== 'instalado') return -1;
-        if (a.situacao !== 'instalado' && b.situacao === 'instalado') return  1;
         return (parseInt(a.numero_pix) || 0) - (parseInt(b.numero_pix) || 0);
     });
 
@@ -1055,17 +1193,24 @@ window.renderizarCards = function(data) {
     }
 
     lista.innerHTML = filtrados.map(p => {
-        const instalado   = p.situacao === 'instalado';
-        const situacaoTxt = instalado ? 'Instalado' : 'Retirado';
-        const situacaoCls = instalado ? 'situacao-txt-instalado' : 'situacao-txt-retirado';
-        const responsavel = instalado ? (p.tecnico || '') : (p.tecnico_retirada || p.tecnico || '');
-        const dataBase    = instalado ? p.data : (p.data_retirada || p.data);
+        const situacao = String(p.situacao || '').trim().toLowerCase();
+        const pendenciaTipo = String(p.pendenciaTipo || '').trim().toLowerCase();
+        const emAnalise = situacao === 'em_analise';
+        const instalado = situacao === 'instalado' || (emAnalise && pendenciaTipo === 'adicao');
+        const retirado = situacao === 'retirado';
+        const situacaoTxt = emAnalise ? 'Em an&#225;lise' : (instalado ? 'Instalado' : 'Retirado');
+        const situacaoCls = emAnalise
+            ? (pendenciaTipo === 'adicao' ? 'situacao-txt-instalado' : 'situacao-txt-retirado')
+            : (instalado ? 'situacao-txt-instalado' : 'situacao-txt-retirado');
+        const exibirComoInstalado = situacao === 'instalado' || (emAnalise && pendenciaTipo === 'adicao');
+        const responsavel = exibirComoInstalado ? (p.tecnico || '') : (p.tecnico_retirada || p.tecnico || '');
+        const dataBase    = exibirComoInstalado ? p.data : (p.data_retirada || p.data);
         const dataExib    = dataBase ? formatarData(dataBase) : '—';
-        const rotuloResp  = instalado ? 'T&#233;cnico:' : 'Informado por:';
+        const rotuloResp  = exibirComoInstalado ? 'T&#233;cnico:' : 'Informado por:';
         const pixKey      = String(p.numero_pix || 'x').replace(/\W/g,'_');
         const contador    = p.contador || '';
 
-        const btnRetirar = instalado && p.clienteId && p.rowId ? `
+        const btnRetirar = situacao === 'instalado' && p.clienteId && p.rowId ? `
             <button class="btn-retirar-card" id="btnret-${pixKey}"
                     onclick="toggleRetiradaCard('${pixKey}')">
                 &#8593; Retirar Pix
@@ -1078,7 +1223,7 @@ window.renderizarCards = function(data) {
                 </button>
             </div>` : '';
 
-        const btnInstalar = !instalado && p.clienteId && p.rowId ? `
+        const btnInstalar = retirado && p.clienteId && p.rowId ? `
             <button class="btn-instalar-card" id="btnins-${pixKey}"
                     onclick="toggleInstalacaoCard('${pixKey}')">
                 + Instalar Pix
@@ -1169,15 +1314,13 @@ window.preencherDadosRetirada = function() {
 // ──────────────────────────────────────────────
 function _pixEmUso() {
     const em_uso = new Set();
-    (window._clientesData || []).forEach(c => {
-        obterEquipamentosDetalhadosCliente(c).forEach(e => {
-            if (e.pix && e.manutencaoPendente !== 'retirada') {
-                em_uso.add(String(e.pix).trim());
-            }
-        });
-    });
-    Object.values(window._pixData || {}).forEach(p => {
-        if (p.numero_pix && p.situacao === 'instalado') em_uso.add(String(p.numero_pix).trim());
+    obterPixParaExibicao().forEach(p => {
+        const situacao = String(p?.situacao || '').trim().toLowerCase();
+        const pendenciaTipo = String(p?.pendenciaTipo || '').trim().toLowerCase();
+        const bloqueiaUso = situacao === 'instalado' || (situacao === 'em_analise' && pendenciaTipo === 'adicao');
+        if (bloqueiaUso && p?.numero_pix) {
+            em_uso.add(String(p.numero_pix).trim());
+        }
     });
     return em_uso;
 }
@@ -1196,7 +1339,7 @@ window.renderizarAdicionarPix = function() {
         .map(c => ({
             ...c,
             semPix: obterEquipamentosDetalhadosCliente(c).filter(
-                e => !e.pix || e.manutencaoPendente === 'retirada'
+                e => !e.pix && (!e.aguardandoConfirmacao || e.manutencaoPendente === 'retirada' || e.pixRetiradoPendente)
             )
         }))
         .filter(c => c.semPix.length > 0)
@@ -1239,12 +1382,14 @@ window.renderizarAdicionarPix = function() {
                 </div>
                 <div class="maquina-form-inline" id="formpix-${chave}">
                     <div class="pix-form-row">
-                        <input type="number" class="form-input pix-input-nr"
+                        <input type="text" class="form-input pix-input-nr"
                                id="pixnr-${chave}" placeholder="N°"
-                               min="1" max="999" inputmode="numeric"
-                               oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                               inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                               oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+                               onblur="validarPixAdicionarAoSair('${chave}')">
                         <input type="text" class="form-input pix-input-cnt"
-                               id="pixcnt-${chave}" placeholder="Contador">
+                               id="pixcnt-${chave}" placeholder="Contador"
+                               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                     </div>
                     <div class="pix-erro" id="pixerro-${chave}" style="display:none"></div>
                     <button class="btn-confirmar-pix" style="background:#16a34a;"
@@ -1287,6 +1432,22 @@ function validarBuscaRetiradaPixObrigatoria() {
     return true;
 }
 
+function exibirAvisoPadrao(msg) {
+    if (window.playAlert) {
+        window.playAlert(msg);
+    } else {
+        alert(msg);
+    }
+}
+
+window.validarPixAdicionarAoSair = function(chave) {
+    const pixNum = String(document.getElementById('pixnr-' + chave)?.value || '').trim();
+    if (!pixNum) return;
+    if (_pixEmUso().has(pixNum)) {
+        exibirAvisoPadrao(`Pix ${pixNum} j\u00e1 est\u00e1 instalado em outro equipamento.`);
+    }
+};
+
 window.toggleMaquinaForm = function(chave) {
     if (!validarBuscaAdicionarPixObrigatoria()) return;
     const form = document.getElementById('formpix-' + chave);
@@ -1314,6 +1475,8 @@ window.confirmarPixMaquina = async function(clienteId, rowId, chave) {
     if (!validarBuscaAdicionarPixObrigatoria()) return;
     const pixNum   = String(document.getElementById('pixnr-'   + chave)?.value || '').trim();
     const contador = String(document.getElementById('pixcnt-'  + chave)?.value || '').trim();
+    const usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
+    const dataInstalacao = new Date().toISOString();
     const erroEl   = document.getElementById('pixerro-' + chave);
 
     const mostrarErro = (msg) => {
@@ -1322,10 +1485,11 @@ window.confirmarPixMaquina = async function(clienteId, rowId, chave) {
     };
     erroEl.style.display = 'none';
 
-    if (!pixNum) return mostrarErro('Informe o n\u00famero do Pix.');
+    if (!pixNum) return exibirAvisoPadrao('Informe o n\u00famero do Pix.');
+    if (!contador) return exibirAvisoPadrao('Informe o n\u00famero do contador.');
 
     if (_pixEmUso().has(pixNum)) {
-        return mostrarErro(`Pix ${pixNum} j\u00e1 est\u00e1 instalado em outro equipamento.`);
+        return exibirAvisoPadrao(`Pix ${pixNum} j\u00e1 est\u00e1 instalado em outro equipamento.`);
     }
 
     const cliente = (window._clientesData || []).find(c => c.firebaseUrl === clienteId);
@@ -1339,32 +1503,59 @@ window.confirmarPixMaquina = async function(clienteId, rowId, chave) {
     const idx = equips.findIndex(e => String(e?.rowId || '') === rowId);
     if (idx === -1) return mostrarErro('Equipamento n\u00e3o encontrado.');
 
+    const pixNovoNormalizado = normalizarPix(pixNum);
+    const pixRetiradoNormalizado = normalizarPix(equips[idx].pixRetiradoPendente || '');
+    const pixAtualNormalizado = normalizarPix(equips[idx].pix || '');
+    const retiradaMesmoPix = equips[idx].manutencaoPendente === 'retirada'
+        && (pixRetiradoNormalizado === pixNovoNormalizado || (!pixRetiradoNormalizado && pixAtualNormalizado === pixNovoNormalizado));
+
+    if (retiradaMesmoPix) {
+        equips[idx].pixRetiradoPendente = '';
+        equips[idx].contadorRetiradoPendente = '';
+        equips[idx].retiradaPendenteEm = '';
+        equips[idx].retiradaPendentePor = '';
+    } else if (!equips[idx].pixRetiradoPendente && equips[idx].manutencaoPendente === 'retirada' && equips[idx].pix) {
+        equips[idx].pixRetiradoPendente = String(equips[idx].pix || '').trim();
+        equips[idx].contadorRetiradoPendente = String(equips[idx].contador || '').trim();
+        equips[idx].retiradaPendenteEm = String(equips[idx].manutencaoPendenteEm || dataInstalacao).trim();
+        equips[idx].retiradaPendentePor = String(equips[idx].manutencaoPendentePor || usuarioLogado).trim();
+    }
+
     equips[idx].pix = pixNum;
     if (contador) equips[idx].contador = contador;
-    equips[idx].manutencaoPendente = '';
-    equips[idx].aguardandoConfirmacao = false;
-    equips[idx].manutencaoPendenteEm = '';
-    equips[idx].manutencaoPendentePor = '';
+    equips[idx].manutencaoPendente = 'adicao';
+    equips[idx].aguardandoConfirmacao = true;
+    equips[idx].manutencaoPendenteEm = dataInstalacao;
+    equips[idx].manutencaoPendentePor = usuarioLogado;
 
     try {
-        await update(ref(db, `clientes/${clienteId}`), { equipDetalhes: equips });
+        await update(ref(db, `clientes/${clienteId}`), {
+            equipDetalhes: equips,
+            equip: serializarEquipamentosTextoCliente(equips),
+            statusCadastro: 'em_analise'
+        });
 
         await push(ref(db, PATH), {
             numero_pix    : pixNum,
             cliente       : String(cliente.nome || '').trim(),
             identificacao : montarIdentificacaoCliente(cliente),
             equipamento   : String(equips[idx].nome || '').trim(),
-            tecnico       : localStorage.getItem('usuarioLogado') || '',
-            data          : new Date().toISOString(),
+            tecnico       : usuarioLogado,
+            data          : dataInstalacao,
             contador      : contador,
             situacao      : 'instalado',
             origem        : 'adicionei_pix',
-            criado_em     : new Date().toISOString()
+            criado_em     : dataInstalacao
         });
 
         await set(ref(db, 'metadata/clientes_versao'), Date.now());
 
-        alert(`Pix ${pixNum} instalado em ${esc(equips[idx].nome)}!`);
+        const mensagem = `Pix ${pixNum} enviado para an\u00e1lise do gestor.`;
+        if (window.playAlert) {
+            window.playAlert(mensagem);
+        } else {
+            alert(mensagem);
+        }
     } catch (e) {
         mostrarErro('Erro ao salvar. Tente novamente.');
     }
@@ -1387,7 +1578,7 @@ window.renderizarRetirarPix = function renderizarRetirarPix() {
         .map(c => ({
             ...c,
             comPix: obterEquipamentosDetalhadosCliente(c).filter(
-                e => e.pix && e.manutencaoPendente !== 'retirada'
+                e => e.pix && !e.aguardandoConfirmacao && e.manutencaoPendente !== 'retirada'
             )
         }))
         .filter(c => c.comPix.length > 0)
@@ -1635,53 +1826,57 @@ window.confirmarInstalacaoCard = async function(clienteId, rowId, pixNum, pixKey
 
     const idx = equips.findIndex(e => String(e?.rowId || '') === rowId);
     if (idx !== -1) {
+        const pixNovoNormalizado = normalizarPix(pixNum);
+        const pixRetiradoNormalizado = normalizarPix(equips[idx].pixRetiradoPendente || '');
+        const pixAtualNormalizado = normalizarPix(equips[idx].pix || '');
+        const retiradaMesmoPix = equips[idx].manutencaoPendente === 'retirada'
+            && (pixRetiradoNormalizado === pixNovoNormalizado || (!pixRetiradoNormalizado && pixAtualNormalizado === pixNovoNormalizado));
+
+        if (retiradaMesmoPix) {
+            equips[idx].pixRetiradoPendente = '';
+            equips[idx].contadorRetiradoPendente = '';
+            equips[idx].retiradaPendenteEm = '';
+            equips[idx].retiradaPendentePor = '';
+        } else if (!equips[idx].pixRetiradoPendente && equips[idx].manutencaoPendente === 'retirada' && equips[idx].pix) {
+            equips[idx].pixRetiradoPendente = String(equips[idx].pix || '').trim();
+            equips[idx].contadorRetiradoPendente = String(equips[idx].contador || '').trim();
+            equips[idx].retiradaPendenteEm = String(equips[idx].manutencaoPendenteEm || dataInstalacao).trim();
+            equips[idx].retiradaPendentePor = String(equips[idx].manutencaoPendentePor || usuarioLogado).trim();
+        }
         equips[idx].pix = pixNum;
-        equips[idx].manutencaoPendente = '';
-        equips[idx].aguardandoConfirmacao = false;
-        equips[idx].manutencaoPendenteEm = '';
-        equips[idx].manutencaoPendentePor = '';
+        equips[idx].manutencaoPendente = 'adicao';
+        equips[idx].aguardandoConfirmacao = true;
+        equips[idx].manutencaoPendenteEm = dataInstalacao;
+        equips[idx].manutencaoPendentePor = usuarioLogado;
     }
 
     const nomeEquipamento = idx !== -1 ? String(equips[idx]?.nome || '').trim() : '';
 
     try {
         try {
-            await update(ref(db, `clientes/${clienteId}`), { equipDetalhes: equips });
+            await update(ref(db, `clientes/${clienteId}`), {
+                equipDetalhes: equips,
+                equip: serializarEquipamentosTextoCliente(equips),
+                statusCadastro: 'em_analise'
+            });
         } catch (erroCliente) {
             throw new Error(descreverErroFirebase(erroCliente, 'Falha ao atualizar o cliente.'));
         }
 
-        const chaveFirebase = Object.keys(window._pixData).find(
-            k => String(window._pixData[k].numero_pix) === String(pixNum)
-        );
-
-        if (chaveFirebase) {
-            try {
-                await update(ref(db, `${PATH}/${chaveFirebase}`), {
-                    situacao      : 'instalado',
-                    tecnico       : usuarioLogado,
-                    data          : dataInstalacao,
-                    equipamento   : nomeEquipamento,
-                    identificacao : montarIdentificacaoCliente(cliente)
-                });
-            } catch (erroPixExistente) {
-                throw new Error(descreverErroFirebase(erroPixExistente, 'Falha ao atualizar o cadastro do Pix.'));
-            }
-        } else {
-            try {
-                await push(ref(db, PATH), {
-                    numero_pix    : pixNum,
-                    cliente       : String(cliente.nome || '').trim(),
-                    identificacao : montarIdentificacaoCliente(cliente),
-                    equipamento   : nomeEquipamento,
-                    situacao      : 'instalado',
-                    tecnico       : usuarioLogado,
-                    data          : dataInstalacao,
-                    criado_em     : new Date().toISOString()
-                });
-            } catch (erroPixNovo) {
-                throw new Error(descreverErroFirebase(erroPixNovo, 'Falha ao registrar o Pix instalado.'));
-            }
+        try {
+            await push(ref(db, PATH), {
+                numero_pix    : pixNum,
+                cliente       : String(cliente.nome || '').trim(),
+                identificacao : montarIdentificacaoCliente(cliente),
+                equipamento   : nomeEquipamento,
+                situacao      : 'instalado',
+                tecnico       : usuarioLogado,
+                data          : dataInstalacao,
+                origem        : 'instalacao_card',
+                criado_em     : dataInstalacao
+            });
+        } catch (erroPixNovo) {
+            throw new Error(descreverErroFirebase(erroPixNovo, 'Falha ao registrar o Pix instalado.'));
         }
 
         try {
@@ -1691,9 +1886,9 @@ window.confirmarInstalacaoCard = async function(clienteId, rowId, pixNum, pixKey
         }
 
         if (window.playAlert) {
-            window.playAlert(`Pix ${pixNum} marcado como instalado.`);
+            window.playAlert(`Pix ${pixNum} enviado para an\u00e1lise do gestor.`);
         } else {
-            alert(`Pix ${pixNum} marcado como instalado.`);
+            alert(`Pix ${pixNum} enviado para an\u00e1lise do gestor.`);
         }
     } catch (e) {
         console.error('Erro ao confirmar instala\u00e7\u00e3o do Pix:', e);
@@ -1703,6 +1898,186 @@ window.confirmarInstalacaoCard = async function(clienteId, rowId, pixNum, pixKey
         } else {
             alert(detalhe);
         }
+    }
+};
+
+// ──────────────────────────────────────────────
+// GESTOR — RENDERIZAR PENDÊNCIAS
+// ──────────────────────────────────────────────
+window.renderizarGestorPix = function() {
+    if (!_isGestor) return;
+    const lista  = document.getElementById('gestor-lista');
+    const vazio  = document.getElementById('gestor-vazio');
+    const badge  = document.getElementById('count-gestor');
+    if (!lista) return;
+
+    const clientesPendentes = (window._clientesData || [])
+        .map(c => ({
+            ...c,
+            pendentes: obterEquipamentosDetalhadosCliente(c).flatMap(e => {
+                const pendencias = [];
+                const rowId = String(e?.rowId || '').trim();
+                const pixRetirado = String(e?.pixRetiradoPendente || '').trim();
+                const pixAtual = String(e?.pix || '').trim();
+                const duplicadoMesmoPix = pixRetirado && pixAtual && pixRetirado === pixAtual;
+
+                if (pixRetirado && !duplicadoMesmoPix) {
+                    pendencias.push({
+                        rowId,
+                        tipo: 'retirada',
+                        nome: String(e?.nome || '').trim(),
+                        pix: pixRetirado,
+                        por: String(e?.retiradaPendentePor || e?.manutencaoPendentePor || '').trim()
+                    });
+                } else if (e.aguardandoConfirmacao && e.manutencaoPendente === 'retirada' && pixAtual && !duplicadoMesmoPix) {
+                    pendencias.push({
+                        rowId,
+                        tipo: 'retirada',
+                        nome: String(e?.nome || '').trim(),
+                        pix: pixAtual,
+                        por: String(e?.manutencaoPendentePor || '').trim()
+                    });
+                }
+
+                if (e.aguardandoConfirmacao && e.manutencaoPendente === 'adicao' && pixAtual) {
+                    pendencias.push({
+                        rowId,
+                        tipo: 'adicao',
+                        nome: String(e?.nome || '').trim(),
+                        pix: pixAtual,
+                        por: String(e?.manutencaoPendentePor || '').trim()
+                    });
+                }
+
+                return pendencias;
+            })
+        }))
+        .filter(c => c.pendentes.length > 0);
+
+    const total = clientesPendentes.reduce((s, c) => s + c.pendentes.length, 0);
+    badge.textContent = total;
+    badge.style.display = total > 0 ? 'inline-block' : 'none';
+
+    if (clientesPendentes.length === 0) {
+        vazio.style.display = 'block';
+        lista.innerHTML = '';
+        return;
+    }
+    vazio.style.display = 'none';
+
+    // Delegação de eventos — mais confiável que onclick inline em módulo ES6
+    lista.onclick = function(ev) {
+        const btn = ev.target.closest('.btn-gestor-confirmar');
+        if (!btn || btn.disabled) return;
+        window.confirmarGestorItem(btn, btn.dataset.clienteid, btn.dataset.rowid, btn.dataset.tipo);
+    };
+
+    lista.innerHTML = clientesPendentes.map(c => {
+        const cId    = c.firebaseUrl;
+        const titulo = montarIdentificacaoCliente(c);
+
+        const itens = c.pendentes.map(e => {
+            const tipo      = e.tipo;
+            const badgeCls  = tipo === 'adicao' ? 'gestor-badge-adicao' : 'gestor-badge-retirada';
+            const tipoLabel = tipo === 'adicao' ? '+ Colocado' : '&minus; Retirado';
+            const pixInfo   = e.pix ? `<span class="gestor-pix-nr">Pix ${esc(e.pix)}</span>` : '';
+            const porQuem   = e.por
+                ? `<span style="font-size:11px;color:#94a3b8;">${esc(e.por)}</span>`
+                : '';
+            return `
+            <div class="gestor-equip-row">
+                <span class="gestor-badge-tipo ${badgeCls}">${tipoLabel}</span>
+                <span class="gestor-equip-nome">${esc(e.nome)}</span>
+                ${pixInfo}
+                ${porQuem}
+                <button class="btn-gestor-confirmar"
+                        data-clienteid="${cId}"
+                        data-rowid="${e.rowId}"
+                        data-tipo="${tipo}">
+                    Confirmar
+                </button>
+            </div>`;
+        }).join('');
+
+        const partes = titulo.match(/^(N\.\s*\d+)\s*-\s*(.+)$/);
+        const tituloHtml = partes
+            ? `<span class="num-cliente">${esc(partes[1])}</span>${esc(partes[2])}`
+            : esc(titulo);
+
+        return `
+        <div class="gestor-item">
+            <div class="gestor-cliente-nome">&#128205; ${tituloHtml}</div>
+            ${itens}
+        </div>`;
+    }).join('');
+};
+
+// ──────────────────────────────────────────────
+// GESTOR — CONFIRMAR ITEM
+// ──────────────────────────────────────────────
+window.confirmarGestorItem = async function(btnEl, clienteId, rowId, tipo) {
+    if (btnEl) { btnEl.disabled = true; btnEl.textContent = '...'; }
+
+    const restaurarBtn = () => { if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Confirmar'; } };
+
+    try {
+        const cliente = (window._clientesData || []).find(c => c.firebaseUrl === clienteId);
+        if (!cliente) {
+            restaurarBtn();
+            alert('Cliente não encontrado. Recarregue a página.');
+            return;
+        }
+
+        let equips = Array.isArray(cliente?.equipDetalhes) && cliente.equipDetalhes.length > 0
+            ? JSON.parse(JSON.stringify(cliente.equipDetalhes))
+            : obterEquipamentosDetalhadosCliente(cliente).map(e => ({ ...e }));
+
+        const idx = equips.findIndex(e => String(e?.rowId || '') === rowId);
+        if (idx === -1) {
+            restaurarBtn();
+            alert('Equipamento não encontrado. Recarregue a página.');
+            return;
+        }
+
+        if (tipo === 'retirada') {
+            equips[idx].pixRetiradoPendente = '';
+            equips[idx].contadorRetiradoPendente = '';
+            equips[idx].retiradaPendenteEm = '';
+            equips[idx].retiradaPendentePor = '';
+            if (equips[idx].manutencaoPendente === 'retirada') {
+                equips[idx].pix      = '';
+                equips[idx].contador = '';
+            }
+        }
+        if (tipo === 'adicao' && String(equips[idx].pixRetiradoPendente || '').trim() === String(equips[idx].pix || '').trim()) {
+            equips[idx].pixRetiradoPendente = '';
+            equips[idx].contadorRetiradoPendente = '';
+            equips[idx].retiradaPendenteEm = '';
+            equips[idx].retiradaPendentePor = '';
+        }
+        if (tipo === 'adicao' || equips[idx].manutencaoPendente === 'retirada') {
+            equips[idx].manutencaoPendente    = '';
+            equips[idx].aguardandoConfirmacao = false;
+            equips[idx].manutencaoPendenteEm  = '';
+            equips[idx].manutencaoPendentePor = '';
+        }
+
+        const patch = {
+            equipDetalhes: equips,
+            equip: serializarEquipamentosTextoCliente(equips)
+        };
+        const aindaPendente = equips.some(e => e.aguardandoConfirmacao || e.pixRetiradoPendente);
+        if (!aindaPendente) patch.statusCadastro = 'ativo';
+
+        await update(ref(db, `clientes/${clienteId}`), patch);
+        await set(ref(db, 'metadata/clientes_versao'), Date.now());
+
+        if (window.playAlert) await window.playAlert('Confirmado com sucesso.');
+        else alert('Confirmado com sucesso.');
+    } catch (e) {
+        restaurarBtn();
+        const detalhe = descreverErroFirebase(e, 'Erro ao confirmar.');
+        alert(detalhe);
     }
 };
 
