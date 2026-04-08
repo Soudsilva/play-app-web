@@ -370,21 +370,25 @@ export async function dbListarColaboradores() {
 // apareçam automaticamente no topo da lista antes de você reordenar.
 export async function dbSalvarColaborador(colaborador, idExistente = null) {
     try {
+        const colaboradorNormalizado = {
+            ...colaborador,
+            nome: String(colaborador?.nome || '').trim()
+        };
         if (idExistente) {
             const colabRef = ref(db, `colaboradores/${idExistente}`);
             const snapshot = await get(colabRef);
             const dadosAntigos = snapshot.val();
             // Mantém a posição na fila se já existir (não joga pro final)
             if (dadosAntigos && dadosAntigos.ordem !== undefined) {
-                colaborador.ordem = dadosAntigos.ordem;
+                colaboradorNormalizado.ordem = dadosAntigos.ordem;
             }
-            await set(colabRef, colaborador);
+            await set(colabRef, colaboradorNormalizado);
         } else {
             // USANDO O TIMESTAMP NEGATIVO: 
             // Quanto mais recente o cadastro, menor o número, logo, fica no topo.
-            colaborador.ordem = -Date.now();
+            colaboradorNormalizado.ordem = -Date.now();
             const colabRef = ref(db, 'colaboradores');
-            await push(colabRef, colaborador);
+            await push(colabRef, colaboradorNormalizado);
         }
     } catch (error) {
         console.error("Erro:", error);
@@ -766,14 +770,17 @@ export function dbEscutarAtendimentos(callback) {
 
 export function dbEscutarHistoricoDoUsuario(nomeUsuario, callback) {
     const histRef = ref(db, 'historico_estoque');
-    const consulta = query(histRef, orderByChild('responsavel'), equalTo(nomeUsuario || ''));
+    const nomeNormalizado = String(nomeUsuario || '').trim();
 
-    return onValue(consulta, (snapshot) => {
+    return onValue(histRef, (snapshot) => {
         const data = snapshot.val();
         const lista = [];
         if (data) {
             Object.keys(data).forEach(key => {
-                lista.push({ ...data[key], firebaseUrl: key });
+                const registro = { ...data[key], firebaseUrl: key };
+                if (String(registro?.responsavel || '').trim() === nomeNormalizado) {
+                    lista.push(registro);
+                }
             });
         }
         callback(lista);
@@ -782,13 +789,16 @@ export function dbEscutarHistoricoDoUsuario(nomeUsuario, callback) {
 
 export function dbEscutarAtendimentosDoUsuario(nomeUsuario, callback) {
     const atendimentosRef = ref(db, 'atendimentos');
-    const consulta = query(atendimentosRef, orderByChild('atendente'), equalTo(nomeUsuario || ''));
-    return onValue(consulta, (snapshot) => {
+    const nomeNormalizado = String(nomeUsuario || '').trim();
+    return onValue(atendimentosRef, (snapshot) => {
         const data = snapshot.val();
         const lista = [];
         if (data) {
             Object.keys(data).forEach(key => {
-                lista.push({ firebaseUrl: key, ...data[key] });
+                const registro = { firebaseUrl: key, ...data[key] };
+                if (String(registro?.atendente || '').trim() === nomeNormalizado) {
+                    lista.push(registro);
+                }
             });
         }
         callback(lista);
@@ -1413,7 +1423,16 @@ export async function dbSincronizarCadastrosPixPorManutencao(cliente, payload = 
                 destino_retirada: payload?.pontoEncerrado ? "analise" : String(registroBase?.destino_retirada || "").trim(),
                 obs_retirada: observacoes || String(registroBase?.obs_retirada || "").trim(),
                 origem: String(registroBase?.origem || "manutencao"),
-                atualizado_em: agoraIso
+                atualizado_em: agoraIso,
+                retirou_trocou_contador: alteracao.item?.retirou_trocou_contador === true,
+                contador_anterior_retirada: alteracao.item?.retirou_trocou_contador === true ? Number(alteracao.item?.contador_anterior_retirada || 0) : "",
+                contador_atual_retirada: alteracao.item?.retirou_trocou_contador === true ? Number(alteracao.item?.contador_atual_retirada || 0) : "",
+                percentual_comissao_cliente: alteracao.item?.retirou_trocou_contador === true ? Number(alteracao.item?.percentual_comissao_cliente || 0) : "",
+                valor_bruto_cliente: alteracao.item?.retirou_trocou_contador === true ? Number(alteracao.item?.valor_bruto_cliente || 0) : "",
+                valor_comissao_cliente: alteracao.item?.retirou_trocou_contador === true ? Number(alteracao.item?.valor_comissao_cliente || 0) : "",
+                valor_pagar_cliente: alteracao.item?.retirou_trocou_contador === true ? Number(alteracao.item?.valor_pagar_cliente || 0) : "",
+                foto_contador_retirada: alteracao.item?.retirou_trocou_contador === true ? String(alteracao.item?.foto_contador_retirada || "").trim() : "",
+                foto_contador_retirada_thumb: alteracao.item?.retirou_trocou_contador === true ? String(alteracao.item?.foto_contador_retirada_thumb || "").trim() : ""
             };
 
             if (keyExistente) {
@@ -1545,7 +1564,7 @@ export async function dbSalvarManutencao(manutencao, idExistente = null) {
 }
 
 function _normalizarChaveUsuario(nomeUsuario) {
-    return String(nomeUsuario || '').replace(/[.#$/[\]]/g, '_');
+    return String(nomeUsuario || '').trim().replace(/[.#$/[\]]/g, '_');
 }
 
 export function dbEscutarFluxoCaixa(nomeUsuario, callback) {

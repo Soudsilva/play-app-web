@@ -417,6 +417,186 @@
             margin-top: 12px;
             line-height: 1.5;
         }
+        .pix-encerramento-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .pix-encerramento-card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 14px;
+            padding: 14px;
+        }
+        .pix-encerramento-titulo {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffeb3b;
+            margin-bottom: 10px;
+        }
+        .retirada-extra-box {
+            background: rgba(0,0,0,0.12);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 12px;
+        }
+        .retirada-extra-pergunta {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        .retirada-extra-opcoes {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .retirada-extra-opcao {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+        }
+        .retirada-extra-opcao input {
+            width: 16px;
+            height: 16px;
+            accent-color: #ffeb3b;
+            margin: 0;
+        }
+        .retirada-extra-body {
+            display: none;
+            margin-top: 10px;
+        }
+        .retirada-extra-body.aberto { display: block; }
+        .retirada-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .retirada-info-item {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+        .retirada-info-item span {
+            display: block;
+            font-size: 12px;
+            color: #b0bbd4;
+            margin-bottom: 4px;
+        }
+        .retirada-info-item strong {
+            font-size: 15px;
+            color: #fff;
+        }
+        .retirada-input-label {
+            display: block;
+            font-size: 13px;
+            color: #cfd6e3;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        .retirada-foto-input {
+            position: relative;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .retirada-foto-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.16);
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            font-size: 22px;
+        }
+        .retirada-foto-btn.tem-foto {
+            border-color: rgba(255,235,59,0.4);
+        }
+        .retirada-foto-menu {
+            display: none;
+            position: absolute;
+            top: 62px;
+            left: 0;
+            z-index: 10;
+        }
+        .retirada-foto-menu.aberto { display: block; }
+        .retirada-foto-menu-box {
+            min-width: 150px;
+            background: #163879;
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.24);
+        }
+        .retirada-foto-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .retirada-foto-menu-item + .retirada-foto-menu-item {
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .retirada-foto-menu-item input {
+            display: none;
+        }
+        .retirada-calc-box {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+        .retirada-calc-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #cfd6e3;
+        }
+        .retirada-calc-row:last-child { margin-bottom: 0; }
+        .retirada-calc-row strong {
+            font-size: 14px;
+            color: #fff;
+        }
+        .retirada-calc-row.bruto {
+            color: #9fb0cf;
+        }
+        .retirada-calc-row.bruto strong {
+            color: #d7def0;
+            font-size: 13px;
+        }
+        .retirada-calc-row.comissao {
+            margin-top: 8px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: #27448b;
+            border: 1px solid #ffb300;
+            color: #ffffff;
+        }
+        .retirada-calc-row.comissao strong {
+            color: #ffeb3b;
+            font-size: 15px;
+        }
 
     </style>
 </head>
@@ -507,6 +687,10 @@
                 <input type="text" id="campoEquipLivre" class="campo-texto" placeholder="Nome do equipamento..." autocomplete="off">
             </div>
 
+            <div class="sub-secao" id="subPixEncerramento">
+                <div class="sub-titulo">Finalize o PIX retirado.</div>
+                <div class="pix-encerramento-lista" id="listaPixEncerramento"></div>
+            </div>
             <!-- Sub-sub: ponto encerrado? -->
             <div class="sub-secao" id="subEncerramento">
                 <div class="aviso-encerramento">
@@ -562,7 +746,7 @@
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
 verificarAutenticacao();
-import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbListarClientes, dbEscutarEstoque, storageSalvarFotoComThumb } from './database.js';
+import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, storageSalvarFotoComThumb } from './database.js';
 
 // ════════════════════════════════════════════════
 // DADOS DA MANUTENÇÃO
@@ -570,7 +754,7 @@ import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscar
 
 const dadosManutencao = JSON.parse(sessionStorage.getItem('manutencao_realizando') || 'null');
 if (!dadosManutencao) { window.location.href = 'manutencoes_solicitadas.html'; }
-const usuarioLogado = localStorage.getItem('usuarioLogado') || dadosManutencao?.selecionadoPor || 'Técnico';
+const usuarioLogado = String(localStorage.getItem('usuarioLogado') || dadosManutencao?.selecionadoPor || 'Técnico').trim();
 
 const ehPontoNovo = String(dadosManutencao?.tipoAcao || '').trim().toLowerCase() === 'ponto novo';
 
@@ -588,6 +772,7 @@ let listaProdutos = [];
 let produtosCarregados = false;
 let maquinasDisponiveis = [];
 let clientesCadastrados = [];
+const _pixEncerramentoFotos = {};
 
 // Respostas acumuladas para salvar no final
 const respostas = {
@@ -598,6 +783,7 @@ const respostas = {
         adicionou: false,
         retirou: false,
     },
+    encerramentoRespondido: false,
     pontoEncerrado: false,
     valorEncerramento: '',
     teveProdutos: null,
@@ -616,6 +802,295 @@ let indiceHistoricoAtual = 0;
 function clonarJson(valor) {
     return JSON.parse(JSON.stringify(valor));
 }
+
+function normalizarNumeroCalculo(valor) {
+    const texto = String(valor || '').trim().replace(/\./g, '').replace(',', '.');
+    const numero = parseFloat(texto);
+    return Number.isFinite(numero) ? numero : 0;
+}
+
+function formatarMoedaBR(valor) {
+    return Number(valor || 0).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    });
+}
+
+function extrairPercentualComissao(valor) {
+    const numero = String(valor || '').replace(',', '.').match(/-?\d+(?:\.\d+)?/);
+    return numero ? (parseFloat(numero[0]) || 0) : 0;
+}
+
+function obterPercentualComissaoClienteAtual() {
+    return extrairPercentualComissao(clienteEncontrado?.comissaoCliente ?? clienteEncontrado?.comissao ?? 0);
+}
+
+function obterEquipamentosRetiradosSelecionados() {
+    return [...indicesEquipamentosRetirados]
+        .map(indice => ({ ...equipamentosDoCliente[indice], indice }))
+        .filter(Boolean);
+}
+
+function obterPixRetiradosSelecionados() {
+    return obterEquipamentosRetiradosSelecionados().filter(item => String(item?.pix || '').trim());
+}
+
+function obterChavePixEncerramento(item) {
+    const rowId = String(item?.rowId || '').trim();
+    const pix = String(item?.pix || '').trim();
+    const indice = Number.isInteger(item?.indice) ? item.indice : '';
+    return rowId || `pix_${pix}_${indice}`;
+}
+
+function capturarEstadoAtualPixEncerramento() {
+    const mapa = {};
+    document.querySelectorAll('#listaPixEncerramento .pix-encerramento-card').forEach(card => {
+        const chave = String(card.dataset.chave || '').trim();
+        if (!chave) return;
+        mapa[chave] = {
+            opcao: card.querySelector(`input[name="encpix-op-${chave}"]:checked`)?.value || '',
+            contadorAtual: card.querySelector(`#encpix-atual-${chave}`)?.value || ''
+        };
+    });
+    return mapa;
+}
+
+function atualizarResumoPixEncerramento(chave) {
+    const body = document.getElementById('encpix-body-' + chave);
+    const atualEl = document.getElementById('encpix-atual-' + chave);
+    const brutoEl = document.getElementById('encpix-bruto-' + chave);
+    const descEl = document.getElementById('encpix-desc-' + chave);
+    if (!body || !atualEl || !brutoEl || !descEl) return;
+
+    const contadorAnterior = normalizarNumeroCalculo(body.dataset.anterior || '');
+    const percentualComissao = normalizarNumeroCalculo(body.dataset.comissao || '');
+    const contadorAtual = normalizarNumeroCalculo(atualEl.value || '');
+    const bruto = contadorAtual > 0 ? contadorAtual - contadorAnterior : 0;
+    const desconto = bruto > 0 ? bruto * (percentualComissao / 100) : 0;
+
+    brutoEl.textContent = formatarMoedaBR(bruto);
+    descEl.textContent = formatarMoedaBR(desconto);
+}
+
+function definirOpcaoPixEncerramento(chave, opcao) {
+    const body = document.getElementById('encpix-body-' + chave);
+    const atualEl = document.getElementById('encpix-atual-' + chave);
+    const fotoBtnEl = document.getElementById('encpix-foto-btn-' + chave);
+    const fotoIconeEl = document.getElementById('encpix-foto-icone-' + chave);
+    const fotoCameraEl = document.getElementById('encpix-foto-camera-' + chave);
+    const fotoGaleriaEl = document.getElementById('encpix-foto-galeria-' + chave);
+    if (!body) return;
+
+    const mostrarExtras = opcao === 'sim';
+    body.classList.toggle('aberto', mostrarExtras);
+
+    if (mostrarExtras) {
+        atualizarResumoPixEncerramento(chave);
+        return;
+    }
+
+    if (atualEl) atualEl.value = '';
+    if (fotoCameraEl) fotoCameraEl.value = '';
+    if (fotoGaleriaEl) fotoGaleriaEl.value = '';
+    if (fotoBtnEl) {
+        fotoBtnEl.classList.remove('tem-foto');
+        fotoBtnEl.querySelectorAll('img').forEach(img => img.remove());
+    }
+    if (fotoIconeEl) fotoIconeEl.style.display = '';
+    delete _pixEncerramentoFotos[chave];
+    fecharMenuFotoPixEncerramento(chave);
+    atualizarResumoPixEncerramento(chave);
+}
+
+function toggleMenuFotoPixEncerramento(chave) {
+    const menu = document.getElementById('encpix-foto-menu-' + chave);
+    if (!menu) return;
+    document.querySelectorAll('.retirada-foto-menu.aberto').forEach(el => {
+        if (el !== menu) el.classList.remove('aberto');
+    });
+    menu.classList.toggle('aberto');
+}
+
+function fecharMenuFotoPixEncerramento(chave) {
+    const menu = document.getElementById('encpix-foto-menu-' + chave);
+    if (menu) menu.classList.remove('aberto');
+}
+
+function carregarFotoPixEncerramento(input, chave) {
+    const file = input?.files?.[0];
+    const btnEl = document.getElementById('encpix-foto-btn-' + chave);
+    const iconeEl = document.getElementById('encpix-foto-icone-' + chave);
+
+    if (!file) {
+        delete _pixEncerramentoFotos[chave];
+        if (btnEl) {
+            btnEl.classList.remove('tem-foto');
+            btnEl.querySelectorAll('img').forEach(img => img.remove());
+        }
+        if (iconeEl) iconeEl.style.display = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const imgObj = new Image();
+        imgObj.onload = function() {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 1600;
+            const MAX_HEIGHT = 1600;
+            let width = imgObj.width;
+            let height = imgObj.height;
+
+            if (width > height) {
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+            } else if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(imgObj, 0, 0, width, height);
+            const base64 = canvas.toDataURL('image/jpeg', 0.8);
+            _pixEncerramentoFotos[chave] = base64;
+
+            if (btnEl) {
+                btnEl.classList.add('tem-foto');
+                btnEl.querySelectorAll('img').forEach(img => img.remove());
+                const img = document.createElement('img');
+                img.src = base64;
+                img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px;pointer-events:none;';
+                btnEl.appendChild(img);
+            }
+            if (iconeEl) iconeEl.style.display = 'none';
+        };
+        imgObj.src = ev.target?.result || '';
+    };
+    reader.readAsDataURL(file);
+}
+
+function renderizarPixEncerramento() {
+    const sub = document.getElementById('subPixEncerramento');
+    const lista = document.getElementById('listaPixEncerramento');
+    if (!sub || !lista) return;
+
+    const pixSelecionados = obterPixRetiradosSelecionados();
+    if (!respostas.acoesMaquinas.retirou || pixSelecionados.length === 0) {
+        sub.classList.remove('visivel');
+        lista.innerHTML = '';
+        return;
+    }
+
+    const estadoAtual = capturarEstadoAtualPixEncerramento();
+    const percentualComissao = obterPercentualComissaoClienteAtual();
+
+    lista.innerHTML = pixSelecionados.map(item => {
+        const chave = obterChavePixEncerramento(item);
+        const pix = String(item?.pix || '').trim();
+        const contadorAnteriorTexto = String(item?.contador || '').trim();
+        const contadorAnteriorNumero = normalizarNumeroCalculo(contadorAnteriorTexto);
+        const estado = estadoAtual[chave] || {};
+        const fotoBase64 = _pixEncerramentoFotos[chave] || '';
+
+        return `
+            <div class="pix-encerramento-card" data-chave="${chave}">
+                <div class="pix-encerramento-titulo">Pix ${pix} • ${String(item?.nome || '').trim()}</div>
+                <div class="retirada-extra-box">
+                    <div class="retirada-extra-pergunta">Informe os dados do contador retirado junto com a máquina.</div>
+                    <div class="retirada-extra-body aberto" id="encpix-body-${chave}" data-anterior="${contadorAnteriorNumero}" data-comissao="${percentualComissao}">
+                        <div class="retirada-info-grid">
+                            <div class="retirada-info-item"><span>Contador anterior</span><strong id="encpix-ant-${chave}">${contadorAnteriorTexto || '0'}</strong></div>
+                            <div class="retirada-info-item"><span>Comissão do cliente</span><strong id="encpix-com-${chave}">${Number.isInteger(percentualComissao) ? String(percentualComissao) : percentualComissao.toFixed(2).replace('.', ',')}%</strong></div>
+                        </div>
+                        <label class="retirada-input-label" for="encpix-atual-${chave}">Valor atual do contador</label>
+                        <input type="text" class="campo-texto" id="encpix-atual-${chave}" placeholder="Digite o contador atual" inputmode="decimal" autocomplete="off" value="${String(estado.contadorAtual || '').replace(/"/g, '&quot;')}" oninput="this.value=this.value.replace(/[^0-9,]/g,''); atualizarResumoPixEncerramento('${chave}')">
+                        <div class="retirada-foto-input">
+                            <button type="button" class="retirada-foto-btn${fotoBase64 ? ' tem-foto' : ''}" id="encpix-foto-btn-${chave}" onclick="toggleMenuFotoPixEncerramento('${chave}')">
+                                <span id="encpix-foto-icone-${chave}" style="${fotoBase64 ? 'display:none;' : ''}">&#128247;</span>
+                                ${fotoBase64 ? `<img src="${fotoBase64}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px;pointer-events:none;">` : ''}
+                            </button>
+                            <div class="retirada-foto-menu" id="encpix-foto-menu-${chave}">
+                                <div class="retirada-foto-menu-box">
+                                    <label class="retirada-foto-menu-item"><span>&#128247;</span><span>Câmera</span><input type="file" id="encpix-foto-camera-${chave}" accept="image/*" capture="environment" onchange="carregarFotoPixEncerramento(this, '${chave}'); fecharMenuFotoPixEncerramento('${chave}')"></label>
+                                    <label class="retirada-foto-menu-item"><span>&#128444;&#65039;</span><span>Galeria</span><input type="file" id="encpix-foto-galeria-${chave}" accept="image/*" onchange="carregarFotoPixEncerramento(this, '${chave}'); fecharMenuFotoPixEncerramento('${chave}')"></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="retirada-calc-box">
+                            <div class="retirada-calc-row bruto"><span>Valor bruto</span><strong id="encpix-bruto-${chave}">R$ 0,00</strong></div>
+                            <div class="retirada-calc-row comissao"><span>Comissão do cliente</span><strong id="encpix-desc-${chave}">R$ 0,00</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    }).join('');
+
+    sub.classList.add('visivel');
+    pixSelecionados.forEach(item => atualizarResumoPixEncerramento(obterChavePixEncerramento(item)));
+}
+
+async function coletarDadosPixEncerramentoParaSalvar() {
+    const pixSelecionados = obterPixRetiradosSelecionados();
+    if (pixSelecionados.length === 0) return [];
+
+    const itens = [];
+    for (const item of pixSelecionados) {
+        const chave = obterChavePixEncerramento(item);
+        const usaContador = true;
+        const contadorAnterior = normalizarNumeroCalculo(item?.contador || '');
+        const contadorAtualTexto = String(document.getElementById(`encpix-atual-${chave}`)?.value || '').trim();
+        const contadorAtual = normalizarNumeroCalculo(contadorAtualTexto);
+        const percentualComissao = obterPercentualComissaoClienteAtual();
+        const valorBruto = contadorAtual - contadorAnterior;
+        const valorComissao = valorBruto > 0 ? valorBruto * (percentualComissao / 100) : 0;
+        const valorPagar = valorBruto > 0 ? valorBruto - valorComissao : 0;
+
+        let fotoContadorUrl = '';
+        let fotoContadorThumbUrl = '';
+        if (usaContador) {
+            if (!contadorAtualTexto) {
+                throw new Error(`Informe o contador atual do Pix ${item.pix}.`);
+            }
+            if (contadorAtual < contadorAnterior) {
+                throw new Error(`O contador atual do Pix ${item.pix} não pode ser menor que o anterior.`);
+            }
+
+            const fotoBase64 = _pixEncerramentoFotos[chave] || '';
+            if (!fotoBase64) {
+                throw new Error(`Adicione a foto do contador do Pix ${item.pix}.`);
+            }
+
+            const fotoSalva = await storageSalvarFotoComThumb(fotoBase64, 'cadastro_pix/retirada_contador', 120);
+            fotoContadorUrl = String(fotoSalva?.url || '').trim();
+            fotoContadorThumbUrl = String(fotoSalva?.thumbUrl || fotoContadorUrl || '').trim();
+        }
+
+        itens.push({
+            chavePixEncerramento: chave,
+            retirou_trocou_contador: usaContador,
+            contador_anterior_retirada: usaContador ? contadorAnterior : '',
+            contador_atual_retirada: usaContador ? contadorAtual : '',
+            percentual_comissao_cliente: usaContador ? percentualComissao : '',
+            valor_bruto_cliente: usaContador ? valorBruto : '',
+            valor_comissao_cliente: usaContador ? valorComissao : '',
+            valor_pagar_cliente: usaContador ? valorPagar : '',
+            foto_contador_retirada: fotoContadorUrl,
+            foto_contador_retirada_thumb: fotoContadorThumbUrl
+        });
+    }
+
+    return itens;
+}
+
+window.atualizarResumoPixEncerramento = atualizarResumoPixEncerramento;
+window.definirOpcaoPixEncerramento = definirOpcaoPixEncerramento;
+window.toggleMenuFotoPixEncerramento = toggleMenuFotoPixEncerramento;
+window.fecharMenuFotoPixEncerramento = fecharMenuFotoPixEncerramento;
+window.carregarFotoPixEncerramento = carregarFotoPixEncerramento;
 
 function capturarValoresCampos() {
     const valores = {};
@@ -706,6 +1181,9 @@ function reidratarEstadoRestaurado(snapshot = null) {
         const subRetirar = document.getElementById('subRetirar');
         if (listaSelecionar && subRetirar?.classList.contains('visivel')) {
             renderizarEquipamentosSelecionar(equipamentosDoCliente);
+            if (respostas.pontoEncerrado) {
+                renderizarPixEncerramento();
+            }
         }
     }
 
@@ -770,14 +1248,19 @@ function inicializarHistoricoNavegador() {
 // ── Preenche o card do topo ──
 (function preencherCardInfo() {
     const el = document.getElementById('cardInfo');
+    const clienteNome = String(dadosManutencao?.clienteNome || dadosManutencao?.cliente?.nome || '').trim();
+    const clienteNumero = String(dadosManutencao?.clienteNumero ?? dadosManutencao?.cliente?.numero ?? '').trim();
+    const clienteRota = String(dadosManutencao?.clienteRota || dadosManutencao?.cliente?.rota || '').trim();
+    const clienteCidade = String(dadosManutencao?.clienteCidade || dadosManutencao?.cliente?.cidade || '').trim();
+    const solicitante = String(dadosManutencao?.solicitante || dadosManutencao?.cadastradoPor || '').trim();
     const meta = [
-        dadosManutencao.clienteRota   ? `Rota ${dadosManutencao.clienteRota}` : null,
-        dadosManutencao.clienteCidade ? dadosManutencao.clienteCidade : null,
-        dadosManutencao.solicitante   ? `Solicitado por ${dadosManutencao.solicitante}` : null,
+        clienteRota ? `Rota ${clienteRota}` : null,
+        clienteCidade ? clienteCidade : null,
+        solicitante ? `Solicitado por ${solicitante}` : null,
     ].filter(Boolean).join(' · ');
 
     el.innerHTML = `
-        <div class="card-info-nome">${dadosManutencao.clienteNumero ? 'N. ' + dadosManutencao.clienteNumero + ' — ' : ''}${dadosManutencao.clienteNome || '—'}</div>
+        <div class="card-info-nome">${clienteNumero ? 'N. ' + clienteNumero + ' — ' : ''}${clienteNome || '—'}</div>
         <div class="card-info-meta">${meta}</div>
         ${dadosManutencao.tipoAcao    ? `<div class="card-info-tipo">${dadosManutencao.tipoAcao}</div>` : ''}
         ${dadosManutencao.observacoes ? `<div class="card-info-obs">${dadosManutencao.observacoes}</div>` : ''}
@@ -809,7 +1292,13 @@ async function carregarEquipamentosDoCliente() {
         // Formato novo: array equipDetalhes
         if (Array.isArray(clienteEncontrado.equipDetalhes) && clienteEncontrado.equipDetalhes.length > 0) {
             equipamentosDoCliente = clienteEncontrado.equipDetalhes
-                .map(e => ({ nome: String(e.nome || '').trim(), qtd: String(e.qtd || '1').trim() }))
+                .map((e, indice) => ({
+                    rowId: String(e?.rowId || `equip_${indice + 1}`),
+                    nome: String(e?.nome || '').trim(),
+                    qtd: String(e?.qtd || '1').trim(),
+                    pix: String(e?.pix || '').trim(),
+                    contador: String(e?.contador || '').trim()
+                }))
                 .filter(e => e.nome);
             return;
         }
@@ -818,10 +1307,16 @@ async function carregarEquipamentosDoCliente() {
         if (clienteEncontrado.equip) {
             equipamentosDoCliente = String(clienteEncontrado.equip)
                 .split(', ')
-                .map(trecho => ({
-                    nome: trecho.replace(/\s*\[Pix:[^\]]*\]/g, '').replace(/\s*\([^)]*\)\s*$/, '').trim(),
-                    qtd: '1'
-                }))
+                .map((trecho, indice) => {
+                    const matchPix = String(trecho || '').match(/\[Pix:\s*([^\]]+)\]/i);
+                    return {
+                        rowId: `legacy_${indice + 1}`,
+                        nome: trecho.replace(/\s*\[Pix:[^\]]*\]/g, '').replace(/\s*\([^)]*\)\s*$/, '').trim(),
+                        qtd: '1',
+                        pix: matchPix ? String(matchPix[1] || '').trim() : '',
+                        contador: ''
+                    };
+                })
                 .filter(e => e.nome);
         }
 
@@ -861,9 +1356,23 @@ dbEscutarClientes((lista) => {
     clientesCadastrados = Array.isArray(lista) ? [...lista] : [];
 });
 
+document.addEventListener('click', (evento) => {
+    document.querySelectorAll('.retirada-foto-input').forEach(wrap => {
+        if (!wrap.contains(evento.target)) {
+            wrap.querySelectorAll('.retirada-foto-menu.aberto').forEach(menu => menu.classList.remove('aberto'));
+        }
+    });
+});
+
 document.addEventListener('input', (evento) => {
     if (!evento.target.closest('#containerEquipamentosAdicionados .linha-equipamento-novo')) return;
     normalizarLinhasEquipamentoAdicionado();
+});
+
+document.addEventListener('input', (evento) => {
+    if (evento.target?.id !== 'campoEquipLivre') return;
+    sincronizarEtapaProdutosAposMaquinas();
+    atualizarBotaoFinalizar();
 });
 
 document.addEventListener('change', (evento) => {
@@ -1448,14 +1957,25 @@ function renderizarEquipamentosSelecionar(equipamentos) {
                 item.classList.remove('marcado');
             }
             // Se selecionou todos, pergunta encerramento
+            const gradeEnc = document.querySelector('#subEncerramento .grade-opcoes');
             if (indicesEquipamentosRetirados.size === equipamentos.length) {
+                if (gradeEnc) gradeEnc.style.display = respostas.encerramentoRespondido ? 'none' : 'flex';
                 mostrarSubSecao('subEncerramento');
+                if (respostas.encerramentoRespondido && respostas.pontoEncerrado) {
+                    mostrarSubSecao('subValorEncerramento');
+                } else if (!respostas.pontoEncerrado) {
+                    document.getElementById('subValorEncerramento').classList.remove('visivel');
+                }
             } else {
+                if (gradeEnc) gradeEnc.style.display = 'flex';
                 document.getElementById('subEncerramento').classList.remove('visivel');
                 document.getElementById('subValorEncerramento').classList.remove('visivel');
+                respostas.encerramentoRespondido = false;
                 respostas.pontoEncerrado = false;
                 respostas.valorEncerramento = '';
             }
+            renderizarPixEncerramento();
+            sincronizarEtapaProdutosAposMaquinas();
             atualizarBotaoFinalizar();
             registrarNovoEstadoHistorico();
         };
@@ -1644,7 +2164,33 @@ function coletarProdutosRepostosParaSalvar() {
 }
 
 function produtosSaoObrigatorios() {
-    return respostas.acoesMaquinas.adicionou === true;
+    return !pontoEncerradoPulaProdutos() && respostas.acoesMaquinas.adicionou === true;
+}
+
+function pontoEncerradoPulaProdutos() {
+    return respostas.pontoEncerrado === true;
+}
+
+function precisaResponderEncerramento() {
+    return respostas.acoesMaquinas.retirou === true
+        && equipamentosDoCliente.length > 0
+        && indicesEquipamentosRetirados.size === equipamentosDoCliente.length;
+}
+
+function encerramentoEstaPendente() {
+    return precisaResponderEncerramento() && respostas.encerramentoRespondido !== true;
+}
+
+function retiradaFoiInformada() {
+    if (respostas.acoesMaquinas.retirou !== true) return true;
+    if (equipamentosDoCliente.length > 0) {
+        return indicesEquipamentosRetirados.size > 0;
+    }
+    return String(document.getElementById('campoEquipLivre')?.value || '').trim() !== '';
+}
+
+function retiradaEstaPendente() {
+    return respostas.acoesMaquinas.retirou === true && !retiradaFoiInformada();
 }
 
 function temAcaoMaquinaSelecionada() {
@@ -1658,7 +2204,12 @@ function sincronizarPosicaoProdutos() {
     const secaoProdutos = document.getElementById('secaoProdutos');
     if (!subProdutos || !hostObrigatorio || !hostPadrao || !secaoProdutos) return;
 
-    if (produtosSaoObrigatorios()) {
+    if (pontoEncerradoPulaProdutos() || encerramentoEstaPendente() || retiradaEstaPendente()) {
+        if (subProdutos.parentElement !== hostPadrao) {
+            hostPadrao.appendChild(subProdutos);
+        }
+        secaoProdutos.classList.add('oculta-por-fluxo');
+    } else if (produtosSaoObrigatorios()) {
         if (subProdutos.parentElement !== hostObrigatorio) {
             hostObrigatorio.appendChild(subProdutos);
         }
@@ -1679,6 +2230,12 @@ function sincronizarSecaoProdutosUI() {
 
     sincronizarPosicaoProdutos();
 
+    if (pontoEncerradoPulaProdutos() || encerramentoEstaPendente() || retiradaEstaPendente()) {
+        secao?.classList.add('oculta-por-fluxo');
+        document.getElementById('subProdutos')?.classList.remove('visivel');
+        return;
+    }
+
     if (titulo) {
         titulo.textContent = produtosSaoObrigatorios()
             ? '📦 Reposição de produtos'
@@ -1692,6 +2249,24 @@ function sincronizarSecaoProdutosUI() {
     if (grade && secao && !secao.classList.contains('respondida')) {
         grade.style.display = produtosSaoObrigatorios() ? 'none' : 'flex';
     }
+}
+
+function sincronizarEtapaProdutosAposMaquinas() {
+    sincronizarSecaoProdutosUI();
+
+    if (!temAcaoMaquinaSelecionada() || retiradaEstaPendente() || encerramentoEstaPendente() || pontoEncerradoPulaProdutos()) {
+        document.getElementById('subProdutos')?.classList.remove('visivel');
+        return;
+    }
+
+    if (produtosSaoObrigatorios()) {
+        if (respostas.teveProdutos !== true || !document.getElementById('subProdutos')?.classList.contains('visivel')) {
+            prepararSecaoProdutosObrigatoria();
+        }
+        return;
+    }
+
+    mostrarSecao('secaoProdutos');
 }
 
 function prepararSecaoProdutosObrigatoria() {
@@ -1736,9 +2311,13 @@ function sincronizarAcoesMaquinaUI() {
         subRetirar.classList.toggle('visivel', respostas.acoesMaquinas.retirou);
         if (respostas.acoesMaquinas.retirou) {
             renderizarEquipamentosSelecionar(equipamentosDoCliente);
+            renderizarPixEncerramento();
         } else {
             document.getElementById('subEncerramento').classList.remove('visivel');
             document.getElementById('subValorEncerramento').classList.remove('visivel');
+            document.getElementById('subPixEncerramento').classList.remove('visivel');
+            document.getElementById('listaPixEncerramento').innerHTML = '';
+            respostas.encerramentoRespondido = false;
             respostas.pontoEncerrado = false;
             respostas.valorEncerramento = '';
         }
@@ -1800,15 +2379,21 @@ function atualizarBotaoFinalizar() {
     const servicoRespondido = respostas.servicoRealizado !== null;
     const maquinasRespondidas = respostas.teveAlteracaoMaquinas !== null;
     const acoesRespondidas = respostas.teveAlteracaoMaquinas !== true || temAcaoMaquinaSelecionada();
-    const precisaRespostaProdutos = !produtosSaoObrigatorios()
+    const retiradaRespondida = !retiradaEstaPendente();
+    const encerramentoRespondido = !encerramentoEstaPendente();
+    const precisaRespostaProdutos = !pontoEncerradoPulaProdutos()
+        && !encerramentoEstaPendente()
+        && !produtosSaoObrigatorios()
         && (
             respostas.teveAlteracaoMaquinas === false
             || (respostas.teveAlteracaoMaquinas === true && temAcaoMaquinaSelecionada())
         );
-    const produtosRespondidos = produtosSaoObrigatorios()
+    const produtosRespondidos = pontoEncerradoPulaProdutos()
+        ? true
+        : produtosSaoObrigatorios()
         ? true
         : !precisaRespostaProdutos || respostas.teveProdutos !== null;
-    const tudo = servicoRespondido && maquinasRespondidas && acoesRespondidas && produtosRespondidos;
+    const tudo = servicoRespondido && maquinasRespondidas && acoesRespondidas && retiradaRespondida && encerramentoRespondido && produtosRespondidos;
 
     botao.classList.toggle('visivel', tudo);
 }
@@ -1852,9 +2437,13 @@ window.responderTemMaquinas = function(teveAlteracao) {
     if (!teveAlteracao) {
         respostas.acoesMaquinas.adicionou = false;
         respostas.acoesMaquinas.retirou = false;
+        respostas.encerramentoRespondido = false;
         respostas.pontoEncerrado = false;
         respostas.valorEncerramento = '';
         respostas.teveProdutos = null;
+        document.getElementById('subPixEncerramento')?.classList.remove('visivel');
+        const listaPixEncerramento = document.getElementById('listaPixEncerramento');
+        if (listaPixEncerramento) listaPixEncerramento.innerHTML = '';
         marcarSecaoRespondida('secaoMaquinas', 'Não mexi em máquinas ✔️');
         sincronizarSecaoProdutosUI();
         mostrarSecao('secaoProdutos');
@@ -1874,12 +2463,13 @@ window.toggleAcaoMaquina = function(tipo) {
     sincronizarAcoesMaquinaUI();
 
     if (!temAcaoMaquinaSelecionada()) {
+        respostas.encerramentoRespondido = false;
+        respostas.pontoEncerrado = false;
+        respostas.valorEncerramento = '';
         respostas.teveProdutos = null;
         document.getElementById('subProdutos')?.classList.remove('visivel');
-    } else if (produtosSaoObrigatorios()) {
-        prepararSecaoProdutosObrigatoria();
     } else {
-        mostrarSecao('secaoProdutos');
+        sincronizarEtapaProdutosAposMaquinas();
     }
 
     atualizarBotaoFinalizar();
@@ -1888,7 +2478,11 @@ window.toggleAcaoMaquina = function(tipo) {
 };
 
 window.responderEncerramento = function(encerrou) {
+    respostas.encerramentoRespondido = true;
     respostas.pontoEncerrado = encerrou;
+    if (encerrou) {
+        respostas.teveProdutos = null;
+    }
 
     const subValor = document.getElementById('subValorEncerramento');
     const gradeEnc = document.querySelector('#subEncerramento .grade-opcoes');
@@ -1897,8 +2491,15 @@ window.responderEncerramento = function(encerrou) {
     if (encerrou) {
         mostrarSubSecao('subValorEncerramento');
         document.getElementById('campoValorEncerramento').focus();
+        document.getElementById('subProdutos')?.classList.remove('visivel');
+        renderizarPixEncerramento();
+    } else {
+        subValor?.classList.remove('visivel');
+        renderizarPixEncerramento();
     }
 
+    sincronizarEtapaProdutosAposMaquinas();
+    atualizarBotaoFinalizar();
     registrarNovoEstadoHistorico();
 };
 
@@ -1918,9 +2519,7 @@ window.confirmarMaquinas = function() {
         'secaoMaquinas',
         acoesConfirmadas.length === 2 ? 'Adicionou e retirou máquinas ✔️' : `${acoesConfirmadas[0]} máquina(s) ✔️`
     );
-    if (produtosSaoObrigatorios()) {
-        prepararSecaoProdutosObrigatoria();
-    }
+    sincronizarEtapaProdutosAposMaquinas();
 
     atualizarBotaoFinalizar();
     registrarNovoEstadoHistorico();
@@ -2042,10 +2641,10 @@ window.finalizarRegistro = async function() {
                 let equipamentosRetiradosDetalhes = [];
 
                 if (equipamentosDoCliente.length > 0) {
-                    equipamentosRetiradosDetalhes = [...indicesEquipamentosRetirados]
-                        .map(i => equipamentosDoCliente[i])
+                    equipamentosRetiradosDetalhes = obterEquipamentosRetiradosSelecionados()
                         .filter(Boolean)
                         .map(item => ({
+                            rowId: item.rowId || '',
                             nome: item.nome,
                             qtd: item.qtd || '1',
                             pix: item.pix || '',
@@ -2065,6 +2664,16 @@ window.finalizarRegistro = async function() {
                 }
 
                 camposExtras.equipamentosRetirados = equipamentosRetirados;
+                const pixEncerramento = await coletarDadosPixEncerramentoParaSalvar();
+                if (pixEncerramento.length > 0) {
+                    const mapaPixEncerramento = new Map(
+                        pixEncerramento.map(item => [String(item?.chavePixEncerramento || '').trim(), item])
+                    );
+                    equipamentosRetiradosDetalhes = equipamentosRetiradosDetalhes.map(item => ({
+                        ...item,
+                        ...(mapaPixEncerramento.get(obterChavePixEncerramento(item)) || {})
+                    }));
+                }
                 camposExtras.equipamentosRetiradosDetalhes = equipamentosRetiradosDetalhes;
                 tiposServico.push('retirou');
 
@@ -2073,7 +2682,6 @@ window.finalizarRegistro = async function() {
                     if (!valorEncerramento) {
                         throw new Error('Informe o valor cobrado no encerramento.');
                     }
-
                     camposExtras.pontoEncerrado = true;
                     camposExtras.valorEncerramento = valorEncerramento;
                     tiposServico.push('encerrado');
@@ -2086,7 +2694,7 @@ window.finalizarRegistro = async function() {
             respostas.teveProdutos = true;
         }
 
-        if (respostas.teveProdutos) {
+        if (!pontoEncerradoPulaProdutos() && respostas.teveProdutos) {
             const produtos = coletarProdutosRepostosParaSalvar();
             camposExtras.produtosRepostos = produtos;
             tiposServico.push('reposicao');
@@ -2183,6 +2791,17 @@ window.finalizarRegistro = async function() {
                 equipamentosRetiradosDetalhes: camposExtras.equipamentosRetiradosDetalhes || [],
                 pontoEncerrado: camposExtras.pontoEncerrado === true,
                 valorEncerramento: camposExtras.valorEncerramento || ''
+            });
+        }
+
+        const pixRetiradosEmManutencao = (camposExtras.equipamentosRetiradosDetalhes || [])
+            .filter(item => String(item?.pix || '').trim());
+        for (const item of pixRetiradosEmManutencao) {
+            await dbAdicionarPixEmPosse(usuarioLogado, String(item.pix || '').trim(), {
+                cliente: String(clienteSnapshotAtendimento?.nome || '').trim(),
+                equipamento: String(item?.nome || '').trim(),
+                origem: camposExtras.pontoEncerrado ? 'encerramento_manutencao' : 'retirada_manutencao',
+                atualizadoEm: new Date().toISOString()
             });
         }
 

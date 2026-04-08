@@ -227,7 +227,7 @@
 
     verificarAutenticacao();
 
-    const nomeLogado = localStorage.getItem('usuarioLogado') || '';
+    const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
     let colaboradores = [];
     let autorizado = false;
     let listaBase = [];

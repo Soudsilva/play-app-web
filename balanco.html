@@ -129,20 +129,39 @@
             border-bottom:1px dashed rgba(255,235,59,0.3);
             display:flex; align-items:center; gap:6px;
         }
+        .pix-resumo-card {
+            background:rgba(255,255,255,0.06);
+            border:1px solid rgba(255,255,255,0.12);
+            border-radius:12px;
+            padding:10px 14px;
+            display:flex;
+            align-items:center;
+            gap:10px;
+        }
+        .pix-resumo-texto {
+            font-size:14px;
+            font-weight:bold;
+            color:rgba(255,255,255,0.88);
+            line-height:1.2;
+            white-space:nowrap;
+        }
+        .pix-resumo-numeros {
+            font-size:14px;
+            font-weight:bold;
+            color:#ffeb3b;
+            line-height:1.2;
+            white-space:nowrap;
+            background:rgba(255,255,255,0.08);
+            border:1px solid rgba(255,255,255,0.14);
+            border-radius:10px;
+            padding:6px 10px;
+        }
         .lista-card { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:14px; overflow:hidden; }
         .lista-item { display:flex; align-items:center; justify-content:space-between; padding:11px 16px; border-bottom:1px solid rgba(255,255,255,0.07); }
         .lista-item:last-child { border-bottom:none; }
         .item-nome { font-size:14px; color:rgba(255,255,255,0.88); }
         .item-badge { font-size:14px; font-weight:bold; color:#fff; background:rgba(68,103,168,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 14px; min-width:40px; text-align:center; }
         .item-badge.destaque { background:rgba(255,235,59,0.2); border-color:rgba(255,235,59,0.4); color:#ffeb3b; }
-        .pix-posse-lista {
-            font-size:15px;
-            font-weight:700;
-            color:#ffffff;
-            text-align:right;
-            line-height:1.45;
-            word-break:break-word;
-        }
         .item-barra-wrap { flex:1; margin:0 12px; }
         .item-barra-bg { background:rgba(255,255,255,0.1); border-radius:10px; height:5px; overflow:hidden; }
         .item-barra { background:#ffeb3b; height:100%; border-radius:10px; transition:width 0.5s ease; }
@@ -258,7 +277,7 @@
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
-    verificarAutenticacao();
+    await verificarAutenticacao();
     import {
         dbListarAtendimentos,
         dbListarColaboradores,
@@ -276,7 +295,7 @@
     // dbLerPosseAcumulada: lÃª o contador persistente de produtos/mÃ¡quinas acumulados
     // de atendimentos jÃ¡ excluÃ­dos do Firebase. Sem isso, ao excluir atendimentos antigos
     // os totais de posse ficariam incorretos (menores do que o real).
-    const usuarioLogado = localStorage.getItem('usuarioLogado') || '';
+    const usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
     let todosAtendimentos = [];
     let todosDepositos = [];
     let historicoEstoque = [];
@@ -590,7 +609,7 @@
     function formatarListaPixEmPosse(lista) {
         const pixOrdenados = ordenarPixEmPosse(lista);
         if (pixOrdenados.length === 0) return '';
-        return `Pix ${pixOrdenados.join(', ')}`;
+        return pixOrdenados.join(', ');
     }
 
     function atendimentosPorDia(atendimentos) {
@@ -722,15 +741,9 @@
 
             ${pixPosse.length > 0 ? `
             <div class="secao">
-                <div class="secao-titulo">&#9889; Pix em Posse</div>
-                <div class="lista-card">
-                    <div class="lista-item">
-                        <div class="item-nome">Pix retirados</div>
-                        <div class="item-barra-wrap" style="margin-right:0;">
-                            <div class="pix-posse-lista">${formatarListaPixEmPosse(pixPosse)}</div>
-                        </div>
-                        <div class="item-badge destaque">${pixPosse.length}</div>
-                    </div>
+                <div class="pix-resumo-card">
+                    <div class="pix-resumo-texto">PIX EM POSSE</div>
+                    <div class="pix-resumo-numeros">${formatarListaPixEmPosse(pixPosse)}</div>
                 </div>
             </div>` : ''}
 
@@ -958,7 +971,7 @@
     todosDepositos = depositos;
     historicoEstoque = historico;
     pixEmPosse = pixPosseInicial;
-    colaboradorObj  = colaboradores.find(c => c.nome === usuarioLogado) || null;
+    colaboradorObj  = colaboradores.find(c => String(c?.nome || '').trim() === usuarioLogado) || null;
 
     // Mapa para cruzar cliente do atendimento â†’ rota atual
     mapaRotas = {};
@@ -967,7 +980,7 @@
         if (c.firebaseUrl) mapaRotas[c.firebaseUrl] = c.rota;
         if (c.numero)      mapaRotas[String(c.numero)] = c.rota;
     });
-    todosAtendimentos = todos.filter(a => a.atendente === usuarioLogado);
+    todosAtendimentos = todos.filter(a => String(a?.atendente || '').trim() === usuarioLogado);
     datasComAtendimento = new Set(
         todosAtendimentos
             .filter(a => {

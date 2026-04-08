@@ -13,10 +13,14 @@ import { app } from './database.js';
 export const auth = getAuth(app);
 export { createUserWithEmailAndPassword, updateProfile };
 
+function normalizarNomeUsuario(nome) {
+    return String(nome || '').trim();
+}
+
 // Converte nome do colaborador em email interno para o Firebase Auth
 // Ex: "João Silva" → "joao.silva@play.internal"
 export function nomeParaEmail(nome) {
-    return nome.trim().toLowerCase()
+    return normalizarNomeUsuario(nome).toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // remove acentos
         .replace(/[^a-z0-9]/g, '.')                          // espaços e especiais → ponto
         .replace(/\.+/g, '.')                                 // pontos duplos → um
@@ -34,9 +38,9 @@ export function normalizarSenha(senha) {
 
 // Faz login com nome + senha. Salva o nome no localStorage para o site reconhecer.
 export async function fazerLogin(nome, senha) {
-    const email = nomeParaEmail(nome.trim());
+    const email = nomeParaEmail(nome);
     const cred = await signInWithEmailAndPassword(auth, email, normalizarSenha(senha));
-    const nomeExibicao = cred.user.displayName || nome.trim();
+    const nomeExibicao = normalizarNomeUsuario(cred.user.displayName || nome);
     localStorage.setItem('usuarioLogado', nomeExibicao);
     localStorage.setItem('usuario_selecionado', nomeExibicao);
     return cred.user;
@@ -57,9 +61,10 @@ export function verificarAutenticacao() {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             unsubscribe();
             if (user) {
-                if (user.displayName) {
-                    localStorage.setItem('usuarioLogado', user.displayName);
-                    localStorage.setItem('usuario_selecionado', user.displayName);
+                const nomeExibicao = normalizarNomeUsuario(user.displayName);
+                if (nomeExibicao) {
+                    localStorage.setItem('usuarioLogado', nomeExibicao);
+                    localStorage.setItem('usuario_selecionado', nomeExibicao);
                 }
                 document.body.style.visibility = 'visible';
                 resolve(user);
@@ -76,9 +81,10 @@ export async function criarContaColaborador(nome, senha) {
     const appSec = initializeApp(app.options, 'cad-' + Date.now());
     const authSec = getAuth(appSec);
     try {
-        const email = nomeParaEmail(nome);
+        const nomeNormalizado = normalizarNomeUsuario(nome);
+        const email = nomeParaEmail(nomeNormalizado);
         const cred = await createUserWithEmailAndPassword(authSec, email, normalizarSenha(senha));
-        await updateProfile(cred.user, { displayName: nome });
+        await updateProfile(cred.user, { displayName: nomeNormalizado });
     } finally {
         await signOut(authSec).catch(() => {});
     }
@@ -89,7 +95,7 @@ export async function atualizarSenhaColaborador(nome, senhaAntiga, senhaNova) {
     const appSec = initializeApp(app.options, 'pwd-' + Date.now());
     const authSec = getAuth(appSec);
     try {
-        const email = nomeParaEmail(nome);
+        const email = nomeParaEmail(normalizarNomeUsuario(nome));
         const cred = await signInWithEmailAndPassword(authSec, email, normalizarSenha(senhaAntiga));
         await updatePassword(cred.user, normalizarSenha(senhaNova));
     } finally {

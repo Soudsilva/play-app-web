@@ -614,7 +614,7 @@
             `;
 
             // Botão excluir: só para quem registrou e dentro de 3 horas
-            const usuarioAtual = localStorage.getItem('usuarioLogado') || '';
+            const usuarioAtual = String(localStorage.getItem('usuarioLogado') || '').trim();
             const foiRegistradoPorMim = mov.registradoPor
                 ? mov.registradoPor === usuarioAtual
                 : mov === historicoGlobal[0]; // registros antigos sem campo: mantém comportamento original
@@ -651,7 +651,7 @@
             optForn.innerText = "Fornecedor";
             select.appendChild(optForn);
 
-            const nomeLogado = localStorage.getItem('usuarioLogado');
+            const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
             if (nomeLogado) {
                 const optUser = document.createElement('option');
                 optUser.value = nomeLogado;
@@ -782,7 +782,7 @@
             itemNome: itemOriginal.nome,
             qtd: qtdMovimento,
             responsavel: responsavel,
-            registradoPor: localStorage.getItem('usuarioLogado') || ''
+            registradoPor: String(localStorage.getItem('usuarioLogado') || '').trim()
         };
 
         try {
@@ -794,7 +794,7 @@
                 const registroEnvio = {
                     data: new Date().toISOString(),
                     atendente: responsavel,
-                    autorizadoPor: localStorage.getItem('usuarioLogado') || '',
+                    autorizadoPor: String(localStorage.getItem('usuarioLogado') || '').trim(),
                     origemRegistro: 'retirada_estoque',
                     cliente: { nome: 'Retirada de Estoque', numero: '' },
                     produtos: [{ nome: itemOriginal.nome, quantidade: qtdMovimento }]

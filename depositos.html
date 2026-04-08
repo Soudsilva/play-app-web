@@ -307,7 +307,7 @@
     import { dbListarAtendimentos, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
     import { dbSalvarDeposito, dbListarDepositos, dbAtualizarDeposito, dbExcluirDeposito } from './database.js';
 
-    const usuarioLogado = localStorage.getItem('usuarioLogado') || '';
+    const usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
     const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 

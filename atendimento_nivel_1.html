@@ -548,7 +548,7 @@
 
     // --- CLIENTES PERMITIDOS (rotas selecionadas pelo usuário na sessão) ---
     async function carregarClientesPermitidos() {
-        const usuario = localStorage.getItem('usuarioLogado') || '';
+        const usuario = String(localStorage.getItem('usuarioLogado') || '').trim();
         if (!usuario) { clientesPermitidosSet = new Set(); return; }
 
         const CACHE_KEY = 'atend_permitidos_' + usuario;
@@ -1400,7 +1400,7 @@
 
         try {
             // --- 1. Coleta de Dados ---
-            const atendenteLogado = localStorage.getItem('usuarioLogado') || "N/A";
+            const atendenteLogado = String(localStorage.getItem('usuarioLogado') || '').trim() || "N/A";
             const atendenteOriginalEdicao = localStorage.getItem('atendimento_em_edicao_atendente') || atendimentoOriginal?.atendente || "";
             const atendente = atendimentoEmEdicaoId && atendenteOriginalEdicao ? atendenteOriginalEdicao : atendenteLogado;
             const clienteEl = document.getElementById('resultadoCliente');
@@ -2227,7 +2227,7 @@
         try {
             const { pixData, dinheiro, comissaoPct, comissaoValor, totalGeral, saldoFinal, saldoDepositar, prodsSelecionados, maquinas } = dadosTesteGerados;
             const cliente = clienteTesteAtual;
-            const atendente = localStorage.getItem('usuarioLogado') || 'TESTE';
+            const atendente = String(localStorage.getItem('usuarioLogado') || '').trim() || 'TESTE';
             const dataISO = new Date(dataHoraVal).toISOString();
 
             const fotos = { ficha: null, maquinas: [], pix: [] };

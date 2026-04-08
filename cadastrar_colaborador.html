@@ -489,7 +489,7 @@
       e.preventDefault();
       const idEdicao = document.getElementById('idEdicao').value;
       const dados = {
-          nome: document.getElementById('nomeColaborador').value,
+          nome: document.getElementById('nomeColaborador').value.trim(),
           cargo: document.getElementById('cargoColaborador').value,
           comissao: limparValorPercentual(document.getElementById('comissaoColaborador').value),
           producaoProdutos: document.getElementById('producaoProdutosColaborador').checked,

@@ -1151,7 +1151,8 @@
     const lightboxImg = document.getElementById('lightboxImg');
 
     window.alternarSelecao = async function(id, marcado, checkbox) {
-        const item = manutencoes.find(m => m.firebaseUrl === id);
+        const item = manutencoesPendentesEnriquecidas.find(m => m.firebaseUrl === id)
+            || manutencoes.find(m => m.firebaseUrl === id);
         if (!item) return;
 
         const usuarioLogado = localStorage.getItem('usuarioLogado') || "Técnico";
@@ -1227,7 +1228,8 @@
     window.confirmarConclusao = async function confirmarConclusao(id) {
         if (!id) return;
 
-        const item = manutencoes.find(m => m.firebaseUrl === id);
+        const item = manutencoesPendentesEnriquecidas.find(m => m.firebaseUrl === id)
+            || manutencoes.find(m => m.firebaseUrl === id);
         if (!item) return;
 
         const usuarioLogado = localStorage.getItem('usuarioLogado') || "";

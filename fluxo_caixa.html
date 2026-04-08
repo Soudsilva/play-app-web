@@ -358,7 +358,7 @@
     };
 
     await verificarAutenticacao();
-    estado.nomeUsuario = localStorage.getItem('usuarioLogado') || '';
+    estado.nomeUsuario = String(localStorage.getItem('usuarioLogado') || '').trim();
 
     vincularEventos();
     atualizarFormulario();

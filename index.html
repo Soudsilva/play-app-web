@@ -336,8 +336,8 @@
     window.abrirAtendimento = function() {
         localStorage.removeItem('rascunho_atendimento');
 
-        const nome = localStorage.getItem('usuarioLogado') || '';
-        const usuario = listaColaboradores.find(c => c.nome === nome);
+        const nome = String(localStorage.getItem('usuarioLogado') || '').trim();
+        const usuario = listaColaboradores.find(c => String(c?.nome || '').trim() === nome);
         const perfil = usuario ? (usuario.nivel_completo || "") : "";
 
         if (perfil.includes('atendimento_1')) {
@@ -352,8 +352,8 @@
 
     // Verificar Envios: Gestor vÃª todos, demais veem apenas os prÃ³prios
     window.abrirEnvios = function() {
-        const nome = localStorage.getItem('usuarioLogado') || '';
-        const usuario = listaColaboradores.find(c => c.nome === nome);
+        const nome = String(localStorage.getItem('usuarioLogado') || '').trim();
+        const usuario = listaColaboradores.find(c => String(c?.nome || '').trim() === nome);
         const perfil = usuario ? (usuario.nivel_completo || "") : "";
 
         if (perfil.includes('gestao')) {
@@ -397,7 +397,8 @@
 
     // Verifica permissÃµes baseado no nome selecionado
     function verificarPermissoes(nomeUsuario) {
-        const usuario = listaColaboradores.find(c => c.nome === nomeUsuario);
+        const nomeNormalizado = String(nomeUsuario || '').trim();
+        const usuario = listaColaboradores.find(c => String(c?.nome || '').trim() === nomeNormalizado);
         const perfil = usuario ? (usuario.nivel_completo || "") : "";
         // Mapeamento de todos os botÃµes para facilitar o controle
         const btns = {
@@ -525,7 +526,7 @@
     if (cacheColab) {
         try {
             listaColaboradores = JSON.parse(cacheColab);
-            const nome = localStorage.getItem('usuarioLogado') || '';
+            const nome = String(localStorage.getItem('usuarioLogado') || '').trim();
             document.getElementById('nomeUsuario').textContent = nome;
             if (nome) verificarPermissoes(nome);
             document.querySelector('.menu').style.display = 'flex';
@@ -536,7 +537,7 @@
     dbEscutarColaboradores((lista) => {
         listaColaboradores = lista;
         localStorage.setItem('cache_colaboradores', JSON.stringify(lista));
-        const nome = localStorage.getItem('usuarioLogado') || '';
+        const nome = String(localStorage.getItem('usuarioLogado') || '').trim();
 
         document.getElementById('nomeUsuario').textContent = nome;
         if (nome) verificarPermissoes(nome);
