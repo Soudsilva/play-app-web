@@ -135,15 +135,13 @@
         .item-nome { font-size:14px; color:rgba(255,255,255,0.88); }
         .item-badge { font-size:14px; font-weight:bold; color:#fff; background:rgba(68,103,168,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 14px; min-width:40px; text-align:center; }
         .item-badge.destaque { background:rgba(255,235,59,0.2); border-color:rgba(255,235,59,0.4); color:#ffeb3b; }
-        .pix-posse-wrap { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
-        .pix-posse-chip {
+        .pix-posse-lista {
             font-size:15px;
             font-weight:700;
             color:#ffffff;
-            background:#2a4f9c;
-            border:1px solid #7eb3ff;
-            border-radius:20px;
-            padding:5px 12px;
+            text-align:right;
+            line-height:1.45;
+            word-break:break-word;
         }
         .item-barra-wrap { flex:1; margin:0 12px; }
         .item-barra-bg { background:rgba(255,255,255,0.1); border-radius:10px; height:5px; overflow:hidden; }
@@ -589,6 +587,12 @@
             });
     }
 
+    function formatarListaPixEmPosse(lista) {
+        const pixOrdenados = ordenarPixEmPosse(lista);
+        if (pixOrdenados.length === 0) return '';
+        return `Pix ${pixOrdenados.join(', ')}`;
+    }
+
     function atendimentosPorDia(atendimentos) {
         const mapa = {};
         atendimentos.forEach(a => {
@@ -722,9 +726,10 @@
                 <div class="lista-card">
                     <div class="lista-item">
                         <div class="item-nome">Pix retirados</div>
-                        <div class="pix-posse-wrap">
-                            ${pixPosse.map(numero => `<span class="pix-posse-chip">Pix ${numero}</span>`).join('')}
+                        <div class="item-barra-wrap" style="margin-right:0;">
+                            <div class="pix-posse-lista">${formatarListaPixEmPosse(pixPosse)}</div>
                         </div>
+                        <div class="item-badge destaque">${pixPosse.length}</div>
                     </div>
                 </div>
             </div>` : ''}

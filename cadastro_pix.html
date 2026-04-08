@@ -1249,6 +1249,32 @@ function normalizarPix(valor) {
     return String(valor || '').trim();
 }
 
+function obterResponsaveisPixEmPosse(numeroPix, usuarioAtual = '') {
+    const pixNormalizado = normalizarPix(numeroPix);
+    const responsaveis = new Set();
+    const usuarioLogado = String(usuarioAtual || '').trim();
+
+    if (usuarioLogado) responsaveis.add(usuarioLogado);
+    if (!pixNormalizado) return [...responsaveis];
+
+    const ultimoRegistroRetirada = Object.values(window._pixData || {})
+        .filter(item => normalizarPix(item?.numero_pix) === pixNormalizado)
+        .sort((a, b) => obterTimestampRegistro(b) - obterTimestampRegistro(a))
+        .find(item => String(item?.tecnico_retirada || '').trim());
+
+    const retiradoPor = String(ultimoRegistroRetirada?.tecnico_retirada || '').trim();
+    if (retiradoPor) responsaveis.add(retiradoPor);
+
+    return [...responsaveis];
+}
+
+async function abaterPixDoBalanco(numeroPix, usuarioAtual = '') {
+    const responsaveis = obterResponsaveisPixEmPosse(numeroPix, usuarioAtual);
+    for (const responsavel of responsaveis) {
+        await dbRemoverPixEmPosse(responsavel, numeroPix);
+    }
+}
+
 function normalizarTexto(valor) {
     return String(valor || '')
         .normalize('NFD')
@@ -2132,7 +2158,7 @@ window.confirmarPixMaquina = async function(clienteId, rowId, chave) {
         });
 
         try {
-            await dbRemoverPixEmPosse(usuarioLogado, pixNum);
+            await abaterPixDoBalanco(pixNum, usuarioLogado);
         } catch (erroPossePix) {
             console.warn('Falha ao abater Pix do balanÃ§o:', erroPossePix);
         }
@@ -2276,7 +2302,7 @@ window.confirmarInstalacaoCard = async function(clienteId, rowId, pixNum, pixKey
         }
 
         try {
-            await dbRemoverPixEmPosse(usuarioLogado, pixNum);
+            await abaterPixDoBalanco(pixNum, usuarioLogado);
         } catch (erroPossePix) {
             console.warn('Falha ao abater Pix do balanÃ§o:', erroPossePix);
         }
