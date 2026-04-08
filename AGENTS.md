@@ -8,4 +8,4 @@
 - In `balanco.html`, products and machines represent the items currently in the user's possession, not a history of usage.
 - For possession logic: stock withdrawals assigned to a user add to that user's balance, and atendimento or delivery actions subtract from that user's balance.
 - If a future stock-output flow is created, include a field such as `retiradoPor` so the balance can identify who took the item.
-- The primary users are aged 40–60. Use font sizes that are comfortable for this age group: body/paragraph text at minimum 15px, labels and secondary text at minimum 13px, important values and headings at 17px or above. Avoid thin font weights for body text — prefer `font-weight: normal` (400) or `bold` (700), never lighter than 400.
+- The primary users are aged 40–60. Use font sizes that are comfortable for this age group: body/paragraph text at minimum 15px, labels and secondary text at minimum 13px, important values and headings at 17px or above. Avoid thin font weights for body text — prefer `font-weight: normal` (400) or `bold` (700), never lighter than 400. 

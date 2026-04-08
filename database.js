@@ -568,8 +568,8 @@ async function _redimensionarParaThumb(base64, maxPx = 200) {
 
 // Salva foto original + miniatura. Retorna { url, thumbUrl }.
 // Offline: retorna base64 de ambas para sync posterior.
-export async function storageSalvarFotoComThumb(base64String, pasta = 'atendimentos') {
-    const thumbBase64 = await _redimensionarParaThumb(base64String, 200).catch(() => base64String);
+export async function storageSalvarFotoComThumb(base64String, pasta = 'atendimentos', thumbMaxPx = 200) {
+    const thumbBase64 = await _redimensionarParaThumb(base64String, thumbMaxPx).catch(() => base64String);
     if (!navigator.onLine) return { url: base64String, thumbUrl: thumbBase64 };
     try {
         const uploads = [storageSalvarFoto(base64String, pasta)];
@@ -1666,6 +1666,71 @@ export function dbEscutarPosseAcumulada(nomeUsuario, callback) {
 
     return onValue(ref(db, `posse_acumulada/${chave}`), (snapshot) => {
         callback(snapshot.val() || { produtos: {}, maquinas: {} });
+    });
+}
+
+function _normalizarChavePix(numeroPix) {
+    return String(numeroPix || '').trim().replace(/[.#$/[\]]/g, '_');
+}
+
+export async function dbAdicionarPixEmPosse(nomeUsuario, numeroPix, dadosExtras = {}) {
+    try {
+        const chaveUsuario = _normalizarChaveUsuario(nomeUsuario);
+        const pixNumero = String(numeroPix || '').trim();
+        const chavePix = _normalizarChavePix(pixNumero);
+        if (!chaveUsuario || !pixNumero || !chavePix) return;
+
+        await set(ref(db, `pix_em_posse/${chaveUsuario}/${chavePix}`), {
+            numero_pix: pixNumero,
+            atualizadoEm: new Date().toISOString(),
+            ...dadosExtras
+        });
+    } catch (error) {
+        console.error("ERRO AO ADICIONAR PIX EM POSSE:", error);
+        throw error;
+    }
+}
+
+export async function dbRemoverPixEmPosse(nomeUsuario, numeroPix) {
+    try {
+        const chaveUsuario = _normalizarChaveUsuario(nomeUsuario);
+        const chavePix = _normalizarChavePix(numeroPix);
+        if (!chaveUsuario || !chavePix) return;
+
+        await remove(ref(db, `pix_em_posse/${chaveUsuario}/${chavePix}`));
+    } catch (error) {
+        console.error("ERRO AO REMOVER PIX EM POSSE:", error);
+        throw error;
+    }
+}
+
+export async function dbLerPixEmPosse(nomeUsuario) {
+    try {
+        const chaveUsuario = _normalizarChaveUsuario(nomeUsuario);
+        if (!chaveUsuario) return [];
+
+        const snap = await get(ref(db, `pix_em_posse/${chaveUsuario}`));
+        if (!snap.exists()) return [];
+
+        const data = snap.val() || {};
+        return Object.keys(data).map(key => ({ firebaseUrl: key, ...data[key] }));
+    } catch (error) {
+        console.error("ERRO AO LER PIX EM POSSE:", error);
+        return [];
+    }
+}
+
+export function dbEscutarPixEmPosse(nomeUsuario, callback) {
+    const chaveUsuario = _normalizarChaveUsuario(nomeUsuario);
+    if (!chaveUsuario) {
+        callback([]);
+        return () => {};
+    }
+
+    return onValue(ref(db, `pix_em_posse/${chaveUsuario}`), (snapshot) => {
+        const data = snapshot.val() || {};
+        const lista = Object.keys(data).map(key => ({ firebaseUrl: key, ...data[key] }));
+        callback(lista);
     });
 }
 

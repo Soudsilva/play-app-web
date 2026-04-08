@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Balanço</title>
+    <title>Balan&ccedil;o</title>
     <style>
         body { margin:0; font-family:Arial, sans-serif; background:#0b2256; display:flex; justify-content:center; color:white; user-select:none; -webkit-user-select:none; }
         .app { width:100%; max-width:600px; padding:15px; box-sizing:border-box; min-height:100vh; padding-bottom:50px; }
@@ -19,7 +19,7 @@
         .topo-fin-datas { display:flex; align-items:center; gap:6px; font-size:12px; color:rgba(255,235,59,0.85); cursor:pointer; padding:3px 10px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:20px; }
         .topo-fin-datas:active { background:rgba(255,255,255,0.14); }
 
-        /* Seletor de período */
+        /* Seletor de perÃ­odo */
         .seletor-periodo {
             display:flex; align-items:center; gap:8px; margin-bottom:18px;
             background:#0f2a66; border:1px solid rgba(255,255,255,0.15);
@@ -38,7 +38,7 @@
         .data-valor.vazio { color:rgba(255,255,255,0.75); font-weight:normal; font-size:13px; }
         .sep-seta { color:rgba(255,255,255,0.35); font-size:18px; flex-shrink:0; }
 
-        /* Overlay do calendário */
+        /* Overlay do calendÃ¡rio */
         .cal-overlay {
             display:none; position:fixed; inset:0;
             background:rgba(0,0,0,0.7); z-index:2000;
@@ -121,7 +121,7 @@
         .resumo-valor { font-size:22px; font-weight:bold; color:#fff; }
         .resumo-label { font-size:11px; color:rgba(255,255,255,0.55); margin-top:2px; text-transform:uppercase; letter-spacing:0.5px; }
 
-        /* Seção */
+        /* SeÃ§Ã£o */
         .secao { margin-bottom:20px; }
         .secao-titulo {
             font-size:12px; font-weight:bold; color:#ffeb3b; text-transform:uppercase;
@@ -135,6 +135,16 @@
         .item-nome { font-size:14px; color:rgba(255,255,255,0.88); }
         .item-badge { font-size:14px; font-weight:bold; color:#fff; background:rgba(68,103,168,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 14px; min-width:40px; text-align:center; }
         .item-badge.destaque { background:rgba(255,235,59,0.2); border-color:rgba(255,235,59,0.4); color:#ffeb3b; }
+        .pix-posse-wrap { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+        .pix-posse-chip {
+            font-size:15px;
+            font-weight:700;
+            color:#ffffff;
+            background:#2a4f9c;
+            border:1px solid #7eb3ff;
+            border-radius:20px;
+            padding:5px 12px;
+        }
         .item-barra-wrap { flex:1; margin:0 12px; }
         .item-barra-bg { background:rgba(255,255,255,0.1); border-radius:10px; height:5px; overflow:hidden; }
         .item-barra { background:#ffeb3b; height:100%; border-radius:10px; transition:width 0.5s ease; }
@@ -144,7 +154,7 @@
         .dia-count { font-size:14px; font-weight:bold; color:#fff; }
         .loading { text-align:center; padding:40px; opacity:0.6; }
 
-        /* Card de fichas do período */
+        /* Card de fichas do perÃ­odo */
         .ficha-card {
             display:flex; gap:12px; align-items:flex-start;
             background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
@@ -196,10 +206,10 @@
 <div class="app">
 
     <div class="topo">
-        <div class="titulo" id="tituloPrincipal">📦 Balanço</div>
+        <div class="titulo" id="tituloPrincipal">&#128230; Balan&ccedil;o</div>
         <div class="topo-fin" id="topoFin" onclick="abrirCalendario()">
-            <div class="topo-fin-titulo">💰 Balanço Financeiro</div>
-            <div class="topo-fin-datas" id="topoFinDatas">Selecione um período</div>
+            <div class="topo-fin-titulo">&#128176; Balan&ccedil;o Financeiro</div>
+            <div class="topo-fin-datas" id="topoFinDatas">Selecione um per&iacute;odo</div>
         </div>
         <div class="btn-home" onclick="event.stopPropagation(); window.location.href='index.html'">
             <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
@@ -214,11 +224,11 @@
 
 <!-- Lightbox foto ficha -->
 <div class="lb-overlay" id="lbOverlay" onclick="fecharLightbox()">
-    <div class="lb-fechar" onclick="fecharLightbox()">✕</div>
+    <div class="lb-fechar" onclick="fecharLightbox()">&times;</div>
     <img class="lb-img" id="lbImg" src="" alt="Ficha">
 </div>
 
-<!-- Calendário customizado -->
+<!-- CalendÃ¡rio customizado -->
 <div class="cal-overlay" id="calOverlay" onclick="fecharCalendarioOverlay(event)">
     <div class="cal-modal">
         <div class="cal-status">
@@ -227,14 +237,14 @@
                 <div class="cal-status-valor vazio" id="calValorDe">Toque para selecionar</div>
             </div>
             <div class="cal-status-item" id="calStatusAte">
-                <div class="cal-status-label">Até</div>
+                <div class="cal-status-label">At&eacute;</div>
                 <div class="cal-status-valor vazio" id="calValorAte">Toque para selecionar</div>
             </div>
         </div>
         <div class="cal-header">
-            <button class="cal-nav" onclick="calNavegar(-1)">‹</button>
+            <button class="cal-nav" onclick="calNavegar(-1)">&#8249;</button>
             <div class="cal-mes-ano" id="calMesAno"></div>
-            <button class="cal-nav" onclick="calNavegar(1)">›</button>
+            <button class="cal-nav" onclick="calNavegar(1)">&#8250;</button>
         </div>
         <div class="cal-semana">
             <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
@@ -258,20 +268,23 @@
         dbListarDepositos,
         dbListarHistorico,
         dbLerPosseAcumulada,
+        dbLerPixEmPosse,
         dbEscutarAtendimentosDoUsuario,
         dbEscutarDepositos,
         dbEscutarHistoricoDoUsuario,
-        dbEscutarPosseAcumulada
+        dbEscutarPosseAcumulada,
+        dbEscutarPixEmPosse
     } from './database.js';
-    // dbLerPosseAcumulada: lê o contador persistente de produtos/máquinas acumulados
-    // de atendimentos já excluídos do Firebase. Sem isso, ao excluir atendimentos antigos
+    // dbLerPosseAcumulada: lÃª o contador persistente de produtos/mÃ¡quinas acumulados
+    // de atendimentos jÃ¡ excluÃ­dos do Firebase. Sem isso, ao excluir atendimentos antigos
     // os totais de posse ficariam incorretos (menores do que o real).
     const usuarioLogado = localStorage.getItem('usuarioLogado') || '';
     let todosAtendimentos = [];
     let todosDepositos = [];
     let historicoEstoque = [];
+    let pixEmPosse = [];
     let datasComAtendimento = new Set();
-    let comissaoUsuario = 0; // % de comissão do colaborador logado (calculado por mês)
+    let comissaoUsuario = 0; // % de comissÃ£o do colaborador logado (calculado por mÃªs)
     let colaboradorObj  = null;
     let mapaRotas = {};
 
@@ -282,8 +295,8 @@
     }
     const hoje = dataLocalStr(new Date());
 
-    // Estado do calendário
-    // etapa: 0 = nenhum selecionado, 1 = aguardando Até
+    // Estado do calendÃ¡rio
+    // etapa: 0 = nenhum selecionado, 1 = aguardando AtÃ©
     let calEtapa = 0;
     let calMesAtual = new Date();
     let dataDe  = '';
@@ -291,9 +304,9 @@
 
     const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-    // ── Calendário ────────────────────────────────────────────────
+    // â”€â”€ CalendÃ¡rio â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     window.abrirCalendario = function() {
-        // Navega para o mês mais recente com atendimento (ou mês atual)
+        // Navega para o mÃªs mais recente com atendimento (ou mÃªs atual)
         if (!dataDe) {
             const datas = [...datasComAtendimento].sort();
             calMesAtual = datas.length ? new Date(datas[datas.length-1] + 'T00:00:00') : new Date();
@@ -322,7 +335,7 @@
     };
 
     window.calNavegar = function(delta) {
-        if (calEtapa === 1 || calEtapa === 2) return; // bloqueado enquanto datas estão selecionadas
+        if (calEtapa === 1 || calEtapa === 2) return; // bloqueado enquanto datas estÃ£o selecionadas
         calMesAtual = new Date(calMesAtual.getFullYear(), calMesAtual.getMonth() + delta, 1);
         renderizarCalendario();
     };
@@ -335,10 +348,10 @@
 
     window.calSelecionarData = function(dataStr) {
         if (calEtapa === 0 || calEtapa === 2) {
-            // Primeiro toque: define De, limpa Até
+            // Primeiro toque: define De, limpa AtÃ©
             dataDe = dataStr; dataAte = ''; calEtapa = 1;
         } else {
-            // Segundo toque: define Até (garante ordem)
+            // Segundo toque: define AtÃ© (garante ordem)
             if (dataStr < dataDe) { dataAte = dataDe; dataDe = dataStr; }
             else { dataAte = dataStr; }
             calEtapa = 2;
@@ -371,7 +384,7 @@
         const mes = calMesAtual.getMonth();
         document.getElementById('calMesAno').textContent = `${MESES[mes]} ${ano}`;
 
-        // Bloqueia navegação de mês quando aguardando seleção do "Até"
+        // Bloqueia navegaÃ§Ã£o de mÃªs quando aguardando seleÃ§Ã£o do "AtÃ©"
         const navBloqueado = calEtapa === 1 || calEtapa === 2;
         document.querySelectorAll('.cal-nav').forEach(btn => btn.disabled = navBloqueado);
 
@@ -386,7 +399,7 @@
         for (let d = 1; d <= diasNoMes; d++) {
             const dataStr = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
             const temAtend = datasComAtendimento.has(dataStr);
-            // Na etapa 1 (escolhendo Até), só permite datas >= De com atendimento; nunca permite data futura
+            // Na etapa 1 (escolhendo AtÃ©), sÃ³ permite datas >= De com atendimento; nunca permite data futura
             const disponivel = temAtend && dataStr <= hoje && (calEtapa !== 1 || dataStr >= dataDe);
 
             const ehDe  = dataStr === dataDe;
@@ -405,7 +418,7 @@
         }
     }
 
-    // ── Seletor visual ────────────────────────────────────────────
+    // â”€â”€ Seletor visual â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function formatarDataBR(iso) {
         if (!iso) return null;
         const [y, m, d] = iso.split('-');
@@ -413,10 +426,10 @@
     }
 
     function renderizarSeletor() {
-        // não necessário — o seletor agora é gerado dentro do renderizar()
+        // nÃ£o necessÃ¡rio â€” o seletor agora Ã© gerado dentro do renderizar()
     }
 
-    // ── Dados ─────────────────────────────────────────────────────
+    // â”€â”€ Dados â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function filtrarPorDatas(atendimentos, de, ate) {
         const inicio = de  ? new Date(de  + 'T00:00:00') : null;
         const fim    = ate ? new Date(ate + 'T23:59:59') : null;
@@ -446,11 +459,11 @@
      * @param {Array}  atendimentos - Lista de atendimentos ativos no Firebase
      * @param {Object} acumulado    - Objeto { "NomeProduto": quantidade } vindo de
      *                               dbLerPosseAcumulada, representando produtos de
-     *                               atendimentos JÁ EXCLUÍDOS. Padrão: {} (vazio).
+     *                               atendimentos JÃ EXCLUÃDOS. PadrÃ£o: {} (vazio).
      * Resultado: lista ordenada por quantidade decrescente [["nome", qtd], ...]
      */
     function somarProdutos(atendimentos, acumulado = {}) {
-        // Começa com os dados acumulados dos atendimentos excluídos
+        // ComeÃ§a com os dados acumulados dos atendimentos excluÃ­dos
         const mapa = { ...acumulado };
         // Soma os atendimentos ativos por cima
         atendimentos.forEach(a => {
@@ -524,7 +537,7 @@
             const f = a.financeiro || {};
             bruto    += Number(f.totalGeral    || 0);
             comissao += Number(f.comissaoValor || 0);
-            // saldoFinal já é totalGeral - comissaoValor, salvo pelo atendimento
+            // saldoFinal jÃ¡ Ã© totalGeral - comissaoValor, salvo pelo atendimento
             liquido  += obterLiquidoEmpresa(f);
             dinheiro += Number(f.dinheiro || 0);
             pix      += obterTotalPix(f);
@@ -544,17 +557,17 @@
     }
 
     /**
-     * Conta as máquinas atendidas somando os atendimentos passados.
+     * Conta as mÃ¡quinas atendidas somando os atendimentos passados.
      * @param {Array}  atendimentos - Lista de atendimentos ativos no Firebase
      * @param {Object} acumulado    - Objeto { "NomeMaquina": contagem } vindo de
-     *                               dbLerPosseAcumulada, representando máquinas de
-     *                               atendimentos JÁ EXCLUÍDOS. Padrão: {} (vazio).
+     *                               dbLerPosseAcumulada, representando mÃ¡quinas de
+     *                               atendimentos JÃ EXCLUÃDOS. PadrÃ£o: {} (vazio).
      * Resultado: lista ordenada por contagem decrescente [["nome", contagem], ...]
      */
     function somarMaquinas(atendimentos, acumulado = {}) {
-        // Começa com os dados acumulados dos atendimentos excluídos
+        // ComeÃ§a com os dados acumulados dos atendimentos excluÃ­dos
         const mapa = { ...acumulado };
-        // Soma os atendimentos ativos por cima (máquinas ficam em a.fotos.maquinas)
+        // Soma os atendimentos ativos por cima (mÃ¡quinas ficam em a.fotos.maquinas)
         atendimentos.forEach(a => {
             (a.fotos?.maquinas || []).forEach(m => {
                 if (!m.nome) return;
@@ -562,6 +575,18 @@
             });
         });
         return Object.entries(mapa).sort((a, b) => b[1] - a[1]);
+    }
+
+    function ordenarPixEmPosse(lista) {
+        return [...lista]
+            .map(item => String(item || '').trim())
+            .filter(Boolean)
+            .sort((a, b) => {
+                const na = /^\d+$/.test(a) ? Number(a) : Number.MAX_SAFE_INTEGER;
+                const nb = /^\d+$/.test(b) ? Number(b) : Number.MAX_SAFE_INTEGER;
+                if (na !== nb) return na - nb;
+                return a.localeCompare(b, 'pt-BR');
+            });
     }
 
     function atendimentosPorDia(atendimentos) {
@@ -604,7 +629,7 @@
         return taxa;
     }
 
-    // ── Render principal ──────────────────────────────────────────
+    // â”€â”€ Render principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function renderizar() {
         const filtrados  = filtrarPorDatas(todosAtendimentos, dataDe, dataAte || dataDe);
         const doMes      = filtrarMesCompleto(todosAtendimentos, dataDe);
@@ -613,9 +638,9 @@
         const fin        = somarFinanceiro(doMes);
         const finPeriodo = somarFinanceiro(filtrados);
 
-        // Posse total = atendimentos ativos + acumulado dos excluídos (lido na inicialização)
-        // window._posseAcumuladaProdutos e window._posseAcumuladaMaquinas são populados
-        // via dbLerPosseAcumulada no bloco de inicialização lá embaixo.
+        // Posse total = atendimentos ativos + acumulado dos excluÃ­dos (lido na inicializaÃ§Ã£o)
+        // window._posseAcumuladaProdutos e window._posseAcumuladaMaquinas sÃ£o populados
+        // via dbLerPosseAcumulada no bloco de inicializaÃ§Ã£o lÃ¡ embaixo.
         const produtosPosse = somarProdutosEmPosse(
             todosAtendimentos,
             historicoEstoque,
@@ -623,10 +648,11 @@
             window._posseAcumuladaProdutos || {}
         );
         const maquinasPosse = somarMaquinas(todosAtendimentos, window._posseAcumuladaMaquinas || {});
+        const pixPosse      = ordenarPixEmPosse((pixEmPosse || []).map(item => item?.numero_pix));
         const maxProd       = produtosPosse[0]?.[1] || 1;   // usado para calcular a barra de progresso
         const maxMaqPosse   = maquinasPosse[0]?.[1] || 1;
 
-        // Máquinas apenas do período selecionado (para a seção "Máquinas Atendidas no Período")
+        // MÃ¡quinas apenas do perÃ­odo selecionado (para a seÃ§Ã£o "MÃ¡quinas Atendidas no PerÃ­odo")
         const maquinas   = somarMaquinas(filtrados);
         const porDia  = atendimentosPorDia(filtrados);
 
@@ -637,17 +663,17 @@
 
             <!--
               =====================================================================
-              SEÇÃO: PRODUTOS EM POSSE (total acumulado)
+              SEÃ‡ÃƒO: PRODUTOS EM POSSE (total acumulado)
               Exibe todos os produtos que o colaborador tem em campo, somando:
                 1. Atendimentos ATIVOS no Firebase (todosAtendimentos)
-                2. Atendimentos JÁ EXCLUÍDOS (window._posseAcumuladaProdutos)
-              A barra de progresso é proporcional ao item de maior quantidade.
-              Só aparece se houver ao menos um produto registrado.
+                2. Atendimentos JÃ EXCLUÃDOS (window._posseAcumuladaProdutos)
+              A barra de progresso Ã© proporcional ao item de maior quantidade.
+              SÃ³ aparece se houver ao menos um produto registrado.
               =====================================================================
             -->
             ${produtosPosse.length > 0 ? `
             <div class="secao">
-                <div class="secao-titulo">🧃 Produtos em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
+                <div class="secao-titulo">&#129371; Produtos em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
                 <div class="lista-card">
                     ${produtosPosse.map(([nome, qtd], i) => `
                         <div class="lista-item">
@@ -664,18 +690,18 @@
 
             <!--
               =====================================================================
-              SEÇÃO: MÁQUINAS EM POSSE (total acumulado)
-              Exibe todas as máquinas atendidas pelo colaborador, somando:
+              SEÃ‡ÃƒO: MÃQUINAS EM POSSE (total acumulado)
+              Exibe todas as mÃ¡quinas atendidas pelo colaborador, somando:
                 1. Atendimentos ATIVOS no Firebase (todosAtendimentos)
-                2. Atendimentos JÁ EXCLUÍDOS (window._posseAcumuladaMaquinas)
-              Máquinas ficam salvas dentro de a.fotos.maquinas em cada atendimento.
-              A barra é verde para destacar diferente dos produtos (amarela).
-              Só aparece se houver ao menos uma máquina registrada.
+                2. Atendimentos JÃ EXCLUÃDOS (window._posseAcumuladaMaquinas)
+              MÃ¡quinas ficam salvas dentro de a.fotos.maquinas em cada atendimento.
+              A barra Ã© verde para destacar diferente dos produtos (amarela).
+              SÃ³ aparece se houver ao menos uma mÃ¡quina registrada.
               =====================================================================
             -->
             ${maquinasPosse.length > 0 ? `
             <div class="secao">
-                <div class="secao-titulo">🎰 Máquinas em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
+                <div class="secao-titulo">&#127920; M&aacute;quinas em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
                 <div class="lista-card">
                     ${maquinasPosse.map(([nome, qtd], i) => `
                         <div class="lista-item">
@@ -690,9 +716,22 @@
                 </div>
             </div>` : ''}
 
+            ${pixPosse.length > 0 ? `
+            <div class="secao">
+                <div class="secao-titulo">&#9889; Pix em Posse</div>
+                <div class="lista-card">
+                    <div class="lista-item">
+                        <div class="item-nome">Pix retirados</div>
+                        <div class="pix-posse-wrap">
+                            ${pixPosse.map(numero => `<span class="pix-posse-chip">Pix ${numero}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>` : ''}
+
             <!-- Rótulo Balanço Financeiro -->
             <div id="tituloFinanceiro" style="text-align:center; font-size:22px; font-weight:bold; color:#fff; margin:24px 0 14px; position:relative;">
-                💰 Balanço Financeiro
+                &#128176; Balan&ccedil;o Financeiro
                 <div style="height:1px; background:linear-gradient(to right, transparent, rgba(255,235,59,0.4), transparent); margin-top:10px;"></div>
             </div>
 
@@ -702,9 +741,9 @@
                     <span class="data-label">De</span>
                     <span class="data-valor${!dataDe ? ' vazio' : ''}">${labelDe}</span>
                 </div>
-                <span class="sep-seta">→</span>
+                <span class="sep-seta">&rarr;</span>
                 <div class="data-btn${dataAte ? ' ativo' : ''}" style="pointer-events:none;">
-                    <span class="data-label">Até</span>
+                    <span class="data-label">At&eacute;</span>
                     <span class="data-valor${!dataAte ? ' vazio' : ''}">${labelAte}</span>
                 </div>
             </div>
@@ -727,7 +766,7 @@
                     })
                     .reduce((s, d) => s + Number(d.valor || 0), 0);
                 const valorDepositar = Math.max(0, totalDeveDepositar - totalJaDepositado);
-                const labelPeriodo = (!dataAte || dataAte === dataDe) ? formatarDataBR(dataDe) : 'Período';
+                const labelPeriodo = (!dataAte || dataAte === dataDe) ? formatarDataBR(dataDe) : 'Per&iacute;odo';
                 return `
             <div class="card-resumo">
 
@@ -736,7 +775,7 @@
                     <div style="background:rgba(255,235,59,0.1); border:1px solid rgba(255,235,59,0.35); border-radius:14px; padding:14px 8px; text-align:center;">
                         <div style="font-size:11px; color:#ffeb3b; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">${labelPeriodo}</div>
                         <div style="font-size:20px; font-weight:bold; color:#ffeb3b; line-height:1;">${moeda(finPeriodo.liquido)}</div>
-                        <div style="font-size:10px; color:rgba(255,235,59,0.5); text-transform:uppercase; margin-top:5px;">Cobrado líquido</div>
+                        <div style="font-size:10px; color:rgba(255,235,59,0.5); text-transform:uppercase; margin-top:5px;">Cobrado l&iacute;quido</div>
                     </div>
                     <div style="background:rgba(255,152,0,0.15); border:1px solid rgba(255,152,0,0.4); border-radius:14px; padding:14px 8px; text-align:center;">
                         <div style="font-size:11px; color:#ffb74d; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Depositar na Loja</div>
@@ -746,18 +785,18 @@
 
                 <!-- Total do mês + Comissão -->
                 <div style="border-top:1px dashed rgba(255,255,255,0.1); padding-top:14px;">
-                    <div class="resumo-titulo" style="margin-bottom:10px;">💰 ${nomeMes}</div>
+                    <div class="resumo-titulo" style="margin-bottom:10px;">&#128176; ${nomeMes}</div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                     <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:14px 8px; text-align:center;">
-                        <div style="font-size:11px; color:rgba(255,255,255,0.6); font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Total do mês</div>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.6); font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Total do m&ecirc;s</div>
                         <div style="font-size:20px; font-weight:bold; color:rgba(255,255,255,0.7); line-height:1;">${moeda(fin.liquido)}</div>
-                        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:5px;">líquido</div>
+                        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:5px;">l&iacute;quido</div>
                     </div>
                     ${comissaoUsuario > 0 ? `
                     <div style="background:rgba(76,175,80,0.15); border:1px solid rgba(76,175,80,0.35); border-radius:14px; padding:14px 8px; text-align:center;">
-                        <div style="font-size:11px; color:#81c784; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Comissão do mês</div>
+                        <div style="font-size:11px; color:#81c784; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Comiss&atilde;o do m&ecirc;s</div>
                         <div style="font-size:20px; font-weight:bold; color:#a5d6a7; line-height:1;">${moeda(valorComissao)}</div>
-                        <div style="font-size:10px; color:rgba(165,214,167,0.6); margin-top:5px;">${comissaoUsuario}% do mês</div>
+                        <div style="font-size:10px; color:rgba(165,214,167,0.6); margin-top:5px;">${comissaoUsuario}% do m&ecirc;s</div>
                     </div>` : `<div></div>`}
                 </div>
                 </div>
@@ -767,7 +806,7 @@
             <!-- Fichas do período -->
             ${filtrados.length > 0 && dataDe ? `
             <div class="secao">
-                <div class="secao-titulo">📋 Fichas do Período</div>
+                <div class="secao-titulo">&#128203; Fichas do Per&iacute;odo</div>
                 ${filtrados.map((a, i) => {
                     const f = a.financeiro || {};
                     const totalPix = obterTotalPix(f);
@@ -781,18 +820,18 @@
                         ${fotoUrl ? `
                         <div class="ficha-foto-wrap" onclick="abrirFoto('${fotoUrl}')">
                             <img src="${fotoUrl}" class="ficha-foto" alt="Ficha">
-                            <div class="ficha-foto-overlay">🔍</div>
+                            <div class="ficha-foto-overlay">&#128269;</div>
                         </div>` : `<div class="ficha-foto-wrap ficha-sem-foto">Sem<br>foto</div>`}
                         <div class="ficha-foto-data">${dataFicha}</div>
                     </div>
                     <div class="ficha-info">
-                        <div class="ficha-numero">Nº ${a.cliente?.numero || i+1} — ${a.cliente?.nome || 'Cliente'}</div>
+                        <div class="ficha-numero">N&ordm; ${a.cliente?.numero || i+1} &mdash; ${a.cliente?.nome || 'Cliente'}</div>
                         <div class="ficha-linha">
                             <span class="ficha-chave">Total Geral</span>
                             <span class="ficha-val">${moeda(f.totalGeral || 0)}</span>
                         </div>
                         <div class="ficha-linha">
-                            <span class="ficha-chave">Dinheiro em Espécie</span>
+                            <span class="ficha-chave">Dinheiro em Esp&eacute;cie</span>
                             <span class="ficha-val dinheiro">${moeda(f.dinheiro || 0)}</span>
                         </div>
                         ${totalPix > 0 ? `
@@ -802,7 +841,7 @@
                         </div>` : ''}
                         ${Number(f.comissaoValor || 0) > 0 ? `
                         <div class="ficha-linha">
-                            <span class="ficha-chave">Comissão${f.comissaoPorcentagem ? ` (${f.comissaoPorcentagem}%)` : ''}</span>
+                            <span class="ficha-chave">Comiss&atilde;o${f.comissaoPorcentagem ? ` (${f.comissaoPorcentagem}%)` : ''}</span>
                             <span class="ficha-val comissao">${moeda(f.comissaoValor)}</span>
                         </div>` : ''}
                         <div class="ficha-linha">
@@ -817,7 +856,7 @@
             <!-- Máquinas atendidas no período -->
             ${maquinas.length > 0 && (dataDe || dataAte) ? `
             <div class="secao">
-                <div class="secao-titulo" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10px;">🎰 Máquinas Atendidas no Período Selecionado</div>
+                <div class="secao-titulo" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10px;">&#127920; M&aacute;quinas Atendidas no Per&iacute;odo Selecionado</div>
                 <div class="lista-card">
                     ${maquinas.map(([nome,qtd]) => `
                         <div class="lista-item">
@@ -830,7 +869,7 @@
             <!-- Por dia -->
             ${porDia.length > 0 && (dataDe || dataAte) ? `
             <div class="secao">
-                <div class="secao-titulo">📅 Líquido por Dia</div>
+                <div class="secao-titulo">&#128197; L&iacute;quido por Dia</div>
                 <div class="lista-card">
                     ${porDia.map(([data,{count,rotas,saldo}]) => {
                         const nums = [...rotas].map(r => r.replace(/^rota\s*/i, '').replace(/^r\.\s*/i, '').trim());
@@ -856,7 +895,7 @@
         if (!el) return;
         const de  = formatarDataBR(dataDe)  || 'Selecione';
         const ate = formatarDataBR(dataAte) || '';
-        el.textContent = (ate && ate !== de) ? `${de} → ${ate}` : de;
+        el.innerHTML = (ate && ate !== de) ? `${de} &rarr; ${ate}` : de;
     }
 
     function setupTopoObserver() {
@@ -898,23 +937,25 @@
         }
     });
 
-    // ── Inicialização ─────────────────────────────────────────────
-    // Todas as chamadas ao Firebase rodam em paralelo para carregar mais rápido.
-    // posseAcumulada: dados de produtos/máquinas de atendimentos já excluídos.
-    // Sem isso, ao excluir atendimentos antigos o balanço de material ficaria errado.
-    const [todos, posseAcumulada, colaboradores, clientes, depositos, historico] = await Promise.all([
+    // â”€â”€ InicializaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Todas as chamadas ao Firebase rodam em paralelo para carregar mais rÃ¡pido.
+    // posseAcumulada: dados de produtos/mÃ¡quinas de atendimentos jÃ¡ excluÃ­dos.
+    // Sem isso, ao excluir atendimentos antigos o balanÃ§o de material ficaria errado.
+    const [todos, posseAcumulada, colaboradores, clientes, depositos, historico, pixPosseInicial] = await Promise.all([
         dbListarAtendimentos(),
-        dbLerPosseAcumulada(usuarioLogado),   // ← acumulado dos atendimentos excluídos
+        dbLerPosseAcumulada(usuarioLogado),   // â† acumulado dos atendimentos excluÃ­dos
         dbListarColaboradores(),
         dbListarClientes(),
         dbListarDepositos(usuarioLogado),
-        dbListarHistorico()
+        dbListarHistorico(),
+        dbLerPixEmPosse(usuarioLogado)
     ]);
     todosDepositos = depositos;
     historicoEstoque = historico;
+    pixEmPosse = pixPosseInicial;
     colaboradorObj  = colaboradores.find(c => c.nome === usuarioLogado) || null;
 
-    // Mapa para cruzar cliente do atendimento → rota atual
+    // Mapa para cruzar cliente do atendimento â†’ rota atual
     mapaRotas = {};
     clientes.forEach(c => {
         if (!c.rota) return;
@@ -933,15 +974,15 @@
             .map(a => dataLocalStr(a.data || a.dataHora || 0))
     );
 
-    // Salva o acumulado em variáveis globais para o renderizar() acessar sempre que
-    // redesenha a tela (ex: ao trocar o período selecionado no calendário).
+    // Salva o acumulado em variÃ¡veis globais para o renderizar() acessar sempre que
+    // redesenha a tela (ex: ao trocar o perÃ­odo selecionado no calendÃ¡rio).
     // Estrutura: { produtos: { "NomeProduto": qtd }, maquinas: { "NomeMaquina": contagem } }
     window._posseAcumuladaProdutos = posseAcumulada.produtos || {};
     window._posseAcumuladaMaquinas = posseAcumulada.maquinas || {};
 
     renderizar();
 
-    // Atualiza em tempo real apenas os dados do usuÃ¡rio logado.
+    // Atualiza em tempo real apenas os dados do usuÃƒÂ¡rio logado.
     dbEscutarAtendimentosDoUsuario(usuarioLogado, (lista) => {
         todosAtendimentos = lista;
         atualizarDatasComAtendimento();
@@ -963,7 +1004,13 @@
         window._posseAcumuladaMaquinas = posseAcumuladaAtual.maquinas || {};
         renderizar();
     });
+
+    dbEscutarPixEmPosse(usuarioLogado, (lista) => {
+        pixEmPosse = lista;
+        renderizar();
+    });
 </script>
 </body>
 </html>
+
 
