@@ -1774,6 +1774,14 @@ export function dbEscutarPixEmPosse(nomeUsuario, callback) {
     });
 }
 
+export function dbEscutarCadastrosPix(callback) {
+    return onValue(ref(db, 'cadastros_pix'), (snapshot) => {
+        const data = snapshot.val() || {};
+        const lista = Object.keys(data).map(key => ({ firebaseUrl: key, ...data[key] }));
+        callback(lista);
+    });
+}
+
 /**
  * Incrementa o acumulador de posse com os dados de UM atendimento.
  * DEVE ser chamada ANTES de excluir um atendimento para não perder os dados.

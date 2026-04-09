@@ -38,6 +38,8 @@
         .info-linha { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; align-items: center;}
         .info-linha span { color: #cfd6e3; }
         .info-linha strong { color: white; font-size: 15px;}
+        .rotulo-cadastrou { color: #4caf50 !important; }
+        .rotulo-retirado { color: #f44336 !important; }
         .item-estoque-nome { color: white !important; font-size: 18px !important; font-weight: bold; }
         .envio-rodape-estoque {
             display: flex; justify-content: space-between; align-items: center;
@@ -117,17 +119,26 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarAtendimentos, dbEscutarColaboradores, dbExcluirAtendimento } from './database.js';
+    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarColaboradores, dbEscutarManutencoes, dbExcluirAtendimento } from './database.js';
 
     // Pega quem estÃ¡ logado no celular no momento
     const usuarioLogado = localStorage.getItem('usuarioLogado');
     let atendimentosSalvos = [];
+    let cadastrosPixSalvos = [];
+    let manutencoesSalvas = [];
     let colaboradoresSalvos = [];
     let colaboradoresCarregados = false;
     let termoBusca = '';
 
     function normalizarTexto(txt) {
         return String(txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
+
+    function formatarDataHora(valor) {
+        if (!valor) return '';
+        const data = new Date(valor);
+        if (Number.isNaN(data.getTime())) return '';
+        return data.toLocaleString('pt-BR');
     }
 
     window.limparBusca = function() {
@@ -174,6 +185,230 @@
         return envio.perfilAutor || envio.autorPerfil || envio.perfil || obterPerfilPorNome(obterNomeAutorEnvio(envio));
     }
 
+    function pertenceAoUsuario(envio) {
+        const usuario = normalizarTexto(usuarioLogado);
+        if (!usuario) return false;
+
+        return [
+            envio?.atendente,
+            envio?.responsavel,
+            envio?.enviadoPor,
+            envio?.autor,
+            envio?.autorizadoPor
+        ].some(nome => normalizarTexto(nome) === usuario);
+    }
+
+    function obterManutencaoCompleta(envio) {
+        const manutencaoResumo = envio?.manutencao || {};
+        const manutencaoId = String(manutencaoResumo?.id || '').trim();
+        if (!manutencaoId) {
+            return manutencaoResumo;
+        }
+
+        const manutencaoBanco = manutencoesSalvas.find(item => item.firebaseUrl === manutencaoId);
+        if (!manutencaoBanco) {
+            return manutencaoResumo;
+        }
+
+        return {
+            ...manutencaoBanco,
+            ...manutencaoResumo,
+            equipamentosAdicionados: Array.isArray(manutencaoBanco.equipamentosAdicionados) && manutencaoBanco.equipamentosAdicionados.length > 0
+                ? manutencaoBanco.equipamentosAdicionados
+                : (Array.isArray(manutencaoResumo.equipamentosAdicionados) ? manutencaoResumo.equipamentosAdicionados : []),
+            equipamentosRetiradosDetalhes: Array.isArray(manutencaoBanco.equipamentosRetiradosDetalhes) && manutencaoBanco.equipamentosRetiradosDetalhes.length > 0
+                ? manutencaoBanco.equipamentosRetiradosDetalhes
+                : [],
+            equipamentosRetirados: Array.isArray(manutencaoBanco.equipamentosRetirados) && manutencaoBanco.equipamentosRetirados.length > 0
+                ? manutencaoBanco.equipamentosRetirados
+                : (Array.isArray(manutencaoResumo.equipamentosRetirados) ? manutencaoResumo.equipamentosRetirados : []),
+            observacoes: manutencaoBanco.observacoes || manutencaoResumo.observacoes || '',
+            valorEncerramento: manutencaoBanco.valorEncerramento || manutencaoResumo.valorEncerramento || '',
+            pontoEncerrado: manutencaoBanco.pontoEncerrado === true || manutencaoResumo.pontoEncerrado === true
+        };
+    }
+
+    function obterDataLocalYMD(isoStr) {
+        if (!isoStr) return '';
+        const d = new Date(isoStr);
+        if (Number.isNaN(d.getTime())) return '';
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function obterTextoLocalCadastroPix(registro, clienteContexto = null) {
+        const identificacao = String(registro?.identificacao || registro?.cliente || '').trim();
+        const equipamento = String(registro?.equipamento || '').trim();
+        const clienteRegistro = extrairClienteDoCadastroPix(registro);
+        const numeroContexto = normalizarTexto(clienteContexto?.numero);
+        const nomeContexto = normalizarTexto(clienteContexto?.nome);
+        const mesmoCliente = Boolean(
+            (numeroContexto && normalizarTexto(clienteRegistro?.numero) === numeroContexto)
+            || (nomeContexto && normalizarTexto(clienteRegistro?.nome) === nomeContexto)
+        );
+
+        if (mesmoCliente) {
+            return equipamento || identificacao || '—';
+        }
+
+        return [identificacao, equipamento].filter(Boolean).join(' | ');
+    }
+
+    function cadastroPixPertenceAoEnvio(registro, envio) {
+        const clienteNome = normalizarTexto(envio?.cliente?.nome);
+        const clienteNumero = normalizarTexto(envio?.cliente?.numero);
+        const identificacao = normalizarTexto(registro?.identificacao);
+        const clienteRegistro = normalizarTexto(registro?.cliente);
+
+        if (clienteNumero && identificacao.includes(clienteNumero)) return true;
+        if (clienteNome && (clienteRegistro === clienteNome || identificacao.includes(clienteNome))) return true;
+        return false;
+    }
+
+    function obterEventosCadastroPixDoEnvio(envio) {
+        const usuario = normalizarTexto(usuarioLogado);
+        const dataEnvio = obterDataLocalYMD(envio?.data);
+        if (!usuario || !dataEnvio) return [];
+
+        const eventos = [];
+        cadastrosPixSalvos.forEach(registro => {
+            if (!cadastroPixPertenceAoEnvio(registro, envio)) return;
+
+            const numeroPix = String(registro?.numero_pix || '').trim();
+            const local = obterTextoLocalCadastroPix(registro, envio?.cliente || null);
+
+            if (normalizarTexto(registro?.tecnico) === usuario && obterDataLocalYMD(registro?.data) === dataEnvio) {
+                eventos.push({
+                    chave: `inst_${registro.firebaseUrl || ''}_${numeroPix}_${registro.data || ''}`,
+                    tipo: 'colocou',
+                    numeroPix,
+                    local,
+                    data: registro?.data || '',
+                    tecnico: String(registro?.tecnico || '').trim()
+                });
+            }
+
+            if (normalizarTexto(registro?.tecnico_retirada) === usuario && obterDataLocalYMD(registro?.data_retirada) === dataEnvio) {
+                eventos.push({
+                    chave: `ret_${registro.firebaseUrl || ''}_${numeroPix}_${registro.data_retirada || ''}`,
+                    tipo: 'retirou',
+                    numeroPix,
+                    local,
+                    data: registro?.data_retirada || '',
+                    tecnico: String(registro?.tecnico_retirada || '').trim()
+                });
+            }
+        });
+
+        const vistos = new Set();
+        return eventos
+            .filter(item => {
+                if (!item.chave || vistos.has(item.chave)) return false;
+                vistos.add(item.chave);
+                return true;
+            })
+            .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+    }
+
+    function extrairClienteDoCadastroPix(registro) {
+        const identificacao = String(registro?.identificacao || '').trim();
+        const clienteFallback = String(registro?.cliente || '').trim();
+        const match = identificacao.match(/^N\.\s*([^-]+)\s*-\s*(.+)$/i);
+        if (match) {
+            return {
+                numero: String(match[1] || '').trim(),
+                nome: String(match[2] || '').trim() || clienteFallback
+            };
+        }
+        return {
+            numero: '',
+            nome: clienteFallback || identificacao || 'Cliente Desconhecido'
+        };
+    }
+
+    function existeAtendimentoParaCadastroPix(registro, tipoEvento, dataEvento) {
+        const dataYmd = obterDataLocalYMD(dataEvento);
+        if (!dataYmd) return false;
+
+        return atendimentosSalvos.some(envio => {
+            if (!pertenceAoUsuario(envio)) return false;
+            if (obterDataLocalYMD(envio?.data) !== dataYmd) return false;
+            if (!cadastroPixPertenceAoEnvio(registro, envio)) return false;
+
+            const eventos = obterEventosCadastroPixDoEnvio(envio);
+            const numeroPix = String(registro?.numero_pix || '').trim();
+            return eventos.some(evento => evento.tipo === tipoEvento && evento.numeroPix === numeroPix && obterDataLocalYMD(evento.data) === dataYmd);
+        });
+    }
+
+    function obterCadastrosPixAvulsosDoUsuario() {
+        const usuario = normalizarTexto(usuarioLogado);
+        if (!usuario) return [];
+
+        const itens = [];
+        cadastrosPixSalvos.forEach(registro => {
+            const numeroPix = String(registro?.numero_pix || '').trim();
+            if (!numeroPix) return;
+
+            const tecnicoInstalacao = normalizarTexto(registro?.tecnico);
+            const tecnicoRetirada = normalizarTexto(registro?.tecnico_retirada);
+
+            if (tecnicoInstalacao === usuario && registro?.data && !existeAtendimentoParaCadastroPix(registro, 'colocou', registro.data)) {
+                itens.push({
+                    tipoLinhaTempo: 'cadastro_pix',
+                    eventoTipo: 'colocou',
+                    data: registro.data,
+                    cadastroPix: registro,
+                    cliente: extrairClienteDoCadastroPix(registro)
+                });
+            }
+
+            if (tecnicoRetirada === usuario && registro?.data_retirada && !existeAtendimentoParaCadastroPix(registro, 'retirou', registro.data_retirada)) {
+                itens.push({
+                    tipoLinhaTempo: 'cadastro_pix',
+                    eventoTipo: 'retirou',
+                    data: registro.data_retirada,
+                    cadastroPix: registro,
+                    cliente: extrairClienteDoCadastroPix(registro)
+                });
+            }
+        });
+
+        return itens.sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+    }
+
+    function montarHtmlCadastroPix(envio) {
+        const eventos = obterEventosCadastroPixDoEnvio(envio);
+        if (eventos.length === 0) return '';
+
+        let html = '';
+        eventos.forEach(evento => {
+            const rotulo = evento.tipo === 'retirou'
+                ? `Retirado Pix ${evento.numeroPix || '—'}`
+                : `Cadastrou Pix ${evento.numeroPix || '—'}`;
+            const detalhes = [evento.local, formatarDataHora(evento.data)].filter(Boolean).join(' | ');
+            const classeRotulo = evento.tipo === 'retirou' ? ' class="rotulo-retirado"' : ' class="rotulo-cadastrou"';
+            html += `<div class="info-linha"><span${classeRotulo}>${rotulo}</span><strong>${detalhes || '—'}</strong></div>`;
+        });
+
+        return html;
+    }
+
+    function montarHtmlCadastroPixAvulso(item) {
+        const registro = item?.cadastroPix || {};
+        const numeroPix = String(registro?.numero_pix || '').trim() || '—';
+        const local = obterTextoLocalCadastroPix(registro, item?.cliente || null);
+        const rotulo = item?.eventoTipo === 'retirou' ? `Retirado Pix ${numeroPix}` : `Cadastrou Pix ${numeroPix}`;
+        let html = '';
+        const classeRotulo = item?.eventoTipo === 'retirou' ? ' class="rotulo-retirado"' : ' class="rotulo-cadastrou"';
+        html += `<div class="info-linha"><span${classeRotulo}>${rotulo}</span><strong>${local || '—'}</strong></div>`;
+
+        if ((registro?.contador ?? '') !== '' && item?.eventoTipo === 'colocou') {
+            html += `<div class="info-linha"><span>Contador</span><strong>${registro.contador}</strong></div>`;
+        }
+
+        return html;
+    }
+
     function ehRegistroManutencao(envio) {
         return envio?.origemRegistro === 'manutencao' || !!envio?.manutencao;
     }
@@ -194,18 +429,64 @@
         );
     }
 
-    function montarHtmlManutencao(envio) {
-        const info = envio?.manutencao || {};
-        let linhas = '';
-        if (info.tipoServico) linhas += `<div class="info-linha"><span>Tipo</span><strong>${info.tipoServico}</strong></div>`;
-        if (Array.isArray(info.equipamentosAdicionados) && info.equipamentosAdicionados.length > 0) {
-            linhas += `<div class="info-linha"><span>Máquinas adicionadas</span><strong>${info.equipamentosAdicionados.map(item => item.nome).join(', ')}</strong></div>`;
+    function formatarDescricaoEquipamento(item, opcoes = {}) {
+        if (!item) return '';
+        if (typeof item === 'string') return item.trim();
+
+        const { modoRetirada = false } = opcoes;
+        const nome = String(item?.nome || '').trim();
+        const partes = [];
+        const qtd = String(item?.qtd ?? '').trim();
+        const pix = String(item?.pix ?? '').trim();
+        const contador = String(item?.contador ?? '').trim();
+        const contAntRetirada = String(item?.contador_anterior_retirada ?? '').trim();
+        const contAtualRetirada = String(item?.contador_atual_retirada ?? '').trim();
+        const valorRetirada = String(item?.valor_retirada ?? '').trim();
+        const percentualComissao = String(item?.percentual_comissao ?? '').trim();
+        const valorComissao = String(item?.valor_comissao ?? '').trim();
+        const valorLiquido = String(item?.valor_liquido ?? '').trim();
+
+        if (qtd && qtd !== '1') partes.push(`Qtd ${qtd}`);
+        if (pix) partes.push(`Pix ${pix}`);
+        if (contador) partes.push(`Contador ${contador}`);
+        if (contAntRetirada || contAtualRetirada) {
+            partes.push(`Retirada ${contAntRetirada || '0'} -> ${contAtualRetirada || '0'}`);
         }
-        if (Array.isArray(info.equipamentosRetirados) && info.equipamentosRetirados.length > 0) {
-            linhas += `<div class="info-linha"><span>Máquinas retiradas</span><strong>${info.equipamentosRetirados.join(', ')}</strong></div>`;
+        if (valorRetirada) partes.push(`Valor ${formatarMoeda(converterParaNumero(valorRetirada))}`);
+        if (percentualComissao) partes.push(`Comissão ${percentualComissao}%`);
+        if (valorComissao) partes.push(`Comis. ${formatarMoeda(converterParaNumero(valorComissao))}`);
+        if (valorLiquido) partes.push(`Líquido ${formatarMoeda(converterParaNumero(valorLiquido))}`);
+
+        if (modoRetirada && pix) {
+            return nome ? `${nome} (Pix ${pix})` : `Pix ${pix}`;
+        }
+
+        if (!nome) return partes.join(' | ');
+        return partes.length > 0 ? `${nome} (${partes.join(' | ')})` : nome;
+    }
+
+    function montarHtmlManutencao(envio) {
+        const info = obterManutencaoCompleta(envio);
+        let linhas = '';
+        const equipamentosAdicionados = Array.isArray(info.equipamentosAdicionados) && info.equipamentosAdicionados.length > 0
+            ? info.equipamentosAdicionados
+            : (Array.isArray(info?.equipamentoAdicionado?.detalhes) ? info.equipamentoAdicionado.detalhes : []);
+        const equipamentosRetirados = Array.isArray(info.equipamentosRetiradosDetalhes) && info.equipamentosRetiradosDetalhes.length > 0
+            ? info.equipamentosRetiradosDetalhes
+            : (Array.isArray(info.equipamentosRetirados) ? info.equipamentosRetirados : []);
+
+        if (info.tipoServico) linhas += `<div class="info-linha"><span>Tipo</span><strong>${info.tipoServico}</strong></div>`;
+        if (equipamentosAdicionados.length > 0) {
+            linhas += `<div class="info-linha"><span>Máquinas adicionadas</span><strong>${equipamentosAdicionados.map(formatarDescricaoEquipamento).filter(Boolean).join(', ')}</strong></div>`;
+        }
+        if (equipamentosRetirados.length > 0) {
+            linhas += `<div class="info-linha"><span>Retirou</span><strong>${equipamentosRetirados.map(item => formatarDescricaoEquipamento(item, { modoRetirada: true })).filter(Boolean).join(', ')}</strong></div>`;
         }
         if (info.pontoEncerrado) {
             linhas += `<div class="info-linha"><span>Ponto</span><strong>Encerrado em análise</strong></div>`;
+        }
+        if ((info.valorEncerramento ?? '') !== '') {
+            linhas += `<div class="info-linha"><span>Valor encerramento</span><strong>${formatarMoeda(converterParaNumero(info.valorEncerramento))}</strong></div>`;
         }
         if (info.observacoes) {
             linhas += `<div class="info-linha"><span>Obs.</span><strong>${info.observacoes}</strong></div>`;
@@ -275,8 +556,7 @@
     const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
     function dataLocalYMD(isoStr) {
-        const d = new Date(isoStr);
-        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        return obterDataLocalYMD(isoStr);
     }
 
     function rotuloData(ymd) {
@@ -302,26 +582,62 @@
             return;
         }
 
-        // Filtra sÃ³ os que foram enviados por ele e ordena da data mais recente (maior) para a mais velha (menor)
-        const meusEnvios = atendimentosSalvos
+        const enviosAtendimento = atendimentosSalvos
             .filter(a => {
-                if (a.atendente !== usuarioLogado) return false;
+                if (!pertenceAoUsuario(a)) return false;
                 if (!termoBusca) return true;
                 const fotos = a.fotos || {};
+                const manutencaoCompleta = ehRegistroManutencao(a) ? obterManutencaoCompleta(a) : {};
+                const eventosCadastroPix = obterEventosCadastroPixDoEnvio(a);
+                const maquinasAdicionadas = Array.isArray(manutencaoCompleta?.equipamentosAdicionados)
+                    ? manutencaoCompleta.equipamentosAdicionados.map(formatarDescricaoEquipamento)
+                    : [];
+                const maquinasRetiradas = Array.isArray(manutencaoCompleta?.equipamentosRetiradosDetalhes) && manutencaoCompleta.equipamentosRetiradosDetalhes.length > 0
+                    ? manutencaoCompleta.equipamentosRetiradosDetalhes.map(formatarDescricaoEquipamento)
+                    : (Array.isArray(manutencaoCompleta?.equipamentosRetirados)
+                        ? manutencaoCompleta.equipamentosRetirados.map(formatarDescricaoEquipamento)
+                        : []);
                 const campos = [
+                    obterNomeAutorEnvio(a),
+                    a.autorizadoPor,
                     a.cliente?.nome,
                     a.cliente?.numero,
                     ...(a.produtos || []).map(p => p.nome),
-                    a.manutencao?.tipoServico || '',
-                    ...(a.manutencao?.equipamentosAdicionados || []).map(m => m.nome),
-                    ...(a.manutencao?.equipamentosRetirados || []),
+                    manutencaoCompleta?.tipoServico || '',
+                    ...maquinasAdicionadas,
+                    ...maquinasRetiradas,
+                    ...eventosCadastroPix.map(item => `pix ${item.numeroPix}`),
+                    ...eventosCadastroPix.map(item => item.local),
+                    manutencaoCompleta?.observacoes || '',
+                    manutencaoCompleta?.valorEncerramento || '',
                     new Date(a.data).toLocaleString('pt-BR'),
                     fotos.ficha ? 'ficha' : '',
                     ...(fotos.maquinas || []).map(m => m.nome),
                     ...(fotos.pix || []).map(p => `pix ${p.numero}`)
                 ];
                 return campos.some(c => normalizarTexto(c).includes(termoBusca));
-            })
+            });
+
+        const enviosCadastroPix = obterCadastrosPixAvulsosDoUsuario()
+            .filter(item => {
+                if (!termoBusca) return true;
+                const registro = item?.cadastroPix || {};
+                const cliente = item?.cliente || {};
+                const campos = [
+                    cliente.numero,
+                    cliente.nome,
+                    registro.numero_pix,
+                    registro.equipamento,
+                    registro.identificacao,
+                    registro.cliente,
+                    item?.eventoTipo === 'retirou' ? 'retirou' : 'colocou',
+                    formatarDataHora(item?.data)
+                ];
+                return campos.some(c => normalizarTexto(c).includes(termoBusca));
+            });
+
+        // Filtra sÃ³ os que foram enviados por ele e ordena da data mais recente (maior) para a mais velha (menor)
+        const meusEnvios = [...enviosAtendimento, ...enviosCadastroPix]
             .sort((a, b) => new Date(b.data) - new Date(a.data));
 
         if (meusEnvios.length === 0) {
@@ -345,8 +661,24 @@
             const card = document.createElement('div');
             card.className = 'card-envio';
 
+            if (envio?.tipoLinhaTempo === 'cadastro_pix') {
+                const clienteNome = envio?.cliente?.nome || 'Cliente Desconhecido';
+                const clienteNumero = envio?.cliente?.numero || 'S/N';
+                const dataFormatada = formatarDataHora(envio?.data);
+                const htmlHeader = `<div class="envio-header"><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>`;
+                const htmlCadastroPixAvulso = montarHtmlCadastroPixAvulso(envio);
+                const htmlRodape = `
+                    <div class="envio-rodape-estoque">
+                        <span>${dataFormatada}</span>
+                    </div>`;
+                card.innerHTML = `${htmlHeader}${htmlCadastroPixAvulso}${htmlRodape}`;
+                container.appendChild(card);
+                return;
+            }
+
             const dataFormatada = new Date(envio.data).toLocaleString('pt-BR');
             const htmlManutencao = ehRegistroManutencao(envio) ? montarHtmlManutencao(envio) : '';
+            const htmlCadastroPix = montarHtmlCadastroPix(envio);
 
             // Cabeçalho
             let htmlHeader;
@@ -431,6 +763,7 @@
             // --- 3. FOTOS ---
             let htmlFotos = `<div class="secao-titulo">Imagens (Toque para ampliar)</div><div class="foto-grid">`;
             const fotos = envio.fotos || {};
+            const manutencaoCompleta = ehRegistroManutencao(envio) ? obterManutencaoCompleta(envio) : null;
             
             // [CORREÃ‡ÃƒO] Filtra links corrompidos
             const ehImagemValida = (url) => url && (url.startsWith('data:') || url.includes('firebasestorage'));
@@ -448,6 +781,17 @@
             if (fotos.pix && Array.isArray(fotos.pix)) {
                 fotos.pix.forEach(p => { if (ehImagemValida(p.url)) { htmlFotos += `<div class="foto-item"><a href="${p.url}" target="_blank"><img src="${p.thumbUrl || p.url}" loading="lazy"></a><div class="foto-legenda">PIX ${p.numero}</div></div>`; temFoto = true; }});
             }
+
+            if (Array.isArray(manutencaoCompleta?.equipamentosRetiradosDetalhes)) {
+                manutencaoCompleta.equipamentosRetiradosDetalhes.forEach(item => {
+                    if (!ehImagemValida(item?.foto_contador_retirada)) return;
+                    const legenda = item?.pix
+                        ? `RETIRADA PIX ${item.pix}`
+                        : (item?.nome ? `RETIRADA ${item.nome}` : 'RETIRADA');
+                    htmlFotos += `<div class="foto-item"><a href="${item.foto_contador_retirada}" target="_blank"><img src="${item.foto_contador_retirada_thumb || item.foto_contador_retirada}" loading="lazy"></a><div class="foto-legenda">${legenda}</div></div>`;
+                    temFoto = true;
+                });
+            }
             
             htmlFotos += `</div>`;
             if (!temFoto) {
@@ -464,18 +808,30 @@
                 </div>
             ` : '';
 
-            // Rodapé universal: data + registrado por (só se diferente do usuário logado)
+            const responsavelEstoque = ehRetiradaEstoque(envio) ? (envio.atendente || envio.responsavel || '') : '';
             const autorEnvio = ehRetiradaEstoque(envio)
-                ? envio.autorizadoPor
+                ? (envio.autorizadoPor || '')
                 : obterNomeAutorEnvio(envio);
-            const mostrarAutor = autorEnvio && autorEnvio !== usuarioLogado;
+            const infoRodape = [];
+
+            if (ehRetiradaEstoque(envio)) {
+                if (responsavelEstoque && normalizarTexto(responsavelEstoque) !== normalizarTexto(usuarioLogado)) {
+                    infoRodape.push(`Responsável: <strong>${responsavelEstoque}</strong>`);
+                }
+                if (autorEnvio && normalizarTexto(autorEnvio) !== normalizarTexto(usuarioLogado)) {
+                    infoRodape.push(`Registrado por: <strong>${autorEnvio}</strong>`);
+                }
+            } else if (autorEnvio && normalizarTexto(autorEnvio) !== normalizarTexto(usuarioLogado)) {
+                infoRodape.push(`Registrado por: <strong>${autorEnvio}</strong>`);
+            }
+
             const htmlRodape = `
                 <div class="envio-rodape-estoque">
                     <span>${dataFormatada}</span>
-                    ${mostrarAutor ? `<span>Registrado por: <strong>${autorEnvio}</strong></span>` : ''}
+                    ${infoRodape.length > 0 ? `<span>${infoRodape.join(' | ')}</span>` : ''}
                 </div>`;
 
-            card.innerHTML = `${htmlHeader}${htmlManutencao}${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}${htmlRodape}`;
+            card.innerHTML = `${htmlHeader}${htmlManutencao}${htmlCadastroPix}${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}${htmlRodape}`;
             if (liberado) {
                 card.querySelector('.btn-editar-envio')?.addEventListener('click', () => window.editarEnvio(envio));
                 card.querySelector('.btn-excluir-envio')?.addEventListener('click', () => window.excluirEnvio(envio.firebaseUrl));
@@ -492,6 +848,16 @@
 
     dbEscutarAtendimentos((atendimentos) => {
         atendimentosSalvos = atendimentos;
+        renderizarEnvios();
+    });
+
+    dbEscutarCadastrosPix((cadastros) => {
+        cadastrosPixSalvos = cadastros;
+        renderizarEnvios();
+    });
+
+    dbEscutarManutencoes((manutencoes) => {
+        manutencoesSalvas = manutencoes;
         renderizarEnvios();
     });
 
