@@ -280,7 +280,9 @@
     </div>
     <label style="text-align: center;">Número do Cliente</label>
     <div style="display: flex; justify-content: center;">
-        <input type="number" id="inputBuscaCliente" placeholder="Nº" oninput="buscarCliente()"
+        <input type="text" inputmode="numeric" id="inputBuscaCliente" name="cliente_busca_manual" placeholder="Nº"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"
+               oninput="this.value = this.value.replace(/[^0-9]/g, ''); buscarCliente()"
                style="width: 40%; font-size: 28px; text-align: center; font-weight: bold;">
     </div>
 
@@ -492,12 +494,23 @@
     carregarClientesPermitidos();
 
     // --- FILTRO DE ROTA (vindo do checkin_rotas) ---
+    function normalizarNumeroClienteBusca(valor) {
+        const bruto = String(valor ?? '').trim();
+        if (!bruto) return '';
+        const apenasDigitos = bruto.replace(/\D+/g, '');
+        const base = apenasDigitos || bruto;
+        return base.replace(/^0+(?=\d)/, '');
+    }
+
     function obterNumerosRotaFiltro() {
         const raw = sessionStorage.getItem('rota_filtro_numeros');
         if (!raw) return null;
         try {
             const arr = JSON.parse(raw);
-            return arr.length > 0 ? new Set(arr) : null;
+            const numerosNormalizados = arr
+                .map(num => normalizarNumeroClienteBusca(num))
+                .filter(Boolean);
+            return numerosNormalizados.length > 0 ? new Set(numerosNormalizados) : null;
         } catch { return null; }
     }
 
@@ -520,21 +533,6 @@
         dbEscutarClientes((lista) => { listaClientes = lista; });
         aplicarBannerRotaFiltro();
     };
-
-    // Pré-preenche o número do cliente se veio do checkin
-    (function preencherClientePreselecionado() {
-        const numCliente = sessionStorage.getItem('cliente_pre_selecionado');
-        if (numCliente) {
-            sessionStorage.removeItem('cliente_pre_selecionado');
-            setTimeout(() => {
-                const input = document.getElementById('inputBuscaCliente');
-                if (input && !input.value) {
-                    input.value = numCliente;
-                    if (typeof buscarCliente === 'function') buscarCliente();
-                }
-            }, 800);
-        }
-    })();
 
     aplicarBannerRotaFiltro();
 
@@ -736,7 +734,7 @@
         // Sub-filtro: se veio do checkin, restringe à rota específica
         const numerosRota = obterNumerosRotaFiltro();
         if (numerosRota) {
-            filtrada = filtrada.filter(c => numerosRota.has(String(c.numero)));
+            filtrada = filtrada.filter(c => numerosRota.has(normalizarNumeroClienteBusca(c.numero)));
         }
         listaClientes = filtrada;
     }
@@ -757,7 +755,7 @@
         const listaUnica = [];
         
         lista.forEach(item => {
-            if ((item.categoria === 'produtos' || item.categoria === 'materiais') && !nomesVistos.has(item.nome)) {
+            if (item.categoria === 'produtos' && !nomesVistos.has(item.nome)) {
                 nomesVistos.add(item.nome);
                 listaUnica.push(item);
             }
@@ -785,6 +783,7 @@
 
     window.buscarCliente = function() {
         const termo = document.getElementById('inputBuscaCliente').value.trim();
+        const termoNormalizado = normalizarNumeroClienteBusca(termo);
         salvarRascunho(); // [NOVO] Salva sempre que digitar
         const divResultado = document.getElementById('resultadoCliente');
         
@@ -798,7 +797,7 @@
         }
 
         // Procura pelo campo "numero" do cliente
-        const cliente = listaClientes.find(c => c.numero == termo);
+        const cliente = listaClientes.find(c => normalizarNumeroClienteBusca(c.numero) === termoNormalizado);
 
         divResultado.style.display = 'block';
 

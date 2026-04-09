@@ -903,9 +903,6 @@ window.irParaAtendimento = function(routeNumber, clienteNumero) {
 
     sessionStorage.setItem('rota_filtro_numeros', JSON.stringify(numerosRota));
     sessionStorage.setItem('rota_filtro_numero_rota', String(routeNumber));
-    if (clienteNumero) {
-        sessionStorage.setItem('cliente_pre_selecionado', String(clienteNumero));
-    }
     sessionStorage.setItem('atendimento_tela_origem', 'checkin_rotas.html');
     window.location.href = 'atendimento_nivel_1.html';
 };
