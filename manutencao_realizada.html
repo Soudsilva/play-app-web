@@ -18,11 +18,16 @@
 
         .app {
             width: 100%;
-            max-width: 520px;
-            padding: 20px 16px 100px;
+            max-width: 640px;
+            padding: 18px 10px 100px;
             display: flex;
             flex-direction: column;
             gap: 14px;
+        }
+        @media (max-width: 480px) {
+            .app {
+                padding: 14px 8px 96px;
+            }
         }
 
         /* ── HEADER ── */
@@ -137,6 +142,11 @@
             background: rgba(255,235,59,0.15);
             border-color: rgba(255,235,59,0.5);
             color: #ffeb3b;
+        }
+        #btnAcaoMaquinaRet.selecionado {
+            background: rgba(255,87,34,0.18);
+            border-color: rgba(255,87,34,0.62);
+            color: #ff8a65;
         }
 
         .linha-produto {
@@ -327,6 +337,14 @@
         }
         .sub-secao.visivel { display: block; animation: surgir 0.25s ease; }
         .sub-titulo { font-size: 15px; color: #b0bbd4; margin-bottom: 10px; }
+        #subPixEncerramento {
+            border-top: none;
+            padding-top: 0;
+        }
+        #subEncerramento {
+            border-top: none;
+            padding-top: 0;
+        }
         .card-fluxo {
             margin-top: 16px;
             padding: 16px;
@@ -377,6 +395,12 @@
             font-size: 13px;
             color: #cfd6e3;
         }
+        .card-fluxo-apoio-retirada {
+            font-size: 17px;
+            font-weight: bold;
+            color: #ff7043;
+            text-align: center;
+        }
 
         /* ── BOTÃO FINALIZAR ── */
         .btn-finalizar {
@@ -421,31 +445,35 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            margin-top: 12px;
+            margin-top: -18px;
         }
         .pix-encerramento-card {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 14px;
-            padding: 14px;
+            padding: 0 14px 12px;
         }
         .pix-encerramento-titulo {
             font-size: 16px;
             font-weight: bold;
             color: #ffeb3b;
             margin-bottom: 10px;
+            text-align: center;
         }
         .retirada-extra-box {
-            background: rgba(0,0,0,0.12);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
             padding: 12px;
+        }
+        @media (max-width: 480px) {
+            .pix-encerramento-card {
+                padding: 10px 8px;
+            }
+            .retirada-extra-box {
+                padding: 10px 8px;
+            }
         }
         .retirada-extra-pergunta {
             font-size: 14px;
             font-weight: bold;
             color: #fff;
             margin-bottom: 10px;
+            text-align: center;
         }
         .retirada-extra-opcoes {
             display: flex;
@@ -483,21 +511,79 @@
             gap: 10px;
             margin-bottom: 10px;
         }
+        .retirada-info-grid-contadores {
+            gap: 4px;
+            width: calc(100% + 24px);
+            margin-left: -12px;
+            margin-right: -12px;
+        }
         .retirada-info-item {
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.08);
             border-radius: 10px;
             padding: 10px 12px;
+            min-height: 84px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .retirada-info-item-input {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 10px 12px;
+            min-height: 84px;
+            justify-content: flex-start;
+            align-items: stretch;
+        }
+        .retirada-info-item-input span {
+            width: 100%;
+            font-size: 14px;
+            margin-bottom: 10px;
         }
         .retirada-info-item span {
             display: block;
             font-size: 12px;
-            color: #b0bbd4;
-            margin-bottom: 4px;
+            color: #ffffff;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-align: center;
+            white-space: nowrap;
         }
         .retirada-info-item strong {
-            font-size: 15px;
+            font-size: 18px;
             color: #fff;
+            line-height: 1.1;
+        }
+        .retirada-info-valor-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 48px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: transparent;
+            border: 1px solid #ffffff;
+            box-sizing: border-box;
+        }
+        .retirada-info-input {
+            width: 100%;
+            min-height: 48px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(11,34,86,0.55);
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+            box-sizing: border-box;
+            text-align: center;
+            flex: 1;
+            outline: none;
+        }
+        .retirada-info-input::placeholder {
+            color: #d7def0;
         }
         .retirada-input-label {
             display: block;
@@ -506,10 +592,24 @@
             margin-bottom: 6px;
             font-weight: bold;
         }
+        .retirada-foto-comissao-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .retirada-resumo-valores {
+            flex: 1;
+        }
+        .retirada-comissao-pct {
+            font-size: 22px;
+            font-weight: bold;
+            color: rgba(255,255,255,0.3);
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
         .retirada-foto-input {
             position: relative;
-            margin-top: 10px;
-            margin-bottom: 10px;
         }
         .retirada-foto-btn {
             width: 56px;
@@ -529,8 +629,8 @@
         .retirada-foto-menu {
             display: none;
             position: absolute;
-            top: 62px;
-            left: 0;
+            bottom: 62px;
+            right: 0;
             z-index: 10;
         }
         .retirada-foto-menu.aberto { display: block; }
@@ -586,16 +686,16 @@
             font-size: 13px;
         }
         .retirada-calc-row.comissao {
-            margin-top: 8px;
-            padding: 8px 10px;
-            border-radius: 8px;
-            background: #27448b;
-            border: 1px solid #ffb300;
-            color: #ffffff;
+            margin-top: 4px;
+            padding-top: 4px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            color: #9fb0cf;
+            justify-content: space-between;
         }
         .retirada-calc-row.comissao strong {
             color: #ffeb3b;
             font-size: 15px;
+            font-weight: bold;
         }
 
     </style>
@@ -677,9 +777,7 @@
         <!-- Sub: retirar equipamento -->
         <div class="sub-secao card-fluxo card-retirar" id="subRetirar">
             <div class="card-fluxo-cabeca">
-                <span class="card-fluxo-chip">Retirar</span>
-                <div class="card-fluxo-titulo">Retirar máquinas</div>
-                <div class="card-fluxo-apoio">Selecione o que saiu do ponto</div>
+                <div class="card-fluxo-apoio card-fluxo-apoio-retirada">Selecione o que saiu do ponto</div>
             </div>
             <div class="equipamentos-lista" id="listaEquipamentosSelecionar"></div>
             <div class="campo-wrap" id="campoEquipLivreWrap" style="display:none">
@@ -688,7 +786,6 @@
             </div>
 
             <div class="sub-secao" id="subPixEncerramento">
-                <div class="sub-titulo">Finalize o PIX retirado.</div>
                 <div class="pix-encerramento-lista" id="listaPixEncerramento"></div>
             </div>
             <!-- Sub-sub: ponto encerrado? -->
@@ -702,7 +799,7 @@
                 </div>
                 <div class="sub-secao" id="subValorEncerramento">
                     <div class="campo-wrap">
-                        <label class="campo-label">Valor cobrado pelas máquinas:</label>
+                        <label class="campo-label">Valor cobrado em dinheiro nas máquinas:</label>
                         <input type="text" id="campoValorEncerramento" class="campo-texto" placeholder="Ex: R$ 500,00" autocomplete="off">
                     </div>
                 </div>
@@ -1000,29 +1097,33 @@ function renderizarPixEncerramento() {
             <div class="pix-encerramento-card" data-chave="${chave}">
                 <div class="pix-encerramento-titulo">Pix ${pix} • ${String(item?.nome || '').trim()}</div>
                 <div class="retirada-extra-box">
-                    <div class="retirada-extra-pergunta">Informe os dados do contador retirado junto com a máquina.</div>
+                    <div class="retirada-extra-pergunta">Informe o número do contador.</div>
                     <div class="retirada-extra-body aberto" id="encpix-body-${chave}" data-anterior="${contadorAnteriorNumero}" data-comissao="${percentualComissao}">
-                        <div class="retirada-info-grid">
-                            <div class="retirada-info-item"><span>Contador anterior</span><strong id="encpix-ant-${chave}">${contadorAnteriorTexto || '0'}</strong></div>
-                            <div class="retirada-info-item"><span>Comissão do cliente</span><strong id="encpix-com-${chave}">${Number.isInteger(percentualComissao) ? String(percentualComissao) : percentualComissao.toFixed(2).replace('.', ',')}%</strong></div>
-                        </div>
-                        <label class="retirada-input-label" for="encpix-atual-${chave}">Valor atual do contador</label>
-                        <input type="text" class="campo-texto" id="encpix-atual-${chave}" placeholder="Digite o contador atual" inputmode="decimal" autocomplete="off" value="${String(estado.contadorAtual || '').replace(/"/g, '&quot;')}" oninput="this.value=this.value.replace(/[^0-9,]/g,''); atualizarResumoPixEncerramento('${chave}')">
-                        <div class="retirada-foto-input">
-                            <button type="button" class="retirada-foto-btn${fotoBase64 ? ' tem-foto' : ''}" id="encpix-foto-btn-${chave}" onclick="toggleMenuFotoPixEncerramento('${chave}')">
-                                <span id="encpix-foto-icone-${chave}" style="${fotoBase64 ? 'display:none;' : ''}">&#128247;</span>
-                                ${fotoBase64 ? `<img src="${fotoBase64}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px;pointer-events:none;">` : ''}
-                            </button>
-                            <div class="retirada-foto-menu" id="encpix-foto-menu-${chave}">
-                                <div class="retirada-foto-menu-box">
-                                    <label class="retirada-foto-menu-item"><span>&#128247;</span><span>Câmera</span><input type="file" id="encpix-foto-camera-${chave}" accept="image/*" capture="environment" onchange="carregarFotoPixEncerramento(this, '${chave}'); fecharMenuFotoPixEncerramento('${chave}')"></label>
-                                    <label class="retirada-foto-menu-item"><span>&#128444;&#65039;</span><span>Galeria</span><input type="file" id="encpix-foto-galeria-${chave}" accept="image/*" onchange="carregarFotoPixEncerramento(this, '${chave}'); fecharMenuFotoPixEncerramento('${chave}')"></label>
-                                </div>
+                        <div class="retirada-info-grid retirada-info-grid-contadores">
+                            <div class="retirada-info-item"><span>Cont. Anterior</span><strong class="retirada-info-valor-chip" id="encpix-ant-${chave}">${contadorAnteriorTexto || '0'}</strong></div>
+                            <div class="retirada-info-item retirada-info-item-input">
+                                <span>Cont. Atual</span>
+                                <input type="text" class="retirada-info-input" id="encpix-atual-${chave}" placeholder="Digite aqui" inputmode="decimal" autocomplete="off" value="${String(estado.contadorAtual || '').replace(/"/g, '&quot;')}" oninput="this.value=this.value.replace(/[^0-9,]/g,''); atualizarResumoPixEncerramento('${chave}')">
                             </div>
                         </div>
-                        <div class="retirada-calc-box">
-                            <div class="retirada-calc-row bruto"><span>Valor bruto</span><strong id="encpix-bruto-${chave}">R$ 0,00</strong></div>
-                            <div class="retirada-calc-row comissao"><span>Comissão do cliente</span><strong id="encpix-desc-${chave}">R$ 0,00</strong></div>
+                        <div class="retirada-foto-comissao-row">
+                            <span class="retirada-comissao-pct" id="encpix-com-${chave}">${Number.isInteger(percentualComissao) ? String(percentualComissao) : percentualComissao.toFixed(2).replace('.', ',')}%</span>
+                            <div class="retirada-resumo-valores">
+                                <div class="retirada-calc-row bruto"><span>Valor</span><strong id="encpix-bruto-${chave}">R$ 0,00</strong></div>
+                                <div class="retirada-calc-row comissao"><span>Comis.</span><strong id="encpix-desc-${chave}">R$ 0,00</strong></div>
+                            </div>
+                            <div class="retirada-foto-input">
+                                <button type="button" class="retirada-foto-btn${fotoBase64 ? ' tem-foto' : ''}" id="encpix-foto-btn-${chave}" onclick="toggleMenuFotoPixEncerramento('${chave}')">
+                                    <span id="encpix-foto-icone-${chave}" style="${fotoBase64 ? 'display:none;' : ''}">&#128247;</span>
+                                    ${fotoBase64 ? `<img src="${fotoBase64}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px;pointer-events:none;">` : ''}
+                                </button>
+                                <div class="retirada-foto-menu" id="encpix-foto-menu-${chave}">
+                                    <div class="retirada-foto-menu-box">
+                                        <label class="retirada-foto-menu-item"><span>&#128247;</span><span>Câmera</span><input type="file" id="encpix-foto-camera-${chave}" accept="image/*" capture="environment" onchange="carregarFotoPixEncerramento(this, '${chave}'); fecharMenuFotoPixEncerramento('${chave}')"></label>
+                                        <label class="retirada-foto-menu-item"><span>&#128444;&#65039;</span><span>Galeria</span><input type="file" id="encpix-foto-galeria-${chave}" accept="image/*" onchange="carregarFotoPixEncerramento(this, '${chave}'); fecharMenuFotoPixEncerramento('${chave}')"></label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
