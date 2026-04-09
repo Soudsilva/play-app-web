@@ -153,7 +153,7 @@
         }
         .busca-row input {
             background: rgba(255,255,255,0.09);
-            border: 1.5px solid rgba(255,255,255,0.22);
+            border: 2px solid #ffffff;
             border-radius: 22px;
             padding: 9px 14px;
             color: white;
@@ -163,7 +163,7 @@
             transition: border-color 0.2s;
             box-sizing: border-box;
         }
-        .busca-row input::placeholder { color: rgba(255,255,255,0.38); }
+        .busca-row input::placeholder { color: #dbeafe; }
         .busca-row input:focus { border-color: rgba(100,170,255,0.65); }
         .busca-numero-input { width: 90px; flex-shrink: 0; text-align: center; }
         .busca-geral-input  { flex: 1; min-width: 0; }
@@ -177,7 +177,6 @@
             margin-bottom: 10px;
         }
         .pix-card:last-child { margin-bottom: 0; }
-
         /* Linha 1: "Pix 1   Grua G" */
         .pix-linha1 {
             display: flex;
@@ -249,6 +248,10 @@
             font-size: 14px;
             color: #a8c4e8;
             margin-bottom: 8px;
+        }
+        .pix-identificacao-numero {
+            color: #dbeafe;
+            font-weight: bold;
         }
 
         /* Linha 3+4: SituaÃ§Ã£o, TÃ©cnico, Data */
@@ -509,6 +512,27 @@
             transition: filter 0.15s;
         }
         .btn-confirmar-pix:active { filter: brightness(0.85); transform: translateY(1px); }
+        .btn-adicionar-fixo {
+            position: fixed;
+            left: 50%;
+            bottom: 18px;
+            transform: translateX(-50%);
+            z-index: 60;
+            background: #1e5c30;
+            border: 2px solid #4ade80;
+            border-radius: 999px;
+            padding: 12px 16px;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: bold;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.28);
+            cursor: pointer;
+            display: none;
+        }
+        .btn-adicionar-fixo.visivel { display: block; }
+        .btn-adicionar-fixo:active {
+            transform: translateX(-50%) scale(0.97);
+        }
 
         /* â”€â”€ RETIRADA INLINE NOS CARDS â”€â”€ */
         .btn-retirar-card {
@@ -1079,7 +1103,7 @@
                        oninput="this.value=this.value.replace(/[^0-9]/g,'');filtrarCards()">
                 <input type="text" id="busca-geral"
                        class="busca-geral-input"
-                       placeholder="&#128269; Cliente / Equipamento"
+                       placeholder="Buscar número ou nome"
                        oninput="filtrarCards()">
             </div>
             <div id="lista-pix">
@@ -1102,7 +1126,7 @@
             <div class="busca-row">
                 <input type="text" id="add-busca"
                        class="busca-geral-input"
-                       placeholder="&#128269; Buscar por n&#250;mero ou nome do cliente"
+                       placeholder="Buscar número ou nome"
                        oninput="renderizarAdicionarPix()">
             </div>
             <div class="add-vazio" id="add-carregando">Carregando clientes...</div>
@@ -1132,6 +1156,8 @@
     </div>
 
 </div><!-- /app -->
+
+<button class="btn-adicionar-fixo" onclick="abrirAdicionarPixFixo()">+ Adicionei Pix</button>
 
 <div class="gestor-foto-overlay" id="gestorFotoOverlay" onclick="fecharFotoGestorRetirada(event)">
     <div class="gestor-foto-fechar" onclick="fecharFotoGestorRetirada()">Ã—</div>
@@ -1235,6 +1261,35 @@ window.toggleSecao = function(secao) {
     if (abrindoSecao === 'locais') window.renderizarLocaisPix?.();
     if (abrindoSecao === 'gestor') window.renderizarGestorPix?.();
 };
+
+window.abrirAdicionarPixFixo = function() {
+    window.toggleSecao('adicionar');
+    document.getElementById('hdr-adicionar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+function atualizarVisibilidadeBotaoAdicionarFixo() {
+    const btn = document.querySelector('.btn-adicionar-fixo');
+    const hdr = document.getElementById('hdr-adicionar');
+    if (!btn || !hdr) return;
+    const rect = hdr.getBoundingClientRect();
+    const totalmenteFora = rect.bottom <= 0 || rect.top >= window.innerHeight;
+    btn.classList.toggle('visivel', totalmenteFora);
+}
+
+if ('IntersectionObserver' in window) {
+    const hdrAdicionar = document.getElementById('hdr-adicionar');
+    const btnAdicionarFixo = document.querySelector('.btn-adicionar-fixo');
+    if (hdrAdicionar && btnAdicionarFixo) {
+        const observer = new IntersectionObserver(([entry]) => {
+            btnAdicionarFixo.classList.toggle('visivel', !entry.isIntersecting);
+        }, { threshold: 0 });
+        observer.observe(hdrAdicionar);
+    }
+} else {
+    window.addEventListener('scroll', atualizarVisibilidadeBotaoAdicionarFixo, { passive: true });
+    window.addEventListener('resize', atualizarVisibilidadeBotaoAdicionarFixo);
+    setTimeout(atualizarVisibilidadeBotaoAdicionarFixo, 0);
+}
 
 function esc(valor) {
     return String(valor ?? '')
@@ -1766,7 +1821,7 @@ window.renderizarLocaisPix = function() {
                 <span class="pix-badge ${instalado ? 'pix-badge-instalado' : 'pix-badge-retirado'}">${instalado ? '+' : '−'}</span>
                 <span class="pix-equipamento-nome">${esc(p.equipamento)}</span>
             </div>
-            <div class="pix-identificacao">${esc(p.identificacao)}</div>
+            <div class="pix-identificacao">${esc(p.identificacao).replace(/^(N\.\s*\d+\s*-\s*)/i, '<span class="pix-identificacao-numero">$1</span>')}</div>
             <div class="pix-rodape">
                 <div class="pix-rodape-linha">
                     <span class="pix-rodape-item"><span class="lbl">Situação:</span><span class="${situacaoCls}"> ${situacaoTxt}</span></span>

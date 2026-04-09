@@ -357,11 +357,38 @@
         btnRegistrar: document.getElementById('btnRegistrar')
     };
 
+    function obterChaveCacheFluxoCaixa(nomeUsuario) {
+        return `play_fluxo_caixa_cache_${String(nomeUsuario || '').trim().toLowerCase()}`;
+    }
+
+    function salvarCacheFluxoCaixa(nomeUsuario, movimentacoes) {
+        if (!nomeUsuario) return;
+        try {
+            localStorage.setItem(obterChaveCacheFluxoCaixa(nomeUsuario), JSON.stringify(movimentacoes));
+        } catch (error) {
+            console.warn('Nao foi possivel salvar o cache do fluxo de caixa:', error);
+        }
+    }
+
+    function lerCacheFluxoCaixa(nomeUsuario) {
+        if (!nomeUsuario) return [];
+        try {
+            const json = localStorage.getItem(obterChaveCacheFluxoCaixa(nomeUsuario));
+            const lista = json ? JSON.parse(json) : [];
+            return Array.isArray(lista) ? lista : [];
+        } catch (error) {
+            console.warn('Nao foi possivel ler o cache do fluxo de caixa:', error);
+            return [];
+        }
+    }
+
     await verificarAutenticacao();
     estado.nomeUsuario = String(localStorage.getItem('usuarioLogado') || '').trim();
 
     vincularEventos();
     atualizarFormulario();
+    estado.movimentacoes = lerCacheFluxoCaixa(estado.nomeUsuario);
+    render();
 
     try {
         await carregarMovimentacoes();
@@ -482,8 +509,8 @@
     }
 
 
-    function obterSaldoPorKey() {
-        const ordenadas = [...estado.movimentacoes].sort((a, b) => (a.criado_em || 0) - (b.criado_em || 0));
+    function obterSaldoPorKey(listaBase = estado.movimentacoes) {
+        const ordenadas = [...listaBase].sort((a, b) => (a.criado_em || 0) - (b.criado_em || 0));
         const saldoPorKey = {};
         let saldo = 0;
 
@@ -507,7 +534,12 @@
 
     function renderLista() {
         const listaFiltrada = [...obterMovimentacoesFiltradas()].sort((a, b) => (b.criado_em || 0) - (a.criado_em || 0));
-        const saldoPorKey = obterSaldoPorKey();
+        const saldoPorKey = obterSaldoPorKey(listaFiltrada);
+        const maisRecente = estado.movimentacoes.reduce(
+            (atual, item) => ((item?.criado_em || 0) > (atual?.criado_em || 0) ? item : atual),
+            null
+        );
+        const maisRecenteKey = maisRecente?.firebaseKey || '';
 
         els.listaMov.innerHTML = '';
 
@@ -549,8 +581,7 @@
                     : '';
                 const saldoApos = saldoPorKey[item.firebaseKey] ?? 0;
                 const apagandoItem = estado.exclusoesEmAndamento.has(item.firebaseKey);
-                const maisRecente = estado.movimentacoes.reduce((a, b) => (b.criado_em || 0) > (a.criado_em || 0) ? b : a, estado.movimentacoes[0]);
-                const podeApagar = item.firebaseKey === maisRecente?.firebaseKey &&
+                const podeApagar = item.firebaseKey === maisRecenteKey &&
                     (Date.now() - (item.criado_em || 0)) < 3600000;
 
                 const card = document.createElement('div');
@@ -598,6 +629,7 @@
 
     async function carregarMovimentacoes() {
         estado.movimentacoes = await dbListarFluxoCaixa(estado.nomeUsuario);
+        salvarCacheFluxoCaixa(estado.nomeUsuario, estado.movimentacoes);
         render();
     }
 
@@ -639,6 +671,7 @@
                 movimentoSalvo,
                 ...estado.movimentacoes.filter(item => item.firebaseKey !== movimentoSalvo.firebaseKey)
             ];
+            salvarCacheFluxoCaixa(estado.nomeUsuario, estado.movimentacoes);
             els.inputValor.value = '';
             els.inputObs.value = '';
             render();
@@ -667,6 +700,7 @@
         try {
             await dbExcluirMovimentoFluxoCaixa(estado.nomeUsuario, firebaseKey);
             estado.movimentacoes = estado.movimentacoes.filter(item => item.firebaseKey !== firebaseKey);
+            salvarCacheFluxoCaixa(estado.nomeUsuario, estado.movimentacoes);
             render();
             toast('Registro apagado!');
         } catch (error) {

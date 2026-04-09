@@ -170,6 +170,28 @@
         .dia-data { font-size:16px; color:#fff; font-weight:bold; }
         .dia-count { font-size:14px; font-weight:bold; color:#fff; }
         .loading { text-align:center; padding:40px; opacity:0.6; }
+        .loading-clientes {
+            text-align: center;
+            padding: 32px 18px;
+        }
+        .loading-engrenagem-cli {
+            display: block;
+            margin: 0 auto 14px;
+            animation: girar-cli 2s linear infinite;
+            transform-origin: center;
+        }
+        @keyframes girar-cli {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+        .loading-msg-cli {
+            font-size: 15px;
+            color: rgba(255,255,255,0.75);
+            min-height: 22px;
+            transition: opacity 0.35s ease;
+            text-align: center;
+        }
+        .loading-msg-cli.fade-out { opacity: 0; }
 
         /* Card de fichas do perÃ­odo */
         .ficha-card {
@@ -234,7 +256,14 @@
     </div>
 
     <div id="conteudo">
-        <div class="loading">Carregando...</div>
+        <div class="loading-clientes">
+            <svg class="loading-engrenagem-cli" width="44" height="44" viewBox="0 0 24 24" fill="none"
+                 stroke="rgba(255,200,50,0.9)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <div id="loadingMsgBalanco" class="loading-msg-cli">Buscando os dados do balanço...</div>
+        </div>
     </div>
 
 </div>
@@ -304,6 +333,36 @@
     let comissaoUsuario = 0; // % de comissÃ£o do colaborador logado (calculado por mÃªs)
     let colaboradorObj  = null;
     let mapaRotas = {};
+    const _loadingMsgsBalanco = [
+        'Buscando os dados do balanço...',
+        'Conferindo atendimentos...',
+        'Organizando depósitos...',
+        'Atualizando histórico...',
+        'Calculando saldos...',
+        'Quase lá...'
+    ];
+    let _loadingIdxBalanco = 0;
+    let _loadingTimerBalanco = null;
+
+    function _iniciarLoadingBalanco() {
+        const el = document.getElementById('loadingMsgBalanco');
+        if (!el || _loadingTimerBalanco) return;
+        _loadingTimerBalanco = setInterval(() => {
+            el.classList.add('fade-out');
+            setTimeout(() => {
+                _loadingIdxBalanco = (_loadingIdxBalanco + 1) % _loadingMsgsBalanco.length;
+                el.textContent = _loadingMsgsBalanco[_loadingIdxBalanco];
+                el.classList.remove('fade-out');
+            }, 350);
+        }, 2200);
+    }
+
+    function _pararLoadingBalanco() {
+        clearInterval(_loadingTimerBalanco);
+        _loadingTimerBalanco = null;
+    }
+
+    _iniciarLoadingBalanco();
 
     function dataLocalStr(date) {
         const d = (date instanceof Date) ? date : new Date(date || 0);
@@ -654,6 +713,7 @@
 
     // â”€â”€ Render principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     function renderizar() {
+        _pararLoadingBalanco();
         const filtrados  = filtrarPorDatas(todosAtendimentos, dataDe, dataAte || dataDe);
         const doMes      = filtrarMesCompleto(todosAtendimentos, dataDe);
         const conteudo   = document.getElementById('conteudo');

@@ -21,9 +21,28 @@
         .tela.ativa { display:flex; }
 
         /* CARREGANDO */
-        .spinner { width:46px; height:46px; border:4px solid rgba(255,255,255,0.1); border-top-color:#ffeb3b; border-radius:50%; animation:girar 0.8s linear infinite; margin:50px auto 14px; }
-        @keyframes girar { to { transform:rotate(360deg); } }
-        .txt-carregando { color:#e5e7eb; font-size:15px; letter-spacing:1px; }
+        .loading-clientes {
+            text-align: center;
+            padding: 32px 18px;
+        }
+        .loading-engrenagem-cli {
+            display: block;
+            margin: 0 auto 14px;
+            animation: girar-cli 2s linear infinite;
+            transform-origin: center;
+        }
+        @keyframes girar-cli {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+        .loading-msg-cli {
+            color: rgba(255,255,255,0.75);
+            font-size: 15px;
+            min-height: 22px;
+            transition: opacity 0.35s ease;
+            text-align: center;
+        }
+        .loading-msg-cli.fade-out { opacity: 0; }
 
         /* TÃƒÂTULO DE SEÃƒâ€¡ÃƒÆ’O Ã¢â‚¬â€ padrÃƒÂ£o do app */
         .secao-titulo { font-size:14px; font-weight:bold; color:#ffeb3b; text-transform:uppercase; letter-spacing:1px; margin:20px 0 10px; padding-bottom:5px; border-bottom:1px dashed rgba(255,235,59,0.3); text-align:center; display:block; width:100%; }
@@ -120,14 +139,26 @@
 
     <!-- TELA: CARREGANDO -->
     <div id="telaCarregando" class="tela ativa">
-        <div class="spinner"></div>
-        <div class="txt-carregando">Carregando...</div>
+        <div class="loading-clientes">
+            <svg class="loading-engrenagem-cli" width="44" height="44" viewBox="0 0 24 24" fill="none"
+                 stroke="rgba(255,200,50,0.9)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <div id="loadingMsgRotas" class="loading-msg-cli">Carregando rotas...</div>
+        </div>
     </div>
 
     <!-- TELA: PREPARANDO SESSÃƒÆ’O (criaÃƒÂ§ÃƒÂ£o automÃƒÂ¡tica) -->
     <div id="telaSemSessao" class="tela">
-        <div class="spinner"></div>
-        <div class="txt-carregando">Preparando as rotas...</div>
+        <div class="loading-clientes">
+            <svg class="loading-engrenagem-cli" width="44" height="44" viewBox="0 0 24 24" fill="none"
+                 stroke="rgba(255,200,50,0.9)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <div id="loadingMsgPreparandoRotas" class="loading-msg-cli">Preparando as rotas...</div>
+        </div>
     </div>
 
     <!-- TELA: SESSÃƒÆ’O ATIVA -->
@@ -198,6 +229,39 @@ let estaAnimando = false; // bloqueia renderizaÃƒÂ§ÃƒÂ£o dos detalhes du
 let timerResetSlot = null;
 let versaoClientesAtual = null;
 let versaoMediaDeVendasAtual = null;
+const _loadingMsgsRotas = [
+    'Carregando rotas...',
+    'Conferindo clientes...',
+    'Atualizando médias de vendas...',
+    'Organizando estimativas...',
+    'Separando rotas disponíveis...',
+    'Quase lá...'
+];
+let _loadingIdxRotas = 0;
+let _loadingTimerRotas = null;
+
+function _iniciarLoadingRotas() {
+    if (_loadingTimerRotas) return;
+    _loadingTimerRotas = setInterval(() => {
+        ['loadingMsgRotas', 'loadingMsgPreparandoRotas'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('fade-out');
+            setTimeout(() => {
+                el.textContent = _loadingMsgsRotas[_loadingIdxRotas];
+                el.classList.remove('fade-out');
+            }, 350);
+        });
+        _loadingIdxRotas = (_loadingIdxRotas + 1) % _loadingMsgsRotas.length;
+    }, 2200);
+}
+
+function _pararLoadingRotas() {
+    clearInterval(_loadingTimerRotas);
+    _loadingTimerRotas = null;
+}
+
+_iniciarLoadingRotas();
 
 function obterHojeLocal() {
     const hoje = new Date();
@@ -336,6 +400,7 @@ function atualizarVisibilidadeCardNumero(qtdMinhas, ultimoNumero) {
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 function mostrarTelaSessaoAtiva(sessao) {
+    _pararLoadingRotas();
     document.getElementById('telaSessaoAtiva').classList.add('ativa');
 
     const rotas = sessao.rotas || {};

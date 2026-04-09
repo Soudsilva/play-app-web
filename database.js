@@ -19,6 +19,7 @@ import {
     query,
     orderByChild,
     equalTo,
+    startAt,
     limitToLast,
     runTransaction
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -1567,6 +1568,17 @@ function _normalizarChaveUsuario(nomeUsuario) {
     return String(nomeUsuario || '').trim().replace(/[.#$/[\]]/g, '_');
 }
 
+function _normalizarListaFluxoCaixa(data) {
+    if (!data) return [];
+    return Object.keys(data).map(key => ({ firebaseKey: key, ...data[key] }));
+}
+
+function _obterInicioJanelaFluxoCaixa(mesesRecentes = 3) {
+    const totalMeses = Math.max(1, Number(mesesRecentes || 3));
+    const agora = new Date();
+    return new Date(agora.getFullYear(), agora.getMonth() - (totalMeses - 1), 1).getTime();
+}
+
 export function dbEscutarFluxoCaixa(nomeUsuario, callback) {
     const chave = _normalizarChaveUsuario(nomeUsuario);
     if (!chave) {
@@ -1575,22 +1587,31 @@ export function dbEscutarFluxoCaixa(nomeUsuario, callback) {
     }
 
     onValue(ref(db, `fluxo_caixa/${chave}/movimentacoes`), (snapshot) => {
-        const data = snapshot.val();
-        const lista = data
-            ? Object.keys(data).map(key => ({ firebaseKey: key, ...data[key] }))
-            : [];
-        callback(lista);
+        callback(_normalizarListaFluxoCaixa(snapshot.val()));
     });
 }
 
-export async function dbListarFluxoCaixa(nomeUsuario) {
+export async function dbListarFluxoCaixa(nomeUsuario, { mesesRecentes = 3 } = {}) {
     try {
         const chave = _normalizarChaveUsuario(nomeUsuario);
         if (!chave) return [];
-        const snapshot = await get(ref(db, `fluxo_caixa/${chave}/movimentacoes`));
+        let snapshot;
+
+        try {
+            const inicioJanela = _obterInicioJanelaFluxoCaixa(mesesRecentes);
+            const movimentosRef = query(
+                ref(db, `fluxo_caixa/${chave}/movimentacoes`),
+                orderByChild('criado_em'),
+                startAt(inicioJanela)
+            );
+            snapshot = await get(movimentosRef);
+        } catch (erroConsulta) {
+            console.warn("Consulta filtrada do fluxo de caixa falhou. Usando leitura completa.", erroConsulta);
+            snapshot = await get(ref(db, `fluxo_caixa/${chave}/movimentacoes`));
+        }
+
         if (!snapshot.exists()) return [];
-        const data = snapshot.val();
-        return Object.keys(data).map(key => ({ firebaseKey: key, ...data[key] }));
+        return _normalizarListaFluxoCaixa(snapshot.val());
     } catch (error) {
         console.error("ERRO AO LISTAR MOVIMENTOS DO FLUXO DE CAIXA:", error);
         throw error;
