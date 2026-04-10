@@ -852,7 +852,6 @@
             <input type="text" id="campoPesquisa" placeholder="Buscar...">
         </div>
     </div>
-
     <div id="filtroRotaBadge" class="filtro-rota-badge" style="display:none;">
         <span id="filtroRotaTexto"></span>
         <span class="filtro-rota-fechar" onclick="limparFiltroRota()">×</span>
@@ -1062,7 +1061,6 @@
         const mesmoDia = diaCadastro === obterDataLocalIso();
         return mesmoUsuario && mesmoDia;
     }
-
     function obterEquipamentosClienteParaCard(cliente) {
         if (Array.isArray(cliente?.equipDetalhes) && cliente.equipDetalhes.length > 0) {
             return cliente.equipDetalhes
@@ -1082,9 +1080,7 @@
         if (!cliente?.equip) return [];
 
         return String(cliente.equip)
-            .split(',')
-            .map(item => item.trim())
-            .filter(Boolean)
+            .split(', ')
             .map((item) => {
                 if (!item) return null;
                 let nome = item;

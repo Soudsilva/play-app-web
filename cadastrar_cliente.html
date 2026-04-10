@@ -940,9 +940,7 @@
         if (!cliente?.equip) return [];
 
         return String(cliente.equip)
-            .split(",")
-            .map(item => item.trim())
-            .filter(Boolean)
+            .split(", ")
             .map((item, index) => {
                 let nome = item;
                 let qtd = "1";
