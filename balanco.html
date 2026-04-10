@@ -312,11 +312,13 @@
         dbListarColaboradores,
         dbListarClientes,
         dbListarDepositos,
+        dbListarEstoque,
         dbListarHistorico,
         dbLerPosseAcumulada,
         dbLerPixEmPosse,
         dbEscutarAtendimentosDoUsuario,
         dbEscutarDepositos,
+        dbEscutarEstoque,
         dbEscutarHistoricoDoUsuario,
         dbEscutarPosseAcumulada,
         dbEscutarPixEmPosse
@@ -328,6 +330,7 @@
     let todosAtendimentos = [];
     let todosDepositos = [];
     let historicoEstoque = [];
+    let estoqueAtual = [];
     let pixEmPosse = [];
     let datasComAtendimento = new Set();
     let comissaoUsuario = 0; // % de comissÃ£o do colaborador logado (calculado por mÃªs)
@@ -563,12 +566,41 @@
         else mapa[nomeItem] = proximoTotal;
     }
 
-    function somarProdutosEmPosse(atendimentos, movimentosEstoque, nomeUsuario, acumulado = {}) {
+    function criarMapaCategoriasEstoque(listaEstoque) {
+        const porId = {};
+        const porNome = {};
+
+        (listaEstoque || []).forEach(item => {
+            const categoria = normalizarTexto(item?.categoria);
+            if (!categoria) return;
+            if (item?.firebaseUrl) porId[item.firebaseUrl] = categoria;
+
+            const nomeNorm = normalizarTexto(item?.nome);
+            if (nomeNorm && !porNome[nomeNorm]) porNome[nomeNorm] = categoria;
+        });
+
+        return { porId, porNome };
+    }
+
+    function obterCategoriaMovimentoEstoque(mov, mapaCategoriasEstoque) {
+        const categoriaDireta = normalizarTexto(mov?.itemCategoria);
+        if (categoriaDireta) return categoriaDireta;
+
+        // Fallback para movimentos antigos, salvos antes de existir itemCategoria no histórico.
+        const categoriaPorId = mapaCategoriasEstoque?.porId?.[mov?.itemUrl];
+        if (categoriaPorId) return categoriaPorId;
+
+        return mapaCategoriasEstoque?.porNome?.[normalizarTexto(mov?.itemNome)] || '';
+    }
+
+    function somarProdutosEmPosse(atendimentos, movimentosEstoque, nomeUsuario, mapaCategoriasEstoque, acumulado = {}) {
         const mapa = { ...acumulado };
         const usuarioNorm = normalizarTexto(nomeUsuario);
 
         movimentosEstoque.forEach(mov => {
             if (normalizarTexto(mov?.responsavel) !== usuarioNorm) return;
+            const categoriaMov = obterCategoriaMovimentoEstoque(mov, mapaCategoriasEstoque);
+            if (categoriaMov === 'maquina') return;
             const qtd = Number(mov?.qtd || 0);
             if (!qtd) return;
 
@@ -640,8 +672,24 @@
      *                               atendimentos JÃ EXCLUÃDOS. PadrÃ£o: {} (vazio).
      * Resultado: lista ordenada por contagem decrescente [["nome", contagem], ...]
      */
-    function somarMaquinas(atendimentos, acumulado = {}) {
+    function somarMaquinas(atendimentos, movimentosEstoque = [], nomeUsuario = '', mapaCategoriasEstoque = {}, acumulado = {}) {
         const mapa = { ...acumulado };
+        const usuarioNorm = normalizarTexto(nomeUsuario);
+
+        movimentosEstoque.forEach(mov => {
+            if (normalizarTexto(mov?.responsavel) !== usuarioNorm) return;
+            if (obterCategoriaMovimentoEstoque(mov, mapaCategoriasEstoque) !== 'maquina') return;
+
+            const qtd = Number(mov?.qtd || 0);
+            if (!qtd) return;
+
+            if (mov.tipo === 'saida') {
+                aplicarDeltaMapa(mapa, mov.itemNome, qtd);
+            } else if (mov.tipo === 'entrada') {
+                aplicarDeltaMapa(mapa, mov.itemNome, -qtd);
+            }
+        });
+
         atendimentos.forEach(a => {
             if (a?.origemRegistro === 'manutencao') {
                 (a?.manutencao?.equipamentosRetiradosDetalhes || []).forEach(item => {
@@ -738,6 +786,7 @@
 
         const fin        = somarFinanceiro(doMes);
         const finPeriodo = somarFinanceiro(filtrados);
+        const mapaCategoriasEstoque = criarMapaCategoriasEstoque(estoqueAtual);
 
         // Posse total = atendimentos ativos + acumulado dos excluÃ­dos (lido na inicializaÃ§Ã£o)
         // window._posseAcumuladaProdutos e window._posseAcumuladaMaquinas sÃ£o populados
@@ -746,9 +795,16 @@
             todosAtendimentos,
             historicoEstoque,
             usuarioLogado,
+            mapaCategoriasEstoque,
             window._posseAcumuladaProdutos || {}
         );
-        const maquinasPosse = somarMaquinas(todosAtendimentos, window._posseAcumuladaMaquinas || {});
+        const maquinasPosse = somarMaquinas(
+            todosAtendimentos,
+            historicoEstoque,
+            usuarioLogado,
+            mapaCategoriasEstoque,
+            window._posseAcumuladaMaquinas || {}
+        );
         const pixPosse      = somarPixEmPosse(pixEmPosse || [], todosAtendimentos);
         const maxProd       = Math.max(1, ...produtosPosse.map(([, qtd]) => Math.abs(qtd)));   // usado para calcular a barra de progresso
         const maxMaqPosse   = Math.max(1, ...maquinasPosse.map(([, qtd]) => Math.abs(qtd)));
@@ -1037,17 +1093,19 @@
     // Todas as chamadas ao Firebase rodam em paralelo para carregar mais rÃ¡pido.
     // posseAcumulada: dados de produtos/mÃ¡quinas de atendimentos jÃ¡ excluÃ­dos.
     // Sem isso, ao excluir atendimentos antigos o balanÃ§o de material ficaria errado.
-    const [todos, posseAcumulada, colaboradores, clientes, depositos, historico, pixPosseInicial] = await Promise.all([
+    const [todos, posseAcumulada, colaboradores, clientes, depositos, historico, pixPosseInicial, estoque] = await Promise.all([
         dbListarAtendimentos(),
         dbLerPosseAcumulada(usuarioLogado),   // â† acumulado dos atendimentos excluÃ­dos
         dbListarColaboradores(),
         dbListarClientes(),
         dbListarDepositos(usuarioLogado),
         dbListarHistorico(),
-        dbLerPixEmPosse(usuarioLogado)
+        dbLerPixEmPosse(usuarioLogado),
+        dbListarEstoque()
     ]);
     todosDepositos = depositos;
     historicoEstoque = historico;
+    estoqueAtual = estoque;
     pixEmPosse = pixPosseInicial;
     colaboradorObj  = colaboradores.find(c => String(c?.nome || '').trim() === usuarioLogado) || null;
 
@@ -1092,6 +1150,11 @@
 
     dbEscutarHistoricoDoUsuario(usuarioLogado, (lista) => {
         historicoEstoque = lista;
+        renderizar();
+    });
+
+    dbEscutarEstoque((lista) => {
+        estoqueAtual = lista;
         renderizar();
     });
 

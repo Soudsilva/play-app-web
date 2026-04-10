@@ -460,6 +460,22 @@ export function dbEscutarEstoque(callback) {
     });
 }
 
+// [BLOCO: ESTOQUE - LISTAR ITENS]
+// Leitura pontual usada em telas que precisam cruzar categoria sem abrir um listener adicional.
+export async function dbListarEstoque() {
+    try {
+        const snapshot = await get(ref(db, 'estoque'));
+        if (!snapshot.exists()) return [];
+        const dados = snapshot.val();
+        const lista = Object.keys(dados).map(key => ({ firebaseUrl: key, ...dados[key] }));
+        lista.sort((a, b) => (a.nome || "").toUpperCase().localeCompare((b.nome || "").toUpperCase()));
+        return lista;
+    } catch (error) {
+        console.error("Erro ao listar estoque:", error);
+        return [];
+    }
+}
+
 // [BLOCO: ESTOQUE - EXCLUIR ITEM]
 export async function dbExcluirItemEstoque(id) {
     try {

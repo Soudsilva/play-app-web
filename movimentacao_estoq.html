@@ -780,6 +780,8 @@
             tipo: modoAtual,
             itemUrl: idItem,
             itemNome: itemOriginal.nome,
+            // Guarda a categoria no histórico para o balanço saber se isso entra em produtos ou máquinas em posse.
+            itemCategoria: itemOriginal.categoria || '',
             qtd: qtdMovimento,
             responsavel: responsavel,
             registradoPor: String(localStorage.getItem('usuarioLogado') || '').trim()
@@ -796,7 +798,11 @@
                     atendente: responsavel,
                     autorizadoPor: String(localStorage.getItem('usuarioLogado') || '').trim(),
                     origemRegistro: 'retirada_estoque',
+                    // Mantemos a categoria na raiz para telas como "Meus Envios" conseguirem rotular a retirada corretamente.
+                    itemCategoria: itemOriginal.categoria || '',
                     cliente: { nome: 'Retirada de Estoque', numero: '' },
+                    // Compatibilidade: várias telas antigas ainda leem retirada de estoque a partir de "produtos".
+                    // Quando a estrutura for reorganizada no futuro, este ponto é o lugar certo para separar por tipo.
                     produtos: [{ nome: itemOriginal.nome, quantidade: qtdMovimento }]
                 };
                 await dbSalvarAtendimento(registroEnvio);

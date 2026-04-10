@@ -417,6 +417,10 @@
         return envio?.origemRegistro === 'retirada_estoque';
     }
 
+    function obterTituloItensRetiradaEstoque(envio) {
+        return normalizarTexto(envio?.itemCategoria) === 'maquina' ? 'Máquinas' : 'Produtos';
+    }
+
     function temFinanceiroNoEnvio(envio) {
         const fin = envio?.financeiro || {};
         return (
@@ -693,7 +697,10 @@
             // --- 1. PRODUTOS ---
             let htmlProdutos = '';
             if (envio.produtos && envio.produtos.length > 0) {
-                htmlProdutos += `<div class="secao-titulo">Produtos</div>`;
+                const tituloItens = ehRetiradaEstoque(envio)
+                    ? obterTituloItensRetiradaEstoque(envio)
+                    : 'Produtos';
+                htmlProdutos += `<div class="secao-titulo">${tituloItens}</div>`;
                 envio.produtos.forEach(p => {
                     if (ehRetiradaEstoque(envio)) {
                         htmlProdutos += `<div class="info-linha"><span class="item-estoque-nome">${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;

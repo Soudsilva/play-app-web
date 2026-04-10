@@ -1154,6 +1154,47 @@
         }).join('')}</span>`;
     }
 
+    function normalizarTextoBusca(valor) {
+        return String(valor || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    function normalizarNumeroBusca(valor) {
+        return String(valor || "").replace(/\D+/g, "");
+    }
+
+    function quebrarTermosBusca(valor) {
+        return normalizarTextoBusca(valor)
+            .split(/\s+/)
+            .map(termo => termo.trim())
+            .filter(Boolean);
+    }
+
+    function cardCombinaComTermos(card, termos) {
+        if (!termos.length) return true;
+        const indice = card.dataset.indiceBusca || '';
+        return termos.every(termo => indice.includes(termo));
+    }
+
+    function montarIndiceBuscaCliente(cliente) {
+        return normalizarTextoBusca([
+            cliente.numero,
+            cliente.nome,
+            cliente.cidade,
+            cliente.rota,
+            cliente.comissao,
+            cliente.aberto,
+            cliente.endereco,
+            cliente.obs,
+            cliente.equip
+        ].filter(Boolean).join(' '));
+    }
+
     function renderizarLista(clientes) {
         _pararLoadingCli();
         const listaHTML = document.getElementById("listaClientes");
@@ -1224,6 +1265,8 @@
             if (clienteEncerradoPendente) classesCard.push('cliente-encerrado-pendente');
             card.className = classesCard.join(' ');
             card.dataset.rota = c.rota || '';
+            card.dataset.numero = normalizarNumeroBusca(c.numero);
+            card.dataset.indiceBusca = montarIndiceBuscaCliente(c);
             card.innerHTML = `
                 <div class="cliente-accent"></div>
                 <div class="cliente-corpo">
@@ -1267,7 +1310,7 @@
         });
         listaHTML.appendChild(_fragment);
 
-        if (rotaFiltroAtivo) filtrarPorRota(rotaFiltroAtivo);
+        aplicarFiltrosVisuais();
     }
 
     dbEscutarColaboradores((colaboradores) => {
@@ -1352,29 +1395,97 @@
     }
 
     function aplicarBusca(termo) {
-        const normalizado = termo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-        const cards = document.querySelectorAll('.cliente');
-        const matchRota = normalizado.match(/^(?:rota|r)\s*:?\s*(\d{1,3})$/) || normalizado.match(/^rota(\d{1,3})$/);
-        const rotaBuscada = matchRota ? normalizarRota(matchRota[1]) : null;
-        cards.forEach(card => {
-            const textoCard = card.innerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-            if (rotaBuscada) {
-                const rotaCard = normalizarRota(card.dataset.rota);
-                card.style.display = rotaCard === rotaBuscada ? "block" : "none";
-                return;
-            }
-            card.style.display = textoCard.includes(normalizado) ? "block" : "none";
-        });
+        termoPesquisaAtivo = String(termo || '');
+        document.getElementById('campoPesquisa').value = termoPesquisaAtivo;
+        document.getElementById('campoPesquisaFlutuante').value = termoPesquisaAtivo;
+        aplicarFiltrosVisuais();
     }
 
-    let rotaFiltroAtivo = null;
+    var rotaFiltroAtivo = null;
+    var termoPesquisaAtivo = '';
 
     function normalizarRota(v) {
         return String(v || '').replace(/^(\d)$/, '0$1').trim();
     }
 
+    function extrairRotaDaBusca(valor) {
+        const bruto = String(valor || '').trim().toLowerCase();
+        const normalizado = normalizarTextoBusca(valor);
+        const matchBruto = bruto.match(/^(?:r|ro|rot|rota)\.?\s*:?\s*(\d{1,3})$/i);
+        if (matchBruto) return normalizarRota(matchBruto[1]);
+
+        const matchNormalizado = normalizado.match(/^(?:r|ro|rot|rota)\s*(\d{1,3})$/);
+        if (matchNormalizado) return normalizarRota(matchNormalizado[1]);
+
+        return null;
+    }
+
+    function buscaRotaPorExtenso(valor) {
+        const bruto = String(valor || '').trim().toLowerCase();
+        const normalizado = normalizarTextoBusca(valor);
+        return /^rota\.?\s*:?\s*\d{1,3}$/i.test(bruto) || /^rota\s*\d{1,3}$/.test(normalizado);
+    }
+
+    function aplicarFiltrosVisuais() {
+        const cards = Array.from(document.querySelectorAll('.cliente'));
+        const termoPuro = String(termoPesquisaAtivo || '').trim();
+        const termoNormalizado = normalizarTextoBusca(termoPuro);
+        const termoNumero = normalizarNumeroBusca(termoPuro);
+        const termos = quebrarTermosBusca(termoPuro);
+        const rotaBuscada = extrairRotaDaBusca(termoPuro);
+        const rotaEstrita = rotaBuscada && buscaRotaPorExtenso(termoPuro);
+        const rotaFixa = rotaFiltroAtivo ? normalizarRota(rotaFiltroAtivo) : null;
+
+        const cardsBase = cards.filter(card => {
+            if (!rotaFixa) return true;
+            return normalizarRota(card.dataset.rota) === rotaFixa;
+        });
+        const cardsBaseSet = new Set(cardsBase);
+
+        let numerosPrioritarios = new Set();
+        if (termoNumero && termoNumero === termoPuro) {
+            const cardsComNumero = cardsBase.filter(card => (card.dataset.numero || '').includes(termoNumero));
+            if (cardsComNumero.length > 0) {
+                numerosPrioritarios = new Set(cardsComNumero);
+            }
+        }
+
+        let totalVisiveis = 0;
+        cards.forEach(card => {
+            const dentroDaBase = cardsBaseSet.has(card);
+            let visivel = dentroDaBase;
+
+            if (visivel && termoNormalizado) {
+                if (numerosPrioritarios.size > 0) {
+                    visivel = numerosPrioritarios.has(card);
+                } else if (rotaEstrita) {
+                    visivel = normalizarRota(card.dataset.rota) === rotaBuscada;
+                } else {
+                    const combinaTexto = cardCombinaComTermos(card, termos);
+                    const combinaRotaBuscada = rotaBuscada && normalizarRota(card.dataset.rota) === rotaBuscada;
+                    visivel = Boolean(combinaTexto || combinaRotaBuscada);
+                }
+            }
+
+            card.style.display = visivel ? 'block' : 'none';
+            if (visivel) totalVisiveis++;
+        });
+
+        const badge = document.getElementById('filtroRotaBadge');
+        if (rotaFiltroAtivo) {
+            const rotaNormalizada = normalizarRota(rotaFiltroAtivo);
+            document.getElementById('filtroRotaTexto').textContent = `Rota: ${rotaNormalizada} â€” ${totalVisiveis} cliente${totalVisiveis !== 1 ? 's' : ''}`;
+            document.getElementById('filtroRotaTexto').textContent = `Rota: ${rotaNormalizada} - ${totalVisiveis} cliente${totalVisiveis !== 1 ? 's' : ''}`;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
     function filtrarPorRota(numero) {
         rotaFiltroAtivo = numero;
+        aplicarFiltrosVisuais();
+        return;
         const normalizado = normalizarRota(numero);
         let total = 0;
         document.querySelectorAll('.cliente').forEach(card => {
@@ -1389,6 +1500,8 @@
 
     window.limparFiltroRota = function() {
         rotaFiltroAtivo = null;
+        aplicarFiltrosVisuais();
+        return;
         document.getElementById('filtroRotaBadge').style.display = 'none';
         const termo = document.getElementById('campoPesquisa').value;
         if (termo) {
@@ -1403,12 +1516,10 @@
 
     document.getElementById('campoPesquisa').oninput = (e) => {
         aplicarBusca(e.target.value);
-        document.getElementById('campoPesquisaFlutuante').value = e.target.value;
     };
 
     document.getElementById('campoPesquisaFlutuante').oninput = (e) => {
         aplicarBusca(e.target.value);
-        document.getElementById('campoPesquisa').value = e.target.value;
     };
 
     const barraBusca = document.getElementById('searchFlutuante');
