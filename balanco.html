@@ -559,8 +559,8 @@
         const nomeItem = String(nome || '').trim();
         if (!nomeItem || !Number.isFinite(delta) || delta === 0) return;
         const proximoTotal = Number(mapa[nomeItem] || 0) + delta;
-        if (proximoTotal > 0) mapa[nomeItem] = proximoTotal;
-        else delete mapa[nomeItem];
+        if (proximoTotal === 0) delete mapa[nomeItem];
+        else mapa[nomeItem] = proximoTotal;
     }
 
     function somarProdutosEmPosse(atendimentos, movimentosEstoque, nomeUsuario, acumulado = {}) {
@@ -586,7 +586,7 @@
             });
         });
 
-        return Object.entries(mapa).sort((a, b) => b[1] - a[1]);
+        return Object.entries(mapa).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0], 'pt-BR'));
     }
 
     function obterTotalPix(financeiro) {
@@ -641,34 +641,52 @@
      * Resultado: lista ordenada por contagem decrescente [["nome", contagem], ...]
      */
     function somarMaquinas(atendimentos, acumulado = {}) {
-        // ComeÃ§a com os dados acumulados dos atendimentos excluÃ­dos
         const mapa = { ...acumulado };
-        // Soma os atendimentos ativos por cima (mÃ¡quinas ficam em a.fotos.maquinas)
         atendimentos.forEach(a => {
+            if (a?.origemRegistro === 'manutencao') {
+                (a?.manutencao?.equipamentosRetiradosDetalhes || []).forEach(item => {
+                    aplicarDeltaMapa(mapa, item?.nome, Number(item?.qtd || 1));
+                });
+                (a?.manutencao?.equipamentosAdicionados || []).forEach(item => {
+                    aplicarDeltaMapa(mapa, item?.nome, -Number(item?.qtd || 1));
+                });
+                return;
+            }
             (a.fotos?.maquinas || []).forEach(m => {
-                if (!m.nome) return;
-                mapa[m.nome] = (mapa[m.nome] || 0) + 1;
+                aplicarDeltaMapa(mapa, m?.nome, -1);
             });
         });
-        return Object.entries(mapa).sort((a, b) => b[1] - a[1]);
+        return Object.entries(mapa).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0], 'pt-BR'));
     }
 
     function ordenarPixEmPosse(lista) {
-        return [...lista]
-            .map(item => String(item || '').trim())
-            .filter(Boolean)
-            .sort((a, b) => {
-                const na = /^\d+$/.test(a) ? Number(a) : Number.MAX_SAFE_INTEGER;
-                const nb = /^\d+$/.test(b) ? Number(b) : Number.MAX_SAFE_INTEGER;
-                if (na !== nb) return na - nb;
-                return a.localeCompare(b, 'pt-BR');
+        return [...lista].sort((a, b) => {
+            const na = /^\d+$/.test(a[0]) ? Number(a[0]) : Number.MAX_SAFE_INTEGER;
+            const nb = /^\d+$/.test(b[0]) ? Number(b[0]) : Number.MAX_SAFE_INTEGER;
+            if (na !== nb) return na - nb;
+            return a[0].localeCompare(b[0], 'pt-BR');
+        });
+    }
+
+    function somarPixEmPosse(registrosPix, atendimentos) {
+        const mapa = {};
+
+        (registrosPix || []).forEach(item => {
+            aplicarDeltaMapa(mapa, String(item?.numero_pix || '').trim(), 1);
+        });
+
+        atendimentos.forEach(a => {
+            (a?.manutencao?.equipamentosAdicionados || []).forEach(item => {
+                aplicarDeltaMapa(mapa, String(item?.pix || '').trim(), -1);
             });
+        });
+
+        return ordenarPixEmPosse(Object.entries(mapa));
     }
 
     function formatarListaPixEmPosse(lista) {
-        const pixOrdenados = ordenarPixEmPosse(lista);
-        if (pixOrdenados.length === 0) return '';
-        return pixOrdenados.join(', ');
+        if (lista.length === 0) return '';
+        return lista.map(([numero, qtd]) => qtd === 1 ? numero : `${numero} (${qtd})`).join(', ');
     }
 
     function atendimentosPorDia(atendimentos) {
@@ -731,9 +749,9 @@
             window._posseAcumuladaProdutos || {}
         );
         const maquinasPosse = somarMaquinas(todosAtendimentos, window._posseAcumuladaMaquinas || {});
-        const pixPosse      = ordenarPixEmPosse((pixEmPosse || []).map(item => item?.numero_pix));
-        const maxProd       = produtosPosse[0]?.[1] || 1;   // usado para calcular a barra de progresso
-        const maxMaqPosse   = maquinasPosse[0]?.[1] || 1;
+        const pixPosse      = somarPixEmPosse(pixEmPosse || [], todosAtendimentos);
+        const maxProd       = Math.max(1, ...produtosPosse.map(([, qtd]) => Math.abs(qtd)));   // usado para calcular a barra de progresso
+        const maxMaqPosse   = Math.max(1, ...maquinasPosse.map(([, qtd]) => Math.abs(qtd)));
 
         // MÃ¡quinas apenas do perÃ­odo selecionado (para a seÃ§Ã£o "MÃ¡quinas Atendidas no PerÃ­odo")
         const maquinas   = somarMaquinas(filtrados);
@@ -763,10 +781,10 @@
                             <div class="item-nome">${nome}</div>
                             <div class="item-barra-wrap">
                                 <div class="item-barra-bg">
-                                    <div class="item-barra" style="width:${Math.round((qtd / maxProd) * 100)}%"></div>
+                                    <div class="item-barra" style="width:${Math.round((Math.abs(qtd) / maxProd) * 100)}%;background:${qtd < 0 ? '#ef5350' : ''}"></div>
                                 </div>
                             </div>
-                            <div class="item-badge${i === 0 ? ' destaque' : ''}">${qtd}</div>
+                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.45);color:#ef9a9a;' : ''}">${qtd}</div>
                         </div>`).join('')}
                 </div>
             </div>` : ''}
@@ -791,10 +809,10 @@
                             <div class="item-nome">${nome}</div>
                             <div class="item-barra-wrap">
                                 <div class="item-barra-bg">
-                                    <div class="item-barra" style="width:${Math.round((qtd / maxMaqPosse) * 100)}%;background:${i === 0 ? '#4caf50' : 'rgba(76,175,80,0.6)'}"></div>
+                                    <div class="item-barra" style="width:${Math.round((Math.abs(qtd) / maxMaqPosse) * 100)}%;background:${qtd < 0 ? '#ef5350' : (i === 0 ? '#4caf50' : 'rgba(76,175,80,0.6)')}"></div>
                                 </div>
                             </div>
-                            <div class="item-badge${i === 0 ? ' destaque' : ''}" style="${i === 0 ? 'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;' : ''}">${qtd}</div>
+                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.45);color:#ef9a9a;' : (i === 0 ? 'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;' : '')}">${qtd}</div>
                         </div>`).join('')}
                 </div>
             </div>` : ''}

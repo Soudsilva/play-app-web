@@ -1802,15 +1802,31 @@ export async function dbAcumularPosse(nomeUsuario, atendimento) {
         (atendimento.produtos || []).forEach(p => {
             if (!p.nome) return;
             const proximoTotal = (atual.produtos[p.nome] || 0) + (Number(p.quantidade || 0) * deltaProdutos);
-            if (proximoTotal > 0) atual.produtos[p.nome] = proximoTotal;
-            else delete atual.produtos[p.nome];
+            if (proximoTotal === 0) delete atual.produtos[p.nome];
+            else atual.produtos[p.nome] = proximoTotal;
         });
 
-        // Acumula máquinas do atendimento (salvas dentro de fotos.maquinas)
-        (atendimento.fotos?.maquinas || []).forEach(m => {
-            if (!m.nome) return;
-            atual.maquinas[m.nome] = (atual.maquinas[m.nome] || 0) + 1;
-        });
+        if (atendimento?.origemRegistro === 'manutencao') {
+            (atendimento?.manutencao?.equipamentosRetiradosDetalhes || []).forEach(item => {
+                if (!item?.nome) return;
+                const proximoTotal = (atual.maquinas[item.nome] || 0) + Number(item?.qtd || 1);
+                if (proximoTotal === 0) delete atual.maquinas[item.nome];
+                else atual.maquinas[item.nome] = proximoTotal;
+            });
+            (atendimento?.manutencao?.equipamentosAdicionados || []).forEach(item => {
+                if (!item?.nome) return;
+                const proximoTotal = (atual.maquinas[item.nome] || 0) - Number(item?.qtd || 1);
+                if (proximoTotal === 0) delete atual.maquinas[item.nome];
+                else atual.maquinas[item.nome] = proximoTotal;
+            });
+        } else {
+            (atendimento.fotos?.maquinas || []).forEach(m => {
+                if (!m.nome) return;
+                const proximoTotal = (atual.maquinas[m.nome] || 0) - 1;
+                if (proximoTotal === 0) delete atual.maquinas[m.nome];
+                else atual.maquinas[m.nome] = proximoTotal;
+            });
+        }
 
         await set(posseRef, atual);
     } catch (error) {
