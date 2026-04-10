@@ -423,9 +423,11 @@
     import { enfileirarAtendimento } from './offline-sync.js';
 
     let listaClientes = [];
+    let listaClientesBruta = [];
     let listaProdutos = [];
     let listaAtendimentos = [];
-    let clientesPermitidosSet = null; // null = carregando | Set = pronto (vazio = sem restrição)
+    let clientesPermitidosSet = null; // null = carregando | Set = pronto (vazio = nenhum cliente permitido)
+    let numeroClientePendente = '';
     let rascunhoRestaurado = false;
     let currentFileInputId = null;
 
@@ -455,25 +457,42 @@
     // --- CLIENTES PERMITIDOS (rotas selecionadas pelo usuário na sessão) ---
     async function carregarClientesPermitidos() {
         const usuario = String(localStorage.getItem('usuarioLogado') || '').trim();
-        if (!usuario) { clientesPermitidosSet = new Set(); return; }
+        if (!usuario) {
+            clientesPermitidosSet = new Set();
+            aplicarFiltroClientes(listaClientesBruta);
+            return;
+        }
 
         const CACHE_KEY = 'atend_permitidos_' + usuario;
 
         // Aplica cache offline imediatamente enquanto carrega
         try {
             const cached = localStorage.getItem(CACHE_KEY);
-            if (cached) clientesPermitidosSet = new Set(JSON.parse(cached));
+            if (cached) {
+                clientesPermitidosSet = new Set(JSON.parse(cached));
+                aplicarFiltroClientes(listaClientesBruta);
+            }
         } catch {}
 
         try {
             const sessao = await dbObterSessaoRotas();
-            if (!sessao?.rotas) { clientesPermitidosSet = new Set(); return; }
+            if (!sessao?.rotas) {
+                clientesPermitidosSet = new Set();
+                localStorage.setItem(CACHE_KEY, JSON.stringify([]));
+                aplicarFiltroClientes(listaClientesBruta);
+                return;
+            }
 
             const rotasDoUsuario = Object.entries(sessao.rotas)
                 .filter(([_, r]) => r.selecionada_por === usuario)
                 .map(([num]) => num);
 
-            if (rotasDoUsuario.length === 0) { clientesPermitidosSet = new Set(); return; }
+            if (rotasDoUsuario.length === 0) {
+                clientesPermitidosSet = new Set();
+                localStorage.setItem(CACHE_KEY, JSON.stringify([]));
+                aplicarFiltroClientes(listaClientesBruta);
+                return;
+            }
 
             const cpr = sessao.clientes_por_rota || {};
             const permitidos = new Set();
@@ -484,10 +503,12 @@
             clientesPermitidosSet = permitidos;
             localStorage.setItem(CACHE_KEY, JSON.stringify([...permitidos]));
 
-            // Re-aplica o filtro com os dados frescos
-            dbEscutarClientes((lista) => { aplicarFiltroClientes(lista); });
+            aplicarFiltroClientes(listaClientesBruta);
         } catch {
-            if (!clientesPermitidosSet) clientesPermitidosSet = new Set();
+            if (!clientesPermitidosSet) {
+                clientesPermitidosSet = new Set();
+            }
+            aplicarFiltroClientes(listaClientesBruta);
         }
     }
 
@@ -514,6 +535,25 @@
         } catch { return null; }
     }
 
+    function tentarAplicarClientePendente() {
+        if (!numeroClientePendente) return;
+
+        const numeroNormalizado = normalizarNumeroClienteBusca(numeroClientePendente);
+        if (!numeroNormalizado) {
+            numeroClientePendente = '';
+            return;
+        }
+
+        const input = document.getElementById('inputBuscaCliente');
+        if (input) input.value = numeroClientePendente;
+
+        if (clientesPermitidosSet === null) return;
+        if (listaClientesBruta.length === 0) return;
+
+        buscarCliente();
+        numeroClientePendente = '';
+    }
+
     function aplicarBannerRotaFiltro() {
         const rotaNum = sessionStorage.getItem('rota_filtro_numero_rota');
         const banner  = document.getElementById('bannerRotaFiltro');
@@ -530,7 +570,7 @@
         sessionStorage.removeItem('rota_filtro_numeros');
         sessionStorage.removeItem('rota_filtro_numero_rota');
         sessionStorage.removeItem('cliente_pre_selecionado');
-        dbEscutarClientes((lista) => { listaClientes = lista; });
+        aplicarFiltroClientes(listaClientesBruta);
         aplicarBannerRotaFiltro();
     };
 
@@ -722,21 +762,28 @@
 
     // 1. Carrega Clientes
     dbEscutarClientes((lista) => {
+        listaClientesBruta = lista || [];
         aplicarFiltroClientes(lista);
     });
 
     function aplicarFiltroClientes(lista) {
-        // Filtro permanente: apenas clientes das rotas do usuário
-        let filtrada = lista;
-        if (clientesPermitidosSet && clientesPermitidosSet.size > 0) {
-            filtrada = lista.filter(c => clientesPermitidosSet.has(c.firebaseUrl));
+        const base = Array.isArray(lista) ? lista : listaClientesBruta;
+
+        if (clientesPermitidosSet === null) {
+            listaClientes = [];
+            return;
         }
+
+        // Filtro permanente: apenas clientes das rotas do usuário
+        let filtrada = base.filter(c => clientesPermitidosSet.has(c.firebaseUrl));
+
         // Sub-filtro: se veio do checkin, restringe à rota específica
         const numerosRota = obterNumerosRotaFiltro();
         if (numerosRota) {
             filtrada = filtrada.filter(c => numerosRota.has(normalizarNumeroClienteBusca(c.numero)));
         }
         listaClientes = filtrada;
+        tentarAplicarClientePendente();
     }
 
     dbEscutarAtendimentos((lista) => {
@@ -941,7 +988,8 @@
             salvarRascunho();
         } else {
             divResultado.className = 'card-cliente erro'; // Vermelho
-            const existeForaDaRota = clientesPermitidosSet && clientesPermitidosSet.size > 0;
+            const existeNoCadastro = listaClientesBruta.some(c => normalizarNumeroClienteBusca(c.numero) === termoNormalizado);
+            const existeForaDaRota = clientesPermitidosSet !== null && existeNoCadastro;
             divResultado.innerHTML = existeForaDaRota
                 ? `🚫 Cliente nº ${termo} não pertence à sua rota selecionada.`
                 : `❌ Cliente nº ${termo} não encontrado.`;
@@ -1701,6 +1749,17 @@
             }
         }
     });
+
+    // Pré-preenche o número do cliente se vier via URL (?numero=X)
+    const _paramNumero = new URLSearchParams(window.location.search).get('numero');
+    if (_paramNumero) {
+        sessionStorage.removeItem('rota_filtro_numeros');
+        sessionStorage.removeItem('rota_filtro_numero_rota');
+        sessionStorage.removeItem('cliente_pre_selecionado');
+        aplicarBannerRotaFiltro();
+        numeroClientePendente = _paramNumero.replace(/[^0-9]/g, '');
+        tentarAplicarClientePendente();
+    }
 
 </script>
 

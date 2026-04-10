@@ -75,18 +75,43 @@
         /* CARD DE ROTA SELECIONADA */
         .card-rota { position:relative; overflow:hidden; padding:16px; border:2px solid #ffffff; border-radius:14px; margin-bottom:10px; background:linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)); width:100%; box-shadow:0 16px 30px rgba(0,0,0,0.25); }
         .card-rota::before { content:""; position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg, #ffeb3b, #ffc107, #ffeb3b); }
-        .card-rota-numero { display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+        .card-rota-numero { display:flex; align-items:center; justify-content:center; position:relative; margin-bottom:12px; }
+        .btn-mapa-rota { position:absolute; right:0; padding:7px 10px; border-radius:10px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); cursor:pointer; display:flex; align-items:center; }
+        .btn-mapa-rota:active { background:rgba(255,255,255,0.14); }
         .card-rota-numero-badge { display:inline-flex; align-items:center; gap:10px; padding:8px 14px; border-radius:999px; background:rgba(255,235,59,0.12); border:1px solid rgba(255,235,59,0.6); box-shadow:0 14px 22px rgba(255,235,59,0.12); }
-        .card-rota-numero-badge-label { font-size:12px; font-weight:bold; letter-spacing:1.6px; text-transform:uppercase; color:#ffffff; }
+        .card-rota-numero-badge-label { font-size:12px; font-weight:bold; letter-spacing:1.6px; text-transform:uppercase; color:#ffffff; user-select:none; -webkit-user-select:none; }
         .card-rota-numero-badge-num { font-size:26px; font-weight:900; color:#ffeb3b; line-height:1; font-family:'Courier New', monospace; text-shadow:0 0 14px rgba(255,235,59,0.35); }
-        .card-rota-numero-sub { font-size:15px; font-weight:bold; color:#ffffff; }
         .card-rota-dias { display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:10px; }
-        .card-rota-dias-label { font-size:12px; color:#ffffff; text-transform:uppercase; letter-spacing:0.5px; width:100%; text-align:center; }
+        .card-rota-dias-label { font-size:12px; color:#ffffff; text-transform:uppercase; letter-spacing:0.5px; width:100%; text-align:center; user-select:none; -webkit-user-select:none; }
         .card-rota-dias-val { display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; width:100%; }
         .dia-badge { font-size:12px; font-weight:bold; border-radius:999px; padding:6px 0; text-align:center; border:1px solid transparent; white-space:nowrap; }
         .dia-badge.disponivel { color:#ffffff; background:linear-gradient(180deg, #66bb6a, #2e7d32); border-color:#a5d6a7; box-shadow:0 0 0 1px rgba(165,214,167,0.18), 0 10px 18px rgba(76,175,80,0.18); }
         .dia-badge.indisponivel { color:#cbd5e1; background:rgba(255,255,255,0.06); border:1px dashed rgba(255,255,255,0.35); text-decoration:line-through; text-decoration-thickness:2px; text-decoration-color:#ffffff; }
         .card-rota-dias-hint { font-size:13px; font-weight:bold; color:#ff9800; text-align:center; margin-top:6px; }
+        .card-rota-clientes { margin-top:14px; display:flex; flex-direction:column; gap:10px; }
+        .card-rota-clientes-bloco { display:flex; flex-direction:column; }
+        .card-rota-clientes-titulo { display:grid; grid-template-columns:26px 1fr auto auto; align-items:center; gap:8px; padding:13px 14px; border-radius:14px; cursor:pointer; user-select:none; -webkit-user-select:none; transition:filter 0.15s, border-radius 0.2s; border:none; }
+        .card-rota-clientes-titulo:active { filter:brightness(0.85); transform:scale(0.99); }
+        .card-rota-clientes-titulo.aberto { border-radius:14px 14px 0 0; }
+        .card-rota-clientes-titulo.pendentes { background:linear-gradient(135deg,#92400e,#d97706); box-shadow:0 4px 16px rgba(217,119,6,0.3); }
+        .card-rota-clientes-titulo.atendidos-hdr { background:linear-gradient(135deg,#14532d,#16a34a); box-shadow:0 4px 16px rgba(22,163,74,0.3); }
+        .bloco-icone { font-size:18px; text-align:center; }
+        .bloco-label { font-size:15px; font-weight:bold; color:white; text-align:center; }
+        .bloco-badge { background:rgba(255,255,255,0.95); color:#0b2256; font-size:14px; font-weight:900; padding:3px 11px; border-radius:999px; text-align:center; white-space:nowrap; min-width:28px; margin-right:4px; }
+        .seta-bloco { display:flex; flex-direction:column; align-items:center; gap:1px; color:rgba(255,255,255,0.8); transition:none; text-align:center; }
+        .seta-bloco::before { content:"ver"; font-size:11px; font-weight:bold; letter-spacing:0.5px; text-transform:uppercase; color:rgba(255,255,255,1); transition:opacity 0.2s; }
+        .seta-bloco svg { transition:transform 0.25s; }
+        .card-rota-clientes-titulo.aberto .seta-bloco::before { content:"fechar"; }
+        .card-rota-clientes-titulo.aberto .seta-bloco svg { transform:rotate(180deg); }
+        .card-rota-numero-sub { font-size:18px; font-weight:bold; color:#ffeb3b; text-align:center; user-select:none; -webkit-user-select:none; }
+        .card-rota-clientes-lista { display:none; flex-direction:column; gap:8px; max-height:260px; overflow:auto; padding:10px; background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.1); border-top:none; border-radius:0 0 14px 14px; }
+        .card-rota-clientes-lista.aberto { display:flex; }
+        .card-rota-cliente-chip { padding:10px 12px; border:1px solid rgba(255,255,255,0.4); border-radius:10px; background:transparent; color:#ffffff; font-size:14px; font-weight:400; text-align:center; transition:background 0.15s; }
+        .card-rota-cliente-chip[onclick]:active { background:rgba(255,255,255,0.1); transform:translateY(2px); }
+        .card-rota-cliente-chip.atendido { border-color:rgba(74,222,128,0.5); color:#bbf7d0; }
+        .card-rota-cliente-chip.justificado { border-style:dashed; border-color:rgba(230,100,60,0.85); color:rgba(255,255,255,0.9); }
+        .card-rota-cliente-chip.justificado::before { content:"⚠️"; font-size:11px; margin-right:7px; vertical-align:middle; }
+        .card-rota-cliente-vazio { padding:10px 12px; border:1px solid #ffffff; border-radius:12px; background:transparent; color:#ffffff; font-size:15px; font-weight:400; text-align:center; }
         .card-rota-acoes { display:flex; gap:8px; margin-top:4px; }
         .btn-ver-clientes { flex:1; padding:10px; border-radius:10px; background:#ffeb3b; color:#0b2256; font-size:14px; font-weight:bold; text-align:center; cursor:pointer; border:none; }
         .btn-ver-clientes:active { background:#ffe100; transform:scale(0.98); }
@@ -214,7 +239,8 @@ import {
     dbCriarSessaoRotas,
     dbSelecionarRota,
     dbEscutarVersaoClientes,
-    dbEscutarVersaoMediaDeVendas
+    dbEscutarVersaoMediaDeVendas,
+    dbListarJustificativasCheckin
 } from './database.js';
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -225,6 +251,9 @@ let sessaoAtual = null;
 let numerosDeRota = [];
 let clientesPorRota = {};
 let maquinasPorCliente = {};
+let clientesAtendidosRecentesSet = new Set();
+let clientesPorIdMap = {};
+let justificativasPorRota = {};
 let estaAnimando = false; // bloqueia renderizaÃƒÂ§ÃƒÂ£o dos detalhes durante a animaÃƒÂ§ÃƒÂ£o
 let timerResetSlot = null;
 let versaoClientesAtual = null;
@@ -276,6 +305,8 @@ function obterHojeLocal() {
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 async function init() {
     usuarioAtual = localStorage.getItem('usuario_selecionado') || '';
+    await carregarClientesPorId();
+    await carregarClientesAtendidosRecentes();
 
     // Escuta a versÃƒÂ£o dos clientes para detectar quando rotas/clientes mudaram
     dbEscutarVersaoClientes((versao) => {
@@ -472,6 +503,82 @@ function montarEnderecoCliente(c) {
     return [c?.endereco, c?.numero_endereco, c?.cidade].filter(Boolean).join(', ').trim();
 }
 
+function escaparHtml(valor) {
+    return String(valor ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function obterChaveCliente(cliente) {
+    return String(cliente?.id || cliente?.firebaseUrl || '').trim();
+}
+
+function obterNumeroCliente(cliente) {
+    const numeroDireto = String(cliente?.numero || '').trim();
+    if (numeroDireto) return numeroDireto;
+
+    const chave = obterChaveCliente(cliente);
+    if (!chave) return '';
+
+    return String(clientesPorIdMap[chave]?.numero || '').trim();
+}
+
+function atualizarClientesAtendidosRecentes(atendimentos) {
+    const agora = Date.now();
+    const CINCO_DIAS = 5 * 24 * 60 * 60 * 1000;
+    const usuarioNorm = String(usuarioAtual || '').trim().toLowerCase();
+    const atendidos = new Set();
+
+    (atendimentos || []).forEach((atendimento) => {
+        const atendenteNorm = String(atendimento?.atendente || '').trim().toLowerCase();
+        if (!usuarioNorm || atendenteNorm !== usuarioNorm) return;
+
+        const total = Number(
+            atendimento?.financeiro?.totalGeral
+            ?? atendimento?.financeiro?.total
+            ?? atendimento?.totalGeral
+            ?? atendimento?.total
+            ?? 0
+        );
+        if (!(total > 0)) return;
+
+        const dataAtendimento = Date.parse(atendimento?.data || atendimento?.ultimaEdicao || '');
+        if (Number.isNaN(dataAtendimento) || (agora - dataAtendimento) > CINCO_DIAS) return;
+
+        const chaveCliente = obterChaveCliente(atendimento?.cliente);
+        if (chaveCliente) atendidos.add(chaveCliente);
+    });
+
+    clientesAtendidosRecentesSet = atendidos;
+}
+
+async function carregarClientesAtendidosRecentes() {
+    try {
+        const atendimentos = await dbListarAtendimentos();
+        atualizarClientesAtendidosRecentes(atendimentos);
+    } catch (error) {
+        console.warn('Falha ao carregar atendimentos recentes para as rotas:', error);
+        clientesAtendidosRecentesSet = new Set();
+    }
+}
+
+async function carregarClientesPorId() {
+    try {
+        const clientes = await dbListarClientes();
+        clientesPorIdMap = {};
+        (clientes || []).forEach((cliente) => {
+            if (!cliente?.firebaseUrl) return;
+            clientesPorIdMap[cliente.firebaseUrl] = cliente;
+        });
+    } catch (error) {
+        console.warn('Falha ao carregar mapa de clientes:', error);
+        clientesPorIdMap = {};
+    }
+}
+
 function gerarUrlGoogleMapsRota(enderecos, origem) {
     const destino = encodeURIComponent(enderecos[enderecos.length - 1]);
     const waypoints = enderecos.slice(0, -1).map(e => encodeURIComponent(e)).join('|');
@@ -564,12 +671,50 @@ window.abrirMapaRota = function(numeroRota) {
     );
 };
 
-function mostrarMinhasRotas(numerosRota, sessao) {
+async function mostrarMinhasRotas(numerosRota, sessao) {
+    // Carrega justificativas de todas as rotas do usuário
+    await Promise.all(numerosRota.map(async (nr) => {
+        try { justificativasPorRota[nr] = await dbListarJustificativasCheckin(nr); }
+        catch (_) { justificativasPorRota[nr] = {}; }
+    }));
+
+    const DOIS_DIAS = 2 * 24 * 60 * 60 * 1000;
+    const agora = Date.now();
+
     const wrap = document.getElementById('detalhesMinhaRota');
     let html = `<div class="secao-titulo">Rotas Selecionadas</div>`;
 
     numerosRota.forEach(numeroRota => {
         const clientes = (sessao.clientes_por_rota || {})[numeroRota] || [];
+        const justifs = justificativasPorRota[numeroRota] || {};
+        const clientesPendentesRaw = clientes.filter((cliente) => !clientesAtendidosRecentesSet.has(obterChaveCliente(cliente)));
+        const clientesAtendidos = clientes.filter((cliente) => clientesAtendidosRecentesSet.has(obterChaveCliente(cliente)));
+        // Justificados vão para o final da lista
+        const clientesPendentes = [
+            ...clientesPendentesRaw.filter(c => { const j = justifs[obterChaveCliente(c)]; return !(j?.timestamp && (agora - j.timestamp) < DOIS_DIAS); }),
+            ...clientesPendentesRaw.filter(c => { const j = justifs[obterChaveCliente(c)]; return j?.timestamp && (agora - j.timestamp) < DOIS_DIAS; }),
+        ];
+        const clientesPendentesHtml = clientesPendentes.length > 0
+            ? clientesPendentes.map((cliente) => {
+                const chave = obterChaveCliente(cliente);
+                const justif = justifs[chave];
+                const justificado = justif?.timestamp && (agora - justif.timestamp) < DOIS_DIAS;
+                const numero = escaparHtml(obterNumeroCliente(cliente));
+                const nome = escaparHtml(String(cliente?.nome || 'Cliente sem nome').trim());
+                const texto = numero ? `${numero} - ${nome}` : nome;
+                const clickAttr = (!justificado && numero) ? ` onclick="window.irParaAtendimentoPorCliente('${escaparHtml(obterNumeroCliente(cliente))}')"` : '';
+                const cursorStyle = (!justificado && numero) ? ' style="cursor:pointer;"' : '';
+                return `<div class="card-rota-cliente-chip${justificado ? ' justificado' : ''}"${cursorStyle}${clickAttr}>${texto}</div>`;
+            }).join('')
+            : `<div class="card-rota-cliente-vazio">${clientes.length > 0 ? 'Nenhum cliente pendente nesta rota.' : 'Nenhum cliente cadastrado nesta rota.'}</div>`;
+        const clientesAtendidosHtml = clientesAtendidos.length > 0
+            ? clientesAtendidos.map((cliente) => {
+                const numero = escaparHtml(obterNumeroCliente(cliente));
+                const nome = escaparHtml(String(cliente?.nome || 'Cliente sem nome').trim());
+                const texto = numero ? `${numero} - ${nome}` : nome;
+                return `<div class="card-rota-cliente-chip atendido">${texto}</div>`;
+            }).join('')
+            : `<div class="card-rota-cliente-vazio">Nenhum cliente atendido nos últimos 5 dias.</div>`;
         const comuns = diasEmComum(clientes);
         const diasHtml = ORDEM_DIAS
             .map(d => `<span class="dia-badge ${comuns.includes(d) ? 'disponivel' : 'indisponivel'}">${d}</span>`)
@@ -579,6 +724,9 @@ function mostrarMinhasRotas(numerosRota, sessao) {
             : '⚠ Nenhum dia em comum para todos os clientes desta rota.';
 
         const temEndereco = clientes.some(c => montarEnderecoCliente(c));
+        const textoQuantidade = clientesPendentes.length === 0
+            ? `Todos os ${clientes.length} cliente${clientes.length !== 1 ? 's' : ''} já foram atendidos`
+            : `Faltam atender ${clientesPendentes.length} de ${clientes.length} cliente${clientes.length !== 1 ? 's' : ''}`;
 
         html += `
         <div class="card-rota">
@@ -587,16 +735,32 @@ function mostrarMinhasRotas(numerosRota, sessao) {
                     <span class="card-rota-numero-badge-label">Rota</span>
                     <span class="card-rota-numero-badge-num">${numeroRota}</span>
                 </div>
-                <div class="card-rota-numero-sub">${clientes.length} cliente${clientes.length !== 1 ? 's' : ''}</div>
+                ${temEndereco ? `<div class="btn-mapa-rota" onclick="window.abrirMapaRota('${numeroRota}')"><img src="assets/img/Localizacao.png" style="width:26px;height:26px;display:block;"></div>` : ''}
             </div>
             <div class="card-rota-dias">
                 <div class="card-rota-dias-label">Dias em comum:</div>
                 <div class="card-rota-dias-val">${diasHtml}</div>
                 <div class="card-rota-dias-hint">${diasHint}</div>
             </div>
-            <div class="card-rota-acoes">
-                ${temEndereco ? `<div onclick="window.abrirMapaRota('${numeroRota}')" style="padding:6px 10px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);cursor:pointer;"><img src="assets/img/Localizacao.png" style="width:28px;height:28px;display:block;"></div>` : ''}
-                <div class="btn-ver-clientes" onclick="window.location.href='clientes.html?rota=${numeroRota}'">Ver clientes</div>
+            <div class="card-rota-clientes">
+                <div class="card-rota-clientes-bloco">
+                    <div class="card-rota-clientes-titulo pendentes" onclick="toggleListaRota('pend-${numeroRota}')" id="hdr-pend-${numeroRota}">
+                        <span class="bloco-icone">⏳</span>
+                        <span class="bloco-label">Faltam atendimento</span>
+                        <span class="bloco-badge">${clientesPendentes.length}</span>
+                        <span class="seta-bloco"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </div>
+                    <div class="card-rota-clientes-lista" id="pend-${numeroRota}">${clientesPendentesHtml}</div>
+                </div>
+                <div class="card-rota-clientes-bloco">
+                    <div class="card-rota-clientes-titulo atendidos-hdr" onclick="toggleListaRota('atend-${numeroRota}')" id="hdr-atend-${numeroRota}">
+                        <span class="bloco-icone">✅</span>
+                        <span class="bloco-label">Já atendidos</span>
+                        <span class="bloco-badge">${clientesAtendidos.length}</span>
+                        <span class="seta-bloco"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                    </div>
+                    <div class="card-rota-clientes-lista" id="atend-${numeroRota}">${clientesAtendidosHtml}</div>
+                </div>
             </div>
         </div>`;
     });
@@ -604,8 +768,27 @@ function mostrarMinhasRotas(numerosRota, sessao) {
     wrap.innerHTML = html;
 }
 
+window.toggleListaRota = function(id) {
+    const lista = document.getElementById(id);
+    const hdr = document.getElementById('hdr-' + id);
+    if (!lista || !hdr) return;
+    const aberto = lista.classList.toggle('aberto');
+    hdr.classList.toggle('aberto', aberto);
+};
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+window.irParaAtendimentoPorCliente = function(numeroCliente) {
+    const numero = String(numeroCliente || '').replace(/\D+/g, '').trim();
+    if (!numero) return;
+
+    sessionStorage.removeItem('rota_filtro_numeros');
+    sessionStorage.removeItem('rota_filtro_numero_rota');
+    sessionStorage.removeItem('cliente_pre_selecionado');
+    sessionStorage.setItem('atendimento_tela_origem', 'selecionar_rota.html');
+
+    window.location.href = `atendimento_nivel_1.html?numero=${encodeURIComponent(numero)}`;
+};
+
+//Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // Selecionar rota (usuÃƒÂ¡rio pressiona o botÃƒÂ£o)
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 window.selecionarRota = async function() {
@@ -725,6 +908,12 @@ async function calcularValoresPorRota() {
         dbListarAtendimentos(),
         dbListarMediaDeVendas()
     ]);
+    clientesPorIdMap = {};
+    (clientes || []).forEach((cliente) => {
+        if (!cliente?.firebaseUrl) return;
+        clientesPorIdMap[cliente.firebaseUrl] = cliente;
+    });
+    atualizarClientesAtendidosRecentes(atendimentos);
 
     const hoje = new Date();
     hoje.setHours(0,0,0,0);
@@ -789,6 +978,7 @@ async function calcularValoresPorRota() {
         rotasMap[numRota].num_clientes++;
         rotasMap[numRota].clientes.push({
             id: c.firebaseUrl,
+            numero: c.numero || '',
             nome: c.nome || '',
             endereco: c.endereco || '',
             numero_endereco: c.numero_endereco || '',

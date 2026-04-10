@@ -1354,8 +1354,15 @@
     function aplicarBusca(termo) {
         const normalizado = termo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
         const cards = document.querySelectorAll('.cliente');
+        const matchRota = normalizado.match(/^(?:rota|r)\s*:?\s*(\d{1,3})$/) || normalizado.match(/^rota(\d{1,3})$/);
+        const rotaBuscada = matchRota ? normalizarRota(matchRota[1]) : null;
         cards.forEach(card => {
             const textoCard = card.innerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            if (rotaBuscada) {
+                const rotaCard = normalizarRota(card.dataset.rota);
+                card.style.display = rotaCard === rotaBuscada ? "block" : "none";
+                return;
+            }
             card.style.display = textoCard.includes(normalizado) ? "block" : "none";
         });
     }

@@ -1038,6 +1038,11 @@
     }
 
     function validarFotosMaquinasInstalacaoObrigatorias() {
+        const gestorEditandoCliente = Boolean(editId) && perfilUsuarioLogado.includes('gestao');
+        if (gestorEditandoCliente) {
+            return true;
+        }
+
         const imgFicha = document.getElementById('imgPreviewFichaInstalacao');
         const fichaOk = imgFicha && imgFicha.style.display === 'block' && !!imgFicha.src;
         if (!fichaOk) {

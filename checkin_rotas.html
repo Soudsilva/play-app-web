@@ -54,15 +54,15 @@
             text-align: center;
             flex: 1;
         }
-        .header-titulo h1 { font-size: 20px; font-weight: bold; letter-spacing: 0.3px; }
-        .header-titulo p  { font-size: 12px; color: #b0bbd4; margin-top: 2px; letter-spacing: 0.5px; }
+        .header-titulo h1 { font-size: 22px; font-weight: bold; letter-spacing: 0.3px; }
+        .header-titulo p  { font-size: 14px; color: #b0bbd4; margin-top: 2px; letter-spacing: 0.5px; }
 
         .chip-usuario {
             background: rgba(255,235,59,0.12);
             border: 1px solid rgba(255,235,59,0.3);
             border-radius: 20px;
             padding: 5px 12px;
-            font-size: 12px;
+            font-size: 14px;
             font-weight: bold;
             color: #ffeb3b;
             white-space: nowrap;
@@ -86,9 +86,9 @@
             gap: 8px;
             border: 1px solid rgba(255,255,255,0.08);
         }
-        .resumo-icon { font-size: 18px; }
-        .resumo-label { font-size: 10px; color: #b0bbd4; text-transform: uppercase; letter-spacing: 0.5px; }
-        .resumo-valor { font-size: 18px; font-weight: bold; line-height: 1; }
+        .resumo-icon { font-size: 20px; }
+        .resumo-label { font-size: 12px; color: #b0bbd4; text-transform: uppercase; letter-spacing: 0.5px; }
+        .resumo-valor { font-size: 20px; font-weight: bold; line-height: 1; }
         .resumo-valor.amarelo { color: #ffeb3b; }
         .resumo-valor.verde { color: #4caf50; }
         .resumo-valor.vermelho { color: #ff5252; }
@@ -112,7 +112,7 @@
             animation: girar 0.7s linear infinite;
         }
         @keyframes girar { to { transform: rotate(360deg); } }
-        .txt-loading { font-size: 14px; color: #b0bbd4; letter-spacing: 1px; }
+        .txt-loading { font-size: 16px; color: #b0bbd4; letter-spacing: 1px; }
 
         /* ─── EMPTY STATE ─── */
         .empty-state {
@@ -123,32 +123,65 @@
             gap: 14px;
             text-align: center;
         }
-        .empty-icon { font-size: 60px; opacity: 0.5; }
-        .empty-titulo { font-size: 20px; font-weight: bold; color: white; }
-        .empty-desc { font-size: 14px; color: #b0bbd4; line-height: 1.6; }
+        .empty-icon { font-size: 62px; opacity: 0.5; }
+        .empty-titulo { font-size: 22px; font-weight: bold; color: white; }
+        .empty-desc { font-size: 16px; color: #b0bbd4; line-height: 1.6; }
 
         /* ─── CARD DE ROTA ─── */
         .lista-rotas { display: flex; flex-direction: column; gap: 16px; }
 
         .card-rota {
             background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.22);
             border-radius: 18px;
             overflow: hidden;
             animation: entrar 0.3s ease;
         }
+        .card-rota.aberta {
+            border: 2px solid #ffeb3b;
+            box-shadow: 0 0 0 1px rgba(255,235,59,0.2), 0 12px 28px rgba(0,0,0,0.22);
+        }
         @keyframes entrar { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
         .card-rota-header {
-            padding: 16px 18px 14px;
+            padding: 14px 16px 12px;
             background: rgba(0,0,0,0.2);
             display: flex;
+            flex-direction: column;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .card-rota-header:active { background: rgba(0,0,0,0.3); }
+        .card-rota-header-topo {
+            display: grid;
+            grid-template-columns: 40px 1fr 40px;
             align-items: center;
+        }
+        .card-rota-header-centro {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             gap: 14px;
         }
 
+        .btn-toggle-lista {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1px;
+            color: rgba(255,255,255,0.8);
+        }
+        .btn-toggle-lista::before { content: "ver"; font-size: 12px; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; }
+        .btn-toggle-lista.aberto::before { content: "fechar"; }
+        .btn-toggle-lista svg { transition: transform 0.25s; }
+        .btn-toggle-lista.aberto svg { transform: rotate(180deg); }
+
+        .clientes-lista { display: none; padding: 6px 0 12px; flex-direction: column; gap: 0; }
+        .clientes-lista.aberta { display: flex; }
+
         /* Anel de progresso */
-        .anel-wrap { position: relative; flex-shrink: 0; width: 64px; height: 64px; }
+        .anel-wrap { position: relative; flex-shrink: 0; width: 52px; height: 52px; }
         .anel-wrap svg { transform: rotate(-90deg); }
         .anel-trilho { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 5; }
         .anel-progresso { fill: none; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
@@ -164,27 +197,30 @@
             justify-content: center;
             line-height: 1;
         }
-        .anel-pct { font-size: 15px; font-weight: bold; }
-        .anel-pct-label { font-size: 9px; color: #b0bbd4; letter-spacing: 0.5px; }
+        .anel-pct { font-size: 17px; font-weight: bold; }
+        .anel-pct-label { font-size: 11px; color: #b0bbd4; letter-spacing: 0.5px; }
 
         .card-rota-info { flex: 1; min-width: 0; }
         .card-rota-numero {
-            font-size: 26px;
-            font-weight: 900;
-            color: #ffeb3b;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 1px;
-            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 20px;
+            border-radius: 999px;
+            background: rgba(255,235,59,0.14);
+            border: 2px solid rgba(255,235,59,0.7);
+            box-shadow: 0 0 16px rgba(255,235,59,0.15);
         }
-        .card-rota-numero span { font-size: 13px; font-weight: normal; color: white; margin-left: 6px; font-family: Arial, sans-serif; }
+        .card-rota-numero span { font-size: 15px; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; color: #ffffff; font-family: Arial, sans-serif; }
+        .card-rota-numero-val { font-size: 32px; font-weight: 900; color: #ffeb3b; font-family: 'Courier New', monospace; line-height: 1; text-shadow: 0 0 12px rgba(255,235,59,0.4); }
         .card-rota-status {
-            margin-top: 6px;
             display: flex;
             gap: 6px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            justify-content: center;
         }
         .badge {
-            font-size: 11px;
+            font-size: 13px;
             border-radius: 20px;
             padding: 3px 9px;
             font-weight: bold;
@@ -198,7 +234,7 @@
             background: linear-gradient(90deg, rgba(76,175,80,0.18), rgba(76,175,80,0.06));
             border-top: 1px solid rgba(76,175,80,0.2);
             padding: 8px 18px;
-            font-size: 12px;
+            font-size: 14px;
             color: #81c784;
             display: flex;
             align-items: center;
@@ -206,70 +242,89 @@
         }
 
         /* ─── LISTA DE CLIENTES ─── */
-        .clientes-lista { padding: 4px 0 8px; }
+        .clientes-lista { padding: 6px 0 12px; display: none; flex-direction: column; gap: 0; }
 
         .secao-label {
-            font-size: 10px;
+            font-size: 16px;
             font-weight: bold;
             letter-spacing: 1.5px;
             text-transform: uppercase;
             color: #b0bbd4;
-            padding: 10px 18px 4px;
+            padding: 12px 14px 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
         }
+        .secao-label::before {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 13px;
+            border-radius: 2px;
+            background: currentColor;
+            flex-shrink: 0;
+        }
+        .secao-label.pendentes { color: #b0bbd4; }
+        .secao-label.justificados { color: #ffb74d; }
+        .secao-label.atendidos { color: #81c784; }
 
         .item-cliente {
             display: flex;
-            align-items: center;
-            padding: 11px 18px;
-            gap: 12px;
-            border-top: 1px solid rgba(255,255,255,0.04);
-            transition: background 0.15s;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px 12px;
+            margin: 3px 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
         }
-
-        .item-cliente-icone { font-size: 20px; flex-shrink: 0; width: 24px; text-align: center; }
-
-        .item-cliente-info { flex: 1; min-width: 0; }
-        .item-cliente-nome { font-size: 14px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .item-cliente-detalhe { font-size: 11px; color: #b0bbd4; margin-top: 1px; }
+        .item-cliente.atendido {
+            background: rgba(22,163,74,0.12);
+            border-color: rgba(129,199,132,0.45);
+        }
+        .item-cliente-topo { display: flex; align-items: center; gap: 8px; }
+        .item-cliente-acoes { display: flex; gap: 8px; }
+        .item-cliente-nome { font-size: 20px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; text-align: center; }
+        .item-cliente-detalhe { font-size: 13px; color: #b0bbd4; }
         .item-cliente-detalhe.justif { color: #ffb74d; }
         .item-cliente-detalhe.expirou { color: #ff5252; }
 
         .btn-justificar {
-            background: rgba(255,82,82,0.1);
-            border: 1px solid rgba(255,82,82,0.25);
-            border-radius: 20px;
-            padding: 6px 12px;
-            font-size: 11px;
+            flex: 1;
+            background: rgba(251,146,60,0.1);
+            border: 1px solid rgba(251,146,60,0.3);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 14px;
             font-weight: bold;
-            color: #ff6e6e;
+            color: #fb923c;
             cursor: pointer;
-            white-space: nowrap;
-            flex-shrink: 0;
             transition: 0.15s;
         }
-        .btn-justificar:active { background: rgba(255,82,82,0.22); transform: scale(0.96); }
+        .btn-justificar:active { background: rgba(251,146,60,0.22); transform: scale(0.97); }
 
         .btn-atender {
-            background: rgba(76,175,80,0.12);
-            border: 1px solid rgba(76,175,80,0.3);
-            border-radius: 20px;
-            padding: 6px 12px;
-            color: #81c784;
-            font-size: 12px;
+            flex: 2;
+            background: #16a34a;
+            border: none;
+            border-radius: 10px;
+            padding: 8px 12px;
+            color: white;
+            font-size: 15px;
             font-weight: bold;
             cursor: pointer;
-            white-space: nowrap;
             flex-shrink: 0;
             transition: 0.15s;
         }
-        .btn-atender:active { background: rgba(76,175,80,0.24); transform: scale(0.96); }
+        .btn-atender:active { background: #15803d; transform: scale(0.97); }
 
         .btn-ver-justif {
             background: rgba(255,183,77,0.08);
             border: 1px solid rgba(255,183,77,0.2);
             border-radius: 20px;
             padding: 5px 10px;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: bold;
             color: #ffb74d;
             cursor: pointer;
@@ -309,13 +364,13 @@
         }
 
         .modal-titulo {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             color: #ffeb3b;
             margin-bottom: 2px;
         }
         .modal-subtitulo {
-            font-size: 12px;
+            font-size: 14px;
             color: #b0bbd4;
             margin-bottom: 20px;
         }
@@ -332,7 +387,7 @@
             border: 1.5px solid rgba(255,255,255,0.12);
             border-radius: 12px;
             padding: 13px 10px;
-            font-size: 13px;
+            font-size: 15px;
             font-weight: bold;
             color: white;
             cursor: pointer;
@@ -343,7 +398,7 @@
             align-items: center;
             gap: 4px;
         }
-        .btn-motivo .motivo-icon { font-size: 22px; }
+        .btn-motivo .motivo-icon { font-size: 24px; }
         .btn-motivo:active { transform: scale(0.96); }
         .btn-motivo.selecionado {
             background: rgba(255,235,59,0.12);
@@ -352,7 +407,7 @@
         }
 
         .obs-label {
-            font-size: 12px;
+            font-size: 14px;
             color: #b0bbd4;
             margin-bottom: 6px;
             letter-spacing: 0.5px;
@@ -363,7 +418,7 @@
             border: 1px solid rgba(255,255,255,0.15);
             border-radius: 12px;
             padding: 12px 14px;
-            font-size: 14px;
+            font-size: 16px;
             color: white;
             outline: none;
             resize: none;
@@ -381,7 +436,7 @@
             background: rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,0.12);
             color: white;
-            font-size: 15px;
+            font-size: 17px;
             font-weight: bold;
             cursor: pointer;
         }
@@ -393,7 +448,7 @@
             background: #ffeb3b;
             border: none;
             color: #0b2256;
-            font-size: 15px;
+            font-size: 17px;
             font-weight: bold;
             cursor: pointer;
             transition: 0.15s;
@@ -411,7 +466,7 @@
             border: 1px solid rgba(255,255,255,0.13);
             border-radius: 50px;
             padding: 11px 22px;
-            font-size: 14px;
+            font-size: 16px;
             color: white;
             z-index: 500;
             opacity: 0;
@@ -442,16 +497,16 @@
             padding: 16px;
             margin-bottom: 16px;
         }
-        .detalhe-justif-linha { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; }
-        .detalhe-justif-label { color: #b0bbd4; font-size: 11px; }
+        .detalhe-justif-linha { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 15px; }
+        .detalhe-justif-label { color: #b0bbd4; font-size: 13px; }
         .detalhe-justif-valor { color: white; font-weight: bold; }
-        .detalhe-justif-obs { font-size: 13px; color: white; font-style: italic; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); }
+        .detalhe-justif-obs { font-size: 15px; color: white; font-style: italic; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); }
 
         .chip-expiracao {
             display: inline-flex;
             align-items: center;
             gap: 4px;
-            font-size: 11px;
+            font-size: 13px;
             border-radius: 20px;
             padding: 3px 10px;
             font-weight: bold;
@@ -466,7 +521,7 @@
             background: rgba(255,82,82,0.08);
             border: 1px solid rgba(255,82,82,0.2);
             color: #ff6e6e;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             cursor: pointer;
             margin-bottom: 10px;
@@ -480,7 +535,7 @@
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.1);
             color: white;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             cursor: pointer;
         }
@@ -515,14 +570,14 @@
             <div class="resumo-item">
                 <span class="resumo-icon">✅</span>
                 <div>
-                    <div class="resumo-label">Atendidos</div>
+                    <div class="resumo-label">Atend.</div>
                     <div class="resumo-valor verde" id="totalAtendidos">0</div>
                 </div>
             </div>
             <div class="resumo-item">
                 <span class="resumo-icon">🔴</span>
                 <div>
-                    <div class="resumo-label">Pendentes</div>
+                    <div class="resumo-label">Pènd.</div>
                     <div class="resumo-valor vermelho" id="totalPendentes">0</div>
                 </div>
             </div>
@@ -558,28 +613,19 @@
         <div class="modal-titulo" id="modalJustifTitulo">Justificar Cliente</div>
         <div class="modal-subtitulo" id="modalJustifSubtitulo">Informe o motivo do não atendimento</div>
 
-        <div class="motivos-grid">
-            <button class="btn-motivo" data-motivo="fechado" onclick="selecionarMotivo(this)">
-                <span class="motivo-icon">🔒</span>Fechado
+        <div class="motivos-grid" style="grid-template-columns:1fr;">
+            <button class="btn-motivo" data-motivo="proximo" onclick="selecionarMotivo(this)">
+                <span class="motivo-icon">⏭️</span>Vou deixar pro próximo, tem pouco tempo desde a última visita
             </button>
-            <button class="btn-motivo" data-motivo="ausente" onclick="selecionarMotivo(this)">
-                <span class="motivo-icon">🚪</span>Ausente
+            <button class="btn-motivo" data-motivo="nao_quero" onclick="selecionarMotivo(this)">
+                <span class="motivo-icon">🚫</span>Não quero atender esse cliente
             </button>
-            <button class="btn-motivo" data-motivo="recusou" onclick="selecionarMotivo(this)">
-                <span class="motivo-icon">🙅</span>Recusou
-            </button>
-            <button class="btn-motivo" data-motivo="acesso" onclick="selecionarMotivo(this)">
-                <span class="motivo-icon">🚧</span>Sem acesso
-            </button>
-            <button class="btn-motivo" data-motivo="endereço" onclick="selecionarMotivo(this)">
-                <span class="motivo-icon">📍</span>Não localizado
-            </button>
-            <button class="btn-motivo" data-motivo="outro" onclick="selecionarMotivo(this)">
-                <span class="motivo-icon">📝</span>Outro
+            <button class="btn-motivo" data-motivo="outros" onclick="selecionarMotivo(this)">
+                <span class="motivo-icon">📝</span>Outros (descreva abaixo)
             </button>
         </div>
 
-        <div class="obs-label">OBSERVAÇÃO (OPCIONAL)</div>
+        <div class="obs-label" id="obsLabel">OBSERVAÇÃO (OPCIONAL)</div>
         <textarea class="obs-input" id="obsInput" rows="3" placeholder="Descreva o que aconteceu..."></textarea>
 
         <div class="modal-acoes">
@@ -730,9 +776,12 @@ function renderizar() {
         const numNorm = normRota(rota.numero);
         const clientes = todosClientes.filter(c => normRota(c.rota) === numNorm);
         const { atendidos, justificados, pendentes } = classificarClientes(clientes, rota.numero);
+        const rotaIniciada = (atendidos.length + justificados.length) > 0;
 
-        totalAtend += atendidos.length + justificados.length;
-        totalPend  += pendentes.length;
+        if (rotaIniciada) {
+            totalAtend += atendidos.length + justificados.length;
+            totalPend  += pendentes.length;
+        }
 
         container.appendChild(criarCardRota(rota, clientes, atendidos, justificados, pendentes));
     });
@@ -789,8 +838,19 @@ function criarCardRota(rota, clientes, atendidos, justificados, pendentes) {
     const resolvidos = atendidos.length + justificados.length;
     const pct        = total > 0 ? Math.round((resolvidos / total) * 100) : 100;
     const isCompleta = pendentes.length === 0;
+    const mapaPendentes = new Set(pendentes.map(c => c.firebaseUrl || String(c.numero || '')));
+    const mapaAtendidos = new Set(atendidos.map(c => c.firebaseUrl || String(c.numero || '')));
+    const justificadosMap = {};
+    justificados.forEach(c => {
+        justificadosMap[c.firebaseUrl || String(c.numero || '')] = c;
+    });
+    const todosOrdenados = [
+        ...clientes.filter(c => mapaPendentes.has(c.firebaseUrl || String(c.numero || ''))).map(c => ({ ...c, _status: 'pendente' })),
+        ...clientes.filter(c => justificadosMap[c.firebaseUrl || String(c.numero || '')]).map(c => ({ ...justificadosMap[c.firebaseUrl || String(c.numero || '')], _status: 'justificado' })),
+        ...clientes.filter(c => mapaAtendidos.has(c.firebaseUrl || String(c.numero || ''))).map(c => ({ ...c, _status: 'atendido' }))
+    ];
 
-    const corAnel = pct === 100 ? 'verde' : pct >= 50 ? 'amarelo' : 'vermelho';
+    const corAnel = pct >= 50 ? 'verde' : 'amarelo';
     const raio    = 26;
     const circ    = 2 * Math.PI * raio;
     const offset  = circ - (pct / 100) * circ;
@@ -798,28 +858,35 @@ function criarCardRota(rota, clientes, atendidos, justificados, pendentes) {
     const card = document.createElement('div');
     card.className = 'card-rota';
     card.innerHTML = `
-        <div class="card-rota-header">
-            <div class="anel-wrap">
-                <svg width="64" height="64" viewBox="0 0 64 64">
-                    <circle class="anel-trilho" cx="32" cy="32" r="${raio}"/>
-                    <circle class="anel-progresso ${corAnel}" cx="32" cy="32" r="${raio}"
-                        stroke-dasharray="${circ.toFixed(1)}"
-                        stroke-dashoffset="${offset.toFixed(1)}"/>
-                </svg>
-                <div class="anel-texto">
-                    <span class="anel-pct">${pct}%</span>
-                    <span class="anel-pct-label">OK</span>
+        <div class="card-rota-header" onclick="toggleClientesRota('${rota.numero}')">
+            <div class="card-rota-header-topo">
+                <div></div>
+                <div class="card-rota-header-centro">
+                    <div class="anel-wrap">
+                        <svg width="52" height="52" viewBox="0 0 64 64">
+                            <circle class="anel-trilho" cx="32" cy="32" r="${raio}"/>
+                            <circle class="anel-progresso ${corAnel}" cx="32" cy="32" r="${raio}"
+                                stroke-dasharray="${circ.toFixed(1)}"
+                                stroke-dashoffset="${offset.toFixed(1)}"/>
+                        </svg>
+                        <div class="anel-texto">
+                            <span class="anel-pct">${pct}%</span>
+                            <span class="anel-pct-label">OK</span>
+                        </div>
+                    </div>
+                    <div class="card-rota-numero">
+                        <span>Rota</span>
+                        <span class="card-rota-numero-val">${rota.numero}</span>
+                    </div>
+                </div>
+                <div class="btn-toggle-lista" id="toggle-btn-${rota.numero}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
             </div>
-            <div class="card-rota-info">
-                <div class="card-rota-numero">
-                    <span>Rota</span> ${rota.numero}
-                </div>
-                <div class="card-rota-status">
-                    <span class="badge badge-verde">✅ ${atendidos.length} atendido${atendidos.length !== 1 ? 's' : ''}</span>
-                    ${justificados.length > 0 ? `<span class="badge badge-amarelo">⚠️ ${justificados.length} justif.</span>` : ''}
-                    ${pendentes.length > 0 ? `<span class="badge badge-vermelho">🔴 ${pendentes.length} pendente${pendentes.length !== 1 ? 's' : ''}</span>` : ''}
-                </div>
+            <div class="card-rota-status">
+                <span class="badge badge-verde">✅ ${atendidos.length} Atend.</span>
+                ${justificados.length > 0 ? `<span class="badge badge-amarelo">⚠️ ${justificados.length} Just.</span>` : ''}
+                ${pendentes.length > 0 ? `<span class="badge badge-vermelho">${pendentes.length} Pènd.</span>` : ''}
             </div>
         </div>
 
@@ -829,59 +896,50 @@ function criarCardRota(rota, clientes, atendidos, justificados, pendentes) {
         </div>
         ` : ''}
 
-        <div class="clientes-lista">
-            ${pendentes.length > 0 ? `
-                <div class="secao-label">Pendentes de atendimento</div>
-                ${pendentes.map(c => `
-                    <div class="item-cliente">
-                        <span class="item-cliente-icone">🔴</span>
-                        <div class="item-cliente-info">
-                            <div class="item-cliente-nome">${c.nome || '—'}</div>
-                            <div class="item-cliente-detalhe">${c.endereco ? c.endereco + (c.numero_endereco ? ', ' + c.numero_endereco : '') : 'Sem endereço'}</div>
-                        </div>
-                        <button class="btn-atender" onclick="irParaAtendimento('${rota.numero}', '${c.numero}')">Atender</button>
-                        <button class="btn-justificar" onclick="abrirModalJustif('${rota.numero}', ${JSON.stringify(c).replace(/"/g, '&quot;')})">Justificar</button>
-                    </div>
-                `).join('')}
-            ` : ''}
-
-            ${justificados.length > 0 ? `
-                <div class="secao-label">Justificados</div>
-                ${justificados.map(c => {
-                    const expirou = c.expirou;
-                    const ts = c.justif?.timestamp ? new Date(c.justif.timestamp) : null;
-                    const expira = ts ? new Date(ts.getTime() + 24 * 60 * 60 * 1000) : null;
-                    const horasRestantes = expira ? Math.max(0, Math.ceil((expira - Date.now()) / 3600000)) : 0;
-                    return `
-                    <div class="item-cliente">
-                        <span class="item-cliente-icone">${expirou ? '🕐' : '⚠️'}</span>
-                        <div class="item-cliente-info">
-                            <div class="item-cliente-nome">${c.nome || '—'}</div>
-                            <div class="item-cliente-detalhe justif">
-                                ${c.justif?.motivo_label || c.justif?.motivo || 'Justificado'}
-                                ${expirou ? '<span class="item-cliente-detalhe expirou"> · Expirado</span>' : ` · Expira em ${horasRestantes}h`}
+        <div class="clientes-lista" id="clientes-${rota.numero}">
+            ${todosOrdenados.length > 0 ? `
+                <div class="secao-label pendentes">Todos os clientes da rota</div>
+                ${todosOrdenados.map((c, index) => {
+                    const chaveAnterior = index > 0 ? todosOrdenados[index - 1]?._status : null;
+                    const abriuSecaoAtendidos = c._status === 'atendido' && chaveAnterior !== 'atendido';
+                    if (c._status === 'pendente') {
+                        return `
+                        <div class="item-cliente">
+                            <div class="item-cliente-topo">
+                                <div class="item-cliente-nome">${c.numero ? c.numero + ' — ' : ''}${c.nome || '—'}</div>
                             </div>
-                        </div>
-                        <button class="btn-ver-justif" onclick="abrirModalVerJustif('${rota.numero}', '${c.firebaseUrl}')">Ver</button>
+                            <div class="item-cliente-acoes">
+                                <button class="btn-justificar" onclick="event.stopPropagation();abrirModalJustif('${rota.numero}', ${JSON.stringify(c).replace(/"/g, '&quot;')})">Justificar</button>
+                                <button class="btn-atender" onclick="event.stopPropagation();irParaAtendimento('${rota.numero}', '${c.numero}')">Atender</button>
+                            </div>
+                        </div>`;
+                    }
+
+                    if (c._status === 'justificado') {
+                        const expirou = c.expirou;
+                        const ts = c.justif?.timestamp ? new Date(c.justif.timestamp) : null;
+                        const expira = ts ? new Date(ts.getTime() + 24 * 60 * 60 * 1000) : null;
+                        const horasRestantes = expira ? Math.max(0, Math.ceil((expira - Date.now()) / 3600000)) : 0;
+                        return `
+                        <div class="item-cliente">
+                            <div class="item-cliente-topo">
+                                <div class="item-cliente-nome">${c.numero ? c.numero + ' — ' : ''}${c.nome || '—'}</div>
+                                <button class="btn-ver-justif" onclick="event.stopPropagation();abrirModalVerJustif('${rota.numero}', '${c.firebaseUrl}')">Ver</button>
+                            </div>
+                            <div class="item-cliente-detalhe justif">${c.justif?.motivo_label || c.justif?.motivo || 'Justificado'}${expirou ? ' · <span class="expirou">Expirado</span>' : ` · Expira em ${horasRestantes}h`}</div>
+                        </div>`;
+                    }
+
+                    return `
+                    ${abriuSecaoAtendidos ? `<div class="secao-label atendidos">Clientes atendidos</div>` : ''}
+                    <div class="item-cliente atendido">
+                        <div class="item-cliente-nome">${c.numero ? c.numero + ' — ' : ''}${c.nome || '—'}</div>
                     </div>`;
                 }).join('')}
             ` : ''}
 
-            ${atendidos.length > 0 ? `
-                <div class="secao-label">Atendidos</div>
-                ${atendidos.map(c => `
-                    <div class="item-cliente">
-                        <span class="item-cliente-icone">✅</span>
-                        <div class="item-cliente-info">
-                            <div class="item-cliente-nome">${c.nome || '—'}</div>
-                            <div class="item-cliente-detalhe">${c.cidade || ''}</div>
-                        </div>
-                    </div>
-                `).join('')}
-            ` : ''}
-
             ${total === 0 ? `
-                <div style="padding:20px 18px; font-size:13px; color:#b0bbd4; text-align:center;">
+                <div style="padding:20px 18px; font-size:15px; color:#b0bbd4; text-align:center;">
                     Nenhum cliente cadastrado nesta rota.
                 </div>
             ` : ''}
@@ -893,18 +951,25 @@ function criarCardRota(rota, clientes, atendidos, justificados, pendentes) {
 // ─────────────────────────────────────────────
 // Modal Justificativa
 // ─────────────────────────────────────────────
-window.irParaAtendimento = function(routeNumber, clienteNumero) {
-    // Coleta os números dos clientes desta rota a partir dos dados já carregados offline
-    const norm = v => String(v || '').trim().replace(/^0+(\d)/, '$1');
-    const numNorm = norm(routeNumber);
-    const numerosRota = todosClientes
-        .filter(c => norm(c.rota) === numNorm)
-        .map(c => String(c.numero));
+window.toggleClientesRota = function(numero) {
+    const lista = document.getElementById('clientes-' + numero);
+    const btn   = document.getElementById('toggle-btn-' + numero);
+    const card  = lista?.closest('.card-rota');
+    if (!lista) return;
+    const aberto = lista.classList.toggle('aberta');
+    if (btn) btn.classList.toggle('aberto', aberto);
+    if (card) card.classList.toggle('aberta', aberto);
+};
 
-    sessionStorage.setItem('rota_filtro_numeros', JSON.stringify(numerosRota));
-    sessionStorage.setItem('rota_filtro_numero_rota', String(routeNumber));
+window.irParaAtendimento = function(routeNumber, clienteNumero) {
+    sessionStorage.removeItem('rota_filtro_numeros');
+    sessionStorage.removeItem('rota_filtro_numero_rota');
+    sessionStorage.removeItem('cliente_pre_selecionado');
     sessionStorage.setItem('atendimento_tela_origem', 'checkin_rotas.html');
-    window.location.href = 'atendimento_nivel_1.html';
+    const numero = String(clienteNumero || '').replace(/\D+/g, '').trim();
+    window.location.href = numero
+        ? `atendimento_nivel_1.html?numero=${encodeURIComponent(numero)}`
+        : 'atendimento_nivel_1.html';
 };
 
 window.abrirModalJustif = function(routeNumber, cliente) {
@@ -931,16 +996,29 @@ window.selecionarMotivo = function(btn) {
     document.querySelectorAll('.btn-motivo').forEach(b => b.classList.remove('selecionado'));
     btn.classList.add('selecionado');
     motivoSelecionado = btn.dataset.motivo;
-    document.getElementById('btnConfirmarJustif').disabled = false;
+    const obsLabel = document.getElementById('obsLabel');
+    const obsInput = document.getElementById('obsInput');
+    if (motivoSelecionado === 'outros') {
+        obsLabel.textContent = 'OBSERVAÇÃO (OBRIGATÓRIA)';
+        obsLabel.style.color = '#fb923c';
+        obsInput.placeholder = 'Descreva o motivo...';
+        obsInput.oninput = () => {
+            document.getElementById('btnConfirmarJustif').disabled = !obsInput.value.trim();
+        };
+        document.getElementById('btnConfirmarJustif').disabled = !obsInput.value.trim();
+    } else {
+        obsLabel.textContent = 'OBSERVAÇÃO (OPCIONAL)';
+        obsLabel.style.color = '';
+        obsInput.placeholder = 'Descreva o que aconteceu...';
+        obsInput.oninput = null;
+        document.getElementById('btnConfirmarJustif').disabled = false;
+    }
 };
 
 const motivoLabels = {
-    fechado: 'Estabelecimento fechado',
-    ausente: 'Responsável ausente',
-    recusou: 'Cliente recusou o atendimento',
-    acesso:  'Problema de acesso',
-    'endereço': 'Não localizado',
-    outro:   'Outro motivo'
+    proximo:   'Deixar pro próximo — pouco tempo desde a última visita',
+    nao_quero: 'Não quer atender esse cliente',
+    outros:    'Outros'
 };
 
 window.confirmarJustificativa = async function() {
