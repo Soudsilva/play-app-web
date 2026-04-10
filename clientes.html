@@ -1082,7 +1082,9 @@
         if (!cliente?.equip) return [];
 
         return String(cliente.equip)
-            .split(', ')
+            .split(',')
+            .map(item => item.trim())
+            .filter(Boolean)
             .map((item) => {
                 if (!item) return null;
                 let nome = item;
