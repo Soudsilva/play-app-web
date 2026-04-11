@@ -746,6 +746,7 @@
 
         atendimentos.forEach(a => {
             if (a?.origemRegistro === 'manutencao') {
+                if (normalizarTexto(a?.atendente || '') !== usuarioNorm) return;
                 (a?.manutencao?.equipamentosRetiradosDetalhes || []).forEach(item => {
                     aplicarDeltaMapa(mapa, item?.nome, Number(item?.qtd || 1));
                 });
@@ -1221,7 +1222,7 @@
         if (c.numero)      mapaRotas[String(c.numero)] = c.rota;
     });
     todosAtendimentos = isTecnico
-        ? todos.filter(a => Number(a.financeiro?.totalGeral || 0) > 0)
+        ? todos.filter(a => Number(a.financeiro?.totalGeral || 0) > 0 || a.origemRegistro === 'manutencao')
         : todos.filter(a => String(a?.atendente || '').trim() === usuarioLogado);
     datasComAtendimento = new Set(
         todosAtendimentos
@@ -1245,7 +1246,7 @@
     // Atualiza em tempo real apenas os dados do usuÃƒÂ¡rio logado.
     if (isTecnico) {
         dbEscutarAtendimentos((lista) => {
-            todosAtendimentos = lista.filter(a => Number(a.financeiro?.totalGeral || 0) > 0);
+            todosAtendimentos = lista.filter(a => Number(a.financeiro?.totalGeral || 0) > 0 || a.origemRegistro === 'manutencao');
             atualizarDatasComAtendimento();
             renderizar();
         });
