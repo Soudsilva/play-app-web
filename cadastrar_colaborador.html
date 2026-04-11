@@ -295,7 +295,7 @@
                         <input type="text" id="bonusFixoColaborador" placeholder="0" maxlength="5" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5);">
                     </div>
                     <div class="campo campo-remuneracao">
-                        <label class="label-focada">Bon. Man.</label>
+                        <label class="label-focada">Bônus Manuten.</label>
                         <input type="text" id="bonusManutencaoColaborador" placeholder="0" maxlength="7" inputmode="numeric">
                     </div>
                 </div>
@@ -434,7 +434,7 @@
                           c.producaoPecas ? 'Prod. Peças' : '',
                           temValorMonetario(c.fixo) ? `Fixo: ${formatarMilhar(c.fixo)}` : '',
                           temValorMonetario(c.bonusFixo) ? `Bônus: ${formatarMilhar(c.bonusFixo)}` : '',
-                          temValorMonetario(c.bonusManutencao) ? `Bon. Man.: ${formatarMilhar(c.bonusManutencao)}` : ''
+                          temValorMonetario(c.bonusManutencao) ? `Bônus Manuten.: ${formatarMilhar(c.bonusManutencao)}` : ''
                       ].filter(Boolean).join(' | ')}</div>
                   </div>
                   <div class="acoes-card">
