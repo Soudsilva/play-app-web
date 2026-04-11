@@ -1270,25 +1270,37 @@ function _normalizarEquipDetalhesCliente(cliente) {
 
     if (!cliente?.equip) return [];
 
-    return String(cliente.equip)
-        .split(', ')
+    const textoEquip = String(cliente.equip || "").trim();
+    const partes = textoEquip.includes('|')
+        ? textoEquip.split(/\s*\|\s*/)
+        : textoEquip.split(/\s*,\s*/);
+
+    return partes
         .map((item, index) => {
-            let nome = item;
+            let nome = String(item || "").trim();
+            if (!nome) return null;
             let qtd = "1";
             let pix = "";
 
-            const regexQtd = /\s*\(([^)]+)\)$/;
-            const matchQtd = nome.match(regexQtd);
-            if (matchQtd) {
-                qtd = matchQtd[1];
-                nome = nome.replace(regexQtd, "");
+            const regexPixLegado = /\s*\[Pix:\s*([^\]]+)\]\s*$/i;
+            const matchPixLegado = nome.match(regexPixLegado);
+            if (matchPixLegado) {
+                pix = String(matchPixLegado[1] || "").trim();
+                nome = nome.replace(regexPixLegado, "").trim();
+            } else {
+                const regexPixTexto = /\s+Pix\s+([0-9]+)\s*$/i;
+                const matchPixTexto = nome.match(regexPixTexto);
+                if (matchPixTexto) {
+                    pix = String(matchPixTexto[1] || "").trim();
+                    nome = nome.replace(regexPixTexto, "").trim();
+                }
             }
 
-            const regexPix = /\s*\[Pix:\s*([^\]]+)\]$/;
-            const matchPix = nome.match(regexPix);
-            if (matchPix) {
-                pix = matchPix[1];
-                nome = nome.replace(regexPix, "");
+            const regexQtd = /\s*\(([^)]+)\)\s*$/;
+            const matchQtd = nome.match(regexQtd);
+            if (matchQtd) {
+                qtd = String(matchQtd[1] || "1").trim() || "1";
+                nome = nome.replace(regexQtd, "").trim();
             }
 
             return {
@@ -1307,7 +1319,7 @@ function _normalizarEquipDetalhesCliente(cliente) {
                 manutencaoPendentePor: ""
             };
         })
-        .filter(item => item.nome);
+        .filter(item => item && item.nome);
 }
 
 function _serializarEquipTextoCliente(equipDetalhes) {
@@ -1321,6 +1333,46 @@ function _serializarEquipTextoCliente(equipDetalhes) {
             return pix ? `${base} [Pix: ${pix}]` : base;
         })
         .join(', ');
+}
+
+export async function dbPadronizarEquipamentosClientes() {
+    try {
+        const clientes = await _obterListaClientesAtualizada();
+        let analisados = 0;
+        let atualizados = 0;
+
+        for (const cliente of (Array.isArray(clientes) ? clientes : [])) {
+            analisados++;
+            if (!cliente?.firebaseUrl) continue;
+
+            const equipDetalhesPadrao = _normalizarEquipDetalhesCliente(cliente);
+            const equipTextoPadrao = _serializarEquipTextoCliente(equipDetalhesPadrao);
+            const equipDetalhesAtuais = Array.isArray(cliente?.equipDetalhes)
+                ? _normalizarEquipDetalhesCliente({ equipDetalhes: cliente.equipDetalhes })
+                : [];
+            const equipTextoAtual = String(cliente?.equip || "").trim();
+
+            const mudouEquipDetalhes = JSON.stringify(equipDetalhesAtuais) !== JSON.stringify(equipDetalhesPadrao);
+            const mudouEquipTexto = equipTextoAtual !== equipTextoPadrao;
+
+            if (!mudouEquipDetalhes && !mudouEquipTexto) continue;
+
+            await update(ref(db, `clientes/${cliente.firebaseUrl}`), {
+                equipDetalhes: equipDetalhesPadrao,
+                equip: equipTextoPadrao
+            });
+            atualizados++;
+        }
+
+        if (atualizados > 0) {
+            await _atualizarVersaoClientes();
+        }
+
+        return { analisados, atualizados };
+    } catch (error) {
+        console.error("ERRO AO PADRONIZAR EQUIPAMENTOS DOS CLIENTES:", error);
+        throw error;
+    }
 }
 
 function _normalizarNumeroPix(valor) {

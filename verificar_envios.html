@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meus Envios</title>
+    <title>Minhas Movimentações</title>
     <style>
         body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; }
         .app { width:100%; max-width:600px; padding:15px; box-sizing:border-box; min-height: 100vh; padding-bottom: 50px; }
@@ -96,7 +96,7 @@
 
 <div class="app">
     <div class="topo">
-        <div class="titulo">Meus Envios</div>
+        <div class="titulo">Minhas Movimentações</div>
         <div class="btn-home" onclick="window.location.href='index.html'">
             <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
         </div>
@@ -119,12 +119,13 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarColaboradores, dbEscutarManutencoes, dbExcluirAtendimento } from './database.js';
+    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbExcluirAtendimento } from './database.js';
 
     // Pega quem estÃ¡ logado no celular no momento
     const usuarioLogado = localStorage.getItem('usuarioLogado');
     let atendimentosSalvos = [];
     let cadastrosPixSalvos = [];
+    let historicoEstoqueSalvo = [];
     let manutencoesSalvas = [];
     let colaboradoresSalvos = [];
     let colaboradoresCarregados = false;
@@ -417,8 +418,52 @@
         return envio?.origemRegistro === 'retirada_estoque';
     }
 
-    function obterTituloItensRetiradaEstoque(envio) {
+    function ehEntradaEstoque(envio) {
+        return envio?.origemRegistro === 'entrada_estoque';
+    }
+
+    function ehMovimentoEstoque(envio) {
+        return ehRetiradaEstoque(envio) || ehEntradaEstoque(envio) || envio?.tipoLinhaTempo === 'movimento_estoque';
+    }
+
+    function obterTituloItensMovimentoEstoque(envio) {
         return normalizarTexto(envio?.itemCategoria) === 'maquina' ? 'Máquinas' : 'Produtos';
+    }
+
+    function obterCabecalhoMovimentoEstoque(envio) {
+        return ehEntradaEstoque(envio) ? '📥 Entrada de Estoque' : '📦 Retirada de Estoque';
+    }
+
+    function obterMovimentosEstoqueDoUsuario() {
+        return historicoEstoqueSalvo
+            .filter(item => {
+                if (!termoBusca) return true;
+                const campos = [
+                    item?.tipo === 'entrada' ? 'entrada de estoque' : 'retirada de estoque',
+                    item?.itemNome,
+                    item?.itemCategoria,
+                    item?.responsavel,
+                    item?.registradoPor,
+                    formatarDataHora(item?.data)
+                ];
+                return campos.some(c => normalizarTexto(c).includes(termoBusca));
+            })
+            .map(item => ({
+                tipoLinhaTempo: 'movimento_estoque',
+                firebaseUrl: item?.firebaseUrl ? `historico_${item.firebaseUrl}` : '',
+                data: item?.data || '',
+                atendente: item?.responsavel || '',
+                responsavel: item?.responsavel || '',
+                autorizadoPor: item?.registradoPor || '',
+                registradoPor: item?.registradoPor || '',
+                itemCategoria: item?.itemCategoria || '',
+                origemRegistro: item?.tipo === 'entrada' ? 'entrada_estoque' : 'retirada_estoque',
+                produtos: [{
+                    nome: item?.itemNome || 'Item sem nome',
+                    quantidade: Number(item?.qtd || 0)
+                }]
+            }))
+            .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
     }
 
     function temFinanceiroNoEnvio(envio) {
@@ -589,6 +634,7 @@
         const enviosAtendimento = atendimentosSalvos
             .filter(a => {
                 if (!pertenceAoUsuario(a)) return false;
+                if (ehMovimentoEstoque(a)) return false;
                 if (!termoBusca) return true;
                 const fotos = a.fotos || {};
                 const manutencaoCompleta = ehRegistroManutencao(a) ? obterManutencaoCompleta(a) : {};
@@ -640,14 +686,16 @@
                 return campos.some(c => normalizarTexto(c).includes(termoBusca));
             });
 
+        const enviosEstoque = obterMovimentosEstoqueDoUsuario();
+
         // Filtra sÃ³ os que foram enviados por ele e ordena da data mais recente (maior) para a mais velha (menor)
-        const meusEnvios = [...enviosAtendimento, ...enviosCadastroPix]
+        const meusEnvios = [...enviosAtendimento, ...enviosCadastroPix, ...enviosEstoque]
             .sort((a, b) => new Date(b.data) - new Date(a.data));
 
         if (meusEnvios.length === 0) {
             container.innerHTML = termoBusca
                 ? `<p class="sem-envios">Nenhum envio encontrado para "<strong>${document.getElementById('inputBusca').value}</strong>".</p>`
-                : '<p class="sem-envios">Você ainda não tem nenhum atendimento salvo no sistema.</p>';
+                : '<p class="sem-envios">Você ainda não tem nenhum envio salvo no sistema.</p>';
             return;
         }
 
@@ -686,8 +734,8 @@
 
             // Cabeçalho
             let htmlHeader;
-            if (ehRetiradaEstoque(envio)) {
-                htmlHeader = `<div class="envio-header"><div class="envio-cliente">📦 Retirada de Estoque</div></div>`;
+            if (ehMovimentoEstoque(envio)) {
+                htmlHeader = `<div class="envio-header"><div class="envio-cliente">${obterCabecalhoMovimentoEstoque(envio)}</div></div>`;
             } else {
                 const clienteNome = envio.cliente?.nome || 'Cliente Desconhecido';
                 const clienteNumero = envio.cliente?.numero || 'S/N';
@@ -697,12 +745,12 @@
             // --- 1. PRODUTOS ---
             let htmlProdutos = '';
             if (envio.produtos && envio.produtos.length > 0) {
-                const tituloItens = ehRetiradaEstoque(envio)
-                    ? obterTituloItensRetiradaEstoque(envio)
+                const tituloItens = ehMovimentoEstoque(envio)
+                    ? obterTituloItensMovimentoEstoque(envio)
                     : 'Produtos';
                 htmlProdutos += `<div class="secao-titulo">${tituloItens}</div>`;
                 envio.produtos.forEach(p => {
-                    if (ehRetiradaEstoque(envio)) {
+                    if (ehMovimentoEstoque(envio)) {
                         htmlProdutos += `<div class="info-linha"><span class="item-estoque-nome">${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
                     } else {
                         htmlProdutos += `<div class="info-linha"><span>${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
@@ -713,7 +761,7 @@
             // --- 2. FINANCEIRO ---
             let htmlFin = '';
             const fin = envio.financeiro || {};
-            if (!ehRetiradaEstoque(envio) && (!ehRegistroManutencao(envio) || temFinanceiroNoEnvio(envio))) {
+            if (!ehMovimentoEstoque(envio) && (!ehRegistroManutencao(envio) || temFinanceiroNoEnvio(envio))) {
                 const totalPix = Array.isArray(fin.pix)
                     ? fin.pix.reduce((soma, pix) => soma + converterParaNumero(pix?.valor), 0)
                     : 0;
@@ -805,7 +853,7 @@
                 htmlFotos = '';
             }
 
-            const liberado = !ehRetiradaEstoque(envio) && podeAlterarEnvio(envio);
+            const liberado = !ehMovimentoEstoque(envio) && podeAlterarEnvio(envio);
             const htmlAcoes = liberado ? `
                 <div class="envio-acoes">
                     <div class="acoes-linha">
@@ -815,16 +863,13 @@
                 </div>
             ` : '';
 
-            const responsavelEstoque = ehRetiradaEstoque(envio) ? (envio.atendente || envio.responsavel || '') : '';
-            const autorEnvio = ehRetiradaEstoque(envio)
+            const responsavelEstoque = ehMovimentoEstoque(envio) ? (envio.atendente || envio.responsavel || '') : '';
+            const autorEnvio = ehMovimentoEstoque(envio)
                 ? (envio.autorizadoPor || '')
                 : obterNomeAutorEnvio(envio);
             const infoRodape = [];
 
-            if (ehRetiradaEstoque(envio)) {
-                if (responsavelEstoque && normalizarTexto(responsavelEstoque) !== normalizarTexto(usuarioLogado)) {
-                    infoRodape.push(`Responsável: <strong>${responsavelEstoque}</strong>`);
-                }
+            if (ehMovimentoEstoque(envio)) {
                 if (autorEnvio && normalizarTexto(autorEnvio) !== normalizarTexto(usuarioLogado)) {
                     infoRodape.push(`Registrado por: <strong>${autorEnvio}</strong>`);
                 }
@@ -860,6 +905,11 @@
 
     dbEscutarCadastrosPix((cadastros) => {
         cadastrosPixSalvos = cadastros;
+        renderizarEnvios();
+    });
+
+    dbEscutarHistoricoDoUsuario(usuarioLogado, (historico) => {
+        historicoEstoqueSalvo = historico;
         renderizarEnvios();
     });
 

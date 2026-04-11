@@ -1411,6 +1411,7 @@ function obterEquipamentosDetalhadosCliente(cliente) {
         return cliente.equipDetalhes.map((item, index) => ({
             rowId: String(item?.rowId || `eq_${index + 1}`),
             nome: String(item?.nome || '').trim(),
+            qtd: String(item?.qtd || item?.quantidade || '1').trim() || '1',
             pix: String(item?.pix || '').trim(),
             contador: String(item?.contador || '').trim(),
             manutencaoPendente: String(item?.manutencaoPendente || '').trim(),
@@ -1426,13 +1427,38 @@ function obterEquipamentosDetalhadosCliente(cliente) {
 
     const texto = String(cliente?.equip || '').trim();
     if (!texto) return [];
-    return texto.split('|').map((parte, index) => {
-        const trecho = String(parte || '').trim();
-        const match = trecho.match(/^(.*?)(?:\s+Pix\s+(\d+))?$/i);
+    const partes = texto.includes('|')
+        ? texto.split(/\s*\|\s*/)
+        : texto.split(/\s*,\s*/);
+    return partes.map((parte, index) => {
+        let trecho = String(parte || '').trim();
+        if (!trecho) return null;
+        let qtd = '1';
+        let pix = '';
+
+        const matchPixLegado = trecho.match(/\s*\[Pix:\s*([^\]]+)\]\s*$/i);
+        if (matchPixLegado) {
+            pix = String(matchPixLegado[1] || '').trim();
+            trecho = trecho.replace(/\s*\[Pix:\s*([^\]]+)\]\s*$/i, '').trim();
+        } else {
+            const matchPixTexto = trecho.match(/\s+Pix\s+([0-9]+)\s*$/i);
+            if (matchPixTexto) {
+                pix = String(matchPixTexto[1] || '').trim();
+                trecho = trecho.replace(/\s+Pix\s+[0-9]+\s*$/i, '').trim();
+            }
+        }
+
+        const matchQtd = trecho.match(/\s*\(([^)]+)\)\s*$/);
+        if (matchQtd) {
+            qtd = String(matchQtd[1] || '1').trim() || '1';
+            trecho = trecho.replace(/\s*\(([^)]+)\)\s*$/, '').trim();
+        }
+
         return {
             rowId: `legacy_${index + 1}`,
-            nome: String(match?.[1] || trecho).trim(),
-            pix: String(match?.[2] || '').trim(),
+            nome: String(trecho || '').trim(),
+            qtd,
+            pix,
             contador: '',
             manutencaoPendente: '',
             aguardandoConfirmacao: false,
@@ -1443,19 +1469,21 @@ function obterEquipamentosDetalhadosCliente(cliente) {
             retiradaPendenteEm: '',
             retiradaPendentePor: ''
         };
-    }).filter(item => item.nome);
+    }).filter(item => item && item.nome);
 }
 
 function serializarEquipamentosTextoCliente(equips = []) {
     return equips
         .map(item => {
             const nome = String(item?.nome || '').trim();
+            const qtd = String(item?.qtd || item?.quantidade || '1').trim() || '1';
             const pix = String(item?.pix || '').trim();
             if (!nome) return '';
-            return pix ? `${nome} Pix ${pix}` : nome;
+            const base = `${nome}${qtd !== '1' ? ` (${qtd})` : ''}`;
+            return pix ? `${base} [Pix: ${pix}]` : base;
         })
         .filter(Boolean)
-        .join(' | ');
+        .join(', ');
 }
 
 function obterPixParaExibicao() {

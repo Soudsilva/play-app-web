@@ -646,6 +646,65 @@
         return Number.isNaN(timestamp) ? 0 : timestamp;
     }
 
+    function obterEquipamentosDetalhadosCliente(cliente) {
+        if (Array.isArray(cliente?.equipDetalhes) && cliente.equipDetalhes.length > 0) {
+            return cliente.equipDetalhes
+                .map((item, index) => ({
+                    rowId: String(item?.rowId || `equip_${index + 1}`),
+                    nome: String(item?.nome || "").trim(),
+                    qtd: String(item?.qtd || item?.quantidade || "1").trim() || "1",
+                    pix: String(item?.pix || "").trim(),
+                    contador: String(item?.contador || "").trim()
+                }))
+                .filter(item => item.nome);
+        }
+
+        const textoEquip = String(cliente?.equip || "").trim();
+        if (!textoEquip) return [];
+
+        const partes = textoEquip.includes('|')
+            ? textoEquip.split(/\s*\|\s*/)
+            : textoEquip.split(/\s*,\s*/);
+
+        return partes
+            .map((item, index) => {
+                let trecho = String(item || "").trim();
+                if (!trecho) return null;
+
+                let pix = "";
+                let qtd = "1";
+
+                const matchPixLegado = trecho.match(/\[Pix:\s*([^\]]+)\]\s*$/i);
+                if (matchPixLegado) {
+                    pix = String(matchPixLegado[1] || "").trim();
+                    trecho = trecho.replace(/\s*\[Pix:\s*([^\]]+)\]\s*$/i, "").trim();
+                } else {
+                    const matchPixTexto = trecho.match(/\s+Pix\s+([0-9]+)\s*$/i);
+                    if (matchPixTexto) {
+                        pix = String(matchPixTexto[1] || "").trim();
+                        trecho = trecho.replace(/\s+Pix\s+[0-9]+\s*$/i, "").trim();
+                    }
+                }
+
+                const matchQtd = trecho.match(/\s*\(([^)]+)\)\s*$/);
+                if (matchQtd) {
+                    qtd = String(matchQtd[1] || "1").trim() || "1";
+                    trecho = trecho.replace(/\s*\(([^)]+)\)\s*$/, "").trim();
+                }
+
+                if (!trecho) return null;
+
+                return {
+                    rowId: `equip_${index + 1}`,
+                    nome: trecho,
+                    qtd,
+                    pix,
+                    contador: ""
+                };
+            })
+            .filter(Boolean);
+    }
+
     function obterUltimosContadoresCliente(cliente) {
         if (!cliente) return {};
 
@@ -669,7 +728,7 @@
             });
         });
 
-        const equipamentosDetalhados = Array.isArray(cliente?.equipDetalhes) ? cliente.equipDetalhes : [];
+        const equipamentosDetalhados = obterEquipamentosDetalhadosCliente(cliente);
         equipamentosDetalhados.forEach(item => {
             const numeroPix = String(item?.pix || "").trim();
             if (!numeroPix || ultimoContadorPorPix[numeroPix] != null) return;
@@ -850,29 +909,15 @@
 
         if (cliente) {
             const ultimosContadoresPix = obterUltimosContadoresCliente(cliente);
+            const equipamentosCliente = obterEquipamentosDetalhadosCliente(cliente);
             // [NOVO] Processa a string de equipamentos para o formato correto
             let equipString = "Nenhum";
-            if (cliente.equip) {
-                const equipList = cliente.equip.split(', ');
+            if (equipamentosCliente.length > 0) {
                 const equipsToShow = [];
-                equipList.forEach(item => {
-                    if (!item) return;
-                    let nome = item;
-                    let qtd = "1";
-                    let pix = "";
-                    const regexQtd = /\s*\(([^)]+)\)$/;
-                    const matchQtd = nome.match(regexQtd);
-                    if (matchQtd) {
-                        qtd = matchQtd[1];
-                        nome = nome.replace(regexQtd, "").trim();
-                    }
-                    const regexPix = /\s*\[Pix:\s*([^\]]+)\]$/;
-                    const matchPix = nome.match(regexPix);
-                    if (matchPix) {
-                        pix = matchPix[1];
-                        nome = nome.replace(regexPix, "").trim();
-                    }
-                    nome = nome.trim();
+                equipamentosCliente.forEach(item => {
+                    const nome = String(item?.nome || "").trim();
+                    const qtd = String(item?.qtd || "1").trim() || "1";
+                    const pix = String(item?.pix || "").trim();
                     if (nome) {
                         const formato = `${nome} ${qtd}${pix ? ` Pix ${pix}` : ''}`;
                         equipsToShow.push(formato);
@@ -910,20 +955,17 @@
             containerFotosPix.innerHTML = ''; // Limpa as fotos pix existentes
 
             const pixValues = [];
-            if (cliente.equip) {
-                const equipList = cliente.equip.split(', ');
+            equipamentosCliente.forEach((item, index) => {
+                if (!item) return;
 
-                equipList.forEach((item, index) => {
-                    if (!item) return;
+                // --- 1. Lógica para Fotos de TODAS as máquinas ---
+                const nomeLimpo = String(item?.nome || "").trim();
+                const pix = String(item?.pix || "").trim();
 
-                    // --- 1. Lógica para Fotos de TODAS as máquinas ---
-                    let nomeLimpo = item.replace(/\s*\(([^)]+)\)$/, "").trim(); // remove qty
-                    nomeLimpo = nomeLimpo.replace(/\s*\[Pix:\s*([^\]]+)\]$/, "").trim(); // remove pix
-
-                    if (nomeLimpo) {
-                        const divFoto = document.createElement('div');
-                        divFoto.className = 'sub-card';
-                        divFoto.innerHTML = `
+                if (nomeLimpo) {
+                    const divFoto = document.createElement('div');
+                    divFoto.className = 'sub-card';
+                    divFoto.innerHTML = `
                             <div class="titulo-sub" style="justify-content: center; font-size: 16px; color: #ffeb3b;">
                                 FOTO: ${nomeLimpo.toUpperCase()}
                             </div>
@@ -933,24 +975,17 @@
                                 <input type="file" id="inputFotoMaquina_${index}" class="input-foto-maquina" accept="image/*" style="display: none;" onchange="mostrarPreview(this, 'imgPreviewMaquina_${index}', 'textoFotoMaquina_${index}')">
                             </div>
                         `;
-                        containerFotosMaquinas.appendChild(divFoto);
-                    }
+                    containerFotosMaquinas.appendChild(divFoto);
+                }
 
-                    // --- 2. Lógica para encontrar valores de PIX ---
-                    let nomeEquipComPix = item.replace(/\s*\(([^)]+)\)$/, "").trim();
-                    const regexPix = /\s*\[Pix:\s*([^\]]+)\]$/i;
-                    const matchPix = nomeEquipComPix.match(regexPix);
-                    if (matchPix) {
-                        pixValues.push(matchPix[1]);
-                    }
-                });
-            }
+                // --- 2. Lógica para encontrar valores de PIX ---
+                if (pix && !pixValues.includes(pix)) {
+                    pixValues.push(pix);
+                }
+            });
 
             // Detecta máquina Saturno e exibe bloco de contagem
-            const temSaturno = (cliente.equip || '').split(', ').some(item => {
-                const nome = item.replace(/\s*\(([^)]+)\)$/, '').replace(/\s*\[Pix:\s*([^\]]+)\]$/i, '').trim();
-                return nome.toLowerCase().includes('saturno');
-            });
+            const temSaturno = equipamentosCliente.some(item => String(item?.nome || '').trim().toLowerCase().includes('saturno'));
             const cardSaturno = document.getElementById('card-saturno');
             if (cardSaturno) {
                 cardSaturno.style.display = temSaturno ? 'block' : 'none';

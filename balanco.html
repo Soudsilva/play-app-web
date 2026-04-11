@@ -38,6 +38,24 @@
         .data-valor.vazio { color:rgba(255,255,255,0.75); font-weight:normal; font-size:13px; }
         .sep-seta { color:rgba(255,255,255,0.35); font-size:18px; flex-shrink:0; }
 
+        /* Seletor mês/ano (técnico) */
+        .seletor-mes-ano {
+            display:flex; gap:10px; margin-bottom:18px;
+            background:#0f2a66; border:1px solid rgba(255,255,255,0.15);
+            border-radius:14px; padding:12px 14px;
+            position:sticky; top:57px; z-index:99;
+        }
+        .seletor-mes-ano select {
+            flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2);
+            border-radius:10px; padding:8px 10px; color:#fff; font-size:15px; font-weight:bold;
+            appearance:none; -webkit-appearance:none; text-align:center;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,235,59,0.7)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 10px center;
+            padding-right:28px; cursor:pointer;
+        }
+        .seletor-mes-ano select:focus { outline:none; border-color:#ffeb3b; }
+        .seletor-mes-ano select option { background:#0f2a66; color:#fff; }
+
         /* Overlay do calendÃ¡rio */
         .cal-overlay {
             display:none; position:fixed; inset:0;
@@ -127,7 +145,7 @@
             font-size:12px; font-weight:bold; color:#ffeb3b; text-transform:uppercase;
             letter-spacing:1px; margin-bottom:10px; padding-bottom:5px;
             border-bottom:1px dashed rgba(255,235,59,0.3);
-            display:flex; align-items:center; gap:6px;
+            display:flex; align-items:center; justify-content:center; gap:6px;
         }
         .pix-resumo-card {
             background:rgba(255,255,255,0.06);
@@ -169,6 +187,24 @@
         .dia-item:last-child { border-bottom:none; }
         .dia-data { font-size:16px; color:#fff; font-weight:bold; }
         .dia-count { font-size:14px; font-weight:bold; color:#fff; }
+        .tabela-dia { width:100%; }
+        .tabela-dia-header { display:grid; gap:4px; padding:6px 10px 8px; border-bottom:1px solid rgba(255,235,59,0.25); margin-bottom:2px; align-items:end; }
+        .tabela-dia-th { font-size:10px; color:rgba(255,235,59,0.55); text-transform:uppercase; letter-spacing:0.3px; font-weight:bold; min-width:0; }
+        .tabela-dia-row { display:grid; gap:4px; padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.06); align-items:center; }
+        .tabela-dia-row:last-child { border-bottom:none; }
+        .tabela-dia-cell { font-size:13px; min-width:0; }
+        .tabela-dia-header > .tabela-dia-th:not(:first-child),
+        .tabela-dia-row > .tabela-dia-cell:not(:first-child) {
+            border-left: 1px solid rgba(255,255,255,0.1);
+            padding-left: 6px;
+        }
+        .tabela-dia-cell.data { font-size:13px; font-weight:bold; color:#fff; }
+        .tabela-dia-th.rota,
+        .tabela-dia-cell.rota { text-align:center; color:#ffeb3b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .tabela-dia-th.saldo,
+        .tabela-dia-cell.saldo { text-align:right; font-weight:bold; color:#69f0ae; }
+        .tabela-dia-th.depositar,
+        .tabela-dia-cell.depositar { text-align:right; font-weight:bold; color:#ffcc80; }
         .loading { text-align:center; padding:40px; opacity:0.6; }
         .loading-clientes {
             text-align: center;
@@ -246,7 +282,7 @@
 
     <div class="topo">
         <div class="titulo" id="tituloPrincipal">&#128230; Balan&ccedil;o</div>
-        <div class="topo-fin" id="topoFin" onclick="abrirCalendario()">
+        <div class="topo-fin" id="topoFin">
             <div class="topo-fin-titulo">&#128176; Balan&ccedil;o Financeiro</div>
             <div class="topo-fin-datas" id="topoFinDatas">Selecione um per&iacute;odo</div>
         </div>
@@ -317,6 +353,7 @@
         dbLerPosseAcumulada,
         dbLerPixEmPosse,
         dbEscutarAtendimentosDoUsuario,
+        dbEscutarAtendimentos,
         dbEscutarDepositos,
         dbEscutarEstoque,
         dbEscutarHistoricoDoUsuario,
@@ -335,6 +372,7 @@
     let datasComAtendimento = new Set();
     let comissaoUsuario = 0; // % de comissÃ£o do colaborador logado (calculado por mÃªs)
     let colaboradorObj  = null;
+    let isTecnico = false;
     let mapaRotas = {};
     const _loadingMsgsBalanco = [
         'Buscando os dados do balanço...',
@@ -417,6 +455,25 @@
         if (calEtapa === 1 || calEtapa === 2) return; // bloqueado enquanto datas estÃ£o selecionadas
         calMesAtual = new Date(calMesAtual.getFullYear(), calMesAtual.getMonth() + delta, 1);
         renderizarCalendario();
+    };
+
+    window.selecionarMesAno = function() {
+        const selA = document.getElementById('selAno');
+        const selM = document.getElementById('selMes');
+        if (!selA || !selM) return;
+        const ano = parseInt(selA.value);
+        const mesSolicitado = parseInt(selM.value);
+        // Filtra meses disponíveis para o ano selecionado
+        const mesAnoDisp = new Set([...datasComAtendimento].map(d => d.slice(0, 7)));
+        const mesesDoAno = [...mesAnoDisp]
+            .filter(ma => ma.startsWith(String(ano)))
+            .map(ma => parseInt(ma.slice(5, 7)) - 1)
+            .sort((a, b) => b - a);
+        const mes = mesesDoAno.includes(mesSolicitado) ? mesSolicitado : (mesesDoAno[0] ?? mesSolicitado);
+        const ultimoDia = new Date(ano, mes + 1, 0).getDate();
+        dataDe  = `${ano}-${String(mes + 1).padStart(2, '0')}-01`;
+        dataAte = `${ano}-${String(mes + 1).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+        renderizar();
     };
 
     window.calLimpar = function() {
@@ -665,14 +722,11 @@
     }
 
     /**
-     * Conta as mÃ¡quinas atendidas somando os atendimentos passados.
-     * @param {Array}  atendimentos - Lista de atendimentos ativos no Firebase
-     * @param {Object} acumulado    - Objeto { "NomeMaquina": contagem } vindo de
-     *                               dbLerPosseAcumulada, representando mÃ¡quinas de
-     *                               atendimentos JÃ EXCLUÃDOS. PadrÃ£o: {} (vazio).
-     * Resultado: lista ordenada por contagem decrescente [["nome", contagem], ...]
+     * Calcula mÃ¡quinas em posse.
+     * Regra: sÃ³ altera por movimentaÃ§Ã£o de estoque e por registros de manutenÃ§Ã£o.
+     * Atendimento comum nÃ£o altera posse de mÃ¡quinas.
      */
-    function somarMaquinas(atendimentos, movimentosEstoque = [], nomeUsuario = '', mapaCategoriasEstoque = {}, acumulado = {}) {
+    function somarMaquinasEmPosse(atendimentos, movimentosEstoque = [], nomeUsuario = '', mapaCategoriasEstoque = {}, acumulado = {}) {
         const mapa = { ...acumulado };
         const usuarioNorm = normalizarTexto(nomeUsuario);
 
@@ -698,12 +752,29 @@
                 (a?.manutencao?.equipamentosAdicionados || []).forEach(item => {
                     aplicarDeltaMapa(mapa, item?.nome, -Number(item?.qtd || 1));
                 });
+            }
+        });
+        return Object.entries(mapa).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0], 'pt-BR'));
+    }
+
+    function somarMaquinasAtendidasPeriodo(atendimentos) {
+        const mapa = {};
+
+        atendimentos.forEach(a => {
+            if (a?.origemRegistro === 'manutencao') {
+                (a?.manutencao?.equipamentosRetiradosDetalhes || []).forEach(item => {
+                    aplicarDeltaMapa(mapa, item?.nome, Number(item?.qtd || 1));
+                });
+                (a?.manutencao?.equipamentosAdicionados || []).forEach(item => {
+                    aplicarDeltaMapa(mapa, item?.nome, Number(item?.qtd || 1));
+                });
                 return;
             }
             (a.fotos?.maquinas || []).forEach(m => {
-                aplicarDeltaMapa(mapa, m?.nome, -1);
+                aplicarDeltaMapa(mapa, m?.nome, 1);
             });
         });
+
         return Object.entries(mapa).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0], 'pt-BR'));
     }
 
@@ -741,10 +812,11 @@
         const mapa = {};
         atendimentos.forEach(a => {
             const chave = new Date(a.data || a.dataHora || 0).toLocaleDateString('pt-BR');
-            if (!mapa[chave]) mapa[chave] = { count: 0, rotas: new Set(), saldo: 0 };
+            if (!mapa[chave]) mapa[chave] = { count: 0, rotas: new Set(), saldo: 0, depositar: 0 };
             mapa[chave].count++;
             const f = a.financeiro || {};
             mapa[chave].saldo += obterLiquidoEmpresa(f);
+            mapa[chave].depositar += obterSaldoDepositar(f);
             const rota = a.cliente?.rota
                 || mapaRotas[a.cliente?.id]
                 || mapaRotas[String(a.cliente?.numero || '')]
@@ -760,6 +832,10 @@
 
     function moeda(v) {
         return Number(v).toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:0, maximumFractionDigits:0 });
+    }
+
+    function ehMovimentoEstoqueNoAtendimento(atendimento) {
+        return atendimento?.origemRegistro === 'retirada_estoque' || atendimento?.origemRegistro === 'entrada_estoque';
     }
 
     function getComissaoParaMes(colab, mesAno) {
@@ -782,10 +858,12 @@
         _pararLoadingBalanco();
         const filtrados  = filtrarPorDatas(todosAtendimentos, dataDe, dataAte || dataDe);
         const doMes      = filtrarMesCompleto(todosAtendimentos, dataDe);
+        const filtradosFinanceiros = filtrados.filter(a => !ehMovimentoEstoqueNoAtendimento(a));
+        const doMesFinanceiro = doMes.filter(a => !ehMovimentoEstoqueNoAtendimento(a));
         const conteudo   = document.getElementById('conteudo');
 
-        const fin        = somarFinanceiro(doMes);
-        const finPeriodo = somarFinanceiro(filtrados);
+        const fin        = somarFinanceiro(doMesFinanceiro);
+        const finPeriodo = somarFinanceiro(filtradosFinanceiros);
         const mapaCategoriasEstoque = criarMapaCategoriasEstoque(estoqueAtual);
 
         // Posse total = atendimentos ativos + acumulado dos excluÃ­dos (lido na inicializaÃ§Ã£o)
@@ -798,7 +876,7 @@
             mapaCategoriasEstoque,
             window._posseAcumuladaProdutos || {}
         );
-        const maquinasPosse = somarMaquinas(
+        const maquinasPosse = somarMaquinasEmPosse(
             todosAtendimentos,
             historicoEstoque,
             usuarioLogado,
@@ -810,8 +888,8 @@
         const maxMaqPosse   = Math.max(1, ...maquinasPosse.map(([, qtd]) => Math.abs(qtd)));
 
         // MÃ¡quinas apenas do perÃ­odo selecionado (para a seÃ§Ã£o "MÃ¡quinas Atendidas no PerÃ­odo")
-        const maquinas   = somarMaquinas(filtrados);
-        const porDia  = atendimentosPorDia(filtrados);
+        const maquinas   = somarMaquinasAtendidasPeriodo(filtrados);
+        const porDia  = atendimentosPorDia(filtradosFinanceiros);
 
         const labelDe  = formatarDataBR(dataDe)  || 'Selecione';
         const labelAte = formatarDataBR(dataAte) || 'Selecione';
@@ -848,10 +926,11 @@
             <!--
               =====================================================================
               SEÃ‡ÃƒO: MÃQUINAS EM POSSE (total acumulado)
-              Exibe todas as mÃ¡quinas atendidas pelo colaborador, somando:
-                1. Atendimentos ATIVOS no Firebase (todosAtendimentos)
-                2. Atendimentos JÃ EXCLUÃDOS (window._posseAcumuladaMaquinas)
-              MÃ¡quinas ficam salvas dentro de a.fotos.maquinas em cada atendimento.
+              Exibe as mÃ¡quinas em posse do colaborador, somando:
+                1. MovimentaÃ§Ãµes de estoque atribuÃ­das ao usuÃ¡rio
+                2. Registros de manutenÃ§Ã£o (retira soma, entrega abate)
+                3. Acumulado de atendimentos/manutenÃ§Ãµes jÃ¡ excluÃ­dos
+              Atendimento comum nÃ£o altera posse de mÃ¡quinas.
               A barra Ã© verde para destacar diferente dos produtos (amarela).
               SÃ³ aparece se houver ao menos uma mÃ¡quina registrada.
               =====================================================================
@@ -888,17 +967,22 @@
             </div>
 
             <!-- Seletor de período -->
-            <div class="seletor-periodo" onclick="abrirCalendario()" style="cursor:pointer;">
-                <div class="data-btn${dataDe ? ' ativo' : ''}" style="pointer-events:none;">
-                    <span class="data-label">De</span>
-                    <span class="data-valor${!dataDe ? ' vazio' : ''}">${labelDe}</span>
-                </div>
-                <span class="sep-seta">&rarr;</span>
-                <div class="data-btn${dataAte ? ' ativo' : ''}" style="pointer-events:none;">
-                    <span class="data-label">At&eacute;</span>
-                    <span class="data-valor${!dataAte ? ' vazio' : ''}">${labelAte}</span>
-                </div>
-            </div>
+            ${(() => {
+                const mesAnoDisp = new Set([...datasComAtendimento].map(d => d.slice(0, 7)));
+                const anoAtual = dataDe ? parseInt(dataDe.slice(0, 4)) : 0;
+                const mesAtual = dataDe ? parseInt(dataDe.slice(5, 7)) - 1 : -1;
+                const anos = [...new Set([...mesAnoDisp].map(ma => parseInt(ma.slice(0, 4))))].sort((a,b) => b - a);
+                const mesesDoAno = [...mesAnoDisp].filter(ma => ma.startsWith(String(anoAtual))).map(ma => parseInt(ma.slice(5, 7)) - 1).sort((a,b) => b - a);
+                return `
+                <div class="seletor-mes-ano">
+                    <select id="selAno" onchange="selecionarMesAno()" style="flex:0 0 80px; font-size:13px; font-weight:normal; color:rgba(255,255,255,0.5); border-color:rgba(255,255,255,0.12);">
+                        ${anos.map(a => `<option value="${a}"${a === anoAtual ? ' selected' : ''}>${a}</option>`).join('')}
+                    </select>
+                    <select id="selMes" onchange="selecionarMesAno()" style="flex:1; font-size:17px; border-color:rgba(255,235,59,0.5); background:rgba(255,235,59,0.08);">
+                        ${mesesDoAno.map(i => `<option value="${i}"${i === mesAtual ? ' selected' : ''}>${MESES[i]}</option>`).join('')}
+                    </select>
+                </div>`;
+            })()}
 
             <!-- Resumo financeiro -->
             ${dataDe ? (() => {
@@ -918,48 +1002,37 @@
                     })
                     .reduce((s, d) => s + Number(d.valor || 0), 0);
                 const valorDepositar = Math.max(0, totalDeveDepositar - totalJaDepositado);
-                const labelPeriodo = (!dataAte || dataAte === dataDe) ? formatarDataBR(dataDe) : 'Per&iacute;odo';
+                const labelPeriodo = nomeMes;
                 return `
             <div class="card-resumo">
 
-                <!-- Cobrado no período + Depositar na Loja -->
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
-                    <div style="background:rgba(255,235,59,0.1); border:1px solid rgba(255,235,59,0.35); border-radius:14px; padding:14px 8px; text-align:center;">
-                        <div style="font-size:11px; color:#ffeb3b; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">${labelPeriodo}</div>
-                        <div style="font-size:20px; font-weight:bold; color:#ffeb3b; line-height:1;">${moeda(finPeriodo.liquido)}</div>
-                        <div style="font-size:10px; color:rgba(255,235,59,0.5); text-transform:uppercase; margin-top:5px;">Cobrado l&iacute;quido</div>
-                    </div>
-                    <div style="background:rgba(255,152,0,0.15); border:1px solid rgba(255,152,0,0.4); border-radius:14px; padding:14px 8px; text-align:center;">
-                        <div style="font-size:11px; color:#ffb74d; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Depositar na Loja</div>
-                        <div style="font-size:20px; font-weight:bold; color:#ffcc80; line-height:1;">${moeda(valorDepositar)}</div>
-                    </div>
-                </div>
 
                 <!-- Total do mês + Comissão -->
                 <div style="border-top:1px dashed rgba(255,255,255,0.1); padding-top:14px;">
-                    <div class="resumo-titulo" style="margin-bottom:10px;">&#128176; ${nomeMes}</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                    <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:14px 8px; text-align:center;">
-                        <div style="font-size:11px; color:rgba(255,255,255,0.6); font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Total do m&ecirc;s</div>
-                        <div style="font-size:20px; font-weight:bold; color:rgba(255,255,255,0.7); line-height:1;">${moeda(fin.liquido)}</div>
-                        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:5px;">l&iacute;quido</div>
-                    </div>
                     ${comissaoUsuario > 0 ? `
-                    <div style="background:rgba(76,175,80,0.15); border:1px solid rgba(76,175,80,0.35); border-radius:14px; padding:14px 8px; text-align:center;">
-                        <div style="font-size:11px; color:#81c784; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Comiss&atilde;o do m&ecirc;s</div>
-                        <div style="font-size:20px; font-weight:bold; color:#a5d6a7; line-height:1;">${moeda(valorComissao)}</div>
-                        <div style="font-size:10px; color:rgba(165,214,167,0.6); margin-top:5px;">${comissaoUsuario}% do m&ecirc;s</div>
-                    </div>` : `<div></div>`}
-                </div>
+                    <!-- Comissão em destaque -->
+                    <div style="background:linear-gradient(135deg, rgba(46,125,50,0.5), rgba(76,175,80,0.3)); border:1.5px solid rgba(76,175,80,0.6); border-radius:18px; padding:20px 12px; text-align:center; margin-bottom:10px; box-shadow:0 0 18px rgba(76,175,80,0.2);">
+                        <div style="font-size:11px; color:#81c784; font-weight:bold; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">&#128179; Seu Saldo do M&ecirc;s</div>
+                        <div style="font-size:11px; color:#ffeb3b; font-weight:bold; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">&#128176; ${nomeMes}</div>
+                        <div style="font-size:32px; font-weight:bold; color:#69f0ae; line-height:1; letter-spacing:-0.5px;">${moeda(valorComissao)}</div>
+                        <div style="font-size:11px; color:rgba(165,214,167,0.7); margin-top:7px;">${comissaoUsuario}% do m&ecirc;s</div>
+                    </div>` : `<div class="resumo-titulo" style="margin-bottom:10px;">&#128176; ${nomeMes}</div>`}
+
+                    <!-- Total do mês menor e discreto (oculto para técnico) -->
+                    ${!isTecnico ? `
+                    <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 8px; text-align:center; display:flex; justify-content:space-between; align-items:center; padding:10px 16px;">
+                        <div style="font-size:11px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.5px;">Total cobrado no m&ecirc;s</div>
+                        <div style="font-size:16px; font-weight:bold; color:rgba(255,255,255,0.35);">${moeda(fin.liquido)}</div>
+                    </div>` : ''}
                 </div>
             </div>`;
             })() : ''}
 
-            <!-- Fichas do período -->
-            ${filtrados.length > 0 && dataDe ? `
+            <!-- Fichas do período (oculto para técnico) -->
+            ${filtradosFinanceiros.length > 0 && dataDe && !isTecnico ? `
             <div class="secao">
                 <div class="secao-titulo">&#128203; Fichas do Per&iacute;odo</div>
-                ${filtrados.map((a, i) => {
+                ${filtradosFinanceiros.map((a, i) => {
                     const f = a.financeiro || {};
                     const totalPix = obterTotalPix(f);
                     const liquidoEmpresa = obterLiquidoEmpresa(f);
@@ -1005,35 +1078,53 @@
                 }).join('')}
             </div>` : ''}
 
-            <!-- Máquinas atendidas no período -->
-            ${maquinas.length > 0 && (dataDe || dataAte) ? `
+            <!-- Por dia -->
+            ${porDia.length > 0 && (dataDe || dataAte) ? `
             <div class="secao">
-                <div class="secao-titulo" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10px;">&#127920; M&aacute;quinas Atendidas no Per&iacute;odo Selecionado</div>
+                <div class="secao-titulo" style="text-align:center;">&#128197; ${isTecnico ? 'Comiss&atilde;o por Dia' : 'L&iacute;quido por Dia'}</div>
+                <div class="lista-card" style="padding:0;">
+                    ${(() => {
+                        const temDepositar = !isTecnico && porDia.some(([,{depositar}]) => depositar > 0);
+                        const cols = isTecnico
+                            ? '1.2fr 1fr'
+                            : temDepositar
+                                ? '1.08fr 0.62fr 0.9fr 0.92fr'
+                                : '1.14fr 0.72fr 1fr';
+                        return `
+                        <div class="tabela-dia-header" style="grid-template-columns:${cols};">
+                            <div class="tabela-dia-th">Data</div>
+                            ${!isTecnico ? `<div class="tabela-dia-th rota">Rota</div>` : ''}
+                            <div class="tabela-dia-th saldo">Saldo</div>
+                            ${temDepositar ? `<div class="tabela-dia-th depositar">Depositar</div>` : ''}
+                        </div>
+                        <div class="tabela-dia">
+                        ${porDia.map(([data,{count,rotas,saldo,depositar}]) => {
+                            const nums = [...rotas].map(r => r.replace(/^rota\s*/i, '').replace(/^r\.\s*/i, '').trim());
+                            const rotasStr = nums.join(' / ');
+                            const valorDia = isTecnico ? saldo * comissaoUsuario / 100 : saldo;
+                            return `
+                            <div class="tabela-dia-row" style="grid-template-columns:${cols};">
+                                <div class="tabela-dia-cell data">${data}</div>
+                                ${!isTecnico ? `<div class="tabela-dia-cell rota">${rotasStr}</div>` : ''}
+                                <div class="tabela-dia-cell saldo">${moeda(valorDia)}</div>
+                                ${temDepositar ? `<div class="tabela-dia-cell depositar">${depositar > 0 ? moeda(depositar) : '—'}</div>` : ''}
+                            </div>`;
+                        }).join('')}
+                        </div>`;
+                    })()}
+                </div>
+            </div>` : ''}
+
+            <!-- Máquinas atendidas no período (oculto para técnico) -->
+            ${maquinas.length > 0 && (dataDe || dataAte) && !isTecnico ? `
+            <div class="secao">
+                <div class="secao-titulo" style="text-align:center;">&#127920; M&aacute;quinas Atendidas no Per&iacute;odo Selecionado</div>
                 <div class="lista-card">
                     ${maquinas.map(([nome,qtd]) => `
                         <div class="lista-item">
                             <div class="item-nome">${nome}</div>
                             <div class="dia-count">${qtd}</div>
                         </div>`).join('')}
-                </div>
-            </div>` : ''}
-
-            <!-- Por dia -->
-            ${porDia.length > 0 && (dataDe || dataAte) ? `
-            <div class="secao">
-                <div class="secao-titulo">&#128197; L&iacute;quido por Dia</div>
-                <div class="lista-card">
-                    ${porDia.map(([data,{count,rotas,saldo}]) => {
-                        const nums = [...rotas].map(r => r.replace(/^rota\s*/i, '').replace(/^r\.\s*/i, '').trim());
-                        const rotasStr = nums.length > 0 ? `Rota ${nums.join(' / ')}` : '';
-                        return `
-                        <div class="dia-item" style="gap:6px;">
-                            <span class="dia-data" style="flex-shrink:0;">${data}</span>
-                            <span style="font-size:13px; color:rgba(255,255,255,0.5); flex-shrink:0;">Qtd ${count}</span>
-                            <span style="font-size:13px; color:#ffeb3b; flex:1; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${rotasStr}</span>
-                            <span style="font-size:13px; font-weight:bold; color:#a5d6a7; flex-shrink:0;">${moeda(saldo)}</span>
-                        </div>`;
-                    }).join('')}
                 </div>
             </div>` : ''}
         `;
@@ -1045,9 +1136,12 @@
     function atualizarTopoFinDatas() {
         const el = document.getElementById('topoFinDatas');
         if (!el) return;
-        const de  = formatarDataBR(dataDe)  || 'Selecione';
-        const ate = formatarDataBR(dataAte) || '';
-        el.innerHTML = (ate && ate !== de) ? `${de} &rarr; ${ate}` : de;
+        if (dataDe) {
+            const ref = new Date(dataDe + 'T00:00:00');
+            el.innerHTML = `&#128197; ${MESES[ref.getMonth()]} ${ref.getFullYear()}`;
+        } else {
+            el.innerHTML = 'Selecione um per&iacute;odo';
+        }
     }
 
     function setupTopoObserver() {
@@ -1108,6 +1202,16 @@
     estoqueAtual = estoque;
     pixEmPosse = pixPosseInicial;
     colaboradorObj  = colaboradores.find(c => String(c?.nome || '').trim() === usuarioLogado) || null;
+    isTecnico = (colaboradorObj?.nivel_completo || '').startsWith('atendimento') &&
+                String(colaboradorObj?.cargo || '').trim().toLowerCase() === 'técnico';
+    if (!dataDe) {
+        const mesAnoDisp = [...new Set([...datasComAtendimento].map(d => d.slice(0, 7)))].sort();
+        const maisRecente = mesAnoDisp[mesAnoDisp.length - 1];
+        const [anoStr, mesStr] = (maisRecente || `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`).split('-');
+        const ultimoDia = new Date(parseInt(anoStr), parseInt(mesStr), 0).getDate();
+        dataDe  = `${anoStr}-${mesStr}-01`;
+        dataAte = `${anoStr}-${mesStr}-${String(ultimoDia).padStart(2, '0')}`;
+    }
 
     // Mapa para cruzar cliente do atendimento â†’ rota atual
     mapaRotas = {};
@@ -1116,7 +1220,9 @@
         if (c.firebaseUrl) mapaRotas[c.firebaseUrl] = c.rota;
         if (c.numero)      mapaRotas[String(c.numero)] = c.rota;
     });
-    todosAtendimentos = todos.filter(a => String(a?.atendente || '').trim() === usuarioLogado);
+    todosAtendimentos = isTecnico
+        ? todos.filter(a => Number(a.financeiro?.totalGeral || 0) > 0)
+        : todos.filter(a => String(a?.atendente || '').trim() === usuarioLogado);
     datasComAtendimento = new Set(
         todosAtendimentos
             .filter(a => {
@@ -1137,11 +1243,19 @@
     renderizar();
 
     // Atualiza em tempo real apenas os dados do usuÃƒÂ¡rio logado.
-    dbEscutarAtendimentosDoUsuario(usuarioLogado, (lista) => {
-        todosAtendimentos = lista;
-        atualizarDatasComAtendimento();
-        renderizar();
-    });
+    if (isTecnico) {
+        dbEscutarAtendimentos((lista) => {
+            todosAtendimentos = lista.filter(a => Number(a.financeiro?.totalGeral || 0) > 0);
+            atualizarDatasComAtendimento();
+            renderizar();
+        });
+    } else {
+        dbEscutarAtendimentosDoUsuario(usuarioLogado, (lista) => {
+            todosAtendimentos = lista;
+            atualizarDatasComAtendimento();
+            renderizar();
+        });
+    }
 
     dbEscutarDepositos(usuarioLogado, (lista) => {
         todosDepositos = lista;
