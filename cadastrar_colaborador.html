@@ -22,13 +22,13 @@
         .subtitulo { font-size: 16px; color: #ffeb3b; margin-bottom: 12px; font-weight: bold; text-align: center; text-transform: uppercase; }
         
         /* Card Branco */
-        .card-colab { 
-            background: white; color: #333; border-radius: 12px; padding: 12px; margin-bottom: 12px; 
-            display: flex; justify-content: space-between; align-items: center; 
+        .card-colab {
+            background: white; color: #333; border-radius: 12px; padding: 12px; margin-bottom: 12px;
+            display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            cursor: default !important; 
+            cursor: default !important;
         }
-        
+
         /* Alça de Arraste ☰ */
         .handle { user-select: none; -webkit-user-select: none; transition: 0.2s; cursor: grab; padding-right: 15px; color: #ccc; font-size: 20px; }
         .handle:hover { color: #042d86 !important; }
@@ -36,7 +36,7 @@
         /* Textos do Card */
         .info-colab b { color: #042d86; font-size: 16px; display: block; }
         .info-colab div { color: #666; font-size: 13px; font-weight: 500; }
-        
+
         /* Botões */
         .acoes-card { display: flex; flex-direction: column; gap: 5px; }
         .btn-editar-card { background: #e3f2fd; color: #1976d2; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; text-align: center; border: 1px solid #1976d2; }
@@ -58,20 +58,23 @@
         input, select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(255,255,255,0.05); color: white; box-sizing:border-box; font-size: 14px; outline: none; }
         input::placeholder { color: rgba(255,255,255,0.4); }
         select option { background: #042d86; color: white; }
-        .bloco-remuneracao { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; padding: 12px; }
-        .titulo-remuneracao { font-size: 16px; margin-bottom: 6px !important; }
-        .remuneracao-grid { display: grid; gap: 10px; }
-        .linha-remuneracao-topo { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: end; }
+        .bloco-remuneracao { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 14px 12px; }
+        .titulo-remuneracao { font-size: 15px; margin-bottom: 10px !important; letter-spacing: 0.5px; }
+        .remuneracao-grid { display: flex; flex-direction: column; gap: 10px; }
+        .rem-row { display: grid; gap: 8px; }
+        .rem-row-2 { grid-template-columns: 1fr 1fr; }
+        .rem-row-3 { grid-template-columns: 1fr 1fr 1fr; }
         .campo-remuneracao { display: flex; flex-direction: column; }
-        .campo-remuneracao .label-focada { font-size: 14px; text-align: center; }
-        .campo-remuneracao input { font-size: 16px; }
+        .campo-remuneracao .label-focada { font-size: 11px; text-align: center; margin-bottom: 3px; }
+        .campo-remuneracao input { font-size: 15px; text-align: center; padding: 9px 6px; }
         .linha-remuneracao { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .linha-remuneracao .label-focada { margin: 0; min-width: 72px; }
         .linha-remuneracao input { flex: 1; }
-        .checks-remuneracao { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .check-remuneracao { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); }
-        .check-remuneracao input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: #4caf50; flex-shrink: 0; }
-        .check-remuneracao span { font-size: 13px; color: white; font-weight: bold; }
+        .checks-remuneracao { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .check-remuneracao { display: flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+        .check-remuneracao:has(input:checked) { background: rgba(76,175,80,0.2); border-color: #4caf50; }
+        .check-remuneracao input[type="checkbox"] { width: 14px; height: 14px; margin: 0; accent-color: #4caf50; flex-shrink: 0; }
+        .check-remuneracao span { font-size: 12px; color: white; font-weight: 600; white-space: nowrap; }
         .btn-salvar { background:#4caf50; padding:14px; text-align:center; border-radius:30px; font-weight:bold; cursor:pointer; margin-top: 10px; border: none; color: white; width: 100%; font-size: 15px; transition: 0.3s; }
     </style>
 </head>
@@ -272,40 +275,46 @@
         <div class="bloco-remuneracao">
             <label class="label-focada titulo-remuneracao">Remuneração</label>
             <div class="remuneracao-grid">
-                <div class="linha-remuneracao-topo">
-                    <div class="campo campo-curto campo-remuneracao">
+                <div class="rem-row rem-row-2">
+                    <div class="campo campo-remuneracao">
                         <label class="label-focada">Comissão</label>
                         <input type="text" id="comissaoColaborador" placeholder="0%" maxlength="5" inputmode="decimal">
                     </div>
-                    <div class="campo campo-curto campo-remuneracao">
-                        <label class="label-focada">Repres.</label>
+                    <div class="campo campo-remuneracao">
+                        <label class="label-focada">Representante</label>
                         <input type="text" id="representanteComissaoColaborador" placeholder="5%" maxlength="5" inputmode="decimal">
                     </div>
-                    <div class="campo campo-curto campo-remuneracao">
+                </div>
+                <div class="rem-row rem-row-3">
+                    <div class="campo campo-remuneracao">
                         <label class="label-focada">Fixo</label>
-                        <input type="text" id="fixoColaborador" placeholder="Valor" maxlength="5" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5);">
+                        <input type="text" id="fixoColaborador" placeholder="0" maxlength="5" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5);">
                     </div>
-                    <div class="campo campo-curto campo-remuneracao">
+                    <div class="campo campo-remuneracao">
                         <label class="label-focada">Bônus Fixo</label>
-                        <input type="text" id="bonusFixoColaborador" placeholder="Valor" maxlength="5" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5);">
+                        <input type="text" id="bonusFixoColaborador" placeholder="0" maxlength="5" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5);">
+                    </div>
+                    <div class="campo campo-remuneracao">
+                        <label class="label-focada">Bon. Man.</label>
+                        <input type="text" id="bonusManutencaoColaborador" placeholder="0" maxlength="7" inputmode="numeric">
                     </div>
                 </div>
                 <div class="checks-remuneracao">
                     <label class="check-remuneracao">
                         <input type="checkbox" id="producaoProdutosColaborador">
-                        <span>Produção de Produtos</span>
+                        <span>Prod. Produtos</span>
                     </label>
                     <label class="check-remuneracao">
                         <input type="checkbox" id="producaoEquipamentosColaborador">
-                        <span>Produção de Equipamentos</span>
+                        <span>Prod. Equip.</span>
                     </label>
                     <label class="check-remuneracao">
                         <input type="checkbox" id="producaoPecasColaborador">
-                        <span>Produção de Peças</span>
+                        <span>Prod. Peças</span>
                     </label>
                     <label class="check-remuneracao">
                         <input type="checkbox" id="prestacaoServicoColaborador">
-                        <span>Prestação de Serviço</span>
+                        <span>Prest. Serviço</span>
                     </label>
                 </div>
             </div>
@@ -316,6 +325,7 @@
       conectarCampoPercentual('representanteComissaoColaborador');
       conectarCampoValor('fixoColaborador');
       conectarCampoValor('bonusFixoColaborador');
+      conectarCampoValor('bonusManutencaoColaborador');
       return;
 
       const bloco = document.querySelector('.bloco-remuneracao');
@@ -409,7 +419,7 @@
               card.className = 'card-colab';
               card.setAttribute('data-id', c.firebaseUrl); 
               const nivelExibir = c.nivel_completo ? c.nivel_completo.toUpperCase().replace('_', ' ') : 'N/D';
-              
+
               card.innerHTML = `
                   <div class="handle">☰</div>
                   <div class="info-colab" style="flex:1;">
@@ -423,7 +433,8 @@
                           formatarResumoRepresentante(c.representanteComissao),
                           c.producaoPecas ? 'Prod. Peças' : '',
                           temValorMonetario(c.fixo) ? `Fixo: ${formatarMilhar(c.fixo)}` : '',
-                          temValorMonetario(c.bonusFixo) ? `Bônus: ${formatarMilhar(c.bonusFixo)}` : ''
+                          temValorMonetario(c.bonusFixo) ? `Bônus: ${formatarMilhar(c.bonusFixo)}` : '',
+                          temValorMonetario(c.bonusManutencao) ? `Bon. Man.: ${formatarMilhar(c.bonusManutencao)}` : ''
                       ].filter(Boolean).join(' | ')}</div>
                   </div>
                   <div class="acoes-card">
@@ -476,6 +487,7 @@
       document.getElementById('representanteComissaoColaborador').value = c.representanteComissao ? `${limparValorPercentual(c.representanteComissao)}%` : '';
       document.getElementById('fixoColaborador').value = formatarMilhar(c.fixo || "");
       document.getElementById('bonusFixoColaborador').value = formatarMilhar(c.bonusFixo || "");
+      document.getElementById('bonusManutencaoColaborador').value = formatarMilhar(c.bonusManutencao || "");
       const partesNivel = String(c.nivel_completo || 'gestao_1').split('_');
       document.getElementById('nivelAcesso').value = partesNivel[0] || 'gestao';
       document.getElementById('nivelNumero').value = partesNivel[1] || '1';
@@ -499,6 +511,7 @@
           representanteComissao: limparValorPercentual(document.getElementById('representanteComissaoColaborador').value),
           fixo: limparValorInteiro(document.getElementById('fixoColaborador').value),
           bonusFixo: limparValorInteiro(document.getElementById('bonusFixoColaborador').value),
+          bonusManutencao: limparValorInteiro(document.getElementById('bonusManutencaoColaborador').value),
           senha: document.getElementById('senhaColaborador').value.trim(),
           nivel_completo: document.getElementById('nivelAcesso').value + "_" + document.getElementById('nivelNumero').value,
           dataAtualizacao: new Date().toISOString()
