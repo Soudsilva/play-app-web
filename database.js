@@ -2110,19 +2110,227 @@ export function dbEscutarJustificativasCheckin(routeNumber, callback) {
     });
 }
 
+function _normalizarTextoRotaUsuario(valor) {
+    return String(valor || '').trim().toLowerCase();
+}
+
+function _normalizarNumeroClienteRota(valor) {
+    return String(valor || '').replace(/\D/g, '').trim();
+}
+
+function _obterTimestampRota(valor) {
+    if (typeof valor === 'number' && Number.isFinite(valor)) return valor;
+    const convertido = Date.parse(valor || '');
+    return Number.isNaN(convertido) ? null : convertido;
+}
+
+function _compararClienteRota(clienteRota, clienteAtendimento) {
+    const idRota = String(clienteRota?.firebaseUrl || clienteRota?.id || '').trim();
+    const idAtendimento = String(clienteAtendimento?.id || clienteAtendimento?.firebaseUrl || '').trim();
+    if (idRota && idAtendimento && idRota === idAtendimento) return true;
+
+    const numeroRota = _normalizarNumeroClienteRota(clienteRota?.numero);
+    const numeroAtendimento = _normalizarNumeroClienteRota(clienteAtendimento?.numero);
+    return Boolean(numeroRota && numeroAtendimento && numeroRota === numeroAtendimento);
+}
+
+function _obterJustificativaCliente(justificativas, cliente) {
+    const chaves = [
+        String(cliente?.firebaseUrl || '').trim(),
+        String(cliente?.id || '').trim(),
+        _normalizarNumeroClienteRota(cliente?.numero)
+    ].filter(Boolean);
+
+    for (const chave of chaves) {
+        if (justificativas?.[chave]) return justificativas[chave];
+    }
+    return null;
+}
+
+function _obterTotalAtendimentoRota(atendimento) {
+    const total = Number(
+        atendimento?.financeiro?.totalGeral
+        ?? atendimento?.financeiro?.total
+        ?? atendimento?.totalGeral
+        ?? atendimento?.total
+        ?? 0
+    );
+    return Number.isFinite(total) ? total : 0;
+}
+
+export function calcularStatusLiberacaoRota({
+    rotaNumero = '',
+    rotaDados = {},
+    clientesDaRota = [],
+    atendimentos = [],
+    justificativas = {},
+    nomeUsuario = '',
+    agora = Date.now()
+} = {}) {
+    const DOIS_DIAS = 2 * 24 * 60 * 60 * 1000;
+    const SEIS_DIAS = 6 * 24 * 60 * 60 * 1000;
+    const CINCO_DIAS = 5 * 24 * 60 * 60 * 1000;
+    const inicioRotaMs = _obterTimestampRota(rotaDados?.timestamp_selecao);
+    const prazoMaximoMs = inicioRotaMs == null ? null : (inicioRotaMs + CINCO_DIAS);
+    const usuarioNorm = _normalizarTextoRotaUsuario(nomeUsuario || rotaDados?.selecionada_por);
+
+    const atendidos = [];
+    const justificados = [];
+    const pendentes = [];
+    let primeiroAtendimentoValidoMs = null;
+
+    (Array.isArray(clientesDaRota) ? clientesDaRota : []).forEach((cliente) => {
+        const atendimentosValidosCliente = (Array.isArray(atendimentos) ? atendimentos : []).filter((atendimento) => {
+            if (!_compararClienteRota(cliente, atendimento?.cliente)) return false;
+
+            const atendenteNorm = _normalizarTextoRotaUsuario(atendimento?.atendente);
+            if (usuarioNorm && atendenteNorm !== usuarioNorm) return false;
+
+            const dataAtendimentoMs = _obterTimestampRota(atendimento?.ultimaEdicao || atendimento?.data);
+            if (dataAtendimentoMs == null) return false;
+            if (!(_obterTotalAtendimentoRota(atendimento) > 0)) return false;
+            if ((agora - dataAtendimentoMs) > SEIS_DIAS) return false;
+            if (inicioRotaMs != null && dataAtendimentoMs < inicioRotaMs) return false;
+            return true;
+        });
+
+        const foiAtendido = atendimentosValidosCliente.length > 0;
+
+        if (foiAtendido) {
+            const primeiroAtendimentoClienteMs = atendimentosValidosCliente.reduce((menor, atendimento) => {
+                const ts = _obterTimestampRota(atendimento?.ultimaEdicao || atendimento?.data);
+                return ts != null && (menor == null || ts < menor) ? ts : menor;
+            }, null);
+            if (primeiroAtendimentoClienteMs != null && (primeiroAtendimentoValidoMs == null || primeiroAtendimentoClienteMs < primeiroAtendimentoValidoMs)) {
+                primeiroAtendimentoValidoMs = primeiroAtendimentoClienteMs;
+            }
+            atendidos.push(cliente);
+            return;
+        }
+
+        const justif = _obterJustificativaCliente(justificativas, cliente);
+        const justifMs = _obterTimestampRota(justif?.timestamp);
+        if (justif && justifMs != null && (inicioRotaMs == null || justifMs >= inicioRotaMs)) {
+            justificados.push({
+                ...cliente,
+                justif,
+                liberarEm: justifMs + DOIS_DIAS,
+                expirou: agora >= (justifMs + DOIS_DIAS)
+            });
+            return;
+        }
+
+        pendentes.push(cliente);
+    });
+
+    const todosResolvidos = pendentes.length === 0;
+    const ultimaJustificativaMs = justificados.reduce((maior, cliente) => {
+        const ts = _obterTimestampRota(cliente?.justif?.timestamp);
+        return ts != null && ts > maior ? ts : maior;
+    }, 0);
+
+    let motivo = 'aguardando_prazo_maximo';
+    let liberarAgora = false;
+    let liberarEmMs = prazoMaximoMs;
+    let referenciaLiberacaoMs = null;
+    let referenciaLiberacaoTipo = null;
+
+    if (prazoMaximoMs != null && agora >= prazoMaximoMs) {
+        motivo = 'prazo_maximo';
+        liberarAgora = true;
+        liberarEmMs = prazoMaximoMs;
+    } else if (todosResolvidos && justificados.length === 0) {
+        motivo = 'todos_atendidos';
+        liberarAgora = true;
+        liberarEmMs = agora;
+    } else if (todosResolvidos && justificados.length > 0) {
+        if (primeiroAtendimentoValidoMs == null) {
+            motivo = 'aguardando_primeiro_atendimento';
+        } else {
+            referenciaLiberacaoMs = Math.max(primeiroAtendimentoValidoMs, ultimaJustificativaMs || 0);
+            referenciaLiberacaoTipo = referenciaLiberacaoMs === primeiroAtendimentoValidoMs && primeiroAtendimentoValidoMs > (ultimaJustificativaMs || 0)
+                ? 'primeiro_atendimento'
+                : 'ultima_justificativa';
+            liberarEmMs = referenciaLiberacaoMs + DOIS_DIAS;
+            if (agora >= liberarEmMs) {
+                motivo = 'ultima_justificativa_expirada';
+                liberarAgora = true;
+            } else {
+                motivo = 'aguardando_ultima_justificativa';
+            }
+        }
+    }
+
+    return {
+        rotaNumero: String(rotaNumero || rotaDados?.numero || '').trim(),
+        atendidos,
+        justificados,
+        pendentes,
+        todosResolvidos,
+        inicioRotaMs,
+        primeiroAtendimentoValidoMs,
+        prazoMaximoMs,
+        ultimaJustificativaMs: ultimaJustificativaMs || null,
+        liberarAgora,
+        liberarEmMs,
+        motivo,
+        referenciaLiberacaoMs,
+        referenciaLiberacaoTipo,
+        tempoRestanteMs: liberarEmMs == null ? null : Math.max(0, liberarEmMs - agora)
+    };
+}
+
+export async function dbVerificarELiberarRota(numeroRota, nomeUsuario, dados = {}) {
+    try {
+        const sessao = dados?.sessao || (await get(ref(db, 'selecao_rotas/ativa'))).val();
+        const rotaDados = sessao?.rotas?.[numeroRota];
+        if (!rotaDados) return { liberada: false, status: null };
+
+        const usuarioSelecionado = _normalizarTextoRotaUsuario(rotaDados?.selecionada_por);
+        const usuarioInformado = _normalizarTextoRotaUsuario(nomeUsuario);
+        if (usuarioInformado && usuarioSelecionado && usuarioSelecionado !== usuarioInformado) {
+            return { liberada: false, status: null };
+        }
+
+        const clientesDaRota = dados?.clientesDaRota || (sessao?.clientes_por_rota?.[numeroRota] || []);
+        const atendimentos = dados?.atendimentos || await dbListarAtendimentos();
+        const justificativas = dados?.justificativas || await dbListarJustificativasCheckin(numeroRota);
+
+        const status = calcularStatusLiberacaoRota({
+            rotaNumero: numeroRota,
+            rotaDados,
+            clientesDaRota,
+            atendimentos,
+            justificativas,
+            nomeUsuario: rotaDados?.selecionada_por || nomeUsuario
+        });
+
+        if (!status?.liberarAgora) {
+            return { liberada: false, status };
+        }
+
+        await dbLiberarRota(numeroRota);
+        return { liberada: true, status };
+    } catch (error) {
+        console.error("ERRO AO VERIFICAR LIBERACAO DA ROTA:", error);
+        throw error;
+    }
+}
+
 /**
  * Libera uma rota específica da sessão ativa, zerando o campo selecionada_por.
  *
  * QUANDO USAR:
- * Critérios de liberação (verificados no checkin_rotas.html ao abrir):
- *   1. Todos os clientes atendidos (pelo mesmo usuário nos últimos 2 dias)
- *      OU com justificativa expirada (mais de 2 dias) — zero pendentes.
- *   2. Rota selecionada há mais de 5 dias (timestamp_selecao).
+ * Critérios de liberação:
+ *   1. Todos os clientes atendidos nos últimos 6 dias -> libera no mesmo instante.
+ *   2. Havendo justificativa, libera 2 dias após a última justificativa,
+ *      mas essa contagem só começa depois do primeiro atendimento válido da rota.
+ *   3. Rota selecionada há mais de 5 dias (timestamp_selecao) -> libera pelo prazo máximo.
  * Ao liberar, a rota volta a ficar disponível para outro usuário selecionar.
  *
  * QUEM CHAMA:
- * - atendimento_nivel_1.html → após salvar um atendimento, verifica se a rota ficou completa
- * - checkin_rotas.html → na inicialização, verifica se alguma rota já expirou e pode ser liberada
+ * - checkin_rotas.html -> ao abrir e ao atualizar as rotas do usuário
+ * - atendimento_nivel_1.html -> após salvar um atendimento, para liberar na hora quando a rota termina
  *
  * @param {string} numeroRota - O número/chave da rota no Firebase (ex: "3", "12")
  */

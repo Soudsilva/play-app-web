@@ -84,6 +84,7 @@
         .card-rota-dias { display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:10px; }
         .card-rota-dias-label { font-size:12px; color:#ffffff; text-transform:uppercase; letter-spacing:0.5px; width:100%; text-align:center; user-select:none; -webkit-user-select:none; }
         .card-rota-dias-val { display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; width:100%; }
+        .card-rota-liberacao { font-size:14px; font-weight:700; color:#ffffff; text-align:center; margin-top:6px; user-select:none; -webkit-user-select:none; }
         .dia-badge { font-size:12px; font-weight:bold; border-radius:999px; padding:6px 0; text-align:center; border:1px solid transparent; white-space:nowrap; }
         .dia-badge.disponivel { color:#ffffff; background:linear-gradient(180deg, #66bb6a, #2e7d32); border-color:#a5d6a7; box-shadow:0 0 0 1px rgba(165,214,167,0.18), 0 10px 18px rgba(76,175,80,0.18); }
         .dia-badge.indisponivel { color:#cbd5e1; background:rgba(255,255,255,0.06); border:1px dashed rgba(255,255,255,0.35); text-decoration:line-through; text-decoration-thickness:2px; text-decoration-color:#ffffff; }
@@ -240,7 +241,9 @@ import {
     dbSelecionarRota,
     dbEscutarVersaoClientes,
     dbEscutarVersaoMediaDeVendas,
-    dbListarJustificativasCheckin
+    dbListarJustificativasCheckin,
+    dbLiberarRota,
+    calcularStatusLiberacaoRota
 } from './database.js';
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -251,13 +254,14 @@ let sessaoAtual = null;
 let numerosDeRota = [];
 let clientesPorRota = {};
 let maquinasPorCliente = {};
-let clientesAtendidosRecentesSet = new Set();
+let todosAtendimentosRotas = [];
 let clientesPorIdMap = {};
 let justificativasPorRota = {};
 let estaAnimando = false; // bloqueia renderizaÃƒÂ§ÃƒÂ£o dos detalhes durante a animaÃƒÂ§ÃƒÂ£o
 let timerResetSlot = null;
 let versaoClientesAtual = null;
 let versaoMediaDeVendasAtual = null;
+let timerAtualizacaoLiberacaoRotas = null;
 const _loadingMsgsRotas = [
     'Carregando rotas...',
     'Conferindo clientes...',
@@ -308,6 +312,18 @@ async function init() {
     await carregarClientesPorId();
     await carregarClientesAtendidosRecentes();
 
+    if (!timerAtualizacaoLiberacaoRotas) {
+        timerAtualizacaoLiberacaoRotas = setInterval(async () => {
+            if (!sessaoAtual) return;
+            try {
+                await processarLiberacoesMinhasRotas(sessaoAtual);
+                if (sessaoAtual) mostrarTelaSessaoAtiva(sessaoAtual);
+            } catch (erroTimer) {
+                console.warn('Falha ao atualizar a liberacao das rotas selecionadas:', erroTimer);
+            }
+        }, 60000);
+    }
+
     // Escuta a versÃƒÂ£o dos clientes para detectar quando rotas/clientes mudaram
     dbEscutarVersaoClientes((versao) => {
         versaoClientesAtual = versao || null;
@@ -332,6 +348,8 @@ let recalculandoSessaoEmSegundoPlano = false;
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 async function onSessaoAtualizada(sessao) {
     sessaoAtual = sessao;
+
+    await processarLiberacoesMinhasRotas(sessao);
 
     // Se a sessão estiver desatualizada, recalcule em segundo plano sem derrubar a tela atual.
     tentarAutoRecalcularSessao();
@@ -526,33 +544,89 @@ function obterNumeroCliente(cliente) {
     return String(clientesPorIdMap[chave]?.numero || '').trim();
 }
 
-function atualizarClientesAtendidosRecentes(atendimentos) {
-    const agora = Date.now();
-    const CINCO_DIAS = 5 * 24 * 60 * 60 * 1000;
-    const usuarioNorm = String(usuarioAtual || '').trim().toLowerCase();
-    const atendidos = new Set();
+function formatarTempoRestante(ms) {
+    if (!(ms > 0)) return 'agora';
 
-    (atendimentos || []).forEach((atendimento) => {
-        const atendenteNorm = String(atendimento?.atendente || '').trim().toLowerCase();
-        if (!usuarioNorm || atendenteNorm !== usuarioNorm) return;
+    const totalMinutos = Math.max(1, Math.ceil(ms / 60000));
+    const dias = Math.floor(totalMinutos / 1440);
+    const horas = Math.floor((totalMinutos % 1440) / 60);
+    const minutos = totalMinutos % 60;
+    const partes = [];
 
-        const total = Number(
-            atendimento?.financeiro?.totalGeral
-            ?? atendimento?.financeiro?.total
-            ?? atendimento?.totalGeral
-            ?? atendimento?.total
-            ?? 0
-        );
-        if (!(total > 0)) return;
+    if (dias > 0) partes.push(`${dias}d`);
+    if (horas > 0) partes.push(`${horas}h`);
+    if (dias === 0 && minutos > 0) partes.push(`${minutos}min`);
 
-        const dataAtendimento = Date.parse(atendimento?.data || atendimento?.ultimaEdicao || '');
-        if (Number.isNaN(dataAtendimento) || (agora - dataAtendimento) > CINCO_DIAS) return;
+    return partes.join(' ');
+}
 
-        const chaveCliente = obterChaveCliente(atendimento?.cliente);
-        if (chaveCliente) atendidos.add(chaveCliente);
+function formatarDataHoraLiberacao(timestamp) {
+    if (!(timestamp > 0)) return '';
+    return new Date(timestamp).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
     });
+}
 
-    clientesAtendidosRecentesSet = atendidos;
+function obterTextoLiberacaoRota(status) {
+    if (status?.motivo === 'aguardando_primeiro_atendimento') {
+        return 'Aguardando o primeiro atendimento da rota para começar a contar a justificativa.';
+    }
+
+    if (!status?.liberarEmMs || status.liberarAgora) return '';
+
+    const quando = formatarTempoRestante(status.tempoRestanteMs);
+    if (status.motivo === 'aguardando_ultima_justificativa') {
+        return `Rota será liberada automaticamente em ${quando}`;
+    }
+
+    if (status.motivo === 'aguardando_prazo_maximo') {
+        return `Rota será liberada automaticamente em ${quando}`;
+    }
+
+    return '';
+}
+
+async function processarLiberacoesMinhasRotas(sessao) {
+    if (!sessao?.rotas) return;
+
+    const minhasRotas = Object.entries(sessao.rotas)
+        .filter(([_, dados]) => dados?.selecionada_por === usuarioAtual)
+        .map(([numero, dados]) => ({ numero: String(numero), ...dados }));
+
+    for (const rota of minhasRotas) {
+        if (!justificativasPorRota[rota.numero]) {
+            try {
+                justificativasPorRota[rota.numero] = await dbListarJustificativasCheckin(rota.numero);
+            } catch (_) {
+                justificativasPorRota[rota.numero] = {};
+            }
+        }
+
+        const status = calcularStatusLiberacaoRota({
+            rotaNumero: rota.numero,
+            rotaDados: rota,
+            clientesDaRota: (sessao.clientes_por_rota || {})[rota.numero] || [],
+            atendimentos: todosAtendimentosRotas,
+            justificativas: justificativasPorRota[rota.numero] || {},
+            nomeUsuario: usuarioAtual
+        });
+
+        if (!status.liberarAgora) continue;
+
+        await dbLiberarRota(rota.numero);
+        if (sessao?.rotas?.[rota.numero]) {
+            sessao.rotas[rota.numero].selecionada_por = null;
+            sessao.rotas[rota.numero].timestamp_selecao = null;
+        }
+        delete justificativasPorRota[rota.numero];
+    }
+}
+
+function atualizarClientesAtendidosRecentes(atendimentos) {
+    todosAtendimentosRotas = Array.isArray(atendimentos) ? atendimentos : [];
 }
 
 async function carregarClientesAtendidosRecentes() {
@@ -561,7 +635,7 @@ async function carregarClientesAtendidosRecentes() {
         atualizarClientesAtendidosRecentes(atendimentos);
     } catch (error) {
         console.warn('Falha ao carregar atendimentos recentes para as rotas:', error);
-        clientesAtendidosRecentesSet = new Set();
+        todosAtendimentosRotas = [];
     }
 }
 
@@ -678,27 +752,27 @@ async function mostrarMinhasRotas(numerosRota, sessao) {
         catch (_) { justificativasPorRota[nr] = {}; }
     }));
 
-    const DOIS_DIAS = 2 * 24 * 60 * 60 * 1000;
-    const agora = Date.now();
-
     const wrap = document.getElementById('detalhesMinhaRota');
     let html = `<div class="secao-titulo">Rotas Selecionadas</div>`;
 
     numerosRota.forEach(numeroRota => {
         const clientes = (sessao.clientes_por_rota || {})[numeroRota] || [];
         const justifs = justificativasPorRota[numeroRota] || {};
-        const clientesPendentesRaw = clientes.filter((cliente) => !clientesAtendidosRecentesSet.has(obterChaveCliente(cliente)));
-        const clientesAtendidos = clientes.filter((cliente) => clientesAtendidosRecentesSet.has(obterChaveCliente(cliente)));
-        // Justificados vão para o final da lista
-        const clientesPendentes = [
-            ...clientesPendentesRaw.filter(c => { const j = justifs[obterChaveCliente(c)]; return !(j?.timestamp && (agora - j.timestamp) < DOIS_DIAS); }),
-            ...clientesPendentesRaw.filter(c => { const j = justifs[obterChaveCliente(c)]; return j?.timestamp && (agora - j.timestamp) < DOIS_DIAS; }),
-        ];
+        const rotaDados = (sessao.rotas || {})[numeroRota] || {};
+        const statusRota = calcularStatusLiberacaoRota({
+            rotaNumero: numeroRota,
+            rotaDados: { numero: numeroRota, ...rotaDados },
+            clientesDaRota: clientes,
+            atendimentos: todosAtendimentosRotas,
+            justificativas: justifs,
+            nomeUsuario: usuarioAtual
+        });
+        const clientesAtendidos = statusRota.atendidos;
+        const clientesPendentes = [...statusRota.pendentes, ...statusRota.justificados];
+        const textoLiberacao = obterTextoLiberacaoRota(statusRota);
         const clientesPendentesHtml = clientesPendentes.length > 0
             ? clientesPendentes.map((cliente) => {
-                const chave = obterChaveCliente(cliente);
-                const justif = justifs[chave];
-                const justificado = justif?.timestamp && (agora - justif.timestamp) < DOIS_DIAS;
+                const justificado = Boolean(cliente?.justif);
                 const numero = escaparHtml(obterNumeroCliente(cliente));
                 const nome = escaparHtml(String(cliente?.nome || 'Cliente sem nome').trim());
                 const texto = numero ? `${numero} - ${nome}` : nome;
@@ -714,20 +788,12 @@ async function mostrarMinhasRotas(numerosRota, sessao) {
                 const texto = numero ? `${numero} - ${nome}` : nome;
                 return `<div class="card-rota-cliente-chip atendido">${texto}</div>`;
             }).join('')
-            : `<div class="card-rota-cliente-vazio">Nenhum cliente atendido nos últimos 5 dias.</div>`;
+            : `<div class="card-rota-cliente-vazio">Nenhum cliente atendido nesta rota ainda.</div>`;
         const comuns = diasEmComum(clientes);
         const diasHtml = ORDEM_DIAS
             .map(d => `<span class="dia-badge ${comuns.includes(d) ? 'disponivel' : 'indisponivel'}">${d}</span>`)
             .join('');
-        const diasHint = comuns.length
-            ? 'Só faça essa rota nos dias em VERDE — os dias riscados NÃO estão disponíveis.'
-            : '⚠ Nenhum dia em comum para todos os clientes desta rota.';
-
         const temEndereco = clientes.some(c => montarEnderecoCliente(c));
-        const textoQuantidade = clientesPendentes.length === 0
-            ? `Todos os ${clientes.length} cliente${clientes.length !== 1 ? 's' : ''} já foram atendidos`
-            : `Faltam atender ${clientesPendentes.length} de ${clientes.length} cliente${clientes.length !== 1 ? 's' : ''}`;
-
         html += `
         <div class="card-rota">
             <div class="card-rota-numero">
@@ -740,7 +806,7 @@ async function mostrarMinhasRotas(numerosRota, sessao) {
             <div class="card-rota-dias">
                 <div class="card-rota-dias-label">Dias em comum:</div>
                 <div class="card-rota-dias-val">${diasHtml}</div>
-                <div class="card-rota-dias-hint">${diasHint}</div>
+                ${textoLiberacao ? `<div class="card-rota-liberacao">${textoLiberacao}</div>` : ''}
             </div>
             <div class="card-rota-clientes">
                 <div class="card-rota-clientes-bloco">

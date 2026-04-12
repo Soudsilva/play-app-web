@@ -219,6 +219,15 @@
             flex-wrap: nowrap;
             justify-content: center;
         }
+        .card-rota-liberacao {
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
         .badge {
             font-size: 13px;
             border-radius: 20px;
@@ -660,10 +669,12 @@ import {
     dbSalvarJustificativaCheckin,
     dbListarJustificativasCheckin,
     dbRemoverJustificativaCheckin,
-    // dbLiberarRota: libera a rota quando todos os clientes foram atendidos ou
-    // tiveram a justificativa expirada (2 dias). Chamado no init para capturar
-    // rotas que completaram enquanto o app estava fechado.
-    dbLiberarRota
+    // Regras de liberação:
+    // - todos atendidos -> libera na hora
+    // - havendo justificativa -> libera 2 dias após a última
+    // - prazo máximo da rota -> 5 dias
+    dbLiberarRota,
+    calcularStatusLiberacaoRota
 } from './database.js';
 
 // ─────────────────────────────────────────────
@@ -684,13 +695,92 @@ let motivoSelecionado = null;
 // Estado do modal ver justificativa
 let verRota        = null;
 let verClienteKey  = null;
+let timerAtualizacaoLiberacao = null;
 
 // ─────────────────────────────────────────────
 // Init
 // ─────────────────────────────────────────────
+function formatarTempoRestante(ms) {
+    if (!(ms > 0)) return 'agora';
+
+    const totalMinutos = Math.max(1, Math.ceil(ms / 60000));
+    const dias = Math.floor(totalMinutos / 1440);
+    const horas = Math.floor((totalMinutos % 1440) / 60);
+    const minutos = totalMinutos % 60;
+    const partes = [];
+
+    if (dias > 0) partes.push(`${dias}d`);
+    if (horas > 0) partes.push(`${horas}h`);
+    if (dias === 0 && minutos > 0) partes.push(`${minutos}min`);
+
+    return partes.join(' ');
+}
+
+function formatarDataHoraLiberacao(timestamp) {
+    if (!(timestamp > 0)) return '';
+    return new Date(timestamp).toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function obterTextoLiberacaoRota(status) {
+    if (status?.motivo === 'aguardando_primeiro_atendimento') {
+        return 'Aguardando o primeiro atendimento da rota para começar a contar a justificativa.';
+    }
+
+    if (!status?.liberarEmMs || status.liberarAgora) return '';
+
+    const quando = formatarTempoRestante(status.tempoRestanteMs);
+    if (status.motivo === 'aguardando_ultima_justificativa') {
+        return `Rota será liberada automaticamente em ${quando}`;
+    }
+
+    if (status.motivo === 'aguardando_prazo_maximo') {
+        return `Rota será liberada automaticamente em ${quando}`;
+    }
+
+    return '';
+}
+
+async function processarLiberacoesRotasDoUsuario() {
+    if (!sessao?.clientes_por_rota || rotasDoUsuario.length === 0) return;
+
+    for (const rota of [...rotasDoUsuario]) {
+        const status = calcularStatusLiberacaoRota({
+            rotaNumero: rota.numero,
+            rotaDados: rota,
+            clientesDaRota: sessao.clientes_por_rota[rota.numero] || [],
+            atendimentos: todosAtendimentos,
+            justificativas: justificativasPorRota[rota.numero] || {},
+            nomeUsuario: usuarioAtual
+        });
+
+        if (!status.liberarAgora) continue;
+
+        await dbLiberarRota(rota.numero);
+        rotasDoUsuario = rotasDoUsuario.filter(r => r.numero !== rota.numero);
+        delete justificativasPorRota[rota.numero];
+    }
+}
+
 async function init() {
     usuarioAtual = localStorage.getItem('usuario_selecionado') || '';
     document.getElementById('chipUsuario').textContent = usuarioAtual || '?';
+
+    if (!timerAtualizacaoLiberacao) {
+        timerAtualizacaoLiberacao = setInterval(async () => {
+            if (!rotasDoUsuario.length) return;
+            try {
+                await processarLiberacoesRotasDoUsuario();
+                renderizar();
+            } catch (erroTimer) {
+                console.warn('Falha ao atualizar o prazo de liberacao das rotas:', erroTimer);
+            }
+        }, 60000);
+    }
 
     try {
         [sessao, todosClientes, todosAtendimentos] = await Promise.all([
@@ -713,32 +803,8 @@ async function init() {
             justificativasPorRota[r.numero] = await dbListarJustificativasCheckin(r.numero);
         }));
 
-        // Verifica e libera automaticamente rotas que ficaram completas enquanto o
-        // app estava fechado (ex: justificativas que expiraram nos últimos 2 dias).
-        // Isso garante que o usuário não fique travado com rotas "fantasma" concluídas.
-        if (sessao && sessao.clientes_por_rota) {
-            const agora = Date.now();
-            const CINCO_DIAS = 5 * 24 * 60 * 60 * 1000;
-
-            for (const rota of rotasDoUsuario) {
-                // Critério 1: mais de 5 dias desde a seleção → libera independente do status
-                if (rota.timestamp_selecao && (agora - rota.timestamp_selecao) >= CINCO_DIAS) {
-                    await dbLiberarRota(rota.numero);
-                    rotasDoUsuario = rotasDoUsuario.filter(r => r.numero !== rota.numero);
-                    continue;
-                }
-
-                const clientesDaRota = (sessao.clientes_por_rota[rota.numero] || []);
-                if (clientesDaRota.length === 0) continue;
-
-                // Critério 2: todos os clientes atendidos ou com justificativa expirada → libera
-                const { pendentes } = classificarClientes(clientesDaRota, rota.numero);
-                if (pendentes.length === 0) {
-                    await dbLiberarRota(rota.numero);
-                    rotasDoUsuario = rotasDoUsuario.filter(r => r.numero !== rota.numero);
-                }
-            }
-        }
+        // Antes de renderizar, aplica as regras de liberação da rota.
+        await processarLiberacoesRotasDoUsuario();
 
         renderizar();
     } catch (err) {
@@ -775,7 +841,8 @@ function renderizar() {
     rotasDoUsuario.forEach((rota) => {
         const numNorm = normRota(rota.numero);
         const clientes = todosClientes.filter(c => normRota(c.rota) === numNorm);
-        const { atendidos, justificados, pendentes } = classificarClientes(clientes, rota.numero);
+        const statusRota = classificarClientes(clientes, rota);
+        const { atendidos, justificados, pendentes } = statusRota;
         const rotaIniciada = (atendidos.length + justificados.length) > 0;
 
         if (rotaIniciada) {
@@ -783,7 +850,7 @@ function renderizar() {
             totalPend  += pendentes.length;
         }
 
-        container.appendChild(criarCardRota(rota, clientes, atendidos, justificados, pendentes));
+        container.appendChild(criarCardRota(rota, clientes, statusRota));
     });
 
     document.getElementById('totalRotas').textContent    = rotasDoUsuario.length;
@@ -791,53 +858,27 @@ function renderizar() {
     document.getElementById('totalPendentes').textContent = totalPend;
 }
 
-function classificarClientes(clientes, routeNumber) {
-    const justifs = justificativasPorRota[routeNumber] || {};
-    const agora = Date.now();
-    const UM_DIA  = 24 * 60 * 60 * 1000;
-    const DOIS_DIAS = 2 * UM_DIA;
-
-    const atendidos   = [];
-    const justificados = [];
-    const pendentes   = [];
-
-    clientes.forEach(c => {
-        // Atendido = este usuário atendeu este cliente nos últimos 2 dias
-        const foiAtendido = todosAtendimentos.some(a => {
-            if (!a.cliente) return false;
-            const numeroAtendimento = String(a?.cliente?.numero ?? '').trim();
-            const numeroCliente = String(c?.numero ?? '').trim();
-            const mesmoCliente =
-                a.cliente.id === c.firebaseUrl ||
-                (numeroAtendimento && numeroCliente && numeroAtendimento === numeroCliente);
-            if (!mesmoCliente) return false;
-            const mesmoUsuario = (a.atendente || '').toLowerCase() === usuarioAtual.toLowerCase();
-            const dentroJanela = (agora - new Date(a.data).getTime()) <= DOIS_DIAS;
-            return mesmoUsuario && dentroJanela;
-        });
-        if (foiAtendido) {
-            atendidos.push(c);
-            return;
-        }
-        const justif = justifs[c.firebaseUrl];
-        if (justif && justif.timestamp) {
-            // Justificativa expira após 2 dias: depois disso o cliente é considerado
-            // resolvido e a rota pode ser liberada automaticamente.
-            const expirou = (agora - justif.timestamp) >= DOIS_DIAS;
-            justificados.push({ ...c, justif, expirou });
-            return;
-        }
-        pendentes.push(c);
+function classificarClientes(clientes, rota) {
+    return calcularStatusLiberacaoRota({
+        rotaNumero: rota.numero,
+        rotaDados: rota,
+        clientesDaRota: clientes,
+        atendimentos: todosAtendimentos,
+        justificativas: justificativasPorRota[rota.numero] || {},
+        nomeUsuario: usuarioAtual
     });
-
-    return { atendidos, justificados, pendentes };
 }
 
-function criarCardRota(rota, clientes, atendidos, justificados, pendentes) {
+function criarCardRota(rota, clientes, statusRota) {
+    const { atendidos, justificados, pendentes } = statusRota;
     const total      = clientes.length;
     const resolvidos = atendidos.length + justificados.length;
     const pct        = total > 0 ? Math.round((resolvidos / total) * 100) : 100;
-    const isCompleta = pendentes.length === 0;
+    const isCompleta = statusRota.todosResolvidos;
+    const textoLiberacao = obterTextoLiberacaoRota(statusRota);
+    const bannerCompleta = isCompleta
+        ? (textoLiberacao ? `⏳ Todos os clientes resolvidos. ${textoLiberacao}` : '✅ Todos os clientes resolvidos.')
+        : '';
     const mapaPendentes = new Set(pendentes.map(c => c.firebaseUrl || String(c.numero || '')));
     const mapaAtendidos = new Set(atendidos.map(c => c.firebaseUrl || String(c.numero || '')));
     const justificadosMap = {};
@@ -888,11 +929,12 @@ function criarCardRota(rota, clientes, atendidos, justificados, pendentes) {
                 ${justificados.length > 0 ? `<span class="badge badge-amarelo">⚠️ ${justificados.length} Just.</span>` : ''}
                 ${pendentes.length > 0 ? `<span class="badge badge-vermelho">${pendentes.length} Pènd.</span>` : ''}
             </div>
+            ${!isCompleta && textoLiberacao ? `<div class="card-rota-liberacao">${textoLiberacao}</div>` : ''}
         </div>
 
         ${isCompleta ? `
         <div class="card-rota-completa-banner">
-            ✅ Todos os clientes resolvidos — rota liberada!
+            ${bannerCompleta}
         </div>
         ` : ''}
 
@@ -916,17 +958,19 @@ function criarCardRota(rota, clientes, atendidos, justificados, pendentes) {
                     }
 
                     if (c._status === 'justificado') {
-                        const expirou = c.expirou;
-                        const ts = c.justif?.timestamp ? new Date(c.justif.timestamp) : null;
-                        const expira = ts ? new Date(ts.getTime() + 24 * 60 * 60 * 1000) : null;
-                        const horasRestantes = expira ? Math.max(0, Math.ceil((expira - Date.now()) / 3600000)) : 0;
+                        const prontoParaLiberar = Boolean(statusRota.liberarAgora);
+                        const detalheLiberacao = statusRota.motivo === 'aguardando_primeiro_atendimento'
+                            ? ' · Aguardando primeiro atendimento'
+                            : (prontoParaLiberar
+                                ? ' · <span class="expirou">Pronto para liberar</span>'
+                                : ` · ${obterTextoLiberacaoRota(statusRota)}`);
                         return `
                         <div class="item-cliente">
                             <div class="item-cliente-topo">
                                 <div class="item-cliente-nome">${c.numero ? c.numero + ' — ' : ''}${c.nome || '—'}</div>
                                 <button class="btn-ver-justif" onclick="event.stopPropagation();abrirModalVerJustif('${rota.numero}', '${c.firebaseUrl}')">Ver</button>
                             </div>
-                            <div class="item-cliente-detalhe justif">${c.justif?.motivo_label || c.justif?.motivo || 'Justificado'}${expirou ? ' · <span class="expirou">Expirado</span>' : ` · Expira em ${horasRestantes}h`}</div>
+                            <div class="item-cliente-detalhe justif">${c.justif?.motivo_label || c.justif?.motivo || 'Justificado'}${detalheLiberacao}</div>
                         </div>`;
                     }
 
@@ -1047,6 +1091,7 @@ window.confirmarJustificativa = async function() {
 
         document.getElementById('modalJustif').classList.remove('ativo');
         mostrarToast('✅ Justificativa registrada!', 'verde');
+        await processarLiberacoesRotasDoUsuario();
         renderizar();
     } catch (err) {
         console.error(err);
@@ -1067,11 +1112,18 @@ window.abrirModalVerJustif = function(routeNumber, clienteKey) {
     const cliente = todosClientes.find(c => c.firebaseUrl === clienteKey);
     if (!justif) return;
 
-    const agora      = Date.now();
-    const UM_DIA     = 24 * 60 * 60 * 1000;
-    const expirou    = (agora - justif.timestamp) >= UM_DIA;
-    const expira     = new Date(justif.timestamp + UM_DIA);
-    const horasRestantes = Math.max(0, Math.ceil((expira - agora) / 3600000));
+    const rota = rotasDoUsuario.find(r => r.numero === routeNumber) || { numero: routeNumber };
+    const clientesDaRota = (sessao?.clientes_por_rota?.[routeNumber] || []).filter(Boolean);
+    const statusRota = calcularStatusLiberacaoRota({
+        rotaNumero: routeNumber,
+        rotaDados: rota,
+        clientesDaRota,
+        atendimentos: todosAtendimentos,
+        justificativas: justificativasPorRota[routeNumber] || {},
+        nomeUsuario: usuarioAtual
+    });
+    const textoLiberacao = obterTextoLiberacaoRota(statusRota);
+    const expirou = Boolean(statusRota.liberarAgora);
 
     document.getElementById('verJustifTitulo').textContent    = cliente?.nome || 'Cliente';
     document.getElementById('verJustifSubtitulo').textContent = `Rota ${routeNumber}`;
@@ -1086,9 +1138,9 @@ window.abrirModalVerJustif = function(routeNumber, clienteKey) {
             <span class="detalhe-justif-valor">${new Date(justif.timestamp).toLocaleString('pt-BR')}</span>
         </div>
         <div class="detalhe-justif-linha">
-            <span class="detalhe-justif-label">Validade</span>
+            <span class="detalhe-justif-label">Liberação</span>
             <span class="chip-expiracao ${expirou ? 'chip-exp-expirada' : 'chip-exp-ativa'}">
-                ${expirou ? '🕐 Expirado' : `⏳ Expira em ${horasRestantes}h`}
+                ${expirou ? '🕐 Pronta para liberar' : `⏳ ${textoLiberacao || 'Aguardando cálculo da rota'}`}
             </span>
         </div>
         ${justif.observacao ? `<div class="detalhe-justif-obs">💬 "${justif.observacao}"</div>` : ''}
@@ -1112,6 +1164,7 @@ window.removerJustificativa = async function() {
         if (justificativasPorRota[verRota]) delete justificativasPorRota[verRota][verClienteKey];
         document.getElementById('modalVerJustif').classList.remove('ativo');
         mostrarToast('Justificativa removida.', '');
+        await processarLiberacoesRotasDoUsuario();
         renderizar();
     } catch (err) {
         console.error(err);

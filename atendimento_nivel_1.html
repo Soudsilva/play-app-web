@@ -419,7 +419,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas } from './database.js';
+    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbVerificarELiberarRota } from './database.js';
     import { enfileirarAtendimento } from './offline-sync.js';
 
     let listaClientes = [];
@@ -1561,6 +1561,14 @@
                 await enfileirarAtendimento(dadosAtendimento);
             } else {
                 await dbSalvarAtendimento(dadosAtendimento, atendimentoEmEdicaoId || null);
+                try {
+                    const numeroRota = String(dadosAtendimento?.cliente?.rota || '').trim();
+                    if (numeroRota) {
+                        await dbVerificarELiberarRota(numeroRota, atendente);
+                    }
+                } catch (erroLiberacaoRota) {
+                    console.warn('Falha ao verificar liberacao da rota apos o atendimento:', erroLiberacaoRota);
+                }
             }
 
             // --- 5. Limpeza e Redirecionamento ---
