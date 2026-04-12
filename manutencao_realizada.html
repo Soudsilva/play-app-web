@@ -161,14 +161,51 @@
         .linha-equipamento-novo {
             display: flex;
             gap: 8px;
-            flex-wrap: nowrap;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.07);
+        }
+        .linha-equipamento-principal {
+            display: flex;
+            gap: 8px;
+            width: 100%;
             align-items: center;
         }
         .lista-equipamentos-adicionados {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 12px;
             margin-top: 12px;
+        }
+        .equip-tecnico-wrap {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 2px;
+            padding: 10px;
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 14px;
+            background: rgba(0,0,0,0.14);
+        }
+        .equip-tecnico-wrap.visivel {
+            display: flex;
+        }
+        .equip-tecnico-label {
+            color: #ffeb3b;
+            font-size: 15px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.02em;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .equip-tecnico {
+            border: 2px solid rgba(255,235,59,0.5);
+            background: rgba(0,0,0,0.14);
         }
         .linha-equipamento-novo .campo-texto {
             margin: 0;
@@ -390,6 +427,16 @@
             font-weight: bold;
             line-height: 1.05;
             color: #fff;
+        }
+        .card-incluir .card-fluxo-titulo {
+            font-size: 26px;
+            color: #b9f6ca;
+            text-align: center;
+        }
+        .card-retirar .card-fluxo-titulo {
+            font-size: 26px;
+            color: #ffab91;
+            text-align: center;
         }
         .card-fluxo-apoio {
             font-size: 13px;
@@ -760,7 +807,6 @@
         <!-- Sub: adicionar equipamento -->
         <div class="sub-secao card-fluxo card-incluir" id="subAdicionar">
             <div class="card-fluxo-cabeca">
-                <span class="card-fluxo-chip">Incluir</span>
                 <div class="card-fluxo-titulo">Incluir máquinas</div>
                 <div class="card-fluxo-apoio">Preencha as máquinas instaladas</div>
             </div>
@@ -777,6 +823,7 @@
         <!-- Sub: retirar equipamento -->
         <div class="sub-secao card-fluxo card-retirar" id="subRetirar">
             <div class="card-fluxo-cabeca">
+                <div class="card-fluxo-titulo">Retirou</div>
                 <div class="card-fluxo-apoio card-fluxo-apoio-retirada">Selecione o que saiu do ponto</div>
             </div>
             <div class="equipamentos-lista" id="listaEquipamentosSelecionar"></div>
@@ -843,7 +890,7 @@
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
 verificarAutenticacao();
-import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, storageSalvarFotoComThumb } from './database.js';
+import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbEscutarColaboradores, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, storageSalvarFotoComThumb } from './database.js';
 
 // ════════════════════════════════════════════════
 // DADOS DA MANUTENÇÃO
@@ -868,6 +915,7 @@ const indicesEquipamentosRetirados = new Set();
 let listaProdutos = [];
 let produtosCarregados = false;
 let maquinasDisponiveis = [];
+let tecnicosProducaoEquip = [];
 let clientesCadastrados = [];
 const _pixEncerramentoFotos = {};
 
@@ -1457,6 +1505,18 @@ dbEscutarClientes((lista) => {
     clientesCadastrados = Array.isArray(lista) ? [...lista] : [];
 });
 
+dbEscutarColaboradores((lista) => {
+    const mapa = new Map();
+    (Array.isArray(lista) ? lista : []).forEach(colaborador => {
+        const nome = String(colaborador?.nome || '').trim();
+        const chave = nome.toLowerCase();
+        if (!nome || colaborador?.producaoEquipamentos !== true || mapa.has(chave)) return;
+        mapa.set(chave, nome);
+    });
+    tecnicosProducaoEquip = Array.from(mapa.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    renderizarSelectsEquipamentoAdicionado();
+});
+
 document.addEventListener('click', (evento) => {
     document.querySelectorAll('.retirada-foto-input').forEach(wrap => {
         if (!wrap.contains(evento.target)) {
@@ -1767,7 +1827,7 @@ function linhaEquipamentoAdicionadoSemMaquina(linha) {
 }
 
 function criarHtmlOpcoesMaquina(nomeSelecionado = '') {
-    let options = '<option value="">Selecione a mÃ¡quina...</option>';
+    let options = '<option value="">Selecione</option>';
     maquinasDisponiveis.forEach(maquina => {
         const selected = maquina.nome === nomeSelecionado ? 'selected' : '';
         options += `<option value="${maquina.nome}" ${selected}>${maquina.nome}</option>`;
@@ -1775,17 +1835,49 @@ function criarHtmlOpcoesMaquina(nomeSelecionado = '') {
     return options;
 }
 
+function criarHtmlOpcoesTecnico(nomeSelecionado = '') {
+    if (tecnicosProducaoEquip.length === 0) {
+        return '<option value="">Nenhum técnico disponível</option>';
+    }
+
+    let options = '<option value="">Selecione o técnico</option>';
+    tecnicosProducaoEquip.forEach(nomeTecnico => {
+        const selected = nomeTecnico === nomeSelecionado ? 'selected' : '';
+        options += `<option value="${nomeTecnico}" ${selected}>${nomeTecnico}</option>`;
+    });
+    return options;
+}
+
+function linhaEquipamentoAdicionadoTemBaseParaTecnico(linha) {
+    if (!linha) return false;
+    const maquina = linha.querySelector('.equip-maquina')?.value.trim() || '';
+    const qtd = linha.querySelector('.equip-qtd')?.value.trim() || '';
+    return !!maquina && !!qtd && (Number.parseInt(qtd, 10) || 0) > 0;
+}
+
 function renderizarSelectsEquipamentoAdicionado() {
     obterLinhasEquipamentoAdicionado().forEach(linha => {
-        const select = linha.querySelector('.equip-maquina');
-        if (!select) return;
-        const valorAtual = select.value || select.dataset.value || '';
-        select.innerHTML = criarHtmlOpcoesMaquina(valorAtual);
-        select.value = valorAtual;
+        const selectMaquina = linha.querySelector('.equip-maquina');
+        if (selectMaquina) {
+            const valorAtual = selectMaquina.value || selectMaquina.dataset.value || '';
+            selectMaquina.innerHTML = criarHtmlOpcoesMaquina(valorAtual);
+            selectMaquina.value = valorAtual;
+        }
+
+        const wrapTecnico = linha.querySelector('.equip-tecnico-wrap');
+        const selectTecnico = linha.querySelector('.equip-tecnico');
+        if (!wrapTecnico || !selectTecnico) return;
+
+        const valorTecnico = selectTecnico.value || selectTecnico.dataset.value || '';
+        const exibirTecnico = linhaEquipamentoAdicionadoTemBaseParaTecnico(linha);
+        selectTecnico.innerHTML = criarHtmlOpcoesTecnico(valorTecnico);
+        selectTecnico.value = valorTecnico;
+        selectTecnico.disabled = !exibirTecnico || tecnicosProducaoEquip.length === 0;
+        wrapTecnico.classList.toggle('visivel', exibirTecnico);
     });
 }
 
-function adicionarLinhaEquipamentoAdicionado(nome = '', qtd = '', pix = '', contador = '') {
+function adicionarLinhaEquipamentoAdicionado(nome = '', qtd = '', pix = '', contador = '', tecnico = '') {
     const container = document.getElementById('containerEquipamentosAdicionados');
     if (!container) return;
 
@@ -1793,12 +1885,20 @@ function adicionarLinhaEquipamentoAdicionado(nome = '', qtd = '', pix = '', cont
     const linha = document.createElement('div');
     linha.className = 'linha-equipamento-novo';
     linha.innerHTML = `
-        <select id="equipAdicionadoMaquina_${indice}" class="campo-texto equip-maquina" data-value="${String(nome).replace(/"/g, '&quot;')}">
-            ${criarHtmlOpcoesMaquina(nome)}
-        </select>
-        <input id="equipAdicionadoQtd_${indice}" type="text" class="campo-texto equip-qtd" placeholder="Qtd" inputmode="numeric" maxlength="3" value="${String(qtd).replace(/"/g, '&quot;')}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3)">
-        <input id="equipAdicionadoPix_${indice}" type="text" class="campo-texto equip-pix" placeholder="Pix" inputmode="numeric" maxlength="3" value="${String(pix).replace(/"/g, '&quot;')}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3)">
-        <input id="equipAdicionadoCont_${indice}" type="text" class="campo-texto equip-cont" placeholder="Cont." inputmode="numeric" maxlength="6" value="${String(contador).replace(/"/g, '&quot;')}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)">
+        <div class="linha-equipamento-principal">
+            <select id="equipAdicionadoMaquina_${indice}" class="campo-texto equip-maquina" data-value="${String(nome).replace(/"/g, '&quot;')}">
+                ${criarHtmlOpcoesMaquina(nome)}
+            </select>
+            <input id="equipAdicionadoQtd_${indice}" type="text" class="campo-texto equip-qtd" placeholder="Qtd" inputmode="numeric" maxlength="3" value="${String(qtd).replace(/"/g, '&quot;')}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3)">
+            <input id="equipAdicionadoPix_${indice}" type="text" class="campo-texto equip-pix" placeholder="Pix" inputmode="numeric" maxlength="3" value="${String(pix).replace(/"/g, '&quot;')}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3)">
+            <input id="equipAdicionadoCont_${indice}" type="text" class="campo-texto equip-cont" placeholder="Cont." inputmode="numeric" maxlength="6" value="${String(contador).replace(/"/g, '&quot;')}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)">
+        </div>
+        <div class="equip-tecnico-wrap">
+            <label class="equip-tecnico-label" for="equipAdicionadoTecnico_${indice}">Qual técnico responsável?</label>
+            <select id="equipAdicionadoTecnico_${indice}" class="campo-texto equip-tecnico" data-value="${String(tecnico).replace(/"/g, '&quot;')}">
+                ${criarHtmlOpcoesTecnico(tecnico)}
+            </select>
+        </div>
     `;
     container.appendChild(linha);
 }
@@ -1811,6 +1911,7 @@ function coletarLinhasEquipamentoAdicionadoComMeta() {
             qtd: linha.querySelector('.equip-qtd')?.value.trim() || '',
             pix: linha.querySelector('.equip-pix')?.value.trim() || '',
             contador: linha.querySelector('.equip-cont')?.value.trim() || '',
+            tecnico: linha.querySelector('.equip-tecnico')?.value.trim() || '',
         }));
 
     const linhasSemMaquina = linhasBrutas.filter(item => !item.nome);
@@ -1951,6 +2052,10 @@ function coletarEquipamentosAdicionadosParaSalvar() {
         throw new Error('Informe pelo menos 1 equipamento adicionado.');
     }
 
+    if (tecnicosProducaoEquip.length === 0) {
+        throw new Error('Nenhum técnico com Prod. Equip. está disponível para selecionar.');
+    }
+
     const linhaIncompleta = linhas.find(item => !item.nome || !item.qtd);
     if (linhaIncompleta) {
         throw new Error('Complete mÃ¡quina e quantidade em todos os equipamentos adicionados.');
@@ -1969,6 +2074,11 @@ function coletarEquipamentosAdicionadosParaSalvar() {
     const linhaContadorSemPix = linhas.find(item => item.contador && !item.pix);
     if (linhaContadorSemPix) {
         throw new Error('O contador sÃ³ pode ser informado quando o Pix estiver preenchido.');
+    }
+
+    const linhaSemTecnico = linhas.find(item => !item.tecnico);
+    if (linhaSemTecnico) {
+        throw new Error('Selecione o técnico responsável em todos os equipamentos adicionados.');
     }
 
     return linhas;

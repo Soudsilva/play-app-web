@@ -488,6 +488,7 @@
         const qtd = String(item?.qtd ?? '').trim();
         const pix = String(item?.pix ?? '').trim();
         const contador = String(item?.contador ?? '').trim();
+        const tecnico = String(item?.tecnico ?? '').trim();
         const contAntRetirada = String(item?.contador_anterior_retirada ?? '').trim();
         const contAtualRetirada = String(item?.contador_atual_retirada ?? '').trim();
         const valorRetirada = String(item?.valor_retirada ?? '').trim();
@@ -496,6 +497,7 @@
         const valorLiquido = String(item?.valor_liquido ?? '').trim();
 
         if (qtd && qtd !== '1') partes.push(`Qtd ${qtd}`);
+        if (tecnico) partes.push(`Técnico ${tecnico}`);
         if (pix) partes.push(`Pix ${pix}`);
         if (contador) partes.push(`Contador ${contador}`);
         if (contAntRetirada || contAtualRetirada) {

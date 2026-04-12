@@ -61,11 +61,11 @@
         .bloco-remuneracao { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 14px 12px; }
         .titulo-remuneracao { font-size: 15px; margin-bottom: 10px !important; letter-spacing: 0.5px; }
         .remuneracao-grid { display: flex; flex-direction: column; gap: 10px; }
-        .rem-row { display: grid; gap: 8px; }
+        .rem-row { display: grid; gap: 8px; align-items: end; }
         .rem-row-2 { grid-template-columns: 1fr 1fr; }
         .rem-row-3 { grid-template-columns: 1fr 1fr 1fr; }
-        .campo-remuneracao { display: flex; flex-direction: column; }
-        .campo-remuneracao .label-focada { font-size: 11px; text-align: center; margin-bottom: 3px; }
+        .campo-remuneracao { display: flex; flex-direction: column; justify-content: flex-end; }
+        .campo-remuneracao .label-focada { font-size: 11px; text-align: center; margin-bottom: 3px; min-height: 28px; display: flex; align-items: center; justify-content: center; }
         .campo-remuneracao input { font-size: 15px; text-align: center; padding: 9px 6px; }
         .linha-remuneracao { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .linha-remuneracao .label-focada { margin: 0; min-width: 72px; }
@@ -104,7 +104,7 @@
 
         <div style="display: flex; gap: 10px;">
             <div style="flex: 2;"><label class="label-focada">Cargo</label><input type="text" id="cargoColaborador" placeholder="Ex: Técnico"></div>
-            <div style="flex: 1;"><label class="label-focada">Comissão</label><input type="text" id="comissaoColaborador" placeholder="0%" inputmode="numeric"></div>
+            <div style="flex: 1;"><label class="label-focada">Comissão por produção</label><input type="text" id="comissaoColaborador" placeholder="0%" inputmode="numeric"></div>
         </div>
 
         <div style="display: flex; gap: 10px;">
@@ -127,7 +127,7 @@
             <div class="remuneracao-grid">
                 <label class="check-remuneracao">
                 <div class="linha-remuneracao">
-                    <label class="label-focada">Comissão</label>
+                    <label class="label-focada">Comissão por produção</label>
                     <input type="text" id="comissaoColaboradorCard" class="comissao-no-card" placeholder="0%" inputmode="numeric">
                 </div>
                     <input type="checkbox" id="producaoProdutosColaborador">
@@ -176,7 +176,14 @@
       const texto = limparValorPercentual(valor).replace(',', '.');
       const numero = Number(texto);
       if (!texto || Number.isNaN(numero) || numero <= 0) return '';
-      return `Comissão: ${String(valor).trim()}%`;
+      return `Comissão por produção: ${String(valor).trim()}%`;
+  }
+
+  function formatarResumoComissaoGlobal(valor) {
+      const texto = limparValorPercentual(valor).replace(',', '.');
+      const numero = Number(texto);
+      if (!texto || Number.isNaN(numero) || numero <= 0) return '';
+      return `Comissão Global: ${String(valor).trim()}%`;
   }
 
   function limparValorPercentual(valor) {
@@ -275,10 +282,14 @@
         <div class="bloco-remuneracao">
             <label class="label-focada titulo-remuneracao">Remuneração</label>
             <div class="remuneracao-grid">
-                <div class="rem-row rem-row-2">
+                <div class="rem-row rem-row-3">
                     <div class="campo campo-remuneracao">
-                        <label class="label-focada">Comissão</label>
+                        <label class="label-focada">Comissão por produção</label>
                         <input type="text" id="comissaoColaborador" placeholder="0%" maxlength="5" inputmode="decimal">
+                    </div>
+                    <div class="campo campo-remuneracao">
+                        <label class="label-focada">Comissão Global</label>
+                        <input type="text" id="comissaoGlobalColaborador" placeholder="0%" maxlength="5" inputmode="decimal">
                     </div>
                     <div class="campo campo-remuneracao">
                         <label class="label-focada">Representante</label>
@@ -295,7 +306,7 @@
                         <input type="text" id="bonusFixoColaborador" placeholder="0" maxlength="5" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5);">
                     </div>
                     <div class="campo campo-remuneracao">
-                        <label class="label-focada">Bônus Manuten.</label>
+                        <label class="label-focada">Bonus produção</label>
                         <input type="text" id="bonusManutencaoColaborador" placeholder="0" maxlength="7" inputmode="numeric">
                     </div>
                 </div>
@@ -322,6 +333,7 @@
         <button type="submit" class="btn-salvar" id="btnSalvar">+ Salvar Dados</button>
       `;
       conectarCampoPercentual('comissaoColaborador');
+      conectarCampoPercentual('comissaoGlobalColaborador');
       conectarCampoPercentual('representanteComissaoColaborador');
       conectarCampoValor('fixoColaborador');
       conectarCampoValor('bonusFixoColaborador');
@@ -344,7 +356,7 @@
           const linhaComissao = document.createElement('div');
           linhaComissao.className = 'linha-remuneracao';
           linhaComissao.innerHTML = `
-              <label class="label-focada">Comissão</label>
+              <label class="label-focada">Comissão por produção</label>
               <input type="text" id="comissaoColaboradorCard" class="comissao-no-card" placeholder="0%" inputmode="numeric">
           `;
           grid.prepend(linhaComissao);
@@ -354,7 +366,7 @@
           linhaComissao.className = 'linha-remuneracao';
           const label = document.createElement('label');
           label.className = 'label-focada';
-          label.textContent = 'Comissão';
+          label.textContent = 'Comissão por produção';
           campoComissaoCard.parentElement?.removeChild(campoComissaoCard);
           linhaComissao.appendChild(label);
           linhaComissao.appendChild(campoComissaoCard);
@@ -430,11 +442,12 @@
                           c.producaoEquipamentos ? 'Prod. Equip.' : '',
                           c.prestacaoServico ? 'Prest. Serviço' : '',
                           formatarResumoComissao(c.comissao),
+                          formatarResumoComissaoGlobal(c.comissaoGlobal),
                           formatarResumoRepresentante(c.representanteComissao),
                           c.producaoPecas ? 'Prod. Peças' : '',
                           temValorMonetario(c.fixo) ? `Fixo: ${formatarMilhar(c.fixo)}` : '',
                           temValorMonetario(c.bonusFixo) ? `Bônus: ${formatarMilhar(c.bonusFixo)}` : '',
-                          temValorMonetario(c.bonusManutencao) ? `Bônus Manuten.: ${formatarMilhar(c.bonusManutencao)}` : ''
+                          temValorMonetario(c.bonusManutencao) ? `Bonus produção: ${formatarMilhar(c.bonusManutencao)}` : ''
                       ].filter(Boolean).join(' | ')}</div>
                   </div>
                   <div class="acoes-card">
@@ -479,6 +492,7 @@
       document.getElementById('nomeColaborador').value = c.nome;
       document.getElementById('cargoColaborador').value = c.cargo || "";
       document.getElementById('comissaoColaborador').value = c.comissao ? `${limparValorPercentual(c.comissao)}%` : "";
+      document.getElementById('comissaoGlobalColaborador').value = c.comissaoGlobal ? `${limparValorPercentual(c.comissaoGlobal)}%` : "";
       document.getElementById('senhaColaborador').value = c.senha || "";
       document.getElementById('producaoProdutosColaborador').checked = !!c.producaoProdutos;
       document.getElementById('producaoEquipamentosColaborador').checked = !!c.producaoEquipamentos;
@@ -504,6 +518,7 @@
           nome: document.getElementById('nomeColaborador').value.trim(),
           cargo: document.getElementById('cargoColaborador').value,
           comissao: limparValorPercentual(document.getElementById('comissaoColaborador').value),
+          comissaoGlobal: limparValorPercentual(document.getElementById('comissaoGlobalColaborador').value),
           producaoProdutos: document.getElementById('producaoProdutosColaborador').checked,
           producaoEquipamentos: document.getElementById('producaoEquipamentosColaborador').checked,
           producaoPecas: document.getElementById('producaoPecasColaborador').checked,
