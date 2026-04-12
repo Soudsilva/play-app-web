@@ -26,7 +26,51 @@
         * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
 
         /* Alinhamento para os equipamentos ficarem lado a lado (Equip + Qtd) */
-        .equip-group { display: flex; gap: 8px; margin-bottom: 8px; }
+        .equip-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.07);
+        }
+        .equip-principal {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            align-items: center;
+        }
+        .equip-tecnico-wrap {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 2px;
+            padding: 10px;
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 14px;
+            background: rgba(0,0,0,0.14);
+        }
+        .equip-tecnico-wrap.visivel {
+            display: flex;
+        }
+        .equip-tecnico-label {
+            font-size: 15px;
+            color: #ffeb3b;
+            font-weight: bold;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .equip-tecnico-select {
+            margin-bottom: 0;
+            border: 2px solid rgba(255,235,59,0.5);
+            background: white;
+            color: #333;
+            text-align: center;
+        }
         .campo-cidade {
             background: #b8c0d1;
             color: #1f2f57;
@@ -530,6 +574,7 @@
     import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, dbEscutarSessaoRotas, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
 
     let maquinasDisponiveis = [];
+    let tecnicosProducaoEquip = [];
     let clientesCadastrados = [];
     let perfilUsuarioLogado = "";
     let nomeUsuarioLogado = localStorage.getItem('usuarioLogado') || "";
@@ -867,6 +912,7 @@
         inputNumero.value = partesEndereco.numero;
         inputEndereco.dataset.origemEndereco = origem;
         atualizarEstadoCampoCidade();
+
         return true;
     }
 
@@ -922,7 +968,8 @@
             nome: grupo.querySelector('.equip-select')?.value.trim() || "",
             qtd: grupo.querySelector('.qtd-input')?.value.trim() || "",
             pix: grupo.querySelector('.pix-input')?.value.trim() || "",
-            contador: grupo.querySelector('.contador-input')?.value.trim() || ""
+            contador: grupo.querySelector('.contador-input')?.value.trim() || "",
+            tecnico: grupo.querySelector('.equip-tecnico-select')?.value.trim() || ""
         }));
     }
 
@@ -933,7 +980,8 @@
                 nome: String(item?.nome || "").trim(),
                 qtd: String(item?.qtd || item?.quantidade || "1").trim() || "1",
                 pix: String(item?.pix || "").trim(),
-                contador: String(item?.contador || "").trim()
+                contador: String(item?.contador || "").trim(),
+                tecnico: String(item?.tecnico || "").trim()
             }));
         }
 
@@ -965,10 +1013,55 @@
                     nome: nome.trim(),
                     qtd: String(qtd || "1").trim() || "1",
                     pix: String(pix || "").trim(),
-                    contador: ""
+                    contador: "",
+                    tecnico: ""
                 };
             })
             .filter(item => item.nome);
+    }
+
+    function colaboradorPodeSerTecnicoEquip(colaborador) {
+        return !!colaborador && colaborador?.producaoEquipamentos === true;
+    }
+
+    function criarOpcoesTecnicoEquip(nomeSelecionado = "") {
+        if (tecnicosProducaoEquip.length === 0) {
+            return '<option value="">Nenhum técnico disponível</option>';
+        }
+
+        let options = '<option value="">Selecione o técnico</option>';
+        tecnicosProducaoEquip.forEach(nomeTecnico => {
+            const selected = nomeTecnico === nomeSelecionado ? 'selected' : '';
+            options += `<option value="${nomeTecnico}" ${selected}>${nomeTecnico}</option>`;
+        });
+        return options;
+    }
+
+    function linhaEquipamentoTemBaseParaTecnico(grupo) {
+        if (!grupo) return false;
+        const maquina = grupo.querySelector('.equip-select')?.value.trim() || "";
+        const qtd = grupo.querySelector('.qtd-input')?.value.trim() || "";
+        return !!maquina && !!qtd && (Number.parseInt(qtd, 10) || 0) > 0;
+    }
+
+    function renderizarTecnicoNasLinhasEquipamento() {
+        document.querySelectorAll('.equip-group').forEach(grupo => {
+            const wrapTecnico = grupo.querySelector('.equip-tecnico-wrap');
+            const selectTecnico = grupo.querySelector('.equip-tecnico-select');
+            if (!wrapTecnico || !selectTecnico) return;
+
+            const valorAtual = selectTecnico.value || selectTecnico.getAttribute('data-value') || "";
+            const exibir = linhaEquipamentoTemBaseParaTecnico(grupo);
+
+            selectTecnico.innerHTML = criarOpcoesTecnicoEquip(valorAtual);
+            selectTecnico.value = valorAtual;
+            if (!exibir) {
+                selectTecnico.value = "";
+                selectTecnico.setAttribute('data-value', "");
+            }
+            selectTecnico.disabled = !exibir || tecnicosProducaoEquip.length === 0;
+            wrapTecnico.classList.toggle('visivel', exibir);
+        });
     }
 
     function capturarFotosMaquinasAtuais() {
@@ -1069,6 +1162,7 @@
         const qtdInput = grupo.querySelector('.qtd-input');
         const pixInput = grupo.querySelector('.pix-input');
         const contadorInput = grupo.querySelector('.contador-input');
+        const tecnicoInput = grupo.querySelector('.equip-tecnico-select');
 
         if (qtdInput) qtdInput.value = "";
         if (pixInput) {
@@ -1076,6 +1170,7 @@
             delete pixInput.dataset.pixRemovidoPorDuplicidade;
         }
         if (contadorInput) contadorInput.value = "";
+        if (tecnicoInput) tecnicoInput.value = "";
     }
 
     function linhaEquipamentoEstaVazia(grupo) {
@@ -1085,8 +1180,9 @@
         const qtd = grupo.querySelector('.qtd-input')?.value.trim() || "";
         const pix = grupo.querySelector('.pix-input')?.value.trim() || "";
         const contador = grupo.querySelector('.contador-input')?.value.trim() || "";
+        const tecnico = grupo.querySelector('.equip-tecnico-select')?.value.trim() || "";
 
-        return !maquina && !qtd && !pix && !contador;
+        return !maquina && !qtd && !pix && !contador && !tecnico;
     }
 
     function normalizarLinhasEquipamento() {
@@ -1110,6 +1206,8 @@
         if (container.querySelectorAll('.equip-group').length === 0) {
             adicionarLinhaEquipamento();
         }
+
+        renderizarTecnicoNasLinhasEquipamento();
     }
 
     function preencherCidadePelaLocalizacao(dados, forcar = true) {
@@ -1472,9 +1570,10 @@
                 maquina: grupo.querySelector('.equip-select')?.value.trim() || "",
                 qtd: grupo.querySelector('.qtd-input')?.value.trim() || "",
                 pix: grupo.querySelector('.pix-input')?.value.trim() || "",
-                contador: grupo.querySelector('.contador-input')?.value.trim() || ""
+                contador: grupo.querySelector('.contador-input')?.value.trim() || "",
+                tecnico: grupo.querySelector('.equip-tecnico-select')?.value.trim() || ""
             }))
-            .filter(item => item.maquina || item.qtd || item.pix || item.contador);
+            .filter(item => item.maquina || item.qtd || item.pix || item.contador || item.tecnico);
 
         if (linhasPreenchidas.length === 0) {
             mostrarAlertaPlay("Preencha pelo menos 1 equipamento com máquina e quantidade.", linhasEquipamento[0]?.querySelector('.equip-select'));
@@ -1496,6 +1595,17 @@
         const linhaContadorSemPix = linhasPreenchidas.find(item => item.contador && !item.pix);
         if (linhaContadorSemPix) {
             mostrarAlertaPlay("O contador só pode ser informado quando o campo Pix estiver preenchido.", linhaContadorSemPix.grupo.querySelector('.pix-input'));
+            return false;
+        }
+
+        if (tecnicosProducaoEquip.length === 0) {
+            mostrarAlertaPlay("Nenhum técnico com Prod. Equip. está disponível para selecionar.");
+            return false;
+        }
+
+        const linhaSemTecnico = linhasPreenchidas.find(item => !item.tecnico);
+        if (linhaSemTecnico) {
+            mostrarAlertaPlay("Selecione o técnico responsável em todos os equipamentos preenchidos.", linhaSemTecnico.grupo.querySelector('.equip-tecnico-select'));
             return false;
         }
 
@@ -1622,6 +1732,16 @@
         nomeUsuarioLogado = localStorage.getItem('usuarioLogado') || "";
         const usuarioAtual = colaboradores.find(c => c.nome === nomeUsuarioLogado);
         perfilUsuarioLogado = String(usuarioAtual?.nivel_completo || "");
+        const mapaTecnicos = new Map();
+        (Array.isArray(colaboradores) ? colaboradores : []).forEach(colaborador => {
+            if (!colaboradorPodeSerTecnicoEquip(colaborador)) return;
+            const nome = String(colaborador?.nome || "").trim();
+            const chave = nome.toLowerCase();
+            if (!nome || mapaTecnicos.has(chave)) return;
+            mapaTecnicos.set(chave, nome);
+        });
+        tecnicosProducaoEquip = Array.from(mapaTecnicos.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        renderizarTecnicoNasLinhasEquipamento();
         perfilCarregado = true;
         if (editId && clienteEmEdicao && !usuarioPodeEditarCliente(clienteEmEdicao)) {
             bloquearEdicaoSemPermissao();
@@ -1653,9 +1773,10 @@
                 select.appendChild(option);
             });
         });
+        renderizarTecnicoNasLinhasEquipamento();
     });
 
-    window.adicionarLinhaEquipamento = function(nome = "", pix = "", qtd = "", contador = "", rowId = "") {
+    window.adicionarLinhaEquipamento = function(nome = "", pix = "", qtd = "", contador = "", rowId = "", tecnico = "") {
         const container = document.getElementById('container-equipamentos');
         const novoGrupo = document.createElement('div');
         novoGrupo.className = 'equip-group';
@@ -1667,13 +1788,22 @@
         });
 
         novoGrupo.innerHTML = `
-            <select class="equip-select" style="flex: 4.4; margin-bottom:0;" data-value="${nome}">
-                ${options}
-            </select>
-            <input class="qtd-input" value="${qtd}" placeholder="Qtd" inputmode="numeric" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);" style="flex: 1.1; margin-bottom:0; border: 2px solid #2196f3; text-align: center; padding: 10px 5px;">
-            <input class="pix-input" value="${pix}" placeholder="Pix" inputmode="numeric" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);" style="flex: 1.2; margin-bottom:0; border: 2px solid #4caf50; text-align: center; padding: 10px 5px;">
-            <input class="contador-input" value="${contador}" placeholder="Cont." inputmode="numeric" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);" style="flex: 1.7; margin-bottom:0; border: 2px solid #ffeb3b; text-align: center; padding: 10px 5px;">
+            <div class="equip-principal">
+                <select class="equip-select" style="flex: 4.4; margin-bottom:0;" data-value="${nome}">
+                    ${options}
+                </select>
+                <input class="qtd-input" value="${qtd}" placeholder="Qtd" inputmode="numeric" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);" style="flex: 1.1; margin-bottom:0; border: 2px solid #2196f3; text-align: center; padding: 10px 5px;">
+                <input class="pix-input" value="${pix}" placeholder="Pix" inputmode="numeric" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);" style="flex: 1.2; margin-bottom:0; border: 2px solid #4caf50; text-align: center; padding: 10px 5px;">
+                <input class="contador-input" value="${contador}" placeholder="Cont." inputmode="numeric" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);" style="flex: 1.7; margin-bottom:0; border: 2px solid #ffeb3b; text-align: center; padding: 10px 5px;">
+            </div>
+            <div class="equip-tecnico-wrap">
+                <label class="equip-tecnico-label">Qual técnico responsável?</label>
+                <select class="equip-tecnico-select">
+                    ${criarOpcoesTecnicoEquip(tecnico)}
+                </select>
+            </div>
         `;
+        novoGrupo.querySelector('.equip-tecnico-select')?.setAttribute('data-value', tecnico);
         container.appendChild(novoGrupo);
         normalizarLinhasEquipamento();
     }
@@ -1877,7 +2007,7 @@
                     container.innerHTML = ""; // Limpa os campos padrão
                     
                     equipamentosDetalhados.forEach((item) => {
-                        adicionarLinhaEquipamento(item.nome, item.pix, item.qtd, item.contador, item.rowId);
+                        adicionarLinhaEquipamento(item.nome, item.pix, item.qtd, item.contador, item.rowId, item.tecnico || "");
                     });
                     adicionarLinhaEquipamento(); // Adiciona uma linha vazia no final
                 } else {
@@ -1927,7 +2057,7 @@
             container.innerHTML = "";
             const equipDetalhes = Array.isArray(ponto.equipDetalhes) ? ponto.equipDetalhes : [];
             equipDetalhes.forEach(item => {
-                adicionarLinhaEquipamento(item.nome, "", item.qtd, "", item.rowId);
+                adicionarLinhaEquipamento(item.nome, "", item.qtd, "", item.rowId, item.tecnico || "");
             });
             adicionarLinhaEquipamento();
 
@@ -1961,6 +2091,10 @@
             normalizarLinhasEquipamento();
             renderizarFotosMaquinasInstalacao();
         }
+
+        if (e.target.classList.contains('qtd-input') || e.target.classList.contains('equip-tecnico-select')) {
+            renderizarTecnicoNasLinhasEquipamento();
+        }
     });
 
     /* --- PARTE D: AÇÃO DE SALVAR ---
@@ -1974,6 +2108,10 @@
     document.getElementById('container-equipamentos').addEventListener('input', (e) => {
         if (e.target.classList.contains('pix-input')) {
             delete e.target.dataset.pixRemovidoPorDuplicidade;
+        }
+
+        if (e.target.classList.contains('qtd-input')) {
+            renderizarTecnicoNasLinhasEquipamento();
         }
     });
 
@@ -2045,7 +2183,8 @@
                     nome: item.nome,
                     qtd: item.qtd || "1",
                     pix: item.pix,
-                    contador: item.contador
+                    contador: item.contador,
+                    tecnico: item.tecnico || ""
                 }));
 
             // Junta Nome + [Pix: x] + (Qtd) de todos os equipamentos preenchidos

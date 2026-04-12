@@ -11,3 +11,4 @@
 - The primary users are aged 40–60. Use font sizes that are comfortable for this age group: body/paragraph text at minimum 15px, labels and secondary text at minimum 13px, important values and headings at 17px or above. Avoid thin font weights for body text — prefer `font-weight: normal` (400) or `bold` (700), never lighter than 400. 
 - When a UI value is automatic and not typed by the user, prefer showing it in a chip with transparent background and white border.
 - Prefer centered text for UI labels, headings, and short explanatory text unless the layout clearly calls for left alignment.
+- For standard mobile app screens, prefer the same container width used in `manutencoes_solicitadas.html`: `width: 100%` with `max-width: 440px`, centered on the page, unless the current screen already has a different established layout pattern.

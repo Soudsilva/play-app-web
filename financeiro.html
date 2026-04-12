@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financeiro</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0b2256;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            color: white;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 600px;
+            padding: 0 0 80px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ══════════════════════════════
+           TOPO
+        ══════════════════════════════ */
+        .topo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 14px 10px;
+            background: linear-gradient(180deg, #091845 0%, #0b2256 100%);
+            border-bottom: 1px solid rgba(255,235,59,0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            min-height: 58px;
+        }
+
+        .titulo-topo {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffeb3b;
+            letter-spacing: 0.5px;
+            text-align: center;
+            flex: 1;
+        }
+
+        /* ══════════════════════════════
+           FILTROS DE PERÍODO
+        ══════════════════════════════ */
+        .filtros-periodo {
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            align-items: center;
+            padding: 14px 16px 18px;
+            background: linear-gradient(180deg, rgba(9,24,69,0.97) 0%, #091845 100%);
+            border-top: 1.5px solid rgba(255,235,59,0.25);
+            border-radius: 20px 20px 0 0;
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 600px;
+            z-index: 99;
+            backdrop-filter: blur(10px);
+        }
+        .filtro-total-label {
+            font-size: 22px;
+            line-height: 1;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .filtro-total-box {
+            flex: 1;
+            background: rgba(255,235,59,0.08);
+            border: 1.5px solid rgba(255,235,59,0.35);
+            border-radius: 10px;
+            padding: 4px 10px;
+            font-size: 26px;
+            font-weight: bold;
+            color: #ffeb3b;
+            text-align: center;
+            min-width: 0;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: -0.5px;
+        }
+        .filtro-select {
+            flex: 1;
+            background: rgba(255,255,255,0.08);
+            border: 1.5px solid rgba(255,255,255,0.18);
+            border-radius: 10px;
+            padding: 9px 30px 9px 12px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,235,59,0.7)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            cursor: pointer;
+            outline: none;
+        }
+        .filtro-select:focus { border-color: rgba(255,235,59,0.55); }
+        .filtro-select option { background: #0f2a66; color: #fff; }
+        .filtro-select.ano { flex: 0 0 76px; padding-right: 22px; }
+        .filtro-select.mes { flex: 1; }
+
+        /* ══════════════════════════════
+           SCROLL AREA
+        ══════════════════════════════ */
+        .scroll-area {
+            flex: 1;
+            padding: 12px 12px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* ══════════════════════════════
+           CARD DE REGISTRO
+        ══════════════════════════════ */
+        .fin-card {
+            background: linear-gradient(160deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+            border: 1.5px solid rgba(255,235,59,0.22);
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        /* — cabeçalho do card — */
+        .fin-card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 11px 15px;
+            background: rgba(68,103,168,0.35);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .fin-entreg {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 17px;
+            font-weight: bold;
+            color: #fff;
+        }
+        .fin-entreg-icon {
+            width: 30px;
+            height: 30px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+        .fin-data-hora {
+            font-size: 13px;
+            font-weight: bold;
+            color: rgba(255,235,59,0.85);
+            white-space: nowrap;
+        }
+
+        /* — corpo do card — */
+        .fin-card-body {
+            padding: 12px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        /* — linha genérica — */
+        .fin-linha {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 28px;
+        }
+        .fin-chave {
+            font-size: 12px;
+            font-weight: bold;
+            color: rgba(255,235,59,0.72);
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            flex-shrink: 0;
+            width: 52px;
+        }
+        .fin-valor {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .fin-valor.local { font-size: 17px; }
+
+        /* — linha equip + quant — */
+        .fin-linha-equip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .fin-equip-nome {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .fin-quant-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: rgba(255,235,59,0.72);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        .fin-quant-val {
+            font-size: 17px;
+            font-weight: bold;
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            padding: 3px 12px;
+            min-width: 38px;
+            text-align: center;
+        }
+
+        /* — responsáveis — */
+        .fin-resp-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .fin-resp-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: rgba(255,235,59,0.72);
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+        }
+        .fin-resp-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0;
+        }
+        .fin-resp-chip + .fin-resp-chip::before {
+            content: ", ";
+            color: rgba(255,255,255,0.5);
+            font-weight: normal;
+        }
+        .fin-resp-chip {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        /* — saldo — */
+        .fin-colab-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .fin-colab-select {
+            flex: 1;
+            background: rgba(255,255,255,0.08);
+            border: 1.5px solid rgba(255,255,255,0.18);
+            border-radius: 10px;
+            padding: 9px 30px 9px 12px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.45)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            outline: none;
+            cursor: pointer;
+        }
+        .fin-colab-select option { background: #0f2a66; }
+        .fin-colab-select:focus { border-color: rgba(255,235,59,0.5); }
+        .btn-enviar {
+            background: #ffeb3b;
+            color: #0b2256;
+            border: none;
+            border-radius: 10px;
+            padding: 9px 18px;
+            font-size: 15px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-enviar:active { background: #edd900; transform: scale(0.95); }
+
+        .fin-saldo-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, rgba(255,235,59,0.12), rgba(255,235,59,0.04));
+            border: 1.5px solid rgba(255,235,59,0.3);
+            border-radius: 12px;
+            padding: 10px 15px;
+        }
+        .fin-saldo-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: rgba(255,235,59,0.75);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .fin-saldo-valor {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffeb3b;
+        }
+
+        /* ══════════════════════════════
+           TABELA
+        ══════════════════════════════ */
+        .tabela-wrap {
+            overflow-x: auto;
+            padding: 12px 12px 0;
+        }
+        .tabela {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 520px;
+        }
+        .tabela th {
+            font-size: 11px;
+            font-weight: bold;
+            color: rgba(255,235,59,0.8);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(255,235,59,0.25);
+            text-align: left;
+            white-space: nowrap;
+        }
+        .tabela td {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            vertical-align: middle;
+        }
+        .tabela tr:last-child td { border-bottom: none; }
+        .tabela tr:hover td { background: rgba(255,255,255,0.04); }
+        .tabela td.saldo { color: #ffeb3b; }
+        .tabela td.data  { color: rgba(255,235,59,0.8); white-space: nowrap; font-size: 13px; }
+        .tabela td.resp  { color: rgba(255,255,255,0.75); font-size: 13px; }
+
+        /* ══════════════════════════════
+           BARRA INFERIOR (TOTAL)
+        ══════════════════════════════ */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 600px;
+            background: linear-gradient(180deg, rgba(9,24,69,0.96) 0%, #091845 100%);
+            border-top: 1.5px solid rgba(255,235,59,0.3);
+            padding: 12px 20px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+            z-index: 200;
+        }
+        .total-esq {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .total-icon { font-size: 20px; }
+        .total-label {
+            font-size: 13px;
+            font-weight: bold;
+            color: rgba(255,255,255,0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .total-count {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 999px;
+            padding: 2px 10px;
+            font-size: 13px;
+            font-weight: bold;
+            color: rgba(255,255,255,0.75);
+        }
+        .total-valor {
+            font-size: 22px;
+            font-weight: bold;
+            color: #a5d6a7;
+            letter-spacing: -0.3px;
+        }
+
+        @media (max-width: 480px) {
+            .fin-card-body { padding: 10px 12px; }
+            .fin-card-head { padding-left: 12px; padding-right: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+
+    <!-- ════ TOPO ════ -->
+    <div class="topo">
+        <div class="titulo-topo">Financeiro</div>
+    </div>
+
+    <!-- ════ CARDS DE EXEMPLO ════ -->
+    <div class="scroll-area">
+
+        <!-- Card 1 -->
+        <div class="fin-card">
+            <div class="fin-card-head">
+                <div class="fin-entreg">
+                    <div class="fin-entreg-icon">&#128100;</div>
+                    Felipe
+                </div>
+                <div class="fin-data-hora">&#128197; 31/03/2026 16:49</div>
+            </div>
+            <div class="fin-card-body">
+                <div class="fin-linha">
+                    <span class="fin-chave">Local</span>
+                    <span class="fin-valor local">Dr Pizza Areal</span>
+                </div>
+                <div class="fin-linha-equip">
+                    <span class="fin-chave" style="width:52px">Equip.</span>
+                    <span class="fin-equip-nome">&#9881; Foguete</span>
+                    <span class="fin-quant-label">Quant.</span>
+                    <span class="fin-quant-val">1</span>
+                </div>
+                <div class="fin-resp-wrap">
+                    <div class="fin-resp-label">Responsáveis</div>
+                    <div class="fin-resp-chips">
+                        <span class="fin-resp-chip">Rafael</span>
+                        <span class="fin-resp-chip">André</span>
+                        <span class="fin-resp-chip">Renar</span>
+                    </div>
+                </div>
+                <div class="fin-colab-row">
+                    <select class="fin-colab-select">
+                        <option value="">Colaborador</option>
+                        <option>Felipe</option>
+                        <option>Anderson</option>
+                        <option>Rafael</option>
+                        <option>André</option>
+                        <option>Renar</option>
+                    </select>
+                    <button class="btn-enviar">Enviar</button>
+                </div>
+                <div class="fin-saldo-row">
+                    <div class="fin-saldo-label">Saldo</div>
+                    <div class="fin-saldo-valor">R$&nbsp;100,00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="fin-card">
+            <div class="fin-card-head">
+                <div class="fin-entreg">
+                    <div class="fin-entreg-icon">&#128100;</div>
+                    Felipe
+                </div>
+                <div class="fin-data-hora">&#128197; 31/03/2026 16:43</div>
+            </div>
+            <div class="fin-card-body">
+                <div class="fin-linha">
+                    <span class="fin-chave">Local</span>
+                    <span class="fin-valor local">Dr Pizza Outeiro</span>
+                </div>
+                <div class="fin-linha-equip">
+                    <span class="fin-chave" style="width:52px">Equip.</span>
+                    <span class="fin-equip-nome">&#9881; Foguete</span>
+                    <span class="fin-quant-label">Quant.</span>
+                    <span class="fin-quant-val">1</span>
+                </div>
+                <div class="fin-resp-wrap">
+                    <div class="fin-resp-label">Responsáveis</div>
+                    <div class="fin-resp-chips">
+                        <span class="fin-resp-chip">Rafael</span>
+                        <span class="fin-resp-chip">André</span>
+                        <span class="fin-resp-chip">Renar</span>
+                    </div>
+                </div>
+                <div class="fin-colab-row">
+                    <select class="fin-colab-select">
+                        <option value="">Colaborador</option>
+                        <option>Felipe</option>
+                        <option>Anderson</option>
+                        <option>Rafael</option>
+                        <option>André</option>
+                        <option>Renar</option>
+                    </select>
+                    <button class="btn-enviar">Enviar</button>
+                </div>
+                <div class="fin-saldo-row">
+                    <div class="fin-saldo-label">Saldo</div>
+                    <div class="fin-saldo-valor">R$&nbsp;100,00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="fin-card">
+            <div class="fin-card-head">
+                <div class="fin-entreg">
+                    <div class="fin-entreg-icon">&#128100;</div>
+                    Anderson
+                </div>
+                <div class="fin-data-hora">&#128197; 27/03/2026 15:22</div>
+            </div>
+            <div class="fin-card-body">
+                <div class="fin-linha">
+                    <span class="fin-chave">Local</span>
+                    <span class="fin-valor local">Minha Farmácia</span>
+                </div>
+                <div class="fin-linha-equip">
+                    <span class="fin-chave" style="width:52px">Equip.</span>
+                    <span class="fin-equip-nome">&#9881; Saturno</span>
+                    <span class="fin-quant-label">Quant.</span>
+                    <span class="fin-quant-val">2</span>
+                </div>
+                <div class="fin-resp-wrap">
+                    <div class="fin-resp-label">Responsáveis</div>
+                    <div class="fin-resp-chips">
+                        <span class="fin-resp-chip">Anderson</span>
+                        <span class="fin-resp-chip">Felipe</span>
+                    </div>
+                </div>
+                <div class="fin-colab-row">
+                    <select class="fin-colab-select">
+                        <option value="">Colaborador</option>
+                        <option>Felipe</option>
+                        <option>Anderson</option>
+                        <option>Rafael</option>
+                        <option>André</option>
+                        <option>Renar</option>
+                    </select>
+                    <button class="btn-enviar">Enviar</button>
+                </div>
+                <div class="fin-saldo-row">
+                    <div class="fin-saldo-label">Saldo</div>
+                    <div class="fin-saldo-valor">R$&nbsp;700,00</div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /scroll-area -->
+
+</div><!-- /app -->
+
+<!-- ════ FILTROS FLUTUANTES ════ -->
+<div class="filtros-periodo">
+    <select class="filtro-select ano">
+        <option>2024</option>
+        <option>2025</option>
+        <option selected>2026</option>
+        <option>2027</option>
+    </select>
+    <select class="filtro-select mes">
+        <option>Janeiro</option>
+        <option>Fevereiro</option>
+        <option>Março</option>
+        <option selected>Abril</option>
+        <option>Maio</option>
+        <option>Junho</option>
+        <option>Julho</option>
+        <option>Agosto</option>
+        <option>Setembro</option>
+        <option>Outubro</option>
+        <option>Novembro</option>
+        <option>Dezembro</option>
+    </select>
+    <span class="filtro-total-label">&#128176;</span>
+    <div class="filtro-total-box">3.000</div>
+</div>
+
+
+</body>
+</html>

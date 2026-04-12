@@ -9,7 +9,7 @@
         .app { width:100%; max-width:600px; padding:15px; box-sizing:border-box; min-height: 100vh; padding-bottom: 50px; }
         
         .topo { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; position: relative; width: 100%; min-height: 45px; }
-        .titulo { font-size: 24px; font-weight: bold; text-align: center; }
+        .titulo { font-size: 24px; font-weight: bold; text-align: center; user-select: none; -webkit-user-select: none; }
         .btn-home { background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 50%; cursor: pointer; display: flex; position: absolute; right: 0; }
         .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
 
@@ -26,18 +26,64 @@
         /* CabeÃ§alho do Card */
         .envio-header { border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 10px; }
         .envio-data { font-size: 13px; color: #ffeb3b; font-weight: bold; }
-        .envio-cliente { font-size: 20px; font-weight: bold; margin-top: 5px; color: white; }
+        .envio-cliente { font-size: 20px; font-weight: bold; margin-top: 5px; color: white; user-select: none; -webkit-user-select: none; }
 
         /* TÃ­tulos de SeÃ§Ã£o Interna */
         .secao-titulo { 
             font-size: 14px; font-weight: bold; color: #ffeb3b; margin: 15px 0 8px 0; 
             text-transform: uppercase; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 3px; 
+            user-select: none; -webkit-user-select: none;
         }
         
         /* Linhas de InformaÃ§Ã£o */
-        .info-linha { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; align-items: center;}
-        .info-linha span { color: #cfd6e3; }
-        .info-linha strong { color: white; font-size: 15px;}
+        .info-linha {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 4px;
+        }
+        .info-linha span {
+            display: inline;
+            color: #cfd6e3;
+            user-select: none;
+            -webkit-user-select: none;
+            white-space: normal;
+            text-align: left;
+            margin-right: 4px;
+        }
+        .info-linha strong {
+            display: inline;
+            color: white;
+            font-size: 15px;
+            text-align: left;
+            line-height: 1.35;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+        .info-linha-bloco {
+            display: block;
+        }
+        .info-linha-bloco span,
+        .info-linha-bloco strong {
+            display: inline;
+        }
+        .info-linha-bloco span { margin-bottom: 0; white-space: normal; }
+        .info-linha-livre {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            column-gap: 10px;
+            align-items: center;
+        }
+        .info-linha-livre span {
+            display: block;
+            white-space: normal;
+            margin-right: 0;
+        }
+        .info-linha-livre strong {
+            display: block;
+            text-align: right;
+        }
         .rotulo-cadastrou { color: #4caf50 !important; }
         .rotulo-retirado { color: #f44336 !important; }
         .item-estoque-nome { color: white !important; font-size: 18px !important; font-weight: bold; }
@@ -60,6 +106,7 @@
             font-size: 12px; font-weight: bold; text-transform: uppercase;
             letter-spacing: 1.5px; color: #aac4f5;
             padding: 14px 2px 6px;
+            user-select: none; -webkit-user-select: none;
         }
 
         /* Barra de busca */
@@ -119,7 +166,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbExcluirAtendimento } from './database.js';
+    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbExcluirAtendimento } from './database.js';
 
     // Pega quem estÃ¡ logado no celular no momento
     const usuarioLogado = localStorage.getItem('usuarioLogado');
@@ -127,6 +174,7 @@
     let cadastrosPixSalvos = [];
     let historicoEstoqueSalvo = [];
     let manutencoesSalvas = [];
+    let clientesSalvos = [];
     let colaboradoresSalvos = [];
     let colaboradoresCarregados = false;
     let termoBusca = '';
@@ -384,8 +432,8 @@
         let html = '';
         eventos.forEach(evento => {
             const rotulo = evento.tipo === 'retirou'
-                ? `Retirado Pix ${evento.numeroPix || '—'}`
-                : `Cadastrou Pix ${evento.numeroPix || '—'}`;
+                ? `Retirado Pix ${evento.numeroPix || '—'}:`
+                : `Cadastrou Pix ${evento.numeroPix || '—'}:`;
             const detalhes = [evento.local, formatarDataHora(evento.data)].filter(Boolean).join(' | ');
             const classeRotulo = evento.tipo === 'retirou' ? ' class="rotulo-retirado"' : ' class="rotulo-cadastrou"';
             html += `<div class="info-linha"><span${classeRotulo}>${rotulo}</span><strong>${detalhes || '—'}</strong></div>`;
@@ -398,13 +446,13 @@
         const registro = item?.cadastroPix || {};
         const numeroPix = String(registro?.numero_pix || '').trim() || '—';
         const local = obterTextoLocalCadastroPix(registro, item?.cliente || null);
-        const rotulo = item?.eventoTipo === 'retirou' ? `Retirado Pix ${numeroPix}` : `Cadastrou Pix ${numeroPix}`;
+        const rotulo = item?.eventoTipo === 'retirou' ? `Retirado Pix ${numeroPix}:` : `Cadastrou Pix ${numeroPix}:`;
         let html = '';
         const classeRotulo = item?.eventoTipo === 'retirou' ? ' class="rotulo-retirado"' : ' class="rotulo-cadastrou"';
         html += `<div class="info-linha"><span${classeRotulo}>${rotulo}</span><strong>${local || '—'}</strong></div>`;
 
         if ((registro?.contador ?? '') !== '' && item?.eventoTipo === 'colocou') {
-            html += `<div class="info-linha"><span>Contador</span><strong>${registro.contador}</strong></div>`;
+            html += `<div class="info-linha"><span>Contador:</span><strong>${registro.contador}</strong></div>`;
         }
 
         return html;
@@ -478,6 +526,55 @@
         );
     }
 
+    function formatarStatusCadastroTexto(status) {
+        const valor = normalizarTexto(status);
+        if (!valor) return 'Aprovado';
+        if (valor === 'em_analise' || valor === 'em analise' || valor === 'analise') return 'Em análise';
+        if (valor === 'aprovado') return 'Aprovado';
+        return String(status || '').trim() || 'Aprovado';
+    }
+
+    function obterEquipamentosTextoLista(equipDetalhes, equipTexto = '') {
+        if (Array.isArray(equipDetalhes) && equipDetalhes.length > 0) {
+            return equipDetalhes.map(formatarDescricaoEquipamento).filter(Boolean).join(', ');
+        }
+        return String(equipTexto || '').trim();
+    }
+
+    function obterCadastrosClienteDoUsuario() {
+        const usuario = normalizarTexto(usuarioLogado);
+        if (!usuario) return [];
+
+        return clientesSalvos
+            .filter(item => normalizarTexto(item?.cadastradoPor) === usuario)
+            .filter(item => {
+                if (!termoBusca) return true;
+                const campos = [
+                    item?.numero,
+                    item?.nome,
+                    item?.cidade,
+                    item?.rota,
+                    item?.endereco,
+                    item?.statusCadastro,
+                    item?.aberto,
+                    item?.obs,
+                    obterEquipamentosTextoLista(item?.equipDetalhes, item?.equip),
+                    formatarDataHora(item?.dataCadastro)
+                ];
+                return campos.some(c => normalizarTexto(c).includes(termoBusca));
+            })
+            .map(item => ({
+                tipoLinhaTempo: 'cadastro_cliente',
+                data: item?.dataCadastro || '',
+                clienteCadastro: item,
+                cliente: {
+                    numero: item?.numero || '',
+                    nome: item?.nome || 'Cliente sem nome'
+                }
+            }))
+            .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+    }
+
     function formatarDescricaoEquipamento(item, opcoes = {}) {
         if (!item) return '';
         if (typeof item === 'string') return item.trim();
@@ -526,23 +623,37 @@
             ? info.equipamentosRetiradosDetalhes
             : (Array.isArray(info.equipamentosRetirados) ? info.equipamentosRetirados : []);
 
-        if (info.tipoServico) linhas += `<div class="info-linha"><span>Tipo</span><strong>${info.tipoServico}</strong></div>`;
+        if (info.tipoServico) linhas += `<div class="info-linha"><span>Tipo:</span><strong>${info.tipoServico}</strong></div>`;
         if (equipamentosAdicionados.length > 0) {
-            linhas += `<div class="info-linha"><span>Máquinas adicionadas</span><strong>${equipamentosAdicionados.map(formatarDescricaoEquipamento).filter(Boolean).join(', ')}</strong></div>`;
+            linhas += `<div class="info-linha"><span>Máquinas adicionadas:</span><strong>${equipamentosAdicionados.map(formatarDescricaoEquipamento).filter(Boolean).join(', ')}</strong></div>`;
         }
         if (equipamentosRetirados.length > 0) {
-            linhas += `<div class="info-linha"><span>Retirou</span><strong>${equipamentosRetirados.map(item => formatarDescricaoEquipamento(item, { modoRetirada: true })).filter(Boolean).join(', ')}</strong></div>`;
+            linhas += `<div class="info-linha"><span>Retirou:</span><strong>${equipamentosRetirados.map(item => formatarDescricaoEquipamento(item, { modoRetirada: true })).filter(Boolean).join(', ')}</strong></div>`;
         }
         if (info.pontoEncerrado) {
-            linhas += `<div class="info-linha"><span>Ponto</span><strong>Encerrado em análise</strong></div>`;
+            linhas += `<div class="info-linha"><span>Ponto:</span><strong>Encerrado em análise</strong></div>`;
         }
         if ((info.valorEncerramento ?? '') !== '') {
-            linhas += `<div class="info-linha"><span>Valor encerramento</span><strong>${formatarMoeda(converterParaNumero(info.valorEncerramento))}</strong></div>`;
+            linhas += `<div class="info-linha"><span>Valor encerramento:</span><strong>${formatarMoeda(converterParaNumero(info.valorEncerramento))}</strong></div>`;
         }
         if (info.observacoes) {
-            linhas += `<div class="info-linha"><span>Obs.</span><strong>${info.observacoes}</strong></div>`;
+            linhas += `<div class="info-linha info-linha-bloco"><span>Observações:</span><strong>${info.observacoes}</strong></div>`;
         }
         return linhas ? `<div class="secao-titulo">Manutenção</div>${linhas}` : '';
+    }
+
+    function montarHtmlCadastroCliente(item) {
+        const info = item?.clienteCadastro || {};
+        const equipamentos = obterEquipamentosTextoLista(info?.equipDetalhes, info?.equip);
+        let html = `<div class="secao-titulo">Cadastro de Cliente</div>`;
+        html += `<div class="info-linha"><span>Status:</span><strong>${formatarStatusCadastroTexto(info?.statusCadastro)}</strong></div>`;
+        if (info?.cidade) html += `<div class="info-linha"><span>Cidade:</span><strong>${info.cidade}</strong></div>`;
+        if (info?.rota) html += `<div class="info-linha"><span>Rota:</span><strong>${info.rota}</strong></div>`;
+        if (info?.endereco) html += `<div class="info-linha info-linha-bloco"><span>Endereço:</span><strong>${info.endereco}</strong></div>`;
+        if (info?.aberto) html += `<div class="info-linha"><span>Dias aberto:</span><strong>${info.aberto}</strong></div>`;
+        if (equipamentos) html += `<div class="info-linha info-linha-bloco"><span>Equipamentos:</span><strong>${equipamentos}</strong></div>`;
+        if (info?.obs) html += `<div class="info-linha info-linha-bloco"><span>Observações:</span><strong>${info.obs}</strong></div>`;
+        return html;
     }
 
     function ehMesmoDiaAtual(dataIso) {
@@ -689,9 +800,15 @@
             });
 
         const enviosEstoque = obterMovimentosEstoqueDoUsuario();
+        const enviosCadastroCliente = obterCadastrosClienteDoUsuario();
 
         // Filtra sÃ³ os que foram enviados por ele e ordena da data mais recente (maior) para a mais velha (menor)
-        const meusEnvios = [...enviosAtendimento, ...enviosCadastroPix, ...enviosEstoque]
+        const meusEnvios = [
+            ...enviosAtendimento,
+            ...enviosCadastroPix,
+            ...enviosEstoque,
+            ...enviosCadastroCliente
+        ]
             .sort((a, b) => new Date(b.data) - new Date(a.data));
 
         if (meusEnvios.length === 0) {
@@ -730,6 +847,34 @@
                 return;
             }
 
+            if (envio?.tipoLinhaTempo === 'cadastro_cliente') {
+                const clienteNome = envio?.cliente?.nome || 'Cliente Desconhecido';
+                const clienteNumero = envio?.cliente?.numero || 'S/N';
+                const dataFormatada = formatarDataHora(envio?.data);
+                const info = envio?.clienteCadastro || {};
+                const htmlHeader = `<div class="envio-header"><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>`;
+                let htmlFotos = '';
+                const fotos = [];
+                if (info?.fotoFichaInstalacao) {
+                    fotos.push({ nome: 'Ficha', url: info.fotoFichaInstalacao, thumbUrl: info.fotoFichaInstalacaoThumb || info.fotoFichaInstalacao });
+                }
+                (Array.isArray(info?.fotosMaquinasInstalacao) ? info.fotosMaquinasInstalacao : []).forEach(foto => {
+                    if (!foto?.url) return;
+                    fotos.push({ nome: foto.nome || 'Máquina', url: foto.url, thumbUrl: foto.thumbUrl || foto.url });
+                });
+                if (fotos.length > 0) {
+                    htmlFotos = `<div class="secao-titulo">Imagens (Toque para ampliar)</div><div class="foto-grid">`;
+                    fotos.forEach(foto => {
+                        htmlFotos += `<div class="foto-item"><a href="${foto.url}" target="_blank"><img src="${foto.thumbUrl || foto.url}" loading="lazy"></a><div class="foto-legenda">${foto.nome}</div></div>`;
+                    });
+                    htmlFotos += `</div>`;
+                }
+                const htmlRodape = `<div class="envio-rodape-estoque"><span>${dataFormatada}</span></div>`;
+                card.innerHTML = `${htmlHeader}${montarHtmlCadastroCliente(envio)}${htmlFotos}${htmlRodape}`;
+                container.appendChild(card);
+                return;
+            }
+
             const dataFormatada = new Date(envio.data).toLocaleString('pt-BR');
             const htmlManutencao = ehRegistroManutencao(envio) ? montarHtmlManutencao(envio) : '';
             const htmlCadastroPix = montarHtmlCadastroPix(envio);
@@ -753,9 +898,9 @@
                 htmlProdutos += `<div class="secao-titulo">${tituloItens}</div>`;
                 envio.produtos.forEach(p => {
                     if (ehMovimentoEstoque(envio)) {
-                        htmlProdutos += `<div class="info-linha"><span class="item-estoque-nome">${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
+                        htmlProdutos += `<div class="info-linha info-linha-livre"><span class="item-estoque-nome">${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
                     } else {
-                        htmlProdutos += `<div class="info-linha"><span>${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
+                        htmlProdutos += `<div class="info-linha info-linha-livre"><span>${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
                     }
                 });
             }
@@ -777,7 +922,7 @@
                 htmlFin += `
                     <div style="background: rgba(255,255,255,0.04); border-left: 3px solid #4caf50; padding: 8px 10px; border-radius: 6px; margin-top: 10px; margin-bottom: 8px;">
                         <div class="info-linha" style="margin: 0;">
-                            <span style="font-weight: 600; color: #ffffff;">Total Geral</span>
+                            <span style="font-weight: 600; color: #ffffff;">Total geral:</span>
                             <strong style="color: #ffffff; font-size: 18px;">${formatarMoeda(converterParaNumero(fin.totalGeral))}</strong>
                         </div>
                     </div>
@@ -801,19 +946,19 @@
 
                 if ((fin.dinheiro ?? '') !== '') {
                     htmlFin += `
-                        <div class="info-linha"><span>Dinheiro em Espécie</span> <strong style="color:#4caf50;">${formatarMoeda(converterParaNumero(fin.dinheiro))}</strong></div>
+                        <div class="info-linha"><span>Dinheiro em espécie:</span> <strong style="color:#4caf50;">${formatarMoeda(converterParaNumero(fin.dinheiro))}</strong></div>
                     `;
                 }
 
                 if (totalPix > 0) {
                     htmlFin += `
-                        <div class="info-linha"><span>Pix</span> <strong style="color:#64b5f6;">${formatarMoeda(totalPix)}</strong></div>
+                        <div class="info-linha"><span>Pix:</span> <strong style="color:#64b5f6;">${formatarMoeda(totalPix)}</strong></div>
                     `;
                 }
 
                 htmlFin += `
-                    <div class="info-linha"><span>Comissão (${fin.comissaoPorcentagem || 0}%)</span> <strong style="color:#f44336;">- ${formatarMoeda(converterParaNumero(fin.comissaoValor))}</strong></div>
-                    <div class="info-linha"><span>Saldo Depositar</span> <strong style="color:#4caf50; font-size:18px;">${formatarMoeda(saldoDepositar)}</strong></div>
+                    <div class="info-linha"><span>Comissão (${fin.comissaoPorcentagem || 0}%):</span> <strong style="color:#f44336;">- ${formatarMoeda(converterParaNumero(fin.comissaoValor))}</strong></div>
+                    <div class="info-linha"><span>Saldo depositar:</span> <strong style="color:#4caf50; font-size:18px;">${formatarMoeda(saldoDepositar)}</strong></div>
                 `;
             }
 
@@ -917,6 +1062,11 @@
 
     dbEscutarManutencoes((manutencoes) => {
         manutencoesSalvas = manutencoes;
+        renderizarEnvios();
+    });
+
+    dbEscutarClientes((clientes) => {
+        clientesSalvos = clientes;
         renderizarEnvios();
     });
 

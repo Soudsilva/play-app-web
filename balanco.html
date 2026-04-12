@@ -946,7 +946,8 @@
 
         // MÃ¡quinas apenas do perÃ­odo selecionado (para a seÃ§Ã£o "MÃ¡quinas Atendidas no PerÃ­odo")
         const maquinas   = somarMaquinasAtendidasPeriodo(filtrados);
-        const porDia  = atendimentosPorDia(filtradosFinanceiros);
+        const porDia  = atendimentosPorDia(filtradosFinanceiros)
+            .filter(([, { saldo }]) => !usaResumoComissao || saldo > 0);
 
         const labelDe  = formatarDataBR(dataDe)  || 'Selecione';
         const labelAte = formatarDataBR(dataAte) || 'Selecione';
@@ -1275,8 +1276,7 @@
     colaboradorObj  = colaboradores.find(c => String(c?.nome || '').trim() === usuarioLogado) || null;
     isTecnico = (colaboradorObj?.nivel_completo || '').startsWith('atendimento') &&
                 String(colaboradorObj?.cargo || '').trim().toLowerCase() === 'técnico';
-    usaComissaoGlobal = String(colaboradorObj?.nivel_completo || '').trim() === 'atendimento_2' &&
-                        parsePercentualColaborador(colaboradorObj?.comissaoGlobal) > 0;
+    usaComissaoGlobal = parsePercentualColaborador(colaboradorObj?.comissaoGlobal) > 0;
 
     // Mapa para cruzar cliente do atendimento â†’ rota atual
     mapaRotas = {};
