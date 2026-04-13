@@ -12,3 +12,4 @@
 - When a UI value is automatic and not typed by the user, prefer showing it in a chip with transparent background and white border.
 - Prefer centered text for UI labels, headings, and short explanatory text unless the layout clearly calls for left alignment.
 - For standard mobile app screens, prefer the same container width used in `manutencoes_solicitadas.html`: `width: 100%` with `max-width: 440px`, centered on the page, unless the current screen already has a different established layout pattern.
+- os botoes sao um rotulo no formato de botão, tome cuidado pra não colocar um rotulo simples que só tem caráter de exibição e deixalo com aparencia de botão

@@ -1,0 +1,2099 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atendimento Nível 1</title>
+    <style>
+        body { 
+            margin:0; 
+            font-family:Arial, sans-serif; 
+            background:#042d86; 
+            display:flex; justify-content:center; color:white; 
+            overscroll-behavior-y: contain; /* [NOVO] Trava o "puxar para atualizar" no celular */
+        }
+        .app { width:100%; max-width:960px; box-sizing:border-box; min-height: 100vh; padding: 20px 10px 100px; }
+
+        /* Cabeçalho  altere aqui o nome e tamanho da fonte */
+        .topo { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .titulo { font-size: 30px; font-weight: bold; } /* Aumentei o tamanho aqui */
+        .btn-voltar { background: rgba(255,255,255,0.2); border:none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+
+        /* Inputs Gerais */
+        label { font-size: 16px; color: #cfd6e3; margin-bottom: 5px; display: block; margin-top: 15px; }
+        input, select { 
+            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.3); 
+            background: white; color: #333; box-sizing: border-box; font-size: 18px; outline: none; 
+        }
+
+        /* Área do Cliente Encontrado */
+        .card-cliente {
+            background: #4caf50; /* Verde quando encontrado */
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 10px;
+            display: none; /* Escondido por padrão */
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .card-cliente.erro { background: #f44336; } /* Vermelho se não achar */
+
+        /* Lista de Produtos Dinâmica */
+        .linha-produto {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            animation: slideDown 0.3s ease;
+        }
+        
+        .col-prod { flex: 2; } /* Dropdown ocupa mais espaço */
+        .col-qtd { flex: 1; }  /* Qtd ocupa menos */
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDown { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* Botão Finalizar */
+        .btn-finalizar {
+            background: #ffeb3b; color: #042d86; font-weight: bold; font-size: 18px;
+            border: none; padding: 15px; border-radius: 12px; cursor: pointer;
+            width: 100%; margin-top: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .btn-finalizar:active { transform: scale(0.98); }
+
+        /* --- ESTILOS DO BLOCO PRODUTOS --- */
+        .card-produtos {
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+        }
+        .titulo-prod {
+            text-align: center; font-weight: bold; color: #ffeb3b; margin-bottom: 15px;
+            font-size: 18px; text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        /* Área de Upload de Foto */
+        .area-foto {
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+            cursor: pointer;
+            background: rgba(255,255,255,0.05);
+        }
+
+        /* --- ESTILOS DO BLOCO FINANCEIRO --- */
+        .card-financeiro {
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 25px;
+            background: rgba(0,0,0,0.2);
+        }
+        .titulo-fin {
+            text-align: center; font-weight: bold; color: #ffeb3b; margin-bottom: 15px;
+            font-size: 18px; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .sub-card {
+            margin-bottom: 15px;
+            margin-left: -15px;
+            margin-right: -15px;
+            border-top: 4px solid rgba(255,255,255,0.36);
+            border-bottom: 0;
+            padding: 15px 15px 0;
+        }
+        .titulo-sub {
+            font-size: 16px; font-weight: bold; color: white; margin-bottom: 10px;
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        .titulo-sub-balanceado {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            width: 100%;
+            gap: 6px;
+        }
+        .titulo-sub-balanceado .titulo-sub-icone,
+        .titulo-sub-balanceado .titulo-sub-espaco {
+            width: 24px;
+            text-align: center;
+        }
+        .titulo-sub-balanceado .titulo-sub-icone {
+            justify-self: end;
+        }
+        .titulo-sub-balanceado .titulo-sub-texto {
+            text-align: center;
+        }
+        .linha-form { display: flex; gap: 10px; margin-bottom: 10px; }
+        .lbl-fin { font-size: 13px; color: #ccc; margin-bottom: 2px; display: block; }
+        
+        /* Readonly inputs visual style */
+        .input-readonly {
+            background: transparent;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            border: 1px solid rgba(255,255,255,0.95);
+        }
+        .input-saldo {
+            background: transparent;
+            color: #9be7a5;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        /* Destaque positivo para a comissão do cliente */
+        .input-comissao {
+            background: transparent;
+            color: #b8f5bf;
+            font-weight: bold;
+            font-size: 20px;
+            text-align: center;
+            border: 2px solid #4caf50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
+        }
+        
+        .preview-img {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 8px;
+            display: none; /* Escondido até ter foto */
+            margin-top: 10px;
+        }
+
+        /* [NOVO] Estilos do Modal de Foto */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+        .modal-content {
+            background: #0f2a66;
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid #ffeb3b;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 85%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 5px;
+        }
+        .modal-content button {
+            padding: 14px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.1s;
+        }
+        .modal-content button:active {
+            transform: scale(0.97);
+        }
+        #btnCamera { background: #4467a8; color: white; }
+        #btnGaleria { background: #4caf50; color: white; }
+        .btn-cancelar-modal { background: transparent; border: 1px solid #f44336; color: #f44336; margin-top: 5px; }
+
+        /* === BLOCO SATURNO === */
+        .card-saturno {
+            border: 3px solid #f44336;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 25px;
+            background: rgba(244, 67, 54, 0.12);
+        }
+        .titulo-saturno {
+            text-align: center;
+            font-weight: bold;
+            color: #ff5252;
+            font-size: 22px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        .aviso-saturno {
+            background: #b71c1c;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 17px;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+        .aviso-saturno-secundario {
+            background: rgba(255,82,82,0.15);
+            border: 1px solid #f44336;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+            color: #ff8a80;
+            text-align: center;
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+        #saturnoContagem {
+            text-align: center;
+            font-size: 32px;
+            font-weight: bold;
+            border: 2px solid #f44336;
+            background: rgba(244,67,54,0.1);
+            color: white;
+        }
+
+        /* === PAINEL EDIÇÃO INLINE CLIENTE === */
+        .painel-edicao-cliente {
+            background: #0f2a66;
+            border: 2px solid #ffeb3b;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            padding: 15px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+        .painel-edicao-titulo {
+            text-align: center;
+            font-weight: bold;
+            color: #ffeb3b;
+            font-size: 15px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .painel-dias-grid {
+            display: flex;
+            gap: 4px;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            flex-wrap: nowrap;
+        }
+        .painel-dia-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            gap: 6px;
+            font-size: 12px;
+            color: #cfd6e3;
+            font-weight: bold;
+        }
+        .painel-dia-label input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            margin: 0;
+            accent-color: #ffeb3b;
+            cursor: pointer;
+        }
+        .painel-obs-textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.08);
+            color: white;
+            font-size: 16px;
+            min-height: 70px;
+            resize: vertical;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            margin-bottom: 10px;
+        }
+        .painel-obs-textarea::placeholder { color: rgba(255,255,255,0.4); }
+        .painel-obs-textarea:focus { outline: none; border-color: #ffeb3b; }
+        .painel-btn-salvar {
+            background: #ffeb3b;
+            color: #042d86;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+        .painel-btn-salvar:active { transform: scale(0.98); }
+        .painel-btn-salvar:disabled { opacity: 0.6; cursor: not-allowed; }
+        .painel-btn-cancelar {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.7);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    
+    <div class="topo">
+        <div class="titulo">Atendimento Teste</div>
+    </div>
+
+    <!-- ATENDENTE -->
+    <label style="text-align: center;">Atendente</label>
+    <select id="selectAtendente" style="margin-bottom: 20px; font-size: 20px; font-weight: bold; text-align: center;">
+        <option value="">— Selecione o atendente —</option>
+    </select>
+
+    <!-- DATA DO ATENDIMENTO -->
+    <label style="text-align: center;">Data do Atendimento</label>
+    <input type="date" id="inputDataAtendimento" style="margin-bottom: 20px; font-size: 20px; font-weight: bold; text-align: center;">
+
+    <!-- 1. BUSCA DE CLIENTE -->
+    <div id="bannerRotaFiltro" style="display:none; background:rgba(76,175,80,0.15); border:1px solid rgba(76,175,80,0.35); border-radius:10px; padding:8px 14px; margin-bottom:10px; align-items:center; justify-content:space-between;">
+        <span style="font-size:14px; color:#81c784; font-weight:bold;">🗺️ Rota <span id="textoRotaFiltro"></span> — apenas clientes desta rota</span>
+        <button onclick="limparFiltroRota()" style="background:none; border:none; color:#b0bbd4; font-size:18px; cursor:pointer; padding:0 0 0 10px; line-height:1;">×</button>
+    </div>
+    <label style="text-align: center;">Número do Cliente</label>
+    <div style="display: flex; justify-content: center;">
+        <input type="text" inputmode="numeric" id="inputBuscaCliente" name="cliente_busca_manual" placeholder="Nº"
+               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"
+               oninput="this.value = this.value.replace(/[^0-9]/g, ''); buscarCliente()"
+               style="width: 40%; font-size: 28px; text-align: center; font-weight: bold;">
+    </div>
+
+    <!-- Galeria (Card) do Resultado -->
+    <div id="resultadoCliente" class="card-cliente">
+        <!-- Conteúdo preenchido via JS -->
+    </div>
+
+    <!-- Painel de edição inline de dias/obs -->
+    <div id="painelEdicaoCliente" class="painel-edicao-cliente">
+        <div class="painel-edicao-titulo">✏️ Editar Cliente</div>
+        <div style="font-size: 13px; color: #cfd6e3; margin-bottom: 8px; text-align: center; font-weight: bold;">Dias Aberto</div>
+        <div class="painel-dias-grid" id="painelDiasGrid"></div>
+        <div style="font-size: 13px; color: #cfd6e3; margin-bottom: 6px; font-weight: bold;">Observações</div>
+        <textarea class="painel-obs-textarea" id="painelObsTexto" placeholder="Observações do cliente..."></textarea>
+        <button class="painel-btn-salvar" id="painelBtnSalvar" onclick="salvarEdicaoCliente()">SALVAR</button>
+        <button class="painel-btn-cancelar" onclick="fecharPainelEdicaoCliente()">Cancelar</button>
+    </div>
+
+    <input type="hidden" id="idClienteSelecionado">
+
+    <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
+
+    <!-- 2. PRODUTOS -->
+    <div class="card-produtos">
+        <div class="titulo-prod">Produtos</div>
+        <div id="containerProdutos">
+            <!-- As linhas serão inseridas aqui via JS -->
+        </div>
+    </div>
+
+    <!-- MÁQUINA SATURNO: Contagem de bolinhas (mostrado apenas quando o cliente tem Saturno) -->
+    <div id="card-saturno" class="card-saturno" style="display:none;">
+        <div class="titulo-saturno">⚠️ MÁQUINA SATURNO ⚠️</div>
+        <div class="aviso-saturno">
+            CONTE as bolinhas que estão<br>DENTRO da máquina AGORA<br>
+            <span style="font-size:14px; font-weight:normal; opacity:0.9;">Faça isso ANTES de colocar mais produto</span>
+        </div>
+        <div class="aviso-saturno-secundario">
+            ⛔ NÃO é a quantidade que você vai abastecer<br>
+            É o que já está lá dentro da máquina!
+        </div>
+        <label style="text-align:center; color:#ffcdd2; font-size:16px; font-weight:bold; display:block;">Bolinhas encontradas dentro da máquina:</label>
+        <input type="number" id="saturnoContagem" inputmode="numeric" placeholder="0" min="0"
+               style="margin-top:8px;" oninput="salvarRascunho()">
+    </div>
+
+    <!-- 3. FINANCEIRO -->
+    <div class="card-financeiro">
+        <div class="titulo-fin">Financeiro</div>
+
+        <!-- Área Pix -->
+        <div class="sub-card" id="areaPix">
+            <div class="titulo-sub titulo-sub-balanceado">
+                <span class="titulo-sub-icone" style="font-size:18px">💠</span>
+                <span class="titulo-sub-texto">Área Pix</span>
+                <span class="titulo-sub-espaco" aria-hidden="true"></span>
+            </div>
+            <div id="containerPix">
+                <!-- As linhas de Pix serão inseridas aqui via JS -->
+            </div>
+        </div>
+
+        <!-- Área Dinheiro em Espécie -->
+        <div class="sub-card">
+            <div class="titulo-sub titulo-sub-balanceado">
+                <span class="titulo-sub-icone" style="font-size:20px">💵</span>
+                <span class="titulo-sub-texto">Dinheiro em Espécie</span>
+                <span class="titulo-sub-espaco" aria-hidden="true"></span>
+            </div>
+            
+            <div style="display: flex; justify-content: center;">
+                <div style="width: 50%;">
+                    <label class="lbl-fin" style="text-align: center;">Dinheiro (R$)</label>
+                    <input type="text" inputmode="numeric" id="valorDinheiro" placeholder="0" oninput="formatarNumero(this, 8); calcularTotais(); salvarRascunho()" style="text-align: center;">
+                </div>
+            </div>
+
+            <div class="linha-form" style="margin-top:10px;">
+                <div style="flex:1">
+                    <label class="lbl-fin" style="text-align: center;">Comissão %</label>
+                    <input type="number" id="porcComissao" class="input-readonly" readonly placeholder="%" style="text-align: center;">
+                </div>
+                <div style="flex:2">
+                    <label class="lbl-fin" style="text-align: center;">Valor Comissão</label>
+                    <input type="text" id="valorComissao" class="input-comissao" readonly placeholder="R$ 0.00">
+                </div>
+            </div>
+
+            <div class="linha-form">
+                <div style="flex:1">
+                    <label class="lbl-fin" style="text-align: center;">Total Geral</label>
+                    <input type="text" id="totalGeral" class="input-readonly" readonly placeholder="R$ 0.00" style="text-align: center;">
+                </div>
+                <div style="flex:1">
+                    <label class="lbl-fin" style="text-align: center;">Saldo Depositar</label>
+                    <input type="text" id="saldoFinal" class="input-saldo" readonly placeholder="R$ 0.00" style="text-align: center;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. FOTOS -->
+    <div class="card-financeiro" style="margin-top: 25px;">
+        <div class="titulo-fin">Fotos</div>
+
+        <!-- Foto da Ficha (Principal) -->
+        <div class="sub-card">
+            <div class="titulo-sub" style="justify-content: center; font-size: 16px; color: #ffeb3b;">
+                📷 FOTO DA FICHA
+            </div>
+            <div class="area-foto" onclick="abrirModalFoto('inputFotoFicha')">
+                <span id="textoFotoFicha" style="font-size: 14px; opacity: 0.8;">Toque para adicionar</span>
+                <img id="imgPreviewFicha" class="preview-img">
+                <input type="file" id="inputFotoFicha" accept="image/*" style="display: none;" onchange="mostrarPreview(this, 'imgPreviewFicha', 'textoFotoFicha')">
+            </div>
+        </div>
+
+        <!-- Fotos dos Contadores Pix (Dinâmico) -->
+        <div id="containerFotosPix">
+            <!-- Inserido via JS -->
+        </div>
+
+        <!-- Fotos das Máquinas (Dinâmico) -->
+        <div id="containerFotosMaquinas">
+            <!-- Inserido via JS -->
+        </div>
+    </div>
+
+    <button class="btn-finalizar" onclick="salvarAtendimento()">FINALIZAR ATENDIMENTO</button>
+
+</div>
+
+<!-- [NOVO] Modal de Opções de Foto -->
+<div id="modalFoto" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-title">Adicionar Foto</div>
+        <button id="btnCamera">📷 Usar Câmera</button>
+        <button id="btnGaleria">🖼️ Enviar da Galeria</button>
+        <button id="btnCancelarModal" class="btn-cancelar-modal">Cancelar</button>
+    </div>
+</div>
+
+<script src="assets/js/play-dialogs.js"></script>
+<script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
+    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, dbSalvarCliente, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbVerificarELiberarRota, dbEscutarColaboradores } from './database.js';
+    import { enfileirarAtendimento } from './offline-sync.js';
+
+    let listaClientes = [];
+    let listaClientesBruta = [];
+    let listaProdutos = [];
+    let listaAtendimentos = [];
+    let clientesPermitidosSet = null; // null = carregando | Set = pronto (vazio = nenhum cliente permitido)
+    let numeroClientePendente = '';
+    let rascunhoRestaurado = false;
+    let currentFileInputId = null;
+    let clienteAtualSelecionado = null;
+
+    // --- DATA DEFAULT: hoje ---
+    document.getElementById('inputDataAtendimento').value = new Date().toISOString().slice(0, 10);
+
+    // --- DROPDOWN DE ATENDENTES (perfil atendimento_1) ---
+    dbEscutarColaboradores((lista) => {
+        const select = document.getElementById('selectAtendente');
+        const valorAtual = select.value;
+        // Remove todas as opções exceto a primeira
+        while (select.options.length > 1) select.remove(1);
+        lista
+            .filter(c => (c.nivel_completo || '').includes('atendimento_1'))
+            .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''))
+            .forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.nome;
+                opt.textContent = c.nome;
+                select.appendChild(opt);
+            });
+        if (valorAtual) select.value = valorAtual;
+    });
+
+    function obterIdAtendimentoEmEdicao() {
+        return localStorage.getItem('atendimento_em_edicao_id') || "";
+    }
+
+    function obterDataAtendimentoEmEdicao() {
+        return localStorage.getItem('atendimento_em_edicao_data') || "";
+    }
+
+    function limparEstadoEdicao() {
+        localStorage.removeItem('atendimento_em_edicao_id');
+        localStorage.removeItem('atendimento_em_edicao_data');
+        localStorage.removeItem('atendimento_em_edicao_atendente');
+        localStorage.removeItem('atendimento_edicao_gestor');
+    }
+
+    function atualizarModoEdicao() {
+        const btn = document.querySelector('.btn-finalizar');
+        if (!btn) return;
+        btn.innerText = obterIdAtendimentoEmEdicao() ? "SALVAR EDIÇÃO" : "FINALIZAR ATENDIMENTO";
+    }
+
+    atualizarModoEdicao();
+
+    // --- CLIENTES PERMITIDOS (rotas selecionadas pelo usuário na sessão) ---
+    async function carregarClientesPermitidos() {
+        const usuario = String(localStorage.getItem('usuarioLogado') || '').trim();
+        if (!usuario) {
+            clientesPermitidosSet = new Set();
+            aplicarFiltroClientes(listaClientesBruta);
+            return;
+        }
+
+        const CACHE_KEY = 'atend_permitidos_' + usuario;
+
+        // Aplica cache offline imediatamente enquanto carrega
+        try {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) {
+                clientesPermitidosSet = new Set(JSON.parse(cached));
+                aplicarFiltroClientes(listaClientesBruta);
+            }
+        } catch {}
+
+        try {
+            const sessao = await dbObterSessaoRotas();
+            if (!sessao?.rotas) {
+                clientesPermitidosSet = new Set();
+                localStorage.setItem(CACHE_KEY, JSON.stringify([]));
+                aplicarFiltroClientes(listaClientesBruta);
+                return;
+            }
+
+            const rotasDoUsuario = Object.entries(sessao.rotas)
+                .filter(([_, r]) => r.selecionada_por === usuario)
+                .map(([num]) => num);
+
+            if (rotasDoUsuario.length === 0) {
+                clientesPermitidosSet = new Set();
+                localStorage.setItem(CACHE_KEY, JSON.stringify([]));
+                aplicarFiltroClientes(listaClientesBruta);
+                return;
+            }
+
+            const cpr = sessao.clientes_por_rota || {};
+            const permitidos = new Set();
+            rotasDoUsuario.forEach(num => {
+                (cpr[num] || []).forEach(c => { if (c.id) permitidos.add(c.id); });
+            });
+
+            clientesPermitidosSet = permitidos;
+            localStorage.setItem(CACHE_KEY, JSON.stringify([...permitidos]));
+
+            aplicarFiltroClientes(listaClientesBruta);
+        } catch {
+            if (!clientesPermitidosSet) {
+                clientesPermitidosSet = new Set();
+            }
+            aplicarFiltroClientes(listaClientesBruta);
+        }
+    }
+
+    carregarClientesPermitidos();
+
+    // --- FILTRO DE ROTA (vindo do checkin_rotas) ---
+    function normalizarNumeroClienteBusca(valor) {
+        const bruto = String(valor ?? '').trim();
+        if (!bruto) return '';
+        const apenasDigitos = bruto.replace(/\D+/g, '');
+        const base = apenasDigitos || bruto;
+        return base.replace(/^0+(?=\d)/, '');
+    }
+
+    function obterNumerosRotaFiltro() {
+        const raw = sessionStorage.getItem('rota_filtro_numeros');
+        if (!raw) return null;
+        try {
+            const arr = JSON.parse(raw);
+            const numerosNormalizados = arr
+                .map(num => normalizarNumeroClienteBusca(num))
+                .filter(Boolean);
+            return numerosNormalizados.length > 0 ? new Set(numerosNormalizados) : null;
+        } catch { return null; }
+    }
+
+    function tentarAplicarClientePendente() {
+        if (!numeroClientePendente) return;
+
+        const numeroNormalizado = normalizarNumeroClienteBusca(numeroClientePendente);
+        if (!numeroNormalizado) {
+            numeroClientePendente = '';
+            return;
+        }
+
+        const input = document.getElementById('inputBuscaCliente');
+        if (input) input.value = numeroClientePendente;
+
+        if (clientesPermitidosSet === null) return;
+        if (listaClientesBruta.length === 0) return;
+
+        buscarCliente();
+        numeroClientePendente = '';
+    }
+
+    function aplicarBannerRotaFiltro() {
+        const rotaNum = sessionStorage.getItem('rota_filtro_numero_rota');
+        const banner  = document.getElementById('bannerRotaFiltro');
+        if (!banner) return;
+        if (rotaNum) {
+            document.getElementById('textoRotaFiltro').textContent = rotaNum;
+            banner.style.display = 'flex';
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+
+    window.limparFiltroRota = function() {
+        sessionStorage.removeItem('rota_filtro_numeros');
+        sessionStorage.removeItem('rota_filtro_numero_rota');
+        sessionStorage.removeItem('cliente_pre_selecionado');
+        aplicarFiltroClientes(listaClientesBruta);
+        aplicarBannerRotaFiltro();
+    };
+
+    aplicarBannerRotaFiltro();
+
+    // --- [NOVO] LÓGICA DO MODAL DE FOTO ---
+    window.abrirModalFoto = function(inputId) {
+        currentFileInputId = inputId;
+        document.getElementById('modalFoto').style.display = 'flex';
+    }
+
+    function fecharModalFoto() {
+        document.getElementById('modalFoto').style.display = 'none';
+        currentFileInputId = null;
+    }
+
+    document.getElementById('btnCamera').addEventListener('click', () => {
+        if (currentFileInputId) {
+            const input = document.getElementById(currentFileInputId);
+            input.setAttribute('capture', 'environment'); // Usa a câmera traseira
+            input.click();
+            fecharModalFoto();
+        }
+    });
+
+    document.getElementById('btnGaleria').addEventListener('click', () => {
+        if (currentFileInputId) {
+            const input = document.getElementById(currentFileInputId);
+            input.removeAttribute('capture');
+            input.click();
+            fecharModalFoto();
+        }
+    });
+
+    document.getElementById('btnCancelarModal').addEventListener('click', fecharModalFoto);
+    document.getElementById('modalFoto').addEventListener('click', (e) => {
+        if (e.target.id === 'modalFoto') { // Fecha se clicar no fundo
+            fecharModalFoto();
+        }
+    });
+
+    // --- FUNÇÃO UTILITÁRIA DE FORMATAÇÃO ---
+    window.formatarNumero = function(input, maxDigits) {
+        // Remove tudo que não for dígito
+        let valor = input.value.replace(/\D/g, '');
+        
+        // [NOVO] Limita o número de dígitos caso seja especificado
+        if (maxDigits && valor.length > maxDigits) {
+            valor = valor.substring(0, maxDigits);
+        }
+
+        // Se o valor ficar vazio, limpa o campo
+        if (valor === '') {
+            input.value = '';
+            return;
+        }
+        
+        // Converte para número e formata para o padrão brasileiro (com pontos)
+        let numeroFormatado = parseInt(valor, 10).toLocaleString('pt-BR');
+        
+        // Atualiza o valor no campo
+        input.value = numeroFormatado;
+    }
+
+    window.parseFormatted = function(val) {
+        return parseInt(String(val).replace(/\D/g, ''), 10) || 0;
+    }
+
+    // --- [NOVO] FUNÇÃO PARA CRIAR LINHAS DE PIX ---
+    function obterDataOrdenacaoAtendimento(atendimento) {
+        const dataBase = atendimento?.ultimaEdicao || atendimento?.data;
+        const timestamp = Date.parse(dataBase || "");
+        return Number.isNaN(timestamp) ? 0 : timestamp;
+    }
+
+    function obterEquipamentosDetalhadosCliente(cliente) {
+        if (Array.isArray(cliente?.equipDetalhes) && cliente.equipDetalhes.length > 0) {
+            return cliente.equipDetalhes
+                .map((item, index) => ({
+                    rowId: String(item?.rowId || `equip_${index + 1}`),
+                    nome: String(item?.nome || "").trim(),
+                    qtd: String(item?.qtd || item?.quantidade || "1").trim() || "1",
+                    pix: String(item?.pix || "").trim(),
+                    contador: String(item?.contador || "").trim()
+                }))
+                .filter(item => item.nome);
+        }
+
+        const textoEquip = String(cliente?.equip || "").trim();
+        if (!textoEquip) return [];
+
+        const partes = textoEquip.includes('|')
+            ? textoEquip.split(/\s*\|\s*/)
+            : textoEquip.split(/\s*,\s*/);
+
+        return partes
+            .map((item, index) => {
+                let trecho = String(item || "").trim();
+                if (!trecho) return null;
+
+                let pix = "";
+                let qtd = "1";
+
+                const matchPixLegado = trecho.match(/\[Pix:\s*([^\]]+)\]\s*$/i);
+                if (matchPixLegado) {
+                    pix = String(matchPixLegado[1] || "").trim();
+                    trecho = trecho.replace(/\s*\[Pix:\s*([^\]]+)\]\s*$/i, "").trim();
+                } else {
+                    const matchPixTexto = trecho.match(/\s+Pix\s+([0-9]+)\s*$/i);
+                    if (matchPixTexto) {
+                        pix = String(matchPixTexto[1] || "").trim();
+                        trecho = trecho.replace(/\s+Pix\s+[0-9]+\s*$/i, "").trim();
+                    }
+                }
+
+                const matchQtd = trecho.match(/\s*\(([^)]+)\)\s*$/);
+                if (matchQtd) {
+                    qtd = String(matchQtd[1] || "1").trim() || "1";
+                    trecho = trecho.replace(/\s*\(([^)]+)\)\s*$/, "").trim();
+                }
+
+                if (!trecho) return null;
+
+                return {
+                    rowId: `equip_${index + 1}`,
+                    nome: trecho,
+                    qtd,
+                    pix,
+                    contador: ""
+                };
+            })
+            .filter(Boolean);
+    }
+
+    function obterUltimosContadoresCliente(cliente) {
+        if (!cliente) return {};
+
+        const atendimentosCliente = listaAtendimentos
+            .filter(atendimento => {
+                if (atendimento?.cliente?.id && cliente.firebaseUrl) {
+                    return atendimento.cliente.id === cliente.firebaseUrl;
+                }
+                return atendimento?.cliente?.numero == cliente.numero;
+            })
+            .sort((a, b) => obterDataOrdenacaoAtendimento(b) - obterDataOrdenacaoAtendimento(a));
+
+        const ultimoContadorPorPix = {};
+
+        atendimentosCliente.forEach(atendimento => {
+            const pixList = atendimento?.financeiro?.pix || [];
+            pixList.forEach(item => {
+                const numeroPix = String(item?.numero || "").trim();
+                if (!numeroPix || ultimoContadorPorPix[numeroPix] != null) return;
+                ultimoContadorPorPix[numeroPix] = window.parseFormatted(item?.contAtual);
+            });
+        });
+
+        const equipamentosDetalhados = obterEquipamentosDetalhadosCliente(cliente);
+        equipamentosDetalhados.forEach(item => {
+            const numeroPix = String(item?.pix || "").trim();
+            if (!numeroPix || ultimoContadorPorPix[numeroPix] != null) return;
+            ultimoContadorPorPix[numeroPix] = window.parseFormatted(item?.contador);
+        });
+
+        return ultimoContadorPorPix;
+    }
+
+    function preencherContadoresAnterioresNasLinhas(cliente, apenasVazios = true) {
+        if (!cliente) return;
+
+        const ultimosContadoresPix = obterUltimosContadoresCliente(cliente);
+        document.querySelectorAll('#containerPix .linha-form').forEach(linha => {
+            const numeroPix = String(linha.querySelector('.pixNumero')?.value || "").trim();
+            const contAntInput = linha.querySelector('.pixContAnt');
+            if (!numeroPix || !contAntInput) return;
+
+            if (apenasVazios && contAntInput.value.trim()) return;
+
+            const ultimoContador = ultimosContadoresPix[numeroPix];
+            if (ultimoContador == null) return;
+
+            contAntInput.value = ultimoContador.toString();
+            formatarNumero(contAntInput, 6);
+            atualizarValorLinhaPix(linha);
+        });
+    }
+
+    window.atualizarValorLinhaPix = function(linha) {
+        if (!linha) return;
+
+        const contAntInput = linha.querySelector('.pixContAnt');
+        const contAtualInput = linha.querySelector('.pixContAtual');
+        const valorInput = linha.querySelector('.valorPix');
+
+        if (!contAntInput || !contAtualInput || !valorInput) return;
+
+        const contAnt = window.parseFormatted(contAntInput.value);
+        const contAtual = window.parseFormatted(contAtualInput.value);
+
+        if (!contAntInput.value.trim() || !contAtualInput.value.trim()) {
+            valorInput.value = "";
+            calcularTotais();
+            salvarRascunho();
+            return;
+        }
+
+        const diferenca = Math.max(contAtual - contAnt, 0);
+        valorInput.value = diferenca.toString();
+        formatarNumero(valorInput, 4);
+        calcularTotais();
+        salvarRascunho();
+    }
+
+    function criarLinhaPix(data = {}) {
+        const container = document.getElementById('containerPix');
+        const div = document.createElement('div');
+        div.className = 'linha-form';
+        div.style.gap = '5px';
+        div.innerHTML = `
+            <div style="flex:1">
+                <label class="lbl-fin">Pix Nº</label>
+                <input type="number" class="pixNumero input-readonly" readonly placeholder="Nº" value="${data.numero || ''}">
+            </div>
+            <div style="flex:2">
+                <label class="lbl-fin">Cont. Ant</label>
+                <input type="text" inputmode="numeric" class="pixContAnt input-readonly" readonly placeholder="0" value="${data.contAnt || ''}">
+            </div>
+            <div style="flex:2">
+                <label class="lbl-fin">Cont. Atual</label>
+                <input type="text" inputmode="numeric" class="pixContAtual" placeholder="0" oninput="formatarNumero(this, 6); atualizarValorLinhaPix(this.closest('.linha-form'))" value="${data.contAtual || ''}">
+            </div>
+            <div style="flex:1.5">
+                <label class="lbl-fin">Valor</label>
+                <input type="text" inputmode="numeric" class="valorPix input-readonly" readonly placeholder="0" value="${data.valor || ''}">
+            </div>
+        `;
+        container.appendChild(div);
+        // Formata números que estão sendo restaurados do rascunho
+        if (data.contAnt) formatarNumero(div.querySelector('.pixContAnt'), 6);
+        if (data.contAtual) formatarNumero(div.querySelector('.pixContAtual'), 6);
+        if (data.valor) formatarNumero(div.querySelector('.valorPix'), 4);
+        if (data.contAtual && !data.valor) {
+            atualizarValorLinhaPix(div);
+        }
+    }
+
+    // --- CARREGAMENTO DE DADOS ---
+
+    // 1. Carrega Clientes
+    dbEscutarClientes((lista) => {
+        listaClientesBruta = lista || [];
+        aplicarFiltroClientes(lista);
+    });
+
+    function aplicarFiltroClientes(lista) {
+        const base = Array.isArray(lista) ? lista : listaClientesBruta;
+
+        // Gestor: todos os clientes liberados, sem restrição de rota
+        let filtrada = base;
+
+        // Sub-filtro: se veio do checkin, restringe à rota específica
+        const numerosRota = obterNumerosRotaFiltro();
+        if (numerosRota) {
+            filtrada = filtrada.filter(c => numerosRota.has(normalizarNumeroClienteBusca(c.numero)));
+        }
+        listaClientes = filtrada;
+        tentarAplicarClientePendente();
+    }
+
+    dbEscutarAtendimentos((lista) => {
+        listaAtendimentos = lista;
+        const clienteSelecionadoId = document.getElementById('idClienteSelecionado')?.value;
+        if (!clienteSelecionadoId) return;
+
+        const clienteSelecionado = listaClientes.find(cliente => cliente.firebaseUrl === clienteSelecionadoId);
+        preencherContadoresAnterioresNasLinhas(clienteSelecionado, true);
+    });
+
+    // 2. Carrega Produtos e inicia a primeira linha
+    dbEscutarEstoque((lista) => {
+        // [ALTERADO] Filtra para não permitir nomes repetidos no dropdown
+        const nomesVistos = new Set();
+        const listaUnica = [];
+        
+        lista.forEach(item => {
+            if (item.categoria === 'produtos' && !nomesVistos.has(item.nome)) {
+                nomesVistos.add(item.nome);
+                listaUnica.push(item);
+            }
+        });
+        listaProdutos = listaUnica;
+
+        // Se for a primeira vez carregando e não tiver linhas, cria a primeira
+        // [ALTERADO] Tenta restaurar rascunho antes de criar linha vazia
+        if (!rascunhoRestaurado) {
+            restaurarRascunho();
+            rascunhoRestaurado = true;
+        }
+        
+        if (document.querySelectorAll('.linha-produto').length === 0) {
+            adicionarLinhaProduto();
+        }
+
+        // Adiciona a linha de PIX se não houver e a busca estiver vazia
+        if (!document.getElementById('inputBuscaCliente').value && document.querySelectorAll('#containerPix .linha-form').length === 0) {
+            criarLinhaPix();
+        }
+    });
+
+    // --- LÓGICA DO CLIENTE ---
+
+    window.buscarCliente = function() {
+        const termo = document.getElementById('inputBuscaCliente').value.trim();
+        const termoNormalizado = normalizarNumeroClienteBusca(termo);
+        salvarRascunho(); // [NOVO] Salva sempre que digitar
+        const divResultado = document.getElementById('resultadoCliente');
+        
+        if (!termo) {
+            divResultado.style.display = 'none';
+            document.getElementById('areaPix').style.display = 'block';
+            if (document.querySelectorAll('#containerPix .linha-form').length === 0) {
+                criarLinhaPix();
+            }
+            return;
+        }
+
+        // Procura pelo campo "numero" do cliente
+        const cliente = listaClientes.find(c => normalizarNumeroClienteBusca(c.numero) === termoNormalizado);
+
+        divResultado.style.display = 'block';
+
+        if (cliente) {
+            const ultimosContadoresPix = obterUltimosContadoresCliente(cliente);
+            const equipamentosCliente = obterEquipamentosDetalhadosCliente(cliente);
+            // [NOVO] Processa a string de equipamentos para o formato correto
+            let equipString = "Nenhum";
+            if (equipamentosCliente.length > 0) {
+                const equipsToShow = [];
+                equipamentosCliente.forEach(item => {
+                    const nome = String(item?.nome || "").trim();
+                    const qtd = String(item?.qtd || "1").trim() || "1";
+                    const pix = String(item?.pix || "").trim();
+                    if (nome) {
+                        const formato = `${nome} ${qtd}${pix ? ` Pix ${pix}` : ''}`;
+                        equipsToShow.push(formato);
+                    }
+                });
+                if (equipsToShow.length > 0) {
+                    equipString = equipsToShow.join(' / ');
+                }
+            }
+
+            clienteAtualSelecionado = cliente;
+            clienteAtualSelecionado._equipString = equipString;
+            fecharPainelEdicaoCliente();
+            divResultado.className = 'card-cliente'; // Verde
+            divResultado.style.cssText = 'display:block'; // limpa estilos inline de cards de erro, mantém visível
+            const diasExibir = cliente.aberto ? `<div style="font-size:12px; margin-top:4px; opacity:0.9;">📅 ${cliente.aberto}</div>` : '';
+            const obsExibir = cliente.obs ? `<div style="font-size:12px; margin-top:3px; opacity:0.85; font-style:italic;">💬 ${cliente.obs}</div>` : '';
+            divResultado.innerHTML = `
+                <div style="font-size: 28px; font-weight: bold;">${cliente.nome}</div>
+                <div style="font-size: 14px; opacity: 0.9;">Rota: ${cliente.rota || "Não informada"}</div>
+                <div style="font-size: 15px; color: #ffeb3b; margin-top:3px; font-weight:bold;">Equi.: ${equipString}</div>
+                <div style="font-size: 12px; margin-top:5px;">${cliente.endereco || "Endereço não cadastrado"}</div>
+                ${diasExibir}${obsExibir}
+                <button onclick="abrirPainelEdicaoCliente()" style="margin-top:10px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.5); color:white; padding:8px 18px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:bold; letter-spacing:0.5px;">✏️ Editar dias / obs</button>
+            `;
+            document.getElementById('idClienteSelecionado').value = cliente.firebaseUrl;
+            // [NOVO] Preenche a comissão automaticamente se disponível
+            
+            if (cliente.comissao) {
+                document.getElementById('porcComissao').value = cliente.comissao.replace('%','').trim();
+            } else {
+                document.getElementById('porcComissao').value = "";
+            }
+
+            // [NOVO] Lógica para preencher a Área Pix
+            const containerPix = document.getElementById('containerPix');
+            const areaPix = document.getElementById('areaPix');
+            const containerFotosPix = document.getElementById('containerFotosPix');
+            const containerFotosMaquinas = document.getElementById('containerFotosMaquinas');
+            containerPix.innerHTML = ''; // Limpa as linhas existentes
+            containerFotosMaquinas.innerHTML = ''; // Limpa as fotos das maquinas existentes
+            containerFotosPix.innerHTML = ''; // Limpa as fotos pix existentes
+
+            const pixValues = [];
+            equipamentosCliente.forEach((item, index) => {
+                if (!item) return;
+
+                // --- 1. Lógica para Fotos de TODAS as máquinas ---
+                const nomeLimpo = String(item?.nome || "").trim();
+                const pix = String(item?.pix || "").trim();
+
+                if (nomeLimpo) {
+                    const divFoto = document.createElement('div');
+                    divFoto.className = 'sub-card';
+                    divFoto.innerHTML = `
+                            <div class="titulo-sub" style="justify-content: center; font-size: 16px; color: #ffeb3b;">
+                                FOTO: ${nomeLimpo.toUpperCase()}
+                            </div>
+                            <div class="area-foto" onclick="abrirModalFoto('inputFotoMaquina_${index}')">
+                                <span id="textoFotoMaquina_${index}" style="font-size: 14px; opacity: 0.8;">Toque para adicionar</span>
+                                <img id="imgPreviewMaquina_${index}" class="preview-img">
+                                <input type="file" id="inputFotoMaquina_${index}" class="input-foto-maquina" accept="image/*" style="display: none;" onchange="mostrarPreview(this, 'imgPreviewMaquina_${index}', 'textoFotoMaquina_${index}')">
+                            </div>
+                        `;
+                    containerFotosMaquinas.appendChild(divFoto);
+                }
+
+                // --- 2. Lógica para encontrar valores de PIX ---
+                if (pix && !pixValues.includes(pix)) {
+                    pixValues.push(pix);
+                }
+            });
+
+            // Detecta máquina Saturno e exibe bloco de contagem
+            const temSaturno = equipamentosCliente.some(item => String(item?.nome || '').trim().toLowerCase().includes('saturno'));
+            const cardSaturno = document.getElementById('card-saturno');
+            if (cardSaturno) {
+                cardSaturno.style.display = temSaturno ? 'block' : 'none';
+                if (!temSaturno) document.getElementById('saturnoContagem').value = '';
+            }
+
+            if (pixValues.length > 0) {
+                areaPix.style.display = 'block';
+                pixValues.forEach((pix, index) => {
+                    criarLinhaPix({
+                        numero: pix,
+                        contAnt: ultimosContadoresPix[String(pix).trim()] ?? ''
+                    });
+
+                    // Cria a área de foto para este PIX
+                    const divFoto = document.createElement('div');
+                    divFoto.className = 'sub-card';
+                    divFoto.innerHTML = `
+                        <div class="titulo-sub" style="justify-content: center; font-size: 16px; color: #ffeb3b;">
+                            FOTO DO CONTADOR PIX Nº ${pix}
+                        </div>
+                        <div class="area-foto" onclick="abrirModalFoto('inputFotoPix_${index}')">
+                            <span id="textoFotoPix_${index}" style="font-size: 14px; opacity: 0.8;">Toque para adicionar</span>
+                            <img id="imgPreviewPix_${index}" class="preview-img">
+                            <input type="file" id="inputFotoPix_${index}" class="input-foto-pix" accept="image/*" style="display: none;" onchange="mostrarPreview(this, 'imgPreviewPix_${index}', 'textoFotoPix_${index}')">
+                        </div>
+                    `;
+                    containerFotosPix.appendChild(divFoto);
+                });
+            } else {
+                areaPix.style.display = 'none';
+            }
+
+            calcularTotais();
+            salvarRascunho();
+        } else {
+            clienteAtualSelecionado = null;
+            fecharPainelEdicaoCliente();
+            divResultado.className = 'card-cliente erro'; // Vermelho
+            divResultado.innerHTML = `❌ Cliente nº ${termo} não encontrado.`;
+            document.getElementById('idClienteSelecionado').value = "";
+            if (cardVendaDia) cardVendaDia.style.display = 'none';
+            document.getElementById('areaPix').style.display = 'block';
+            document.getElementById('containerPix').innerHTML = '';
+            document.getElementById('containerFotosPix').innerHTML = '';
+            document.getElementById('containerFotosMaquinas').innerHTML = '';
+            const cardSaturnoErr = document.getElementById('card-saturno');
+            if (cardSaturnoErr) { cardSaturnoErr.style.display = 'none'; document.getElementById('saturnoContagem').value = ''; }
+            criarLinhaPix();
+        }
+    }
+
+    // --- LÓGICA DOS PRODUTOS DINÂMICOS ---
+
+    // [NOVO] Função para atualizar opções e impedir duplicados
+    window.atualizarOpcoes = function() {
+        const selects = document.querySelectorAll('.input-prod');
+        const selecionados = Array.from(selects).map(s => s.value).filter(v => v);
+
+        selects.forEach(select => {
+            const valorAtual = select.value;
+            let opcoesHTML = `<option value="">Selecione o produto...</option>`;
+            
+            listaProdutos.forEach(p => {
+                // Adiciona se for o item já selecionado neste campo OU se não estiver selecionado em nenhum outro
+                if (p.firebaseUrl === valorAtual || !selecionados.includes(p.firebaseUrl)) {
+                    opcoesHTML += `<option value="${p.firebaseUrl}">${p.nome}</option>`;
+                }
+            });
+
+            select.innerHTML = opcoesHTML;
+            select.value = valorAtual; // Mantém a seleção
+        });
+    }
+
+    window.adicionarLinhaProduto = function(inputAnterior = null, valorProd = null, valorQtd = null) {
+        // Se foi chamado pelo input, e o input está vazio, não faz nada
+        if (inputAnterior && inputAnterior.value === "") return;
+        
+        // Verifica se a última linha já está vazia para não criar duplicatas vazias
+        const inputsQtd = document.querySelectorAll('.input-qtd');
+        if (inputsQtd.length > 0) {
+            const ultimoInput = inputsQtd[inputsQtd.length - 1];
+            if (ultimoInput.value === "") return; 
+        }
+
+        const container = document.getElementById('containerProdutos');
+        const div = document.createElement('div');
+        div.className = 'linha-produto';
+
+        // O conteúdo do Select será preenchido dinamicamente pela função atualizarOpcoes
+        div.innerHTML = `
+            <div class="col-prod">
+                <select class="input-prod" onchange="atualizarOpcoes()">
+                    <!-- Preenchido via JS -->
+                </select>
+            </div>
+            <div class="col-qtd">
+                <input type="text" inputmode="numeric" class="input-qtd" placeholder="Qtd" oninput="formatarNumero(this); adicionarLinhaProduto(this)" onchange="salvarRascunho()">
+            </div>
+        `;
+
+        container.appendChild(div);
+        
+        // [CORREÇÃO] Popula o select antes de definir o valor para que o browser reconheça a opção
+        atualizarOpcoes();
+
+        // [NOVO] Se vieram valores (da restauração), preenche eles
+        if (valorProd) {
+            div.querySelector('.input-prod').value = valorProd;
+        }
+        if (valorQtd) {
+            div.querySelector('.input-qtd').value = valorQtd;
+        }
+
+        // Atualiza todos os dropdowns para filtrar os itens
+        atualizarOpcoes();
+        salvarRascunho(); // Salva estado atual
+    }
+
+    // --- LÓGICA DA FOTO (PREVIEW) ---
+    window.mostrarPreview = function(input, imgId, textoId) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const imgObj = new Image();
+                imgObj.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 1600;
+                    const MAX_HEIGHT = 1600;
+                    let width = imgObj.width;
+                    let height = imgObj.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    } else {
+                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(imgObj, 0, 0, width, height);
+
+                    // Comprime a imagem para JPEG mantendo boa qualidade para ler assinaturas (~300 a 500KB)
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+                    const imgEl = document.getElementById(imgId);
+                    imgEl.src = dataUrl;
+                    imgEl.style.display = 'block';
+                    
+                    if (document.getElementById(textoId)) { document.getElementById(textoId).style.display = 'none'; }
+                    salvarRascunho(); 
+                }
+                imgObj.src = e.target.result;
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // --- CÁLCULOS FINANCEIROS ---
+    window.calcularTotais = function() {
+        let vPixTotal = 0;
+        document.querySelectorAll('.valorPix').forEach(input => {
+            vPixTotal += window.parseFormatted(input.value);
+        });
+        const vDin = window.parseFormatted(document.getElementById('valorDinheiro').value);
+        const pct = parseFloat(document.getElementById('porcComissao').value) || 0;
+
+        const total = Math.round(vPixTotal + vDin);
+        const valorComissao = Math.round(total * (pct / 100));
+        const saldoDepositar = vDin - valorComissao;
+
+        // Formatação para BRL sem exibir os centavos
+        const formatoMoeda = { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 };
+
+        // Atualiza campos readonly
+        document.getElementById('valorComissao').value = valorComissao.toLocaleString('pt-BR', formatoMoeda);
+        document.getElementById('totalGeral').value = total.toLocaleString('pt-BR', formatoMoeda);
+        document.getElementById('saldoFinal').value = saldoDepositar.toLocaleString('pt-BR', formatoMoeda);
+    }
+
+    // --- FINALIZAR (Simulação) ---
+    function validarProdutosObrigatorios() {
+        const linhas = Array.from(document.querySelectorAll('.linha-produto'));
+        const preenchidas = linhas
+            .map((linha, index) => {
+                const prodId = (linha.querySelector('.input-prod')?.value || "").trim();
+                const qtdRaw = (linha.querySelector('.input-qtd')?.value || "").trim();
+                const qtd = window.parseFormatted(qtdRaw);
+                return { index, prodId, qtdRaw, qtd };
+            })
+            // Ignora linhas totalmente vazias
+            .filter(l => l.prodId !== "" || l.qtdRaw !== "");
+
+        if (preenchidas.length === 0) {
+            return "Em PRODUTOS, preencha pelo menos 1 item (Produto e Qtd).";
+        }
+
+        const incompletas = preenchidas.filter(l => l.prodId === "" || l.qtd <= 0);
+        if (incompletas.length > 0) {
+            const linhasTxt = incompletas.map(l => `linha ${l.index + 1}`).join(', ');
+            return `Em PRODUTOS, não deixe campos em branco. Complete Produto e Qtd em: ${linhasTxt}.`;
+        }
+
+        return null;
+    }
+
+    function validarFotosObrigatorias() {
+        const faltas = [];
+
+        const imgFicha = document.getElementById('imgPreviewFicha');
+        const fichaOk = imgFicha && imgFicha.style.display === 'block' && !!imgFicha.src;
+        if (!fichaOk) {
+            faltas.push("- Envie a FOTO DA FICHA.");
+        }
+
+        // Máquinas: todas as fotos geradas para o cliente são obrigatórias
+        const faltandoMaquinas = [];
+        document.querySelectorAll('.input-foto-maquina').forEach(input => {
+            const index = input.id.split('_').pop();
+            const img = document.getElementById(`imgPreviewMaquina_${index}`);
+            const ok = img && img.style.display === 'block' && !!img.src;
+            if (!ok) {
+                const titulo = input.closest('.sub-card')?.querySelector('.titulo-sub')?.innerText?.trim();
+                faltandoMaquinas.push(titulo || `Máquina ${Number(index) + 1}`);
+            }
+        });
+        if (faltandoMaquinas.length > 0) {
+            faltas.push(`- Envie TODAS as fotos das MÁQUINAS: ${faltandoMaquinas.join(', ')}.`);
+        }
+
+        // PIX: se houver inputs de foto de pix, todos são obrigatórios
+        const faltandoPix = [];
+        document.querySelectorAll('.input-foto-pix').forEach(input => {
+            const index = input.id.split('_').pop();
+            const img = document.getElementById(`imgPreviewPix_${index}`);
+            const ok = img && img.style.display === 'block' && !!img.src;
+            if (!ok) {
+                const titulo = input.closest('.sub-card')?.querySelector('.titulo-sub')?.innerText?.trim();
+                faltandoPix.push(titulo || `Pix ${Number(index) + 1}`);
+            }
+        });
+        if (faltandoPix.length > 0) {
+            faltas.push(`- Envie TODAS as fotos dos CONTADORES PIX: ${faltandoPix.join(', ')}.`);
+        }
+
+        if (faltas.length > 0) {
+            return `Em FOTOS, todos os envios são obrigatórios:\n${faltas.join('\n')}`;
+        }
+
+        return null;
+    }
+
+    function validarDinheiroInformado() {
+        const valorDinheiro = (document.getElementById('valorDinheiro')?.value || "").trim();
+        if (valorDinheiro === "") {
+            return 'Preencha o campo "Dinheiro em espécie", mesmo que seja 0.';
+        }
+
+        return null;
+    }
+
+    function validarPixObrigatorio() {
+        const areaPix = document.getElementById('areaPix');
+        if (!areaPix || window.getComputedStyle(areaPix).display === 'none') {
+            return null;
+        }
+
+        const linhasPix = Array.from(document.querySelectorAll('#containerPix .linha-form'));
+        if (linhasPix.length === 0) {
+            return "Em ÁREA PIX, preencha os campos obrigatórios.";
+        }
+
+        const incompletas = linhasPix
+            .map((linha, index) => {
+                const numero = (linha.querySelector('.pixNumero')?.value || "").trim();
+                const contAnt = (linha.querySelector('.pixContAnt')?.value || "").trim();
+                const contAtual = (linha.querySelector('.pixContAtual')?.value || "").trim();
+                const valor = (linha.querySelector('.valorPix')?.value || "").trim();
+                const completo = numero !== "" && contAnt !== "" && contAtual !== "" && valor !== "";
+                return { index, completo };
+            })
+            .filter(linha => !linha.completo);
+
+        if (incompletas.length > 0) {
+            const linhasTxt = incompletas.map(linha => `linha ${linha.index + 1}`).join(', ');
+            return `Em ÁREA PIX, preencha todos os campos em: ${linhasTxt}.`;
+        }
+
+        return null;
+    }
+
+    function validarSaturno() {
+        const card = document.getElementById('card-saturno');
+        if (!card || card.style.display === 'none') return null;
+        const val = (document.getElementById('saturnoContagem').value || '').trim();
+        if (val === '') {
+            return 'MÁQUINA SATURNO: Preencha a contagem de bolinhas que estavam dentro da máquina antes de finalizar.';
+        }
+        return null;
+    }
+
+    function calcularIndicadorVendaDiaCliente(listaAtendimentos, novoAtendimento) {
+        const numeroCliente = String(novoAtendimento?.cliente?.numero ?? '').trim();
+        if (!numeroCliente) {
+            return { venda_por_dia: null, msg: "aguardando mais atendimentos para a media por dia", baseTotal: 0, diasEntre: 0, usados: [], calculadoEm: new Date().toISOString() };
+        }
+
+        const candidatos = Array.isArray(listaAtendimentos) ? listaAtendimentos : [];
+
+        const prev = candidatos
+            .filter(a => String(a?.cliente?.numero ?? '').trim() === numeroCliente)
+            .filter(a => {
+                const total = Number(a?.financeiro?.totalGeral) || 0;
+                const saldo = Number(a?.financeiro?.saldoFinal) || 0;
+                const t = Date.parse(a?.data || "");
+                return total > 0 && !Number.isNaN(t);
+            })
+            .map(a => ({
+                data: a.data,
+                totalGeral: Number(a?.financeiro?.totalGeral) || 0,
+                saldoFinal: Number(a?.financeiro?.saldoFinal) || 0,
+            }));
+
+        const atual = {
+            data: novoAtendimento?.data || new Date().toISOString(),
+            totalGeral: Number(novoAtendimento?.financeiro?.totalGeral) || 0,
+            saldoFinal: Number(novoAtendimento?.financeiro?.saldoFinal) || 0,
+        };
+
+        const todos = [atual, ...prev]
+            .filter(a => (Number(a.totalGeral) || 0) > 0 && !Number.isNaN(Date.parse(a.data || "")))
+            .sort((a, b) => Date.parse(b.data) - Date.parse(a.data));
+
+        const usadosBase = todos.slice(0, 3);
+        const usados = usadosBase.length >= 3 ? usadosBase : usadosBase.slice(0, 2);
+
+        let vendaPorDia = null;
+        let msg = null;
+        let baseTotal = 0;
+        let diasEntre = 0;
+
+        if (usados.length >= 2) {
+            baseTotal = usados.reduce((s, x) => s + (Number(x.totalGeral) || 0), 0);
+            const dRec = new Date(usados[0].data);
+            const dAnt = new Date(usados[usados.length - 1].data);
+            dRec.setHours(0, 0, 0, 0);
+            dAnt.setHours(0, 0, 0, 0);
+            diasEntre = Math.abs(Math.round((dRec - dAnt) / 86400000));
+            const dias = diasEntre > 0 ? diasEntre : 1;
+            vendaPorDia = Math.round(((baseTotal / dias) + Number.EPSILON) * 100) / 100;
+        } else {
+            msg = "aguardando mais atendimentos para a media por dia";
+            if (usados.length === 1) baseTotal = Number(usados[0]?.totalGeral) || 0;
+        }
+
+        return {
+            venda_por_dia: vendaPorDia,
+            msg,
+            baseTotal,
+            diasEntre,
+            usados,
+            calculadoEm: new Date().toISOString()
+        };
+    }
+
+    // --- EDIÇÃO INLINE DE DIAS / OBS DO CLIENTE ---
+
+    window.abrirPainelEdicaoCliente = function() {
+        const cliente = clienteAtualSelecionado;
+        if (!cliente) return;
+        const painel = document.getElementById('painelEdicaoCliente');
+        if (!painel) return;
+
+        const diasAbertos = (cliente.aberto || '').split(',').map(d => d.trim()).filter(Boolean);
+        const todosDias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+        document.getElementById('painelDiasGrid').innerHTML = todosDias.map(dia => `
+            <label class="painel-dia-label">
+                ${dia}
+                <input type="checkbox" class="painel-dia-check" value="${dia}"${diasAbertos.includes(dia) ? ' checked' : ''}>
+            </label>
+        `).join('');
+
+        document.getElementById('painelObsTexto').value = cliente.obs || '';
+        document.getElementById('resultadoCliente').style.borderRadius = '12px 12px 0 0';
+        painel.style.display = 'block';
+        painel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    window.fecharPainelEdicaoCliente = function() {
+        const painel = document.getElementById('painelEdicaoCliente');
+        if (painel) painel.style.display = 'none';
+        const card = document.getElementById('resultadoCliente');
+        if (card) card.style.borderRadius = '';
+    }
+
+    window.salvarEdicaoCliente = async function() {
+        const cliente = clienteAtualSelecionado;
+        if (!cliente || !cliente.firebaseUrl) return alert('Nenhum cliente selecionado.');
+
+        const btn = document.getElementById('painelBtnSalvar');
+        btn.disabled = true;
+        btn.textContent = 'SALVANDO...';
+
+        try {
+            const diasSelecionados = Array.from(document.querySelectorAll('.painel-dia-check:checked')).map(c => c.value);
+            const obs = document.getElementById('painelObsTexto').value.trim();
+
+            await dbSalvarCliente({ aberto: diasSelecionados.join(', '), obs }, cliente.firebaseUrl);
+
+            // Atualiza o objeto local e reexibe o card
+            clienteAtualSelecionado.aberto = diasSelecionados.join(', ');
+            clienteAtualSelecionado.obs = obs;
+
+            const diasExibir = diasSelecionados.length ? `<div style="font-size:12px; margin-top:4px; opacity:0.9;">📅 ${diasSelecionados.join(', ')}</div>` : '';
+            const obsExibir = obs ? `<div style="font-size:12px; margin-top:3px; opacity:0.85; font-style:italic;">💬 ${obs}</div>` : '';
+            const equipStr = cliente._equipString || 'Nenhum';
+            const endStr = cliente.endereco || 'Endereço não cadastrado';
+            const cardDiv = document.getElementById('resultadoCliente');
+            cardDiv.innerHTML = `
+                <div style="font-size: 28px; font-weight: bold;">${cliente.nome}</div>
+                <div style="font-size: 14px; opacity: 0.9;">Rota: ${cliente.rota || "Não informada"}</div>
+                <div style="font-size: 15px; color: #ffeb3b; margin-top:3px; font-weight:bold;">Equi.: ${equipStr}</div>
+                <div style="font-size: 12px; margin-top:5px;">${endStr}</div>
+                ${diasExibir}${obsExibir}
+                <button onclick="abrirPainelEdicaoCliente()" style="margin-top:10px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.5); color:white; padding:8px 18px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:bold; letter-spacing:0.5px;">✏️ Editar dias / obs</button>
+            `;
+            fecharPainelEdicaoCliente();
+            await window.playAlert('✅ Atualizado com sucesso!');
+        } catch (e) {
+            alert('Erro ao salvar: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'SALVAR';
+        }
+    }
+
+    window.salvarAtendimento = async function() { // [ALTERADO] para async
+        const btn = document.querySelector('.btn-finalizar');
+        const idCliente = document.getElementById('idClienteSelecionado').value;
+        const atendimentoEmEdicaoId = obterIdAtendimentoEmEdicao();
+        const dataOriginalEdicao = obterDataAtendimentoEmEdicao();
+        const atendimentoOriginal = atendimentoEmEdicaoId ? (listaAtendimentos || []).find(a => a.firebaseUrl === atendimentoEmEdicaoId) : null;
+        if (!idCliente) return alert("Selecione um cliente válido.");
+
+        const erroSaturno = validarSaturno();
+        if (erroSaturno) return alert(erroSaturno);
+
+        const erroDinheiro = validarDinheiroInformado();
+        if (erroDinheiro) return alert(erroDinheiro);
+
+        const erroPix = validarPixObrigatorio();
+        if (erroPix) return alert(erroPix);
+
+        const erroProdutos = validarProdutosObrigatorios();
+        if (erroProdutos) return alert(erroProdutos);
+
+        // Validação: atendente obrigatório
+        const atendenteEscolhido = (document.getElementById('selectAtendente')?.value || '').trim();
+        if (!atendenteEscolhido) return alert("Selecione o atendente antes de finalizar.");
+
+        // Fotos opcionais para gestor — validação removida
+
+        // [NOVO] Inicia o processo de salvamento
+        btn.disabled = true;
+        btn.innerText = "SALVANDO DADOS E FOTOS...";
+
+        try {
+            // --- 1. Coleta de Dados ---
+            const atendenteLogado = String(localStorage.getItem('usuarioLogado') || '').trim() || "N/A";
+            const atendenteSelecionado = (document.getElementById('selectAtendente')?.value || '').trim();
+            const atendenteOriginalEdicao = localStorage.getItem('atendimento_em_edicao_atendente') || atendimentoOriginal?.atendente || "";
+            const atendente = atendimentoEmEdicaoId && atendenteOriginalEdicao ? atendenteOriginalEdicao : (atendenteSelecionado || atendenteLogado);
+            const clienteEl = document.getElementById('resultadoCliente');
+            const clienteNome = clienteEl.querySelector('div:first-child')?.innerText || "Cliente não encontrado";
+            const clienteNumero = document.getElementById('inputBuscaCliente').value;
+
+            // Coleta produtos
+            const produtos = [];
+            document.querySelectorAll('.linha-produto').forEach(linha => {
+                const qtd = window.parseFormatted(linha.querySelector('.input-qtd').value);
+                if (qtd > 0) {
+                    const prodId = linha.querySelector('.input-prod').value;
+                    const produtoInfo = listaProdutos.find(p => p.firebaseUrl === prodId);
+                    produtos.push({
+                        nome: produtoInfo ? produtoInfo.nome : "Produto não encontrado",
+                        quantidade: qtd
+                    });
+                }
+            });
+
+            // Coleta financeiro
+            const pixLinhas = [];
+            document.querySelectorAll('#containerPix .linha-form').forEach(linha => {
+                pixLinhas.push({
+                    numero: linha.querySelector('.pixNumero').value,
+                    contAnt: window.parseFormatted(linha.querySelector('.pixContAnt').value),
+                    contAtual: window.parseFormatted(linha.querySelector('.pixContAtual').value),
+                    valor: window.parseFormatted(linha.querySelector('.valorPix').value)
+                });
+            });
+
+            const dinheiroValor = window.parseFormatted(document.getElementById('valorDinheiro').value);
+            const comissaoValor = window.parseFormatted(document.getElementById('valorComissao').value);
+            const totalGeralValor = window.parseFormatted(document.getElementById('totalGeral').value);
+            const saldoDepositarValor = window.parseFormatted(document.getElementById('saldoFinal').value);
+            const financeiro = {
+                pix: pixLinhas,
+                dinheiro: dinheiroValor,
+                comissaoPorcentagem: parseFloat(document.getElementById('porcComissao').value) || 0,
+                comissaoValor,
+                totalGeral: totalGeralValor,
+                saldoFinal: totalGeralValor - comissaoValor,
+                saldoDepositar: saldoDepositarValor
+            };
+
+            // --- 2. Upload de Fotos ---
+            const fotos = { ficha: null, maquinas: [], pix: [] };
+
+            // Foto da Ficha
+            try {
+                const imgFicha = document.getElementById('imgPreviewFicha');
+                if (imgFicha.style.display === 'block' && imgFicha.src && imgFicha.src.startsWith('data:')) {
+                    const r = await storageSalvarFotoComThumb(imgFicha.src);
+                    fotos.ficha = r.url;
+                    fotos.fichaThumb = r.thumbUrl;
+                } else if (imgFicha.style.display === 'block' && imgFicha.src && imgFicha.src.startsWith('http')) {
+                    fotos.ficha = imgFicha.src;
+                    fotos.fichaThumb = imgFicha.src;
+                }
+            } catch(e) { console.warn("Falha no upload da ficha. Salvando sem ela.", e); }
+
+            // Fotos das Máquinas
+            const fotosMaquinasInputs = document.querySelectorAll('.input-foto-maquina');
+            for (let input of fotosMaquinasInputs) {
+                const index = input.id.split('_').pop();
+                const img = document.getElementById(`imgPreviewMaquina_${index}`);
+                if (img && img.style.display === 'block' && img.src) {
+                    const nomeMaquinaEl = input.closest('.sub-card').querySelector('.titulo-sub');
+                    const nomeMaquina = nomeMaquinaEl ? nomeMaquinaEl.innerText.replace('FOTO: ', '').trim() : `Maquina ${index}`;
+                    
+                    let url = null, thumbUrl = null;
+                    try {
+                        if (img.src.startsWith('data:')) {
+                            const r = await storageSalvarFotoComThumb(img.src);
+                            url = r.url; thumbUrl = r.thumbUrl;
+                        } else if (img.src.startsWith('http') && !img.src.includes('.html')) {
+                            url = img.src; thumbUrl = img.src;
+                        }
+                    } catch(e) { console.warn("Falha ao salvar foto da maquina", e); }
+                    if (url) { fotos.maquinas.push({ nome: nomeMaquina, url, thumbUrl }); }
+                }
+            }
+
+            // Fotos do PIX
+            const fotosPixInputs = document.querySelectorAll('.input-foto-pix');
+            for (let input of fotosPixInputs) {
+                const index = input.id.split('_').pop();
+                const img = document.getElementById(`imgPreviewPix_${index}`);
+                if (img && img.style.display === 'block' && img.src) {
+                    const numeroPixEl = input.closest('.sub-card').querySelector('.titulo-sub');
+                    const numeroPix = numeroPixEl ? (numeroPixEl.innerText.match(/\d+/) || ['N/A'])[0] : `Pix ${index}`;
+
+                    let url = null, thumbUrl = null;
+                    try {
+                        if (img.src.startsWith('data:')) {
+                            const r = await storageSalvarFotoComThumb(img.src);
+                            url = r.url; thumbUrl = r.thumbUrl;
+                        } else if (img.src.startsWith('http') && !img.src.includes('.html')) {
+                            url = img.src; thumbUrl = img.src;
+                        }
+                    } catch(e) { console.warn("Falha ao salvar foto do pix", e); }
+                    if (url) { fotos.pix.push({ numero: numeroPix, url, thumbUrl }); }
+                }
+            }
+
+            // --- 3. Montagem do Objeto Final ---
+            const clienteCompleto = listaClientes.find(c => c.firebaseUrl === idCliente) || {};
+            const dadosAtendimento = {
+                atendente,
+                data: atendimentoEmEdicaoId ? (dataOriginalEdicao || atendimentoOriginal?.data || new Date().toISOString()) : (() => { const v = document.getElementById('inputDataAtendimento')?.value; return v ? new Date(v + 'T12:00:00').toISOString() : new Date().toISOString(); })(),
+                cliente: {
+                    id:              idCliente,
+                    nome:            clienteCompleto.nome            || clienteNome,
+                    numero:          clienteCompleto.numero          || clienteNumero,
+                    rota:            clienteCompleto.rota            || '',
+                    comissao:        clienteCompleto.comissao        || '',
+                    endereco:        clienteCompleto.endereco        || '',
+                    numero_endereco: clienteCompleto.numero_endereco || '',
+                    cidade:          clienteCompleto.cidade          || '',
+                    ponto_aberto:    clienteCompleto.ponto_aberto    || '',
+                },
+                produtos, financeiro, fotos,
+                saturno_contagem_bolinhas: (() => {
+                    const card = document.getElementById('card-saturno');
+                    if (!card || card.style.display === 'none') return null;
+                    const v = parseInt(document.getElementById('saturnoContagem').value, 10);
+                    return isNaN(v) ? null : v;
+                })()
+            };
+
+            if (atendimentoEmEdicaoId && atendimentoOriginal?._teste) {
+                dadosAtendimento._teste = true;
+            }
+
+            if (atendimentoEmEdicaoId) {
+                dadosAtendimento.ultimaEdicao = new Date().toISOString();
+            }
+
+            // Indicador de Venda/dia fica salvo apenas no atendimento mais recente (novo atendimento)
+            if (!atendimentoEmEdicaoId && navigator.onLine) {
+                const ind = calcularIndicadorVendaDiaCliente(listaAtendimentos, dadosAtendimento);
+                dadosAtendimento.indicadores_venda_dia = ind;
+                dadosAtendimento.cliente.venda_por_dia = ind.venda_por_dia;
+                dadosAtendimento.cliente.venda_por_dia_msg = ind.msg;
+                dadosAtendimento.cliente.venda_por_dia_intervalo_dias = ind.diasEntre;
+                dadosAtendimento.cliente.venda_por_dia_base_total = ind.baseTotal;
+                dadosAtendimento.cliente.venda_por_dia_atualizado_em = ind.calculadoEm;
+            }
+
+            if (atendimentoEmEdicaoId && atendimentoOriginal?._gestor_ultima_edicao) {
+                dadosAtendimento._gestor_ultima_edicao = atendimentoOriginal._gestor_ultima_edicao;
+            }
+
+            const gestorEditor = localStorage.getItem('atendimento_edicao_gestor') || "";
+            if (atendimentoEmEdicaoId && gestorEditor) {
+                dadosAtendimento._gestor_ultima_edicao = {
+                    nome: gestorEditor,
+                    em: new Date().toISOString()
+                };
+            }
+
+            // --- 4. Salvar no Banco de Dados (ou na fila offline) ---
+            btn.innerText = "FINALIZANDO...";
+            const semInternet = !navigator.onLine;
+            if (semInternet) {
+                if (atendimentoEmEdicaoId) {
+                    await window.playAlert("📵 Sem internet — não é possível editar um atendimento já enviado.\nConecte-se e tente novamente.");
+                    btn.disabled = false;
+                    atualizarModoEdicao();
+                    return;
+                }
+                await enfileirarAtendimento(dadosAtendimento);
+            } else {
+                await dbSalvarAtendimento(dadosAtendimento, atendimentoEmEdicaoId || null);
+                try {
+                    const numeroRota = String(dadosAtendimento?.cliente?.rota || '').trim();
+                    if (numeroRota) {
+                        await dbVerificarELiberarRota(numeroRota, atendente);
+                    }
+                } catch (erroLiberacaoRota) {
+                    console.warn('Falha ao verificar liberacao da rota apos o atendimento:', erroLiberacaoRota);
+                }
+            }
+
+            // --- 5. Limpeza e Redirecionamento ---
+            localStorage.removeItem('rascunho_atendimento');
+            sessionStorage.removeItem('rota_filtro_numeros');
+            sessionStorage.removeItem('rota_filtro_numero_rota');
+            sessionStorage.removeItem('cliente_pre_selecionado');
+            limparEstadoEdicao();
+            sessionStorage.removeItem('atendimento_tela_origem');
+            const msgFim = semInternet
+                ? "📵 Sem internet — atendimento salvo localmente!\nSerá enviado automaticamente quando a conexão voltar."
+                : (atendimentoEmEdicaoId ? "Atendimento atualizado com sucesso!" : "Atendimento registrado com sucesso!");
+            await window.playAlert(msgFim);
+            window.location.href = 'index.html';
+
+        } catch (error) {
+            console.error("Falha ao salvar atendimento:", error);
+            alert("Ocorreu um erro ao salvar o atendimento. Detalhe: " + error.message);
+            btn.disabled = false;
+            atualizarModoEdicao();
+        }
+    }
+
+    // --- SISTEMA DE RASCUNHO (Auto-Save) ---
+    
+    window.salvarRascunho = function() {
+        const cardSatRascunho = document.getElementById('card-saturno');
+        const dados = {
+            clienteBusca: document.getElementById('inputBuscaCliente').value || "",
+            pixLinhas: [],
+            valorDinheiro: document.getElementById('valorDinheiro').value || "",
+            porcComissao: document.getElementById('porcComissao').value || "",
+            produtos: [],
+            saturnoContagem: (cardSatRascunho && cardSatRascunho.style.display !== 'none')
+                ? document.getElementById('saturnoContagem').value
+                : ""
+        };
+
+        document.querySelectorAll('#containerPix .linha-form').forEach(linha => {
+            const pixNumero = linha.querySelector('.pixNumero').value;
+            const pixContAnt = linha.querySelector('.pixContAnt').value;
+            const pixContAtual = linha.querySelector('.pixContAtual').value;
+            const valorPix = linha.querySelector('.valorPix').value;
+            if (pixNumero || pixContAnt || pixContAtual || valorPix) {
+                dados.pixLinhas.push({
+                    numero: pixNumero,
+                    contAnt: pixContAnt,
+                    contAtual: pixContAtual,
+                    valor: valorPix
+                });
+            }
+        });
+
+        document.querySelectorAll('.linha-produto').forEach(linha => {
+            const p = linha.querySelector('.input-prod').value;
+            const q = linha.querySelector('.input-qtd').value;
+            if (p || q) { // Salva se tiver algo preenchido
+                dados.produtos.push({ prod: p, qtd: q });
+            }
+        });
+
+        // Salva foto da ficha
+        const imgFicha = document.getElementById('imgPreviewFicha');
+        if (imgFicha.style.display === 'block' && imgFicha.src) {
+            dados.fotoFichaBase64 = imgFicha.src;
+        }
+
+        // Salva fotos do pix
+        dados.fotosPix = [];
+        document.querySelectorAll('.input-foto-pix').forEach((input, index) => {
+            const img = document.getElementById(`imgPreviewPix_${index}`);
+            if (img && img.style.display === 'block' && img.src) {
+                dados.fotosPix.push({
+                    index: index,
+                    src: img.src
+                });
+            }
+        });
+
+        // Salva fotos das maquinas
+        dados.fotosMaquinas = [];
+        document.querySelectorAll('.input-foto-maquina').forEach((input, index) => {
+            const img = document.getElementById(`imgPreviewMaquina_${index}`);
+            if (img && img.style.display === 'block' && img.src) {
+                dados.fotosMaquinas.push({
+                    index: index,
+                    src: img.src
+                });
+            }
+        });
+
+        try {
+            localStorage.setItem('rascunho_atendimento', JSON.stringify(dados));
+        } catch (e) {
+            console.warn("Imagem muito grande para salvar no rascunho.");
+        }
+    }
+
+    window.restaurarRascunho = function() {
+        const salvo = localStorage.getItem('rascunho_atendimento');
+        if (salvo) {
+            try {
+                const dados = JSON.parse(salvo);
+                
+                // 1. Restaura Cliente
+                if (dados.clienteBusca) {
+                    document.getElementById('inputBuscaCliente').value = dados.clienteBusca;
+                    buscarCliente(); // Dispara a busca visual
+                }
+
+                // 2. Restaura Financeiro
+                const containerPix = document.getElementById('containerPix');
+                const areaPix = document.getElementById('areaPix');
+                containerPix.innerHTML = ''; // Limpa para recriar
+                if (dados.pixLinhas && dados.pixLinhas.length > 0) {
+                    areaPix.style.display = 'block';
+                    dados.pixLinhas.forEach(linha => criarLinhaPix(linha));
+                } else {
+                    // Se não tinha rascunho de pix, mas o cliente foi buscado, a busca já populou.
+                    // Se não, cria uma linha vazia.
+                    if (!dados.clienteBusca) {
+                        areaPix.style.display = 'block';
+                        criarLinhaPix();
+                    } else {
+                        areaPix.style.display = 'none';
+                    }
+                }
+
+                document.getElementById('valorDinheiro').value = dados.valorDinheiro ?? "";
+                formatarNumero(document.getElementById('valorDinheiro'), 8);
+
+                document.getElementById('porcComissao').value = dados.porcComissao ?? "";
+                calcularTotais(); // Atualiza os cálculos visuais
+
+                // 2. Restaura Produtos
+                // 3. Restaura Produtos
+                const container = document.getElementById('containerProdutos');
+                container.innerHTML = ""; // Limpa para recriar
+
+                if (dados.produtos && dados.produtos.length > 0) {
+                    dados.produtos.forEach(item => {
+                        const prodId = item.prod || (listaProdutos.find(p => p.nome === item.prodNome)?.firebaseUrl || "");
+                        adicionarLinhaProduto(null, prodId, item.qtd);
+                    });
+                    // Adiciona uma linha vazia no final para continuar digitando
+                    adicionarLinhaProduto();
+                }
+
+                // 3.5 Restaura contagem Saturno (buscarCliente já exibiu o bloco se necessário)
+                if (dados.saturnoContagem) {
+                    const elSat = document.getElementById('saturnoContagem');
+                    if (elSat) elSat.value = dados.saturnoContagem;
+                }
+
+                // 4. Restaura Foto da Ficha
+                if (dados.fotoFichaBase64) {
+                    const img = document.getElementById('imgPreviewFicha');
+                    img.src = dados.fotoFichaBase64;
+                    img.style.display = 'block';
+                    document.getElementById('textoFotoFicha').style.display = 'none';
+                }
+
+                // 5. Restaura Fotos do Pix (após buscarCliente ter criado os inputs)
+                if (dados.fotosPix && dados.fotosPix.length > 0) {
+                    dados.fotosPix.forEach(foto => {
+                        const img = document.getElementById(`imgPreviewPix_${foto.index}`);
+                        const texto = document.getElementById(`textoFotoPix_${foto.index}`);
+                        if (img && texto) {
+                            img.src = foto.src;
+                            img.style.display = 'block';
+                            texto.style.display = 'none';
+                        }
+                    });
+                }
+
+                // 6. Restaura Fotos das Máquinas (após buscarCliente ter criado os inputs)
+                if (dados.fotosMaquinas && dados.fotosMaquinas.length > 0) {
+                    dados.fotosMaquinas.forEach(foto => {
+                        const img = document.getElementById(`imgPreviewMaquina_${foto.index}`);
+                        const texto = document.getElementById(`textoFotoMaquina_${foto.index}`);
+                        if (img && texto) {
+                            img.src = foto.src;
+                            img.style.display = 'block';
+                            texto.style.display = 'none';
+                        }
+                    });
+                }
+                
+            } catch (e) {
+                console.error("Erro ao restaurar rascunho", e);
+            }
+        }
+    }
+    
+    // Adiciona listener para salvar quando muda o dropdown de produto
+    document.getElementById('containerProdutos').addEventListener('change', (e) => {
+        if(e.target.classList.contains('input-prod')) salvarRascunho();
+    });
+
+
+    // [NOVO] Segurança Extra: Ao entrar na página (mesmo pelo cache do celular), se não houver rascunho, limpa tudo.
+    window.addEventListener('pageshow', function() {
+        atualizarModoEdicao();
+        if (!localStorage.getItem('rascunho_atendimento')) {
+            limparEstadoEdicao();
+            document.getElementById('inputBuscaCliente').value = "";
+            document.getElementById('resultadoCliente').style.display = 'none';
+            document.getElementById('containerProdutos').innerHTML = "";
+            document.getElementById('imgPreviewFicha').style.display = 'none';
+            document.getElementById('textoFotoFicha').style.display = 'block';
+            document.getElementById('containerFotosPix').innerHTML = '';
+            document.getElementById('containerFotosMaquinas').innerHTML = '';
+            document.getElementById('areaPix').style.display = 'block';
+            document.getElementById('containerPix').innerHTML = "";
+            // Se estiver vazio, tenta criar a primeira linha novamente
+            if (document.querySelectorAll('.linha-produto').length === 0 && typeof window.adicionarLinhaProduto === 'function') {
+                window.adicionarLinhaProduto();
+            }
+            if (document.querySelectorAll('#containerPix .linha-form').length === 0 && typeof window.criarLinhaPix === 'function') {
+                window.criarLinhaPix();
+            }
+        }
+    });
+
+    // Pré-preenche o número do cliente se vier via URL (?numero=X)
+    const _paramNumero = new URLSearchParams(window.location.search).get('numero');
+    if (_paramNumero) {
+        sessionStorage.removeItem('rota_filtro_numeros');
+        sessionStorage.removeItem('rota_filtro_numero_rota');
+        sessionStorage.removeItem('cliente_pre_selecionado');
+        aplicarBannerRotaFiltro();
+        numeroClientePendente = _paramNumero.replace(/[^0-9]/g, '');
+        tentarAplicarClientePendente();
+    }
+
+</script>
+
+<!-- [NOVO] Script de Proteção de Saída (Fora do Módulo para execução imediata e robusta) -->
+<script>
+    // Função simples para adicionar um estado no histórico
+    const CHAVE_TELA_ORIGEM_ATENDIMENTO = 'atendimento_tela_origem';
+    let permitirSaidaAtendimento = false;
+
+    function travarVoltar() {
+        if (permitirSaidaAtendimento) return;
+        history.pushState(null, null, window.location.href);
+    }
+
+    function obterTelaAnterior() {
+        const origemSalva = sessionStorage.getItem(CHAVE_TELA_ORIGEM_ATENDIMENTO);
+        if (origemSalva && origemSalva !== 'atendimento_nivel_1.html') {
+            return origemSalva;
+        }
+
+        try {
+            if (document.referrer) {
+                const urlAnterior = new URL(document.referrer);
+                if (urlAnterior.origin === window.location.origin) {
+                    const caminho = urlAnterior.pathname.split('/').pop();
+                    if (caminho && caminho !== 'atendimento_nivel_1.html') return caminho;
+                }
+            }
+        } catch (e) {}
+
+        return 'index.html';
+    }
+
+    function sairParaTelaAnterior() {
+        const destino = 'index.html';
+        permitirSaidaAtendimento = true;
+        window.removeEventListener('click', garantirTrava);
+        window.removeEventListener('touchstart', garantirTrava);
+        try {
+            localStorage.removeItem('rascunho_atendimento');
+            localStorage.removeItem('atendimento_em_edicao_id');
+            localStorage.removeItem('atendimento_em_edicao_data');
+            localStorage.removeItem('atendimento_em_edicao_atendente');
+            localStorage.removeItem('atendimento_edicao_gestor');
+            sessionStorage.removeItem(CHAVE_TELA_ORIGEM_ATENDIMENTO);
+        } catch (error) {
+            console.error('Falha ao limpar estado antes de sair do atendimento:', error);
+        } finally {
+            window.setTimeout(function() {
+                try {
+                    window.location.replace(destino);
+                } catch (error) {
+                    window.location.href = destino;
+                }
+            }, 80);
+        }
+    }
+
+    // 1. Tenta travar assim que a página carrega
+    window.addEventListener('load', function() {
+        travarVoltar();
+    });
+
+    // 2. Garante a trava na primeira interação (para contornar bloqueios de navegadores após refresh)
+    function garantirTrava() {
+        travarVoltar();
+        window.removeEventListener('click', garantirTrava);
+        window.removeEventListener('touchstart', garantirTrava);
+    }
+    window.addEventListener('click', garantirTrava);
+    window.addEventListener('touchstart', garantirTrava);
+
+    // 3. Evento disparado ao apertar Voltar
+    window.addEventListener('popstate', async function (event) {
+        // IMPORTANTE: Empurra o estado de volta IMEDIATAMENTE para cancelar a saída
+        travarVoltar();
+
+        // Exibe a confirmação
+        if (await window.playConfirm("Se sair perderá as informações não enviadas. Deseja sair?", {
+            secondaryLabel: "Sim",
+            secondaryResult: true,
+            primaryLabel: "Não",
+            primaryResult: false,
+            overlayResult: false
+        })) {
+            sairParaTelaAnterior();
+        }
+    });
+</script>
+
+</body>
+</html>

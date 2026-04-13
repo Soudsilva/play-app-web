@@ -344,6 +344,8 @@
         if (perfil.includes('atendimento_1')) {
             sessionStorage.setItem('atendimento_tela_origem', 'index.html');
             window.location.href = 'atendimento_nivel_1.html';
+        } else if (perfil.includes('gestao')) {
+            window.location.href = 'Atedimento_Teste.html';
         } else {
             // Caso existam outras telas para outros niveis ou padrÃ£o
             console.log("Abrindo atendimento padrÃ£o...");
