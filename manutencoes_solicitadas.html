@@ -1255,13 +1255,13 @@
 
         const _scrollPos = manutencaoPendenteAjuste ? window.scrollY : null;
 
-        renderizarResumo(lista);
         container.innerHTML = "";
 
         if (lista.length === 0) {
             document.getElementById('barraFlutuante').classList.remove('visivel');
             atualizarEspacoDaBarra(false);
             manutencaoPendenteAjuste = "";
+            renderizarResumo([]);
             estado.style.display = 'block';
             estado.textContent = "Nenhuma manutencao pendente no momento.";
             return;
@@ -1311,6 +1311,8 @@
                 });
             }
         } catch (_) {}
+
+        renderizarResumo(listaFiltrada);
 
         if (listaFiltrada.length === 0) {
             estado.style.display = 'block';

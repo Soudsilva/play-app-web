@@ -5,9 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Financeiro</title>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
 
         body {
+            visibility: hidden;
             font-family: Arial, sans-serif;
             background: #0b2256;
             min-height: 100vh;
@@ -16,28 +24,37 @@
             color: white;
         }
 
+        button,
+        select {
+            font-family: Arial, sans-serif;
+            font-size: 15px;
+        }
+
+        select {
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
         .app {
             width: 100%;
-            max-width: 600px;
-            padding: 0 0 80px;
+            max-width: 440px;
+            min-height: 100vh;
+            padding: 0 0 104px;
             display: flex;
             flex-direction: column;
         }
 
-        /* ══════════════════════════════
-           TOPO
-        ══════════════════════════════ */
         .topo {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            min-height: 58px;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 12px 14px 10px;
             background: linear-gradient(180deg, #091845 0%, #0b2256 100%);
             border-bottom: 1px solid rgba(255,235,59,0.2);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            min-height: 58px;
         }
 
         .titulo-topo {
@@ -49,33 +66,349 @@
             flex: 1;
         }
 
-        /* ══════════════════════════════
-           FILTROS DE PERÍODO
-        ══════════════════════════════ */
-        .filtros-periodo {
+        .btn-home {
+            position: absolute;
+            right: 14px;
+            top: 11px;
+            width: 40px;
+            height: 40px;
+            border: 1px solid #6b87c8;
+            border-radius: 999px;
+            background: #18336f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .btn-home img {
+            width: 18px;
+            height: 18px;
+            filter: brightness(0) invert(1);
+        }
+
+        .conteudo {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 14px 12px 0;
+        }
+
+
+        .lista-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .fin-card {
+            background: linear-gradient(160deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+            border: 1.5px solid rgba(255,235,59,0.22);
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .fin-card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 11px 15px;
+            background: rgba(68,103,168,0.35);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .fin-entreg {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            min-width: 0;
+            flex: 1;
+            font-size: 17px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .fin-entreg-icon {
+            width: 30px;
+            height: 30px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .fin-entreg-nome {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .fin-data-hora {
+            font-size: 13px;
+            font-weight: bold;
+            color: rgba(255,235,59,0.85);
+            white-space: nowrap;
+        }
+
+        .fin-card-body {
+            padding: 12px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .fin-linha,
+        .fin-linha-equip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .fin-chave,
+        .fin-quant-label,
+        .fin-resp-label {
+            font-size: 12px;
+            font-weight: bold;
+            color: rgba(255,235,59,0.72);
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            white-space: nowrap;
+        }
+
+        .fin-chave {
+            width: 52px;
+            flex-shrink: 0;
+        }
+
+        .fin-valor,
+        .fin-equip-nome {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .fin-equip-nome {
+            flex: 1;
+            color: #fff;
+            text-shadow: 0 0 12px rgba(255,255,255,0.45);
+        }
+
+        .fin-quant-val {
+            font-size: 17px;
+            font-weight: bold;
+            color: #fff;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            padding: 3px 12px;
+            min-width: 38px;
+            text-align: center;
+        }
+
+        .fin-resp-wrap {
             display: flex;
             flex-direction: row;
-            gap: 8px;
+            align-items: baseline;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .fin-resp-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0;
+        }
+
+        .fin-resp-chip + .fin-resp-chip::before {
+            content: ", ";
+            color: rgba(255,255,255,0.5);
+            font-weight: normal;
+        }
+
+        .fin-resp-chip {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .fin-colab-row {
+            display: flex;
             align-items: center;
-            padding: 14px 16px 18px;
-            background: linear-gradient(180deg, rgba(9,24,69,0.97) 0%, #091845 100%);
-            border-top: 1.5px solid rgba(255,235,59,0.25);
-            border-radius: 20px 20px 0 0;
+            gap: 8px;
+        }
+
+        .fin-colab-select {
+            flex: 1;
+            min-width: 0;
+            background: rgba(255,255,255,0.08);
+            border: 1.5px solid rgba(255,255,255,0.18);
+            border-radius: 10px;
+            padding: 9px 30px 9px 12px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.45)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            cursor: pointer;
+        }
+
+        .fin-colab-select option { background: #0f2a66; }
+        .fin-colab-select:focus { border-color: rgba(255,235,59,0.5); }
+        .fin-colab-select:disabled { opacity: 0.4; cursor: default; }
+
+        .btn-enviar {
+            background: #ffeb3b;
+            color: #0b2256;
+            border: none;
+            border-radius: 10px;
+            padding: 9px 18px;
+            font-size: 15px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn-enviar:active { background: #edd900; transform: scale(0.95); }
+        .btn-enviar:disabled { background: rgba(255,235,59,0.3); color: rgba(11,34,86,0.5); cursor: default; transform: none; }
+
+        .fin-saldo-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(135deg, rgba(255,235,59,0.12), rgba(255,235,59,0.04));
+            border: 1.5px solid rgba(255,235,59,0.3);
+            border-radius: 12px;
+            padding: 10px 15px;
+        }
+        .fin-saldo-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: rgba(255,235,59,0.75);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .fin-saldo-valor {
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffeb3b;
+            letter-spacing: -0.5px;
+        }
+
+        .estado-vazio {
+            background: linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+            border: 1.5px solid rgba(255,235,59,0.15);
+            border-radius: 18px;
+            padding: 22px 16px;
+            font-size: 16px;
+            font-weight: bold;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .estado-carregando {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 52px 16px 36px;
+        }
+
+        .spinner-anel {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            border: 3.5px solid rgba(255,235,59,0.1);
+            border-top-color: #ffeb3b;
+            border-right-color: rgba(255,235,59,0.45);
+            animation: girar 0.85s linear infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes girar {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner-msg {
+            font-size: 15px;
+            font-weight: bold;
+            color: rgba(255,255,255,0.55);
+            text-align: center;
+            transition: opacity 0.25s ease;
+            letter-spacing: 0.2px;
+        }
+
+        .filtros-periodo {
             position: fixed;
-            bottom: 0;
             left: 50%;
+            bottom: 0;
             transform: translateX(-50%);
             width: 100%;
-            max-width: 600px;
-            z-index: 99;
+            max-width: 440px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 12px 20px;
+            background: linear-gradient(180deg, rgba(9,24,69,0.97) 0%, #091845 100%);
+            border-top: 1.5px solid rgba(255,235,59,0.3);
+            border-radius: 20px 20px 0 0;
             backdrop-filter: blur(10px);
         }
+
+        .filtro-select {
+            flex: 1;
+            min-width: 0;
+            border-radius: 10px;
+            border: 1.5px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            padding: 10px 30px 10px 12px;
+            font-size: 15px;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,235,59,0.7)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+        }
+
+        .filtro-select option { background: #0f2a66; color: #fff; }
+        .filtro-select:focus { border-color: rgba(255,235,59,0.55); }
+
+        .filtro-select.ano {
+            flex: 0 0 84px;
+            padding-right: 22px;
+        }
+
         .filtro-total-label {
             font-size: 22px;
             line-height: 1;
-            white-space: nowrap;
             flex-shrink: 0;
         }
+
         .filtro-total-box {
             flex: 1;
             background: rgba(255,235,59,0.08);
@@ -93,524 +426,489 @@
             justify-content: center;
             letter-spacing: -0.5px;
         }
-        .filtro-select {
-            flex: 1;
-            background: rgba(255,255,255,0.08);
-            border: 1.5px solid rgba(255,255,255,0.18);
-            border-radius: 10px;
-            padding: 9px 30px 9px 12px;
-            color: #fff;
-            font-size: 15px;
-            font-weight: bold;
-            font-family: Arial, sans-serif;
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,235,59,0.7)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            cursor: pointer;
-            outline: none;
-        }
-        .filtro-select:focus { border-color: rgba(255,235,59,0.55); }
-        .filtro-select option { background: #0f2a66; color: #fff; }
-        .filtro-select.ano { flex: 0 0 76px; padding-right: 22px; }
-        .filtro-select.mes { flex: 1; }
 
-        /* ══════════════════════════════
-           SCROLL AREA
-        ══════════════════════════════ */
-        .scroll-area {
-            flex: 1;
-            padding: 12px 12px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        /* ══════════════════════════════
-           CARD DE REGISTRO
-        ══════════════════════════════ */
-        .fin-card {
-            background: linear-gradient(160deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
-            border: 1.5px solid rgba(255,235,59,0.22);
-            border-radius: 18px;
-            overflow: hidden;
-        }
-
-        /* — cabeçalho do card — */
-        .fin-card-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 11px 15px;
-            background: rgba(68,103,168,0.35);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .fin-entreg {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            font-size: 17px;
-            font-weight: bold;
-            color: #fff;
-        }
-        .fin-entreg-icon {
-            width: 30px;
-            height: 30px;
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-            flex-shrink: 0;
-        }
-        .fin-data-hora {
-            font-size: 13px;
-            font-weight: bold;
-            color: rgba(255,235,59,0.85);
-            white-space: nowrap;
-        }
-
-        /* — corpo do card — */
-        .fin-card-body {
-            padding: 12px 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 9px;
-        }
-
-        /* — linha genérica — */
-        .fin-linha {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            min-height: 28px;
-        }
-        .fin-chave {
-            font-size: 12px;
-            font-weight: bold;
-            color: rgba(255,235,59,0.72);
-            text-transform: uppercase;
-            letter-spacing: 0.7px;
-            flex-shrink: 0;
-            width: 52px;
-        }
-        .fin-valor {
-            font-size: 16px;
-            font-weight: bold;
-            color: #fff;
-            flex: 1;
-            min-width: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .fin-valor.local { font-size: 17px; }
-
-        /* — linha equip + quant — */
-        .fin-linha-equip {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .fin-equip-nome {
-            font-size: 16px;
-            font-weight: bold;
-            color: #fff;
-            flex: 1;
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .fin-quant-label {
-            font-size: 12px;
-            font-weight: bold;
-            color: rgba(255,235,59,0.72);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-        }
-        .fin-quant-val {
-            font-size: 17px;
-            font-weight: bold;
-            color: #fff;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            padding: 3px 12px;
-            min-width: 38px;
-            text-align: center;
-        }
-
-        /* — responsáveis — */
-        .fin-resp-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        .fin-resp-label {
-            font-size: 12px;
-            font-weight: bold;
-            color: rgba(255,235,59,0.72);
-            text-transform: uppercase;
-            letter-spacing: 0.7px;
-        }
-        .fin-resp-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0;
-        }
-        .fin-resp-chip + .fin-resp-chip::before {
-            content: ", ";
-            color: rgba(255,255,255,0.5);
-            font-weight: normal;
-        }
-        .fin-resp-chip {
-            background: none;
-            border: none;
-            padding: 0;
-            font-size: 18px;
-            font-weight: bold;
-            color: #fff;
-        }
-
-        /* — saldo — */
-        .fin-colab-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-        .fin-colab-select {
-            flex: 1;
-            background: rgba(255,255,255,0.08);
-            border: 1.5px solid rgba(255,255,255,0.18);
-            border-radius: 10px;
-            padding: 9px 30px 9px 12px;
-            color: #fff;
-            font-size: 15px;
-            font-weight: bold;
-            font-family: Arial, sans-serif;
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.45)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            outline: none;
-            cursor: pointer;
-        }
-        .fin-colab-select option { background: #0f2a66; }
-        .fin-colab-select:focus { border-color: rgba(255,235,59,0.5); }
-        .btn-enviar {
-            background: #ffeb3b;
-            color: #0b2256;
-            border: none;
-            border-radius: 10px;
-            padding: 9px 18px;
-            font-size: 15px;
-            font-weight: bold;
-            font-family: Arial, sans-serif;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .btn-enviar:active { background: #edd900; transform: scale(0.95); }
-
-        .fin-saldo-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: linear-gradient(135deg, rgba(255,235,59,0.12), rgba(255,235,59,0.04));
-            border: 1.5px solid rgba(255,235,59,0.3);
-            border-radius: 12px;
-            padding: 10px 15px;
-        }
-        .fin-saldo-label {
-            font-size: 12px;
-            font-weight: bold;
-            color: rgba(255,235,59,0.75);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .fin-saldo-valor {
-            font-size: 22px;
-            font-weight: bold;
-            color: #ffeb3b;
-        }
-
-        /* ══════════════════════════════
-           TABELA
-        ══════════════════════════════ */
-        .tabela-wrap {
-            overflow-x: auto;
-            padding: 12px 12px 0;
-        }
-        .tabela {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 520px;
-        }
-        .tabela th {
-            font-size: 11px;
-            font-weight: bold;
-            color: rgba(255,235,59,0.8);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            padding: 8px 10px;
-            border-bottom: 1px solid rgba(255,235,59,0.25);
-            text-align: left;
-            white-space: nowrap;
-        }
-        .tabela td {
-            font-size: 14px;
-            font-weight: bold;
-            color: #fff;
-            padding: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.07);
-            vertical-align: middle;
-        }
-        .tabela tr:last-child td { border-bottom: none; }
-        .tabela tr:hover td { background: rgba(255,255,255,0.04); }
-        .tabela td.saldo { color: #ffeb3b; }
-        .tabela td.data  { color: rgba(255,235,59,0.8); white-space: nowrap; font-size: 13px; }
-        .tabela td.resp  { color: rgba(255,255,255,0.75); font-size: 13px; }
-
-        /* ══════════════════════════════
-           BARRA INFERIOR (TOTAL)
-        ══════════════════════════════ */
-        .bottom-bar {
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            max-width: 600px;
-            background: linear-gradient(180deg, rgba(9,24,69,0.96) 0%, #091845 100%);
-            border-top: 1.5px solid rgba(255,235,59,0.3);
-            padding: 12px 20px 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            backdrop-filter: blur(10px);
-            z-index: 200;
-        }
-        .total-esq {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .total-icon { font-size: 20px; }
-        .total-label {
-            font-size: 13px;
-            font-weight: bold;
-            color: rgba(255,255,255,0.6);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .total-count {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 999px;
-            padding: 2px 10px;
-            font-size: 13px;
-            font-weight: bold;
-            color: rgba(255,255,255,0.75);
-        }
-        .total-valor {
-            font-size: 22px;
-            font-weight: bold;
-            color: #a5d6a7;
-            letter-spacing: -0.3px;
-        }
-
-        @media (max-width: 480px) {
-            .fin-card-body { padding: 10px 12px; }
-            .fin-card-head { padding-left: 12px; padding-right: 12px; }
-        }
     </style>
 </head>
 <body>
+    <div class="app">
+        <header class="topo">
+            <div class="titulo-topo">Financeiro</div>
+            <button class="btn-home" type="button" aria-label="Ir para a tela inicial" onclick="window.location.href='index.html'">
+                <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
+            </button>
+        </header>
 
-<div class="app">
+        <main class="conteudo">
 
-    <!-- ════ TOPO ════ -->
-    <div class="topo">
-        <div class="titulo-topo">Financeiro</div>
+            <section id="listaFinanceiro" class="lista-cards">
+                <div class="estado-carregando">
+                    <div class="spinner-anel"></div>
+                    <span class="spinner-msg" id="spinnerMsg">Buscando seus registros...</span>
+                </div>
+            </section>
+        </main>
     </div>
 
-    <!-- ════ CARDS DE EXEMPLO ════ -->
-    <div class="scroll-area">
+    <div class="filtros-periodo">
+        <select id="filtroAno" class="filtro-select ano" aria-label="Ano"></select>
+        <select id="filtroMes" class="filtro-select" aria-label="Mês"></select>
+        <span class="filtro-total-label">&#128176;</span>
+        <div id="rodapeResumo" class="filtro-total-box">0,00</div>
+    </div>
 
-        <!-- Card 1 -->
-        <div class="fin-card">
-            <div class="fin-card-head">
-                <div class="fin-entreg">
-                    <div class="fin-entreg-icon">&#128100;</div>
-                    Felipe
-                </div>
-                <div class="fin-data-hora">&#128197; 31/03/2026 16:49</div>
-            </div>
-            <div class="fin-card-body">
-                <div class="fin-linha">
-                    <span class="fin-chave">Local</span>
-                    <span class="fin-valor local">Dr Pizza Areal</span>
-                </div>
-                <div class="fin-linha-equip">
-                    <span class="fin-chave" style="width:52px">Equip.</span>
-                    <span class="fin-equip-nome">&#9881; Foguete</span>
-                    <span class="fin-quant-label">Quant.</span>
-                    <span class="fin-quant-val">1</span>
-                </div>
-                <div class="fin-resp-wrap">
-                    <div class="fin-resp-label">Responsáveis</div>
-                    <div class="fin-resp-chips">
-                        <span class="fin-resp-chip">Rafael</span>
-                        <span class="fin-resp-chip">André</span>
-                        <span class="fin-resp-chip">Renar</span>
+    <script src="assets/js/play-dialogs.js"></script>
+    <script type="module">
+        import { verificarAutenticacao } from './auth.js';
+        import { dbEscutarAtendimentos, dbEscutarColaboradores, dbAtualizarAtendimento, dbEscutarEstoque } from './database.js';
+
+        document.body.style.visibility = 'visible';
+        await verificarAutenticacao();
+
+        const MESES = [
+            'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+        const TIMEZONE = 'America/Sao_Paulo';
+
+        const estado = {
+            atendimentos: [],
+            nomesElegiveis: [],
+            registros: [],
+            mapaValores: {},
+            anoSelecionado: '',
+            mesSelecionado: '',
+            prontoEstoque: false,
+            prontoColaboradores: false,
+            prontoAtendimentos: false,
+            get carregando() {
+                return !this.prontoEstoque || !this.prontoColaboradores || !this.prontoAtendimentos;
+            }
+        };
+
+        const listaFinanceiro = document.getElementById('listaFinanceiro');
+        const filtroAno = document.getElementById('filtroAno');
+        const filtroMes = document.getElementById('filtroMes');
+
+        const rodapeResumo = document.getElementById('rodapeResumo');
+
+        let _msgInterval = null;
+        let _spinnerAtivo = false;
+        const _msgs = [
+            'Buscando seus registros...',
+            'Calculando saldos do mês...',
+            'Preparando o relatório...',
+            'Quase lá...'
+        ];
+
+        function iniciarSpinner() {
+            if (!document.getElementById('spinnerMsg')) {
+                listaFinanceiro.innerHTML = `
+                    <div class="estado-carregando">
+                        <div class="spinner-anel"></div>
+                        <span class="spinner-msg" id="spinnerMsg">${_msgs[0]}</span>
                     </div>
-                </div>
-                <div class="fin-colab-row">
-                    <select class="fin-colab-select">
-                        <option value="">Colaborador</option>
-                        <option>Felipe</option>
-                        <option>Anderson</option>
-                        <option>Rafael</option>
-                        <option>André</option>
-                        <option>Renar</option>
-                    </select>
-                    <button class="btn-enviar">Enviar</button>
-                </div>
-                <div class="fin-saldo-row">
-                    <div class="fin-saldo-label">Saldo</div>
-                    <div class="fin-saldo-valor">R$&nbsp;100,00</div>
-                </div>
-            </div>
-        </div>
+                `;
+            }
+            if (_spinnerAtivo) return;
+            _spinnerAtivo = true;
+            let i = 0;
+            clearInterval(_msgInterval);
+            _msgInterval = setInterval(() => {
+                const el = document.getElementById('spinnerMsg');
+                if (!el) { clearInterval(_msgInterval); _spinnerAtivo = false; return; }
+                el.style.opacity = '0';
+                setTimeout(() => {
+                    if (el.isConnected) {
+                        i = (i + 1) % _msgs.length;
+                        el.textContent = _msgs[i];
+                        el.style.opacity = '1';
+                    }
+                }, 260);
+            }, 2200);
+        }
 
-        <!-- Card 2 -->
-        <div class="fin-card">
-            <div class="fin-card-head">
-                <div class="fin-entreg">
-                    <div class="fin-entreg-icon">&#128100;</div>
-                    Felipe
-                </div>
-                <div class="fin-data-hora">&#128197; 31/03/2026 16:43</div>
-            </div>
-            <div class="fin-card-body">
-                <div class="fin-linha">
-                    <span class="fin-chave">Local</span>
-                    <span class="fin-valor local">Dr Pizza Outeiro</span>
-                </div>
-                <div class="fin-linha-equip">
-                    <span class="fin-chave" style="width:52px">Equip.</span>
-                    <span class="fin-equip-nome">&#9881; Foguete</span>
-                    <span class="fin-quant-label">Quant.</span>
-                    <span class="fin-quant-val">1</span>
-                </div>
-                <div class="fin-resp-wrap">
-                    <div class="fin-resp-label">Responsáveis</div>
-                    <div class="fin-resp-chips">
-                        <span class="fin-resp-chip">Rafael</span>
-                        <span class="fin-resp-chip">André</span>
-                        <span class="fin-resp-chip">Renar</span>
-                    </div>
-                </div>
-                <div class="fin-colab-row">
-                    <select class="fin-colab-select">
-                        <option value="">Colaborador</option>
-                        <option>Felipe</option>
-                        <option>Anderson</option>
-                        <option>Rafael</option>
-                        <option>André</option>
-                        <option>Renar</option>
-                    </select>
-                    <button class="btn-enviar">Enviar</button>
-                </div>
-                <div class="fin-saldo-row">
-                    <div class="fin-saldo-label">Saldo</div>
-                    <div class="fin-saldo-valor">R$&nbsp;100,00</div>
-                </div>
-            </div>
-        </div>
+        function pararSpinner() {
+            clearInterval(_msgInterval);
+            _msgInterval = null;
+            _spinnerAtivo = false;
+        }
 
-        <!-- Card 3 -->
-        <div class="fin-card">
-            <div class="fin-card-head">
-                <div class="fin-entreg">
-                    <div class="fin-entreg-icon">&#128100;</div>
-                    Anderson
-                </div>
-                <div class="fin-data-hora">&#128197; 27/03/2026 15:22</div>
-            </div>
-            <div class="fin-card-body">
-                <div class="fin-linha">
-                    <span class="fin-chave">Local</span>
-                    <span class="fin-valor local">Minha Farmácia</span>
-                </div>
-                <div class="fin-linha-equip">
-                    <span class="fin-chave" style="width:52px">Equip.</span>
-                    <span class="fin-equip-nome">&#9881; Saturno</span>
-                    <span class="fin-quant-label">Quant.</span>
-                    <span class="fin-quant-val">2</span>
-                </div>
-                <div class="fin-resp-wrap">
-                    <div class="fin-resp-label">Responsáveis</div>
-                    <div class="fin-resp-chips">
-                        <span class="fin-resp-chip">Anderson</span>
-                        <span class="fin-resp-chip">Felipe</span>
-                    </div>
-                </div>
-                <div class="fin-colab-row">
-                    <select class="fin-colab-select">
-                        <option value="">Colaborador</option>
-                        <option>Felipe</option>
-                        <option>Anderson</option>
-                        <option>Rafael</option>
-                        <option>André</option>
-                        <option>Renar</option>
-                    </select>
-                    <button class="btn-enviar">Enviar</button>
-                </div>
-                <div class="fin-saldo-row">
-                    <div class="fin-saldo-label">Saldo</div>
-                    <div class="fin-saldo-valor">R$&nbsp;700,00</div>
-                </div>
-            </div>
-        </div>
+        function normalizarTexto(valor) {
+            return String(valor || '').trim().toLowerCase();
+        }
 
-    </div><!-- /scroll-area -->
+        function escaparHtml(valor) {
+            return String(valor || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
 
-</div><!-- /app -->
+        function partesDataSaoPaulo(iso) {
+            const data = new Date(iso || '');
+            if (Number.isNaN(data.getTime())) return null;
 
-<!-- ════ FILTROS FLUTUANTES ════ -->
-<div class="filtros-periodo">
-    <select class="filtro-select ano">
-        <option>2024</option>
-        <option>2025</option>
-        <option selected>2026</option>
-        <option>2027</option>
-    </select>
-    <select class="filtro-select mes">
-        <option>Janeiro</option>
-        <option>Fevereiro</option>
-        <option>Março</option>
-        <option selected>Abril</option>
-        <option>Maio</option>
-        <option>Junho</option>
-        <option>Julho</option>
-        <option>Agosto</option>
-        <option>Setembro</option>
-        <option>Outubro</option>
-        <option>Novembro</option>
-        <option>Dezembro</option>
-    </select>
-    <span class="filtro-total-label">&#128176;</span>
-    <div class="filtro-total-box">3.000</div>
-</div>
+            const partes = new Intl.DateTimeFormat('pt-BR', {
+                timeZone: TIMEZONE,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).formatToParts(data);
 
+            const mapa = {};
+            partes.forEach((parte) => {
+                if (parte.type !== 'literal') mapa[parte.type] = parte.value;
+            });
 
+            return {
+                ano: mapa.year || '',
+                mes: mapa.month || '',
+                dia: mapa.day || '',
+                hora: mapa.hour || '',
+                minuto: mapa.minute || ''
+            };
+        }
+
+        function formatarDataHora(iso) {
+            const partes = partesDataSaoPaulo(iso);
+            if (!partes) return 'Sem data';
+            return `${partes.dia}/${partes.mes}/${partes.ano} ${partes.hora}:${partes.minuto}`;
+        }
+
+        function obterChaveMesAno(iso) {
+            const partes = partesDataSaoPaulo(iso);
+            if (!partes) return '';
+            return `${partes.ano}-${partes.mes}`;
+        }
+
+        function deduplicarNomes(lista) {
+            const mapa = new Map();
+            (Array.isArray(lista) ? lista : []).forEach((nome) => {
+                const limpo = String(nome || '').trim();
+                const chave = normalizarTexto(limpo);
+                if (!limpo || mapa.has(chave)) return;
+                mapa.set(chave, limpo);
+            });
+            return Array.from(mapa.values());
+        }
+
+        function obterResponsaveis(itemEquipamento) {
+            return deduplicarNomes([
+                ...(Array.isArray(itemEquipamento?.responsaveis) ? itemEquipamento.responsaveis : []),
+                itemEquipamento?.tecnico
+            ]);
+        }
+
+        function reconstruirRegistros() {
+            estado.registros = estado.atendimentos.flatMap((atendimento) => {
+                const equipamentos = Array.isArray(atendimento?.manutencao?.equipamentosAdicionados)
+                    ? atendimento.manutencao.equipamentosAdicionados
+                    : [];
+
+                return equipamentos.map((item, indice) => ({
+                    atendimentoId: atendimento.firebaseUrl,
+                    equipamentoIndice: indice,
+                    data: atendimento?.data || atendimento?.ultimaEdicao || '',
+                    registradoPor: String(atendimento?.atendente || atendimento?.registradoPor || '').trim(),
+                    clienteNome: String(atendimento?.cliente?.nome || '').trim(),
+                    equipamentoNome: String(item?.nome || '').trim(),
+                    qtd: Number.parseInt(item?.qtd, 10) || 0,
+                    responsaveis: obterResponsaveis(item),
+                    itemOriginal: item,
+                    get saldo() {
+                        const chave = normalizarTexto(this.equipamentoNome);
+                        const valor = Number(estado.mapaValores[chave] || 0);
+                        const divisor = this.responsaveis.length || 1;
+                        return (this.qtd * valor) / divisor;
+                    }
+                }));
+            }).filter((registro) => registro.equipamentoNome && registro.qtd > 0);
+
+            estado.registros.sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+            sincronizarFiltros();
+            renderizar();
+        }
+
+        function sincronizarFiltros() {
+            const periodos = Array.from(new Set(
+                estado.registros
+                    .map((registro) => obterChaveMesAno(registro.data))
+                    .filter(Boolean)
+            )).sort().reverse();
+
+            const anos = Array.from(new Set(periodos.map((periodo) => periodo.slice(0, 4)))).sort((a, b) => Number(b) - Number(a));
+
+            if (anos.length === 0) {
+                const agora = partesDataSaoPaulo(new Date().toISOString());
+                estado.anoSelecionado = agora?.ano || '';
+                estado.mesSelecionado = agora?.mes || '';
+                filtroAno.innerHTML = `<option value="${estado.anoSelecionado}">${estado.anoSelecionado}</option>`;
+                preencherMeses([]);
+                return;
+            }
+
+            if (!estado.anoSelecionado || !anos.includes(estado.anoSelecionado)) {
+                estado.anoSelecionado = anos[0];
+            }
+
+            filtroAno.innerHTML = anos
+                .map((ano) => `<option value="${ano}"${ano === estado.anoSelecionado ? ' selected' : ''}>${ano}</option>`)
+                .join('');
+
+            const mesesDoAno = periodos
+                .filter((periodo) => periodo.startsWith(`${estado.anoSelecionado}-`))
+                .map((periodo) => periodo.slice(5, 7));
+
+            if (!estado.mesSelecionado || !mesesDoAno.includes(estado.mesSelecionado)) {
+                estado.mesSelecionado = mesesDoAno[0] || '01';
+            }
+
+            preencherMeses(mesesDoAno);
+        }
+
+        function preencherMeses(meses) {
+            if (!Array.isArray(meses) || meses.length === 0) {
+                filtroMes.innerHTML = '<option value="01">Janeiro</option>';
+                return;
+            }
+
+            filtroMes.innerHTML = meses
+                .map((mes) => {
+                    const indice = Number(mes) - 1;
+                    const nomeMes = MESES[indice] || mes;
+                    return `<option value="${mes}"${mes === estado.mesSelecionado ? ' selected' : ''}>${nomeMes}</option>`;
+                })
+                .join('');
+        }
+
+        function registrosFiltrados() {
+            const chaveSelecionada = `${estado.anoSelecionado}-${estado.mesSelecionado}`;
+            const usuarioAtual = normalizarTexto(localStorage.getItem('usuarioLogado') || '');
+            return estado.registros.filter((registro) => {
+                if (obterChaveMesAno(registro.data) !== chaveSelecionada) return false;
+                return registro.responsaveis.some((nome) => normalizarTexto(nome) === usuarioAtual);
+            });
+        }
+
+        function opcoesDropdown(responsaveisAtuais) {
+            const mapaAtuais = new Set(responsaveisAtuais.map((nome) => normalizarTexto(nome)));
+            return estado.nomesElegiveis.filter((nome) => !mapaAtuais.has(normalizarTexto(nome)));
+        }
+
+        function htmlResponsaveis(responsaveis) {
+            if (responsaveis.length === 0) {
+                return '<span class="fin-resp-chip">Sem responsável</span>';
+            }
+
+            return responsaveis
+                .map((nome) => `<span class="fin-resp-chip">${escaparHtml(nome)}</span>`)
+                .join('');
+        }
+
+        function renderizar() {
+            if (estado.carregando) {
+                iniciarSpinner();
+                return;
+            }
+            pararSpinner();
+
+            const lista = registrosFiltrados();
+            const totalMaquinas = lista.reduce((soma, registro) => soma + Number(registro.qtd || 0), 0);
+
+            const totalSaldo = lista.reduce((soma, r) => soma + r.saldo, 0);
+            rodapeResumo.textContent = totalSaldo.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+            if (lista.length === 0) {
+                listaFinanceiro.innerHTML = '<div class="estado-vazio">Nenhum registro de máquina instalada neste período.</div>';
+                return;
+            }
+
+            listaFinanceiro.innerHTML = lista.map((registro) => {
+                const selectId = `select_${registro.atendimentoId}_${registro.equipamentoIndice}`;
+                const opcoes = opcoesDropdown(registro.responsaveis);
+                const opcoesHtml = opcoes.length > 0
+                    ? opcoes.map((nome) => `<option value="${escaparHtml(nome)}">${escaparHtml(nome)}</option>`).join('')
+                    : '<option value="">Sem outros usuários</option>';
+
+                return `
+                    <article class="fin-card">
+                        <div class="fin-card-head">
+                            <div class="fin-entreg">
+                                <div class="fin-entreg-icon">&#128100;</div>
+                                <div class="fin-entreg-nome">${escaparHtml(registro.registradoPor || 'Sem nome')}</div>
+                            </div>
+                            <div class="fin-data-hora">&#128197; ${escaparHtml(formatarDataHora(registro.data))}</div>
+                        </div>
+                        <div class="fin-card-body">
+                            <div class="fin-linha">
+                                <span class="fin-chave">Cliente:</span>
+                                <span class="fin-valor">${escaparHtml(registro.clienteNome || 'Sem cliente')}</span>
+                            </div>
+
+                            <div class="fin-linha-equip">
+                                <span class="fin-chave">Equip.:</span>
+                                <span class="fin-equip-nome">${escaparHtml(registro.equipamentoNome)}</span>
+                                <span class="fin-quant-label">Qtd.:</span>
+                                <span class="fin-quant-val">${registro.qtd}</span>
+                            </div>
+
+                            <div class="fin-resp-wrap">
+                                <div class="fin-resp-label">Responsáveis:</div>
+                                <div class="fin-resp-chips">${htmlResponsaveis(registro.responsaveis)}</div>
+                            </div>
+
+                            <div class="fin-colab-row">
+                                <select id="${selectId}" class="fin-colab-select" ${opcoes.length === 0 ? 'disabled' : ''}>
+                                    <option value="">Adicionar responsável</option>
+                                    ${opcoesHtml}
+                                </select>
+                                <button
+                                    type="button"
+                                    class="btn-enviar"
+                                    data-atendimento-id="${escaparHtml(registro.atendimentoId)}"
+                                    data-equipamento-indice="${registro.equipamentoIndice}"
+                                    data-select-id="${selectId}"
+                                    ${opcoes.length === 0 ? 'disabled' : ''}
+                                >
+                                    Enviar
+                                </button>
+                            </div>
+
+                            <div class="fin-saldo-row">
+                                <span class="fin-saldo-label">Saldo:</span>
+                                <span class="fin-saldo-valor">${registro.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        async function mostrarAviso(texto) {
+            if (window.playAlert) {
+                await window.playAlert(texto);
+                return;
+            }
+            window.alert(texto);
+        }
+
+        async function adicionarResponsavel(atendimentoId, equipamentoIndice, selectId, botao) {
+            const select = document.getElementById(selectId);
+            const nomeSelecionado = String(select?.value || '').trim();
+
+            if (!nomeSelecionado) {
+                await mostrarAviso('Selecione um usuário para adicionar.');
+                return;
+            }
+
+            const atendimento = estado.atendimentos.find((item) => item.firebaseUrl === atendimentoId);
+            if (!atendimento) {
+                await mostrarAviso('Não foi possível localizar o registro.');
+                return;
+            }
+
+            const manutencaoAtual = atendimento?.manutencao || {};
+            const equipamentosAtualizados = Array.isArray(manutencaoAtual.equipamentosAdicionados)
+                ? manutencaoAtual.equipamentosAdicionados.map((item) => ({ ...item }))
+                : [];
+
+            const equipamento = equipamentosAtualizados[equipamentoIndice];
+            if (!equipamento) {
+                await mostrarAviso('Não foi possível localizar a máquina deste card.');
+                return;
+            }
+
+            const responsaveisAtualizados = deduplicarNomes([
+                ...(Array.isArray(equipamento.responsaveis) ? equipamento.responsaveis : []),
+                equipamento.tecnico,
+                nomeSelecionado
+            ]);
+
+            equipamento.responsaveis = responsaveisAtualizados;
+
+            const manutencaoPatch = {
+                ...manutencaoAtual,
+                equipamentosAdicionados: equipamentosAtualizados
+            };
+
+            botao.disabled = true;
+            botao.textContent = 'Enviando...';
+
+            try {
+                await dbAtualizarAtendimento(atendimentoId, {
+                    manutencao: manutencaoPatch,
+                    ultimaEdicao: new Date().toISOString()
+                });
+            } catch (erro) {
+                console.error(erro);
+                await mostrarAviso('Erro ao adicionar o responsável.');
+            } finally {
+                botao.disabled = false;
+                botao.textContent = 'Enviar';
+            }
+        }
+
+        filtroAno.addEventListener('change', () => {
+            estado.anoSelecionado = filtroAno.value;
+            sincronizarFiltros();
+            renderizar();
+        });
+
+        filtroMes.addEventListener('change', () => {
+            estado.mesSelecionado = filtroMes.value;
+            renderizar();
+        });
+
+        listaFinanceiro.addEventListener('click', async (event) => {
+            const botao = event.target.closest('.btn-enviar');
+            if (!botao || botao.disabled) return;
+
+            await adicionarResponsavel(
+                botao.dataset.atendimentoId || '',
+                Number.parseInt(botao.dataset.equipamentoIndice || '0', 10) || 0,
+                botao.dataset.selectId || '',
+                botao
+            );
+        });
+
+        dbEscutarEstoque((lista) => {
+            estado.mapaValores = {};
+            (Array.isArray(lista) ? lista : []).forEach((item) => {
+                const chave = normalizarTexto(item?.nome || '');
+                if (chave) estado.mapaValores[chave] = Number(item?.valorEquipamento || 0);
+            });
+            estado.prontoEstoque = true;
+            renderizar();
+        });
+
+        dbEscutarColaboradores((lista) => {
+            const nomes = [];
+            (Array.isArray(lista) ? lista : []).forEach((colaborador) => {
+                if (colaborador?.producaoEquipamentos !== true) return;
+                const nome = String(colaborador?.nome || '').trim();
+                if (!nome) return;
+                nomes.push(nome);
+            });
+
+            estado.nomesElegiveis = deduplicarNomes(nomes).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+            estado.prontoColaboradores = true;
+            renderizar();
+        });
+
+        dbEscutarAtendimentos((lista) => {
+            estado.atendimentos = (Array.isArray(lista) ? lista : []).filter((atendimento) => {
+                return Array.isArray(atendimento?.manutencao?.equipamentosAdicionados)
+                    && atendimento.manutencao.equipamentosAdicionados.length > 0;
+            });
+
+            estado.prontoAtendimentos = true;
+            reconstruirRegistros();
+        });
+    </script>
 </body>
 </html>

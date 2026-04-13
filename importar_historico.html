@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar Histórico de Vendas</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0b2256;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            color: white;
+            visibility: hidden;
+        }
+        .app { width: 100%; max-width: 600px; padding: 16px 16px 60px; }
+
+        /* AVISO */
+        .aviso-topo {
+            background: rgba(255, 80, 80, 0.12);
+            border: 1px solid rgba(255, 80, 80, 0.4);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #ff8282;
+            text-align: center;
+            line-height: 1.5;
+        }
+        .aviso-topo strong { display: block; font-size: 14px; margin-bottom: 4px; color: #ff6b6b; }
+
+        /* TOPO */
+        .topo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .titulo { font-size: 20px; font-weight: bold; text-align: center; }
+        .btn-home {
+            background: rgba(255,255,255,0.1);
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            position: absolute;
+            left: 0;
+            border: none;
+        }
+        .btn-home:active { background: rgba(255,255,255,0.2); }
+
+        /* STATUS CLIENTES */
+        .status-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #4ade80;
+            flex-shrink: 0;
+        }
+        .status-dot.carregando { background: #ffeb3b; animation: piscar 1s ease-in-out infinite; }
+        @keyframes piscar { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* SEÇÃO */
+        .secao-titulo {
+            font-size: 13px;
+            font-weight: bold;
+            color: #ffeb3b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0 0 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px dashed rgba(255,235,59,0.3);
+        }
+
+        /* TEXTAREA */
+        .textarea-dados {
+            width: 100%;
+            height: 180px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            padding: 12px;
+            resize: vertical;
+            margin-bottom: 12px;
+            outline: none;
+        }
+        .textarea-dados::placeholder { color: rgba(255,255,255,0.35); }
+        .textarea-dados:focus { border-color: rgba(255,235,59,0.5); }
+
+        .dica {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
+
+        /* BOTÕES */
+        .btn-principal {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.15s;
+            margin-bottom: 10px;
+        }
+        .btn-principal:active { transform: scale(0.98); }
+        .btn-analisar { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; }
+        .btn-analisar:hover { background: rgba(255,255,255,0.15); }
+        .btn-importar { background: #ffeb3b; color: #0b2256; display: none; }
+        .btn-importar:hover { background: #ffe100; }
+        .btn-importar:disabled { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #9ca3af; cursor: not-allowed; transform: none; }
+
+        /* PREVIEW */
+        .secao-preview { display: none; margin-top: 24px; }
+        .resumo-analise {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .badge {
+            font-size: 13px;
+            font-weight: bold;
+            padding: 5px 12px;
+            border-radius: 999px;
+        }
+        .badge-ok { background: rgba(74,222,128,0.15); border: 1px solid rgba(74,222,128,0.4); color: #4ade80; }
+        .badge-ignorado { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #9ca3af; }
+        .badge-aviso { background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.35); color: #fbbf24; }
+        .badge-erro { background: rgba(255,80,80,0.1); border: 1px solid rgba(255,80,80,0.3); color: #f87171; }
+
+        .tabela-wrap {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        thead tr { background: rgba(255,255,255,0.06); }
+        th {
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.6);
+            white-space: nowrap;
+        }
+        td { padding: 9px 12px; border-top: 1px solid rgba(255,255,255,0.06); vertical-align: middle; }
+        .row-ok td:last-child { color: #4ade80; font-weight: bold; }
+        .row-ignorado td { color: #6b7280; }
+        .row-ignorado td:last-child { color: #6b7280; }
+        .row-aviso td { color: #e5e7eb; }
+        .row-aviso td:last-child { color: #fbbf24; }
+        .row-erro td { color: #e5e7eb; }
+        .row-erro td:last-child { color: #f87171; }
+
+        /* LOG */
+        .log-importacao {
+            display: none;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 12px 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 16px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            line-height: 1.7;
+        }
+        .log-ok { color: #4ade80; }
+        .log-erro { color: #f87171; }
+        .log-resumo {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed rgba(255,255,255,0.2);
+            color: #ffeb3b;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
+        /* LOADING INICIAL */
+        .tela-carregando {
+            text-align: center;
+            padding: 48px 16px;
+        }
+        .eng {
+            display: block;
+            margin: 0 auto 14px;
+            animation: girar 2s linear infinite;
+        }
+        @keyframes girar { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="app">
+
+    <!-- TOPO -->
+    <div class="topo">
+        <button class="btn-home" onclick="window.location.href='index.html'">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+        </button>
+        <div class="titulo">Importar Histórico</div>
+    </div>
+
+    <!-- AVISO -->
+    <div class="aviso-topo">
+        <strong>FERRAMENTA DE USO ÚNICO</strong>
+        Apagar este arquivo após concluir a importação. Não deixar em produção.
+    </div>
+
+    <!-- CARREGANDO CLIENTES -->
+    <div id="telaCarregando" class="tela-carregando">
+        <svg class="eng" width="40" height="40" viewBox="0 0 24 24" fill="none"
+             stroke="rgba(255,200,50,0.9)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <div style="color: rgba(255,255,255,0.6); font-size: 14px;">Verificando acesso...</div>
+    </div>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <div id="mainContent" style="display: none;">
+
+        <!-- STATUS DOS CLIENTES -->
+        <div class="status-card">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusClientes">Carregando clientes...</span>
+        </div>
+
+        <!-- COLAR DADOS -->
+        <div class="secao-titulo">Cole os dados do Dataverse</div>
+        <div class="dica">
+            Copie diretamente do Excel ou do Dataverse e cole abaixo.<br>
+            Colunas esperadas: <strong>nº cliente · rota · venda/dia · última visita · penúltima visita</strong><br>
+            Linhas sem rota são ignoradas automaticamente.
+        </div>
+        <textarea
+            id="txtDados"
+            class="textarea-dados"
+            placeholder="Cole aqui os dados copiados do Dataverse...&#10;&#10;Ex:&#10;1	R.03	10,20	02/04/2026	23/03/2026&#10;2	R.44	46,66	27/03/2026	07/01/2026&#10;3		&#10;4	R.22	3,24	07/04/2026	21/03/2026"
+        ></textarea>
+
+        <button class="btn-principal btn-analisar" onclick="analisarDados()">
+            Analisar dados
+        </button>
+
+        <!-- PREVIEW -->
+        <div class="secao-preview" id="secaoPreview">
+            <div class="secao-titulo">Resultado da análise</div>
+            <div class="resumo-analise" id="resumoAnalise"></div>
+
+            <div class="tabela-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nº</th>
+                            <th>Nome / Observação</th>
+                            <th>Rota</th>
+                            <th>Venda/dia</th>
+                            <th>Último atend.</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaPreview"></tbody>
+                </table>
+            </div>
+
+            <button class="btn-principal btn-importar" id="btnImportar" onclick="importarDados()">
+                Importar agora
+            </button>
+
+            <div class="log-importacao" id="logImportacao"></div>
+        </div>
+
+    </div>
+</div>
+
+<script type="module">
+import { verificarAutenticacao } from './auth.js';
+import { app } from './database.js';
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+// ── Reutiliza a mesma instância Firebase do app (auth compartilhado) ──────────
+const db = getDatabase(app);
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+verificarAutenticacao().then(user => {
+    if (user) inicializar();
+});
+
+// ── Estado global ─────────────────────────────────────────────────────────────
+let clientesMap = {};   // { "123": { id, numero, nome, rota } }
+let dadosAnalisados = [];
+
+// ── Inicialização: carrega clientes do Firebase ───────────────────────────────
+async function inicializar() {
+    const dotEl    = document.getElementById('statusDot');
+    const statusEl = document.getElementById('statusClientes');
+    dotEl.classList.add('carregando');
+
+    try {
+        const snap = await get(ref(db, 'clientes'));
+        const data = snap.val() || {};
+        clientesMap = {};
+        Object.entries(data).forEach(([key, c]) => {
+            const num = String(c.numero ?? '').trim();
+            if (num) {
+                clientesMap[num] = {
+                    id: key,
+                    numero: num,
+                    nome: c.nome || '',
+                    rota: c.rota || ''
+                };
+            }
+        });
+        const total = Object.keys(clientesMap).length;
+        dotEl.classList.remove('carregando');
+        statusEl.textContent = `${total} clientes carregados do Firebase`;
+        document.getElementById('telaCarregando').style.display = 'none';
+        document.getElementById('mainContent').style.display   = 'block';
+    } catch (e) {
+        dotEl.style.background = '#f87171';
+        statusEl.textContent = 'Erro ao carregar clientes: ' + e.message;
+        document.getElementById('telaCarregando').style.display = 'none';
+        document.getElementById('mainContent').style.display   = 'block';
+    }
+}
+
+// ── Parsear data DD/MM/YYYY → YYYY-MM-DD ─────────────────────────────────────
+function parsearData(str) {
+    if (!str) return null;
+    const m = String(str).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!m) return null;
+    return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+}
+
+// ── Calcular estimativa (igual ao app) ───────────────────────────────────────
+function calcularEstimativa(venda_por_dia, ultimo_iso) {
+    if (typeof venda_por_dia !== 'number' || !ultimo_iso) return null;
+    const hoje  = new Date(); hoje.setHours(0, 0, 0, 0);
+    const ultimo = new Date(ultimo_iso); ultimo.setHours(0, 0, 0, 0);
+    const dias  = Math.max(0, Math.round((hoje - ultimo) / 86400000));
+    return Math.round(((venda_por_dia * dias) + Number.EPSILON) * 100) / 100;
+}
+
+function hojeYMD() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ── Parsear linhas coladas ────────────────────────────────────────────────────
+function parsearLinhas(texto) {
+    const linhas = texto.split('\n').map(l => l.trim()).filter(l => l);
+    const result = [];
+
+    linhas.forEach(linha => {
+        const cols      = linha.split('\t').map(c => c.trim());
+        const numero    = String(cols[0] ?? '').trim();
+        const rotaRaw   = String(cols[1] ?? '').trim();
+        const vendaRaw  = String(cols[2] ?? '').trim();
+        const ultimoRaw = String(cols[3] ?? '').trim();
+        const penulRaw  = String(cols[4] ?? '').trim();
+
+        if (!numero) return;
+
+        // Linha sem rota = cliente inativo
+        if (!rotaRaw) {
+            result.push({ numero, status: 'ignorado', motivo: 'rota em branco — cliente inativo' });
+            return;
+        }
+
+        // Valor da venda (trocar vírgula por ponto)
+        const venda_por_dia = parseFloat(vendaRaw.replace(',', '.'));
+        if (isNaN(venda_por_dia) || venda_por_dia < 0) {
+            result.push({ numero, status: 'erro', motivo: `valor inválido: "${vendaRaw}"` });
+            return;
+        }
+
+        // Data do último atendimento
+        const ultimo_atendimento_em = parsearData(ultimoRaw);
+        if (!ultimo_atendimento_em) {
+            result.push({ numero, status: 'erro', motivo: `data inválida: "${ultimoRaw}"` });
+            return;
+        }
+
+        // Dias entre última e penúltima visita (se disponível)
+        let diasEntre = 0;
+        if (penulRaw) {
+            const penulIso = parsearData(penulRaw);
+            if (penulIso) {
+                diasEntre = Math.abs(Math.round(
+                    (new Date(ultimo_atendimento_em) - new Date(penulIso)) / 86400000
+                ));
+            }
+        }
+
+        // Verifica se o cliente existe no Firebase
+        const clienteFirebase = clientesMap[numero];
+        if (!clienteFirebase) {
+            result.push({ numero, status: 'aviso', motivo: `número ${numero} não encontrado no app` });
+            return;
+        }
+
+        result.push({
+            numero,
+            status: 'ok',
+            venda_por_dia,
+            ultimo_atendimento_em,
+            diasEntre,
+            cliente: clienteFirebase   // usa os dados do Firebase (nome, rota, id)
+        });
+    });
+
+    return result;
+}
+
+// ── Renderizar preview ────────────────────────────────────────────────────────
+function renderizarPreview(dados) {
+    const nOk       = dados.filter(d => d.status === 'ok').length;
+    const nIgn      = dados.filter(d => d.status === 'ignorado').length;
+    const nAviso    = dados.filter(d => d.status === 'aviso').length;
+    const nErro     = dados.filter(d => d.status === 'erro').length;
+
+    document.getElementById('resumoAnalise').innerHTML = `
+        <span class="badge badge-ok">${nOk} para importar</span>
+        <span class="badge badge-ignorado">${nIgn} ignorados</span>
+        ${nAviso ? `<span class="badge badge-aviso">${nAviso} não encontrados</span>` : ''}
+        ${nErro  ? `<span class="badge badge-erro">${nErro} com erro</span>` : ''}
+    `;
+
+    const rows = dados.map(d => {
+        if (d.status === 'ok') {
+            return `<tr class="row-ok">
+                <td>${d.numero}</td>
+                <td>${d.cliente.nome || '—'}</td>
+                <td>${d.cliente.rota || '—'}</td>
+                <td>R$ ${d.venda_por_dia.toFixed(2)}/dia</td>
+                <td>${d.ultimo_atendimento_em}</td>
+                <td>✓ importar</td>
+            </tr>`;
+        }
+        const label = d.status === 'ignorado' ? '— ignorado'
+                    : d.status === 'aviso'    ? '⚠ não encontrado'
+                    : '✗ erro';
+        return `<tr class="row-${d.status}">
+            <td>${d.numero}</td>
+            <td colspan="4" style="font-size:12px;">${d.motivo}</td>
+            <td>${label}</td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('tabelaPreview').innerHTML = rows || '<tr><td colspan="6" style="color:#6b7280;text-align:center;padding:16px;">Nenhuma linha reconhecida</td></tr>';
+    document.getElementById('secaoPreview').style.display = 'block';
+    document.getElementById('btnImportar').style.display  = nOk > 0 ? 'block' : 'none';
+    document.getElementById('logImportacao').style.display = 'none';
+    document.getElementById('logImportacao').innerHTML     = '';
+}
+
+// ── Expor funções para os botões HTML ────────────────────────────────────────
+window.analisarDados = function () {
+    const texto = document.getElementById('txtDados').value.trim();
+    if (!texto) { alert('Cole os dados antes de analisar.'); return; }
+    dadosAnalisados = parsearLinhas(texto);
+    renderizarPreview(dadosAnalisados);
+};
+
+window.importarDados = async function () {
+    const paraImportar = dadosAnalisados.filter(d => d.status === 'ok');
+    if (paraImportar.length === 0) { alert('Nenhum registro válido para importar.'); return; }
+
+    const btn = document.getElementById('btnImportar');
+    btn.disabled    = true;
+    btn.textContent = `Importando 0 de ${paraImportar.length}...`;
+
+    const log = document.getElementById('logImportacao');
+    log.innerHTML    = '';
+    log.style.display = 'block';
+
+    const agoraIso = new Date().toISOString();
+    const hojeStr  = hojeYMD();
+    let ok = 0, erros = 0;
+
+    for (const item of paraImportar) {
+        try {
+            const baseTotal   = item.diasEntre > 0
+                ? Math.round(item.venda_por_dia * item.diasEntre * 100) / 100
+                : 0;
+            const estimativa  = calcularEstimativa(item.venda_por_dia, item.ultimo_atendimento_em);
+
+            // Estrutura exata que o app já usa em Media_de_Vendas
+            const registro = {
+                cliente: {
+                    id: item.cliente.id,
+                    numero: item.cliente.numero,
+                    nome: item.cliente.nome,
+                    rota: item.cliente.rota
+                },
+                rota: item.cliente.rota,
+                ultimo_atendimento_em: item.ultimo_atendimento_em,
+                venda_por_dia: item.venda_por_dia,
+                venda_por_dia_msg: null,
+                venda_por_dia_base_total: baseTotal,
+                venda_por_dia_intervalo_dias: item.diasEntre,
+                venda_por_dia_atualizado_em: agoraIso,
+                hoje_dia: hojeStr,
+                estimativa_hoje: estimativa,
+                atualizado_em: agoraIso
+            };
+
+            await set(ref(db, `Media_de_Vendas/${item.cliente.numero}`), registro);
+            log.innerHTML += `<div class="log-ok">✓ ${item.numero} — ${item.cliente.nome}</div>`;
+            ok++;
+            btn.textContent = `Importando ${ok} de ${paraImportar.length}...`;
+            log.scrollTop = log.scrollHeight;
+        } catch (e) {
+            log.innerHTML += `<div class="log-erro">✗ ${item.numero} — ${e.message}</div>`;
+            erros++;
+        }
+    }
+
+    // Notifica o app que a Media_de_Vendas foi atualizada (igual ao database.js)
+    try { await set(ref(db, 'metadata/media_de_vendas_versao'), Date.now()); } catch (_) {}
+
+    log.innerHTML += `
+        <div class="log-resumo">
+            Concluído: ${ok} importado${ok !== 1 ? 's' : ''}${erros > 0 ? `, ${erros} com erro` : ''}.
+        </div>`;
+    log.scrollTop = log.scrollHeight;
+
+    btn.textContent = 'Importar novamente';
+    btn.disabled    = false;
+};
+</script>
+</body>
+</html>

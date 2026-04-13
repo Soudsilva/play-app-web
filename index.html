@@ -202,6 +202,10 @@
                     <span class="icone">&#127974;</span>
                     <span>Dep&oacute;sitos</span>
                 </div>
+                <div class="botao-sub" id="btnImportarHistorico" onclick="window.location.href='importar_historico.html'" style="display: none;">
+                    <span class="icone">&#128229;</span>
+                    <span>Importar Hist&oacute;rico</span>
+                </div>
             </div>
         </div>
 
@@ -419,6 +423,7 @@
             balanco: document.getElementById('btnBalanco'),
             checkinRotas: document.getElementById('btnCheckinRotas'),
             depositos: document.getElementById('btnDepositos'),
+            importarHistorico: document.getElementById('btnImportarHistorico'),
             rotas: document.getElementById('btnRotas'),
             cadColab: document.getElementById('btnCadColaborador'),
             cadastroItens: document.getElementById('btnCadastroItens'),
@@ -457,6 +462,12 @@
 
             btns.pedidos.style.display = 'flex';
             btns.financeiro.style.display = 'flex';
+
+            // Manutenção aparece depois de Financeiro para estoque
+            const _menu = document.querySelector('.menu');
+            if (_menu && btns.financeiro && btns.manutencao) {
+                _menu.insertBefore(btns.manutencao, btns.financeiro.nextSibling);
+            }
             }
 
         // 2. PERFIL ATENDIMENTO
@@ -476,6 +487,7 @@
             btns.mediaVendas.style.display = ehAtendimentoNivel2 ? 'flex' : 'none';
             btns.checkinRotas.style.display = ehAtendimentoNivel2 ? 'none' : 'flex';
             btns.depositos.style.display = ehAtendimentoNivel2 ? 'none' : 'flex';
+            btns.importarHistorico.style.display = 'none';
             
             // [ALTERADO] Rotas apenas para NÃ­vel 1
             if (perfil.includes('atendimento_1')) {
@@ -510,6 +522,7 @@
             btns.mediaVendas.style.display = 'flex';
             btns.checkinRotas.style.display = 'flex';
             btns.depositos.style.display = 'flex';
+            btns.importarHistorico.style.display = 'flex';
             
             // [ALTERADO] Rotas Ã© exclusivo de Atendimento 1
             btns.rotas.style.display = 'none'; 
