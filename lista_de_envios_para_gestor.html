@@ -144,7 +144,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarAtendimentos, dbEscutarColaboradores, dbExcluirAtendimento } from './database.js';
+    import { dbEscutarAtendimentos, dbEscutarColaboradores, dbExcluirAtendimento, dbReverterEncerramentoCliente, dbExcluirMovimentoFluxoCaixa, dbReverterConclusaoManutencao } from './database.js';
 
     // Pega quem está logado no celular no momento
     const usuarioLogado = localStorage.getItem('usuarioLogado');
@@ -561,9 +561,30 @@
 
         const autorEnvio = obterNomeAutorEnvio(envio) || envio.atendente || 'N/A';
         const dataFormatada = envio.data ? new Date(envio.data).toLocaleString('pt-BR') : '';
+        const ehEncerramento = envio.manutencao?.pontoEncerrado === true;
 
-        if (await window.playConfirm(`Excluir este envio?\n\nEnviado por: ${autorEnvio}\nData: ${dataFormatada}\n\nEsta ação não pode ser desfeita.`)) {
+        const msg = ehEncerramento
+            ? `Excluir este envio?\n\nEnviado por: ${autorEnvio}\nData: ${dataFormatada}\n\nO encerramento do cliente e o lançamento no fluxo de caixa serão revertidos.`
+            : `Excluir este envio?\n\nEnviado por: ${autorEnvio}\nData: ${dataFormatada}\n\nEsta ação não pode ser desfeita.`;
+
+        if (await window.playConfirm(msg)) {
             await dbExcluirAtendimento(id);
+
+            if (ehEncerramento) {
+                const clienteId = envio.cliente?.id || '';
+                const equipamentos = envio.manutencao?.equipamentosRetiradosDetalhes || [];
+                const manutencaoId = envio.manutencao?.id || '';
+
+                if (clienteId) {
+                    await dbReverterEncerramentoCliente(clienteId, equipamentos).catch(e => console.error(e));
+                }
+                if (envio.fluxoCaixaKey && envio.operadorFluxoCaixa) {
+                    await dbExcluirMovimentoFluxoCaixa(envio.operadorFluxoCaixa, envio.fluxoCaixaKey).catch(e => console.error(e));
+                }
+                if (manutencaoId && envio.manutencao?.servicoRealizado) {
+                    await dbReverterConclusaoManutencao(manutencaoId).catch(e => console.error(e));
+                }
+            }
         }
     };
 </script>

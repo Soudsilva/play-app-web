@@ -288,6 +288,13 @@
         const id = document.getElementById('idItem').value;
         const categoria = document.getElementById('categoriaItem').value;
         const valorEquipamento = obterValorNumerico(categoria, document.getElementById('valorEquipamento').value || 0);
+
+        if (categoria === 'produtos' && !(valorEquipamento > 0)) {
+            alert("Informe o valor do produto antes de salvar.");
+            document.getElementById('valorEquipamento').focus();
+            return;
+        }
+
         const dados = {
             nome: document.getElementById('nomeItem').value,
             categoria,

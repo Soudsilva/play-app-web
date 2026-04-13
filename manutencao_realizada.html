@@ -498,11 +498,21 @@
             padding: 0 14px 12px;
         }
         .pix-encerramento-titulo {
-            font-size: 16px;
-            font-weight: bold;
-            color: #ffeb3b;
             margin-bottom: 10px;
             text-align: center;
+        }
+        .pix-encerramento-numero {
+            font-size: 32px;
+            font-weight: 900;
+            color: #ffeb3b;
+            letter-spacing: 2px;
+            line-height: 1;
+        }
+        .pix-encerramento-maquina {
+            font-size: 15px;
+            font-weight: bold;
+            color: white;
+            margin-top: 4px;
         }
         .retirada-extra-box {
             padding: 12px;
@@ -890,7 +900,7 @@
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
 verificarAutenticacao();
-import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbEscutarColaboradores, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, storageSalvarFotoComThumb } from './database.js';
+import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbEscutarColaboradores, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, storageSalvarFotoComThumb, dbSalvarMovimentoFluxoCaixa } from './database.js';
 
 // ════════════════════════════════════════════════
 // DADOS DA MANUTENÇÃO
@@ -1143,7 +1153,10 @@ function renderizarPixEncerramento() {
 
         return `
             <div class="pix-encerramento-card" data-chave="${chave}">
-                <div class="pix-encerramento-titulo">Pix ${pix} • ${String(item?.nome || '').trim()}</div>
+                <div class="pix-encerramento-titulo">
+                    <div class="pix-encerramento-numero">PIX ${pix}</div>
+                    <div class="pix-encerramento-maquina">${String(item?.nome || '').trim()}</div>
+                </div>
                 <div class="retirada-extra-box">
                     <div class="retirada-extra-pergunta">Informe o número do contador.</div>
                     <div class="retirada-extra-body aberto" id="encpix-body-${chave}" data-anterior="${contadorAnteriorNumero}" data-comissao="${percentualComissao}">
@@ -2967,6 +2980,29 @@ window.finalizarRegistro = async function() {
                 pix: []
             };
 
+            // ── Fluxo de caixa: salva ANTES do atendimento para guardar a chave ──
+            let fluxoCaixaKey = null;
+            if (camposExtras.pontoEncerrado && camposExtras.valorEncerramento) {
+                const valorNumerico = Number(
+                    String(camposExtras.valorEncerramento)
+                        .replace(/[^\d,]/g, '')
+                        .replace(',', '.')
+                );
+                if (valorNumerico > 0) {
+                    const nomeCliente = clienteSnapshotAtendimento.nome || '';
+                    const numeroCliente = clienteSnapshotAtendimento.numero || '';
+                    const movSalvo = await dbSalvarMovimentoFluxoCaixa(usuarioLogado, {
+                        tipo: 'entrada',
+                        valor: valorNumerico,
+                        descricao: `Encerramento ponto${numeroCliente ? ` N. ${numeroCliente}` : ''}${nomeCliente ? ` – ${nomeCliente}` : ''}`,
+                        data: new Date().toISOString(),
+                        criado_em: Date.now(),
+                        origemAutomatica: true
+                    });
+                    fluxoCaixaKey = movSalvo?.firebaseKey || null;
+                }
+            }
+
             await dbSalvarAtendimento({
                 atendente: usuarioLogado,
                 data: new Date().toISOString(),
@@ -2978,6 +3014,7 @@ window.finalizarRegistro = async function() {
                 financeiro: {},
                 fotos: fotosHistorico,
                 origemRegistro: 'manutencao',
+                ...(fluxoCaixaKey ? { fluxoCaixaKey, operadorFluxoCaixa: usuarioLogado } : {}),
                 manutencao: {
                     id: dadosManutencao.firebaseUrl || '',
                     tipoServico: tiposServico.join(' e '),

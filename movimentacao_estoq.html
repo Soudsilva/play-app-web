@@ -67,6 +67,9 @@
             background: #fffde7;
             border-color: #f9a825;
         }
+        .inp-qtd::-webkit-outer-spin-button,
+        .inp-qtd::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .inp-qtd[type=number] { -moz-appearance: textfield; }
 
         /* Linha de Saldo Atual */
         .saldo-box {
@@ -430,7 +433,7 @@
 
             <div class="campo-form">
                 <label>Quantidade</label>
-                <input type="number" id="qtdInput" class="inp-qtd" placeholder="0" min="1">
+                <input type="text" id="qtdInput" class="inp-qtd" placeholder="0" inputmode="numeric">
             </div>
             <div class="campo-form">
                 <label>Responsável</label>
@@ -660,12 +663,20 @@
             }
         }
 
-        // Filtra apenas colaboradores que tenham "atendimento" no perfil
-        const listaFiltrada = colabsGlobal.filter(c => c.nivel_completo && c.nivel_completo.includes('atendimento'));
+        const tipoProduto = document.getElementById('filtroCategoria').value === 'produtos';
+
+        let listaFiltrada;
+        if (modoAtual === 'entrada' && tipoProduto) {
+            // Entrada de produtos: apenas quem tem remuneração "Produção de Produtos"
+            listaFiltrada = colabsGlobal.filter(c => c.producaoProdutos);
+        } else {
+            // Demais casos: colaboradores com perfil atendimento
+            listaFiltrada = colabsGlobal.filter(c => c.nivel_completo && c.nivel_completo.includes('atendimento'));
+        }
 
         listaFiltrada.forEach(c => {
             const opt = document.createElement('option');
-            opt.value = c.nome; // Salva o nome do colaborador
+            opt.value = c.nome;
             opt.innerText = c.nome;
             select.appendChild(opt);
         });
@@ -673,6 +684,7 @@
 
     // 2. FILTRAR ITENS POR CATEGORIA
     window.filtrarItens = function() {
+        renderizarResponsaveis(); // atualiza dropdown de responsável conforme tipo selecionado
         const categoriaSelecionada = document.getElementById('filtroCategoria').value;
         const selectItem = document.getElementById('selectItem');
         const valorAnterior = selectItem.value;
@@ -743,7 +755,7 @@
     // 5. ATUALIZAR ESTOQUE NO BANCO
     window.salvarMovimentacao = async function() {
         const idItem = document.getElementById('selectItem').value;
-        const qtdMovimento = parseInt(document.getElementById('qtdInput').value);
+        const qtdMovimento = parseInt(String(document.getElementById('qtdInput').value).replace(/\./g, ''));
         const responsavel = document.getElementById('responsavel').value;
         if (!idItem) return alert("Selecione um item.");
         if (isNaN(qtdMovimento) || qtdMovimento <= 0) return alert("Informe a quantidade.");
@@ -784,7 +796,9 @@
             itemCategoria: itemOriginal.categoria || '',
             qtd: qtdMovimento,
             responsavel: responsavel,
-            registradoPor: String(localStorage.getItem('usuarioLogado') || '').trim()
+            registradoPor: String(localStorage.getItem('usuarioLogado') || '').trim(),
+            // Valor unitário capturado no momento da entrada — garante que mudanças futuras de preço não afetam o histórico
+            valorUnitario: Number(itemOriginal.valorEquipamento) || 0
         };
 
         try {
@@ -815,6 +829,14 @@
             console.error(error);
         }
     };
+
+    // ── FORMATAÇÃO CAMPO QUANTIDADE ──
+    const qtdInput = document.getElementById('qtdInput');
+    qtdInput.addEventListener('input', () => {
+        const apenasNumeros = qtdInput.value.replace(/\D/g, '');
+        if (!apenasNumeros) { qtdInput.value = ''; return; }
+        qtdInput.value = Number(apenasNumeros).toLocaleString('pt-BR');
+    });
 
     // ── ITENS DO ESTOQUE ──
 

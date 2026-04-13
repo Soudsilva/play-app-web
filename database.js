@@ -1599,6 +1599,54 @@ export async function dbAplicarPendenciasManutencaoCliente(firebaseUrlCliente, p
 }
 
 /**
+ * Reverte o encerramento de um ponto: limpa flags do cliente e restaura PIX dos equipamentos.
+ */
+export async function dbReverterEncerramentoCliente(firebaseUrlCliente, equipamentosRetiradosDetalhes = []) {
+    try {
+        if (!firebaseUrlCliente) return;
+        const clienteRef = ref(db, `clientes/${firebaseUrlCliente}`);
+        const snapshot = await get(clienteRef);
+        if (!snapshot.exists()) return;
+
+        const clienteAtual = snapshot.val() || {};
+        const equipamentos = _normalizarEquipDetalhesCliente(clienteAtual).map(item => ({ ...item }));
+
+        // Restaura PIX e contador de cada equipamento retirado pendente
+        equipamentosRetiradosDetalhes.forEach(retirado => {
+            const alvo = equipamentos.find(e =>
+                String(e?.nome || '').trim() === String(retirado?.nome || '').trim() &&
+                (String(retirado?.pix || '').trim() === '' ||
+                 String(e?.pixRetiradoPendente || '').trim() === String(retirado?.pix || '').trim())
+            );
+            if (!alvo) return;
+            if (alvo.pixRetiradoPendente) alvo.pix = alvo.pixRetiradoPendente;
+            if (alvo.contadorRetiradoPendente) alvo.contador = alvo.contadorRetiradoPendente;
+            delete alvo.pixRetiradoPendente;
+            delete alvo.contadorRetiradoPendente;
+            delete alvo.retiradaPendenteEm;
+            delete alvo.retiradaPendentePor;
+            delete alvo.manutencaoPendente;
+            delete alvo.aguardandoConfirmacao;
+            delete alvo.manutencaoPendenteEm;
+            delete alvo.manutencaoPendentePor;
+        });
+
+        await update(clienteRef, {
+            encerrado: false,
+            aguardandoRevisao: false,
+            valorEncerramento: '',
+            dataEncerramento: '',
+            equipDetalhes: equipamentos,
+            equip: _serializarEquipTextoCliente(equipamentos)
+        });
+        await _atualizarVersaoClientes();
+    } catch (erro) {
+        console.error("ERRO AO REVERTER ENCERRAMENTO DO CLIENTE:", erro);
+        throw erro;
+    }
+}
+
+/**
  * Marca um cliente como encerrado no banco.
  * Usado quando o técnico retira todos os equipamentos e confirma que o ponto foi encerrado.
  * O card do cliente vai aparecer em vermelho na lista, aguardando revisão do gestor.
@@ -1631,6 +1679,19 @@ export async function dbSalvarManutencao(manutencao, idExistente = null) {
     } catch (error) {
         console.error("ERRO AO SALVAR MANUTENCAO:", error);
         throw error;
+    }
+}
+
+export async function dbReverterConclusaoManutencao(manutencaoId) {
+    try {
+        if (!manutencaoId) return;
+        await update(ref(db, `manutencoes/${manutencaoId}`), {
+            status: 'pendente',
+            dataConclusao: null
+        });
+    } catch (erro) {
+        console.error("ERRO AO REVERTER CONCLUSAO DA MANUTENCAO:", erro);
+        throw erro;
     }
 }
 

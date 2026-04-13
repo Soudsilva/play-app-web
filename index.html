@@ -400,7 +400,9 @@
             return;
         }
         if (tela === 'financeiro') {
-            window.location.href = 'financeiro.html';
+            const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
+            const u = listaColaboradores.find(c => String(c?.nome || '').trim() === nomeLogado);
+            window.location.href = u?.producaoProdutos ? 'producao_produtos.html' : 'financeiro.html';
             return;
         }
         console.log("Abrindo tela genÃ©rica: " + tela);
@@ -538,6 +540,11 @@
             btns.pix.style.display = perfil.includes('gestao') ? 'flex' : 'none'; // Apenas GestÃ£o (ou atendimento acima)
             btns.fluxoCaixa.style.display = perfil.includes('gestao') ? 'flex' : 'none';
             btns.financeiro.style.display = 'none'; // Financeiro continua restrito ao Estoque
+        }
+
+        // Remuneração "Produção de Produtos": exibe o botão Financeiro para qualquer perfil
+        if (usuario?.producaoProdutos) {
+            btns.financeiro.style.display = 'flex';
         }
     }
 

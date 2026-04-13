@@ -321,6 +321,7 @@
     import { verificarAutenticacao } from './auth.js';
     import {
         dbListarFluxoCaixa,
+        dbEscutarFluxoCaixa,
         dbSalvarMovimentoFluxoCaixa,
         dbExcluirMovimentoFluxoCaixa
     } from './database.js';
@@ -390,12 +391,11 @@
     estado.movimentacoes = lerCacheFluxoCaixa(estado.nomeUsuario);
     render();
 
-    try {
-        await carregarMovimentacoes();
-    } catch (error) {
-        console.error('Erro ao carregar fluxo de caixa:', error);
-        await window.playAlert('Erro ao carregar os registros.');
-    }
+    dbEscutarFluxoCaixa(estado.nomeUsuario, (movimentacoes) => {
+        estado.movimentacoes = movimentacoes;
+        salvarCacheFluxoCaixa(estado.nomeUsuario, movimentacoes);
+        render();
+    });
 
     function vincularEventos() {
         els.btnGasto.addEventListener('click', () => {
@@ -582,7 +582,8 @@
                 const saldoApos = saldoPorKey[item.firebaseKey] ?? 0;
                 const apagandoItem = estado.exclusoesEmAndamento.has(item.firebaseKey);
                 const podeApagar = item.firebaseKey === maisRecenteKey &&
-                    (Date.now() - (item.criado_em || 0)) < 3600000;
+                    (Date.now() - (item.criado_em || 0)) < 3600000 &&
+                    !item.origemAutomatica;
 
                 const card = document.createElement('div');
                 card.className = `mov-card ${item.tipo}`;
