@@ -223,7 +223,7 @@
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
-    import { dbEscutarAtendimentos, dbEscutarClientes, dbEscutarColaboradores, dbEscutarMediaDeVendas } from './database.js';
+    import { dbEscutarAtendimentos, dbEscutarClientes, dbEscutarColaboradores, dbEscutarMediaDeVendas, dbEscutarEstoque } from './database.js';
 
     verificarAutenticacao();
 
@@ -238,6 +238,7 @@
     let modoBusca = '';
     let termoMaquina = '';
     let modoOrdenacao = 'numero_menor';
+    let nomesMaquinasEstoque = [];
 
     const elLista = document.getElementById('lista');
     const elVazia = document.getElementById('vazia');
@@ -341,12 +342,12 @@
     }
 
     function atualizarOpcoesMaquina() {
-        const nomes = new Set();
-        Array.from(mapaClientesPorId.values()).forEach(cliente => {
-            extrairNomesMaquinas(cliente).forEach(nome => nomes.add(nome));
-        });
+        const listaOrdenada = nomesMaquinasEstoque.length > 0
+            ? nomesMaquinasEstoque
+            : Array.from(new Set(
+                Array.from(mapaClientesPorId.values()).flatMap(cliente => extrairNomesMaquinas(cliente))
+              )).sort((a, b) => normalizar(a).localeCompare(normalizar(b)));
 
-        const listaOrdenada = Array.from(nomes).sort((a, b) => normalizar(a).localeCompare(normalizar(b)));
         const valorAtual = elBuscaMaquina.value;
         elBuscaMaquina.innerHTML = '<option value="">Selecione a m&aacute;quina</option>';
         listaOrdenada.forEach(nome => {
@@ -701,6 +702,15 @@
     dbEscutarAtendimentos((lista) => {
         listaAtendimentos = Array.isArray(lista) ? lista : [];
         render();
+    });
+
+    dbEscutarEstoque((lista) => {
+        nomesMaquinasEstoque = (Array.isArray(lista) ? lista : [])
+            .filter(item => item.categoria === 'maquina')
+            .map(item => String(item.nome || '').trim())
+            .filter(Boolean)
+            .sort((a, b) => normalizar(a).localeCompare(normalizar(b)));
+        atualizarOpcoesMaquina();
     });
 
     window.addEventListener('online', render);
