@@ -660,7 +660,7 @@
             optForn.innerText = "Fornecedor";
             select.appendChild(optForn);
 
-            if (nomeLogado) {
+            if (nomeLogado && categoriaAtual !== 'maquina' && categoriaAtual !== 'produtos' && categoriaAtual !== 'materiais') {
                 const optUser = document.createElement('option');
                 optUser.value = nomeLogado;
                 optUser.innerText = nomeLogado;
@@ -671,17 +671,13 @@
         const tipoProduto = categoriaAtual === 'produtos';
         const tipoMaterial = categoriaAtual === 'materiais';
 
-        const tipoPeca = categoriaAtual === 'peca';
-
         let listaFiltrada;
-        if (modoAtual === 'entrada' && tipoProduto) {
+        if (modoAtual === 'entrada' && tipoMaterial) {
+            // Entrada de materiais: só Fornecedor (já adicionado acima)
+            listaFiltrada = [];
+        } else if (modoAtual === 'entrada' && tipoProduto) {
             // Entrada de produtos: apenas quem tem remuneração "Produção de Produtos"
-            listaFiltrada = colabsGlobal.filter(c => c.producaoProdutos);
-        } else if (modoAtual === 'entrada' && tipoPeca) {
-            // Entrada de peça: usuário logado já foi adicionado acima; demais estoque exceto ele mesmo
-            listaFiltrada = colabsGlobal.filter(c =>
-                c.nivel_completo && c.nivel_completo.startsWith('estoque') && c.nome !== nomeLogado
-            );
+            listaFiltrada = colabsGlobal.filter(c => c.producaoProdutos || (c.nivel_completo && c.nivel_completo.includes('atendimento')));
         } else if (modoAtual === 'saida' && tipoMaterial) {
             // Saída de materiais: atendimento nível 2 + perfil estoque (exceto quem tem produção de produtos)
             listaFiltrada = colabsGlobal.filter(c =>
@@ -815,12 +811,11 @@
         if (modoAtual === 'entrada') {
             if (isPeca) {
                 const ehFornecedor = responsavel === 'Fornecedor';
-                const ehProprioUsuario = responsavel === String(localStorage.getItem('usuarioLogado') || '').trim();
                 const responsavelEhEstoque = colabsGlobal.some(
                     c => c.nome === responsavel && c.nivel_completo && c.nivel_completo.startsWith('estoque')
                 );
 
-                if (ehFornecedor || ehProprioUsuario || responsavelEhEstoque) {
+                if (ehFornecedor || responsavelEhEstoque) {
                     // Peça boa: abate defeitos primeiro, o que sobrar soma ao estoque bom
                     qtdDefeitoConsumida = Math.min(qtdMovimento, novaQtdDefeito);
                     novaQtdDefeito -= qtdDefeitoConsumida;
