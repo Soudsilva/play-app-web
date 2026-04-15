@@ -90,6 +90,9 @@
         }
         .info-atual { font-size: 18px; color: rgba(255,235,59,0.85); font-weight: bold; }
         .destaque-qtd { color: rgba(255,235,59,0.85); font-weight: bold; font-size: 18px; }
+        .saldo-total-disc { font-size: 11px; color: rgba(255,255,255,0.35); margin-right: 6px; }
+        .saldo-defeito-label { font-size: 13px; color: #ff9800; font-weight: 600; margin-right: 8px; }
+        .saldo-defeito-num { font-size: 15px; font-weight: bold; }
 
         .btn-confirmar {
             width: 100%; padding: 14px; border: none; border-radius: 12px;
@@ -646,7 +649,10 @@
     function renderizarResponsaveis() {
         const select = document.getElementById('responsavel');
         select.innerHTML = '<option value="">Responsável</option>';
-        
+
+        const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
+        const categoriaAtual = document.getElementById('filtroCategoria').value;
+
         // Adiciona "Fornecedor" e usuário logado apenas se for ENTRADA
         if (modoAtual === 'entrada') {
             const optForn = document.createElement('option');
@@ -654,7 +660,6 @@
             optForn.innerText = "Fornecedor";
             select.appendChild(optForn);
 
-            const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
             if (nomeLogado) {
                 const optUser = document.createElement('option');
                 optUser.value = nomeLogado;
@@ -663,12 +668,36 @@
             }
         }
 
-        const tipoProduto = document.getElementById('filtroCategoria').value === 'produtos';
+        const tipoProduto = categoriaAtual === 'produtos';
+        const tipoMaterial = categoriaAtual === 'materiais';
+
+        const tipoPeca = categoriaAtual === 'peca';
 
         let listaFiltrada;
         if (modoAtual === 'entrada' && tipoProduto) {
             // Entrada de produtos: apenas quem tem remuneração "Produção de Produtos"
             listaFiltrada = colabsGlobal.filter(c => c.producaoProdutos);
+        } else if (modoAtual === 'entrada' && tipoPeca) {
+            // Entrada de peça: usuário logado já foi adicionado acima; demais estoque exceto ele mesmo
+            listaFiltrada = colabsGlobal.filter(c =>
+                c.nivel_completo && c.nivel_completo.startsWith('estoque') && c.nome !== nomeLogado
+            );
+        } else if (modoAtual === 'saida' && tipoMaterial) {
+            // Saída de materiais: atendimento nível 2 + perfil estoque (exceto quem tem produção de produtos)
+            listaFiltrada = colabsGlobal.filter(c =>
+                !c.producaoProdutos &&
+                (
+                    c.nivel_completo === 'atendimento_2' ||
+                    (c.nivel_completo && c.nivel_completo.startsWith('estoque'))
+                )
+            );
+            // Permite que o próprio usuário logado se selecione
+            if (nomeLogado && !listaFiltrada.some(c => c.nome === nomeLogado)) {
+                const optSelf = document.createElement('option');
+                optSelf.value = nomeLogado;
+                optSelf.innerText = nomeLogado + ' (você)';
+                select.appendChild(optSelf);
+            }
         } else {
             // Demais casos: colaboradores com perfil atendimento
             listaFiltrada = colabsGlobal.filter(c => c.nivel_completo && c.nivel_completo.includes('atendimento'));
@@ -708,6 +737,8 @@
             option.value = item.firebaseUrl;
             option.innerText = item.nome;
             option.dataset.qtdAtual = item.quantidade || 0;
+            option.dataset.qtdDefeito = item.qtd_defeito || 0;
+            option.dataset.categItem = item.categoria || '';
             selectItem.appendChild(option);
         });
 
@@ -725,8 +756,19 @@
         const saldoBox = document.getElementById('saldoBox');
 
         if (itemSelecionado && itemSelecionado.value) {
-            const qtd = itemSelecionado.dataset.qtdAtual;
-            document.getElementById('textoSaldo').innerHTML = `<span class="destaque-qtd">${qtd}</span>`;
+            const qtdBoa = parseInt(itemSelecionado.dataset.qtdAtual || 0);
+            const qtdDefeito = parseInt(itemSelecionado.dataset.qtdDefeito || 0);
+            const isPeca = itemSelecionado.dataset.categItem === 'peca';
+
+            if (isPeca && qtdDefeito > 0) {
+                const total = qtdBoa + qtdDefeito;
+                document.getElementById('textoSaldo').innerHTML =
+                    `<span class="saldo-total-disc">Total ${total}</span>` +
+                    `<span class="saldo-defeito-label">&#9888; Defeito <span class="saldo-defeito-num">${qtdDefeito}</span></span>` +
+                    `<span class="destaque-qtd">${qtdBoa}</span>`;
+            } else {
+                document.getElementById('textoSaldo').innerHTML = `<span class="destaque-qtd">${qtdBoa}</span>`;
+            }
             saldoBox.style.display = 'flex';
         } else {
             saldoBox.style.display = 'none';
@@ -764,10 +806,33 @@
         const itemOriginal = listaGlobal.find(i => i.firebaseUrl === idItem);
         if (!itemOriginal) return alert("Erro ao localizar item.");
 
+        const isPeca = itemOriginal.categoria === 'peca';
         let novaQtd = parseInt(itemOriginal.quantidade) || 0;
+        let novaQtdDefeito = parseInt(itemOriginal.qtd_defeito) || 0;
+        let isDefeitoEntry = false;
+        let qtdDefeitoConsumida = 0;
 
         if (modoAtual === 'entrada') {
-            novaQtd += qtdMovimento;
+            if (isPeca) {
+                const ehFornecedor = responsavel === 'Fornecedor';
+                const ehProprioUsuario = responsavel === String(localStorage.getItem('usuarioLogado') || '').trim();
+                const responsavelEhEstoque = colabsGlobal.some(
+                    c => c.nome === responsavel && c.nivel_completo && c.nivel_completo.startsWith('estoque')
+                );
+
+                if (ehFornecedor || ehProprioUsuario || responsavelEhEstoque) {
+                    // Peça boa: abate defeitos primeiro, o que sobrar soma ao estoque bom
+                    qtdDefeitoConsumida = Math.min(qtdMovimento, novaQtdDefeito);
+                    novaQtdDefeito -= qtdDefeitoConsumida;
+                    novaQtd += qtdMovimento - qtdDefeitoConsumida;
+                } else {
+                    // Veio da rua: entra como defeito
+                    novaQtdDefeito += qtdMovimento;
+                    isDefeitoEntry = true;
+                }
+            } else {
+                novaQtd += qtdMovimento;
+            }
         } else {
             if (qtdMovimento > novaQtd) {
                 return alert("Quantidade insuficiente em estoque!");
@@ -780,9 +845,9 @@
             nome: itemOriginal.nome,
             categoria: itemOriginal.categoria,
             quantidade: novaQtd,
+            qtd_defeito: novaQtdDefeito,
             minimo: itemOriginal.minimo || 0,
             dataAtualizacao: new Date().toISOString(),
-            // Salvamos quem mexeu por último para controle
             ultimo_responsavel: responsavel
         };
 
@@ -792,13 +857,13 @@
             tipo: modoAtual,
             itemUrl: idItem,
             itemNome: itemOriginal.nome,
-            // Guarda a categoria no histórico para o balanço saber se isso entra em produtos ou máquinas em posse.
             itemCategoria: itemOriginal.categoria || '',
             qtd: qtdMovimento,
             responsavel: responsavel,
             registradoPor: String(localStorage.getItem('usuarioLogado') || '').trim(),
-            // Valor unitário capturado no momento da entrada — garante que mudanças futuras de preço não afetam o histórico
-            valorUnitario: Number(itemOriginal.valorEquipamento) || 0
+            valorUnitario: Number(itemOriginal.valorEquipamento) || 0,
+            isDefeitoEntry: isDefeitoEntry,
+            qtdDefeitoConsumida: qtdDefeitoConsumida
         };
 
         try {
@@ -921,6 +986,15 @@
             if (item.categoria === 'materiais') { classeCor = 'bg-materiais-est'; nomeCat = 'Materiais'; }
             const div = document.createElement('div');
             div.className = 'card-est';
+            const qtdDefeito = parseInt(item.qtd_defeito) || 0;
+            const qtdBoa = parseInt(item.quantidade) || 0;
+            const rodapeQtd = (item.categoria === 'peca' && qtdDefeito > 0)
+                ? `<div style="display:flex;align-items:center;gap:8px;">
+                       <span class="saldo-defeito-label" style="font-size:11px;">&#9888; <span class="saldo-defeito-num">${qtdDefeito}</span></span>
+                       <div class="qtd-est">${qtdBoa}</div>
+                   </div>`
+                : `<div class="qtd-est">${qtdBoa}</div>`;
+
             div.innerHTML = `
                 <div class="card-est-topo">
                     <span class="card-est-nome">${item.nome}</span>
@@ -928,7 +1002,7 @@
                 </div>
                 <div class="card-est-rodape">
                     <span class="card-est-minimo">Mínimo: ${item.minimo || 0}</span>
-                    <div class="qtd-est">${item.quantidade}</div>
+                    ${rodapeQtd}
                 </div>
             `;
             container.appendChild(div);
@@ -953,9 +1027,19 @@
         }
 
         let novaQtd = parseInt(itemEstoque.quantidade);
+        let novaQtdDefeito = parseInt(itemEstoque.qtd_defeito) || 0;
+        const isPecaRev = itemEstoque.categoria === 'peca';
 
-        // Lógica Inversa: Se foi Entrada, subtrai. Se foi Saída, soma.
-        if(mov.tipo === 'entrada') {
+        if (isPecaRev && mov.tipo === 'entrada') {
+            if (mov.isDefeitoEntry) {
+                // Desfaz entrada defeituosa: remove do defeito
+                novaQtdDefeito -= parseInt(mov.qtd);
+            } else {
+                // Desfaz entrada boa: restaura defeitos consumidos e remove do bom
+                novaQtdDefeito += parseInt(mov.qtdDefeitoConsumida || 0);
+                novaQtd -= parseInt(mov.qtd) - parseInt(mov.qtdDefeitoConsumida || 0);
+            }
+        } else if (mov.tipo === 'entrada') {
             novaQtd -= parseInt(mov.qtd);
         } else {
             novaQtd += parseInt(mov.qtd);
@@ -963,7 +1047,7 @@
 
         try {
             // 1. Atualiza Estoque
-            await dbSalvarItemEstoque({ ...itemEstoque, quantidade: novaQtd }, mov.itemUrl);
+            await dbSalvarItemEstoque({ ...itemEstoque, quantidade: novaQtd, qtd_defeito: novaQtdDefeito }, mov.itemUrl);
             
             // 2. Remove do Histórico (Precisamos que o database.js traga a chave firebaseUrl no histórico também)
             // NOTA IMPORTANTE: Como ajustamos o database.js para ler com Object.values, precisamos garantir que a chave venha.
