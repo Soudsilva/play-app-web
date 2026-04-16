@@ -551,6 +551,11 @@
             btns.financeiro.style.display = 'none'; // Financeiro continua restrito ao Estoque
         }
 
+        // GESTOR NÍVEL 2 e 3: acesso a Entr. Saídas
+        if (perfil.includes('gestao_2') || perfil.includes('gestao_3')) {
+            btns.movimentacao.style.display = 'flex';
+        }
+
         // GESTOR NÍVEL 1: restrições sobre o perfil gestão
         if (perfil.includes('gestao_1')) {
             btns.cadColab.style.display = 'none';
