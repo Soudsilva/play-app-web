@@ -699,6 +699,13 @@
             listaFiltrada = colabsGlobal.filter(c => c.nivel_completo && c.nivel_completo.includes('atendimento'));
         }
 
+        if (modoAtual === 'saida' && categoriaAtual === 'peca') {
+            const optMaquina = document.createElement('option');
+            optMaquina.value = 'Máquina';
+            optMaquina.innerText = 'Máquina';
+            select.appendChild(optMaquina);
+        }
+
         listaFiltrada.forEach(c => {
             const opt = document.createElement('option');
             opt.value = c.nome;

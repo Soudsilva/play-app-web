@@ -472,7 +472,7 @@
                     <input type="text" id="totalGeral" class="input-readonly" readonly placeholder="R$ 0.00" style="text-align: center;">
                 </div>
                 <div style="flex:1">
-                    <label class="lbl-fin" style="text-align: center;">Saldo Depositar</label>
+                    <label class="lbl-fin" style="text-align: center;">Saldo Parcial</label>
                     <input type="text" id="saldoFinal" class="input-saldo" readonly placeholder="R$ 0.00" style="text-align: center;">
                 </div>
             </div>
@@ -1288,7 +1288,7 @@
 
         const total = Math.round(vPixTotal + vDin);
         const valorComissao = Math.round(total * (pct / 100));
-        const saldoDepositar = vDin - valorComissao;
+        const saldoDepositar = total - valorComissao;
 
         // Formatação para BRL sem exibir os centavos
         const formatoMoeda = { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 };
@@ -1623,7 +1623,6 @@
             const dinheiroValor = window.parseFormatted(document.getElementById('valorDinheiro').value);
             const comissaoValor = window.parseFormatted(document.getElementById('valorComissao').value);
             const totalGeralValor = window.parseFormatted(document.getElementById('totalGeral').value);
-            const saldoDepositarValor = window.parseFormatted(document.getElementById('saldoFinal').value);
             const financeiro = {
                 pix: pixLinhas,
                 dinheiro: dinheiroValor,
@@ -1631,7 +1630,7 @@
                 comissaoValor,
                 totalGeral: totalGeralValor,
                 saldoFinal: totalGeralValor - comissaoValor,
-                saldoDepositar: saldoDepositarValor
+                saldoDepositar: dinheiroValor - comissaoValor
             };
 
             // --- 2. Upload de Fotos ---
