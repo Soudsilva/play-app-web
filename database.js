@@ -838,9 +838,89 @@ export async function dbListarAtendimentos() {
     return [];
 }
 
+async function _reverterContadorClientePorAtendimentoExcluido(atendimento) {
+    try {
+        if (atendimento?._teste) return;
+
+        const pixValidos = _extrairPixValidosAtendimento(atendimento);
+        if (pixValidos.length === 0) return;
+
+        const clienteRef = atendimento?.cliente || {};
+        const clienteId = String(clienteRef?.id || clienteRef?.firebaseUrl || "").trim();
+        let cliente = clienteId
+            ? await dbBuscarClientePorId(clienteId)
+            : await dbBuscarClientePorNumero(clienteRef?.numero);
+
+        if (!cliente && clienteRef?.numero != null) {
+            cliente = await dbBuscarClientePorNumero(clienteRef.numero);
+        }
+        if (!cliente?.firebaseUrl) return;
+
+        const equipamentos = _normalizarEquipDetalhesCliente(cliente);
+        if (equipamentos.length === 0) return;
+
+        const numerosAlvo = new Set(pixValidos.map(item => item.numero));
+        if (!equipamentos.some(item => numerosAlvo.has(_normalizarNumeroPix(item?.pix)))) return;
+
+        // Busca atendimentos restantes (o excluído já foi removido antes desta chamada)
+        const ultimosContadores = {};
+        try {
+            const atendimentosCliente = await _listarAtendimentosDoCliente({
+                id: cliente.firebaseUrl,
+                numero: cliente.numero
+            });
+
+            atendimentosCliente
+                .sort((a, b) => _obterTimestampOrdenacaoAtendimento(b) - _obterTimestampOrdenacaoAtendimento(a))
+                .forEach(item => {
+                    _extrairPixValidosAtendimento(item).forEach(pix => {
+                        if (!numerosAlvo.has(pix.numero) || ultimosContadores[pix.numero] != null) return;
+                        ultimosContadores[pix.numero] = pix.contAtual;
+                    });
+                });
+        } catch (erroBusca) {
+            console.warn("NÃO FOI POSSÍVEL REPROCESSAR CONTADORES DO CLIENTE AO EXCLUIR:", erroBusca);
+        }
+
+        // Sem fallback: se nenhum atendimento restante tiver contador para esse PIX, zera o campo
+        let houveMudanca = false;
+        const equipamentosAtualizados = equipamentos.map(item => {
+            const numeroPix = _normalizarNumeroPix(item?.pix);
+            if (!numeroPix || !numerosAlvo.has(numeroPix)) return item;
+
+            const contadorAtualizado = ultimosContadores[numeroPix] != null
+                ? String(ultimosContadores[numeroPix]).trim()
+                : "";
+
+            if (String(item?.contador || "").trim() === contadorAtualizado) return item;
+
+            houveMudanca = true;
+            return { ...item, contador: contadorAtualizado };
+        });
+
+        if (!houveMudanca) return;
+
+        await update(ref(db, `clientes/${cliente.firebaseUrl}`), {
+            equipDetalhes: equipamentosAtualizados,
+            equip: _serializarEquipTextoCliente(equipamentosAtualizados)
+        });
+        await _atualizarVersaoClientes();
+    } catch (erro) {
+        console.error("ERRO AO REVERTER CONTADOR DO CLIENTE POR ATENDIMENTO EXCLUÍDO:", erro);
+    }
+}
+
 export async function dbExcluirAtendimento(id) {
     try {
+        // Captura dados antes de excluir para poder reverter o contador PIX
+        const snap = await get(ref(db, `atendimentos/${id}`));
+        const atendimento = snap.exists() ? { ...snap.val(), firebaseUrl: id } : null;
+
         await remove(ref(db, `atendimentos/${id}`));
+
+        if (atendimento) {
+            await _reverterContadorClientePorAtendimentoExcluido(atendimento);
+        }
     } catch (error) {
         console.error("ERRO AO EXCLUIR ATENDIMENTO:", error);
         throw error;

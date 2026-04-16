@@ -1598,15 +1598,17 @@
             return false;
         }
 
-        if (tecnicosProducaoEquip.length === 0) {
-            mostrarAlertaPlay("Nenhum técnico com Prod. Equip. está disponível para selecionar.");
-            return false;
-        }
+        if (!modoSolicitar) {
+            if (tecnicosProducaoEquip.length === 0) {
+                mostrarAlertaPlay("Nenhum técnico com Prod. Equip. está disponível para selecionar.");
+                return false;
+            }
 
-        const linhaSemTecnico = linhasPreenchidas.find(item => !item.tecnico);
-        if (linhaSemTecnico) {
-            mostrarAlertaPlay("Selecione o técnico responsável em todos os equipamentos preenchidos.", linhaSemTecnico.grupo.querySelector('.equip-tecnico-select'));
-            return false;
+            const linhaSemTecnico = linhasPreenchidas.find(item => !item.tecnico);
+            if (linhaSemTecnico) {
+                mostrarAlertaPlay("Selecione o técnico responsável em todos os equipamentos preenchidos.", linhaSemTecnico.grupo.querySelector('.equip-tecnico-select'));
+                return false;
+            }
         }
 
         return true;
@@ -1884,6 +1886,7 @@
                 outline-offset: -2px;
             }
             .pix-input, .contador-input { display: none !important; }
+            .equip-tecnico-wrap { display: none !important; }
         `;
         document.head.appendChild(estiloSolicitar);
 
@@ -2301,7 +2304,8 @@
                     dataCadastro,
                     dataCadastroDia,
                     statusCadastro,
-                    ...(representantePontoNovo ? { representante: representantePontoNovo } : {})
+                    ...(representantePontoNovo ? { representante: representantePontoNovo } : {}),
+                    ...(fromPontoNovo ? { pontoNovoOrigemId: fromPontoNovo } : {})
                 };
                 await dbSalvarCliente(dadosFinal, idParaSalvar);
 

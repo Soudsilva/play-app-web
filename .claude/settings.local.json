@@ -6,7 +6,9 @@
       "Bash(grep -l \"dbEscutarClientes\\\\|dbListarClientes\\\\|dbSalvarCliente\\\\|dbExcluirCliente\" /c/Users/souds/play-app-web/*.html)",
       "Bash(grep -n \"storageSalvarFoto\\\\|fotos\\\\.ficha\\\\|fotos\\\\.maquinas\\\\|fotoSolicitacao\\\\|fotoFichaInstalacao\\\\|fotosMaquinasInstalacao\" /c/Users/souds/play-app-web/*.html)",
       "Bash(grep -n \"fotos\\\\.pix\\\\|\\\\.foto.*=\" /c/Users/souds/play-app-web/*.html)",
-      "Bash(ls /c/Users/souds/play-app-web/manut*.html)"
+      "Bash(ls /c/Users/souds/play-app-web/manut*.html)",
+      "Bash(grep -rn \"getCurrentPosition\\\\|geolocation\\\\|localizacao\\\\|linkLocalizacao\\\\|linkMapa\\\\|latitude\\\\|longitude\" c:/Users/souds/play-app-web/*.html --include=\"*.html\" -l)",
+      "Bash(ls c:/Users/souds/play-app-web/*.html)"
     ]
   }
 }

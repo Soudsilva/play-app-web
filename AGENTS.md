@@ -1,15 +1,20 @@
-# Project Instructions
-
-- For labels, headings, button text, menu text, and other non-input UI text used for navigation, disable text selection with CSS such as `user-select: none;` and `-webkit-user-select: none;`.
-- Do not apply the non-selectable rule to inputs, textareas, or content the user may reasonably need to copy.
-- Unless the user explicitly asks for it, do not use transparent text styling. Avoid `opacity` on text and avoid alpha-based text colors such as `rgba(...)` or `hsla(...)`.
-- Prefer solid, fully readable text colors for all default UI work.
-- Assume the user's default timezone is Brasilia time (`America/Sao_Paulo`) for dates, times, schedules, and time-based calculations unless the user explicitly says otherwise.
-- In `balanco.html`, products and machines represent the items currently in the user's possession, not a history of usage.
-- For possession logic: stock withdrawals assigned to a user add to that user's balance, and atendimento or delivery actions subtract from that user's balance.
-- If a future stock-output flow is created, include a field such as `retiradoPor` so the balance can identify who took the item.
-- The primary users are aged 40–60. Use font sizes that are comfortable for this age group: body/paragraph text at minimum 15px, labels and secondary text at minimum 13px, important values and headings at 17px or above. Avoid thin font weights for body text — prefer `font-weight: normal` (400) or `bold` (700), never lighter than 400. 
-- When a UI value is automatic and not typed by the user, prefer showing it in a chip with transparent background and white border.
-- Prefer centered text for UI labels, headings, and short explanatory text unless the layout clearly calls for left alignment.
-- For standard mobile app screens, prefer the same container width used in `manutencoes_solicitadas.html`: `width: 100%` with `max-width: 440px`, centered on the page, unless the current screen already has a different established layout pattern.
-- os botoes sao um rotulo no formato de botão, tome cuidado pra não colocar um rotulo simples que só tem caráter de exibição e deixalo com aparencia de botão
+Instruções do Projeto
+Para rótulos, títulos, texto de botões, texto de menus e outros textos de interface (UI) usados para navegação, desative a seleção de texto com CSS, como user-select: none; e -webkit-user-select: none;.
+Não aplique a regra de não selecionável a inputs, textareas ou conteúdos que o usuário possa precisar copiar.
+A menos que o usuário peça explicitamente, não use estilos de texto transparente. Evite opacity em textos e evite cores com alpha, como rgba(...) ou hsla(...).
+Prefira cores sólidas e totalmente legíveis para todo o texto padrão da interface.
+Considere que o fuso horário padrão do usuário é o de Brasília (America/Sao_Paulo) para datas, horários, agendas e cálculos baseados em tempo, a menos que o usuário diga o contrário.
+Em balanco.html, produtos e máquinas representam os itens atualmente em posse do usuário, e não um histórico de uso.
+Para a lógica de posse: retiradas de estoque atribuídas a um usuário aumentam o saldo desse usuário, e ações de atendimento ou entrega diminuem esse saldo.
+Se for criado um fluxo futuro de saída de estoque, inclua um campo como retiradoPor para que o saldo consiga identificar quem retirou o item.
+Os usuários principais têm entre 40 e 60 anos. Use tamanhos de fonte confortáveis para esse público: texto de corpo/parágrafo no mínimo 15px, rótulos e textos secundários no mínimo 13px, valores importantes e títulos com 17px ou mais. Evite fontes finas no texto principal — prefira font-weight: normal (400) ou bold (700), nunca menor que 400.
+Quando um valor na interface for automático (não digitado pelo usuário), prefira exibi-lo em um “chip” com fundo transparente e borda branca.
+Prefira texto centralizado para rótulos, títulos e textos explicativos curtos, a menos que o layout claramente peça alinhamento à esquerda.
+Para telas padrão de aplicativos mobile, prefira usar a mesma largura de container utilizada em manutencoes_solicitadas.html: width: 100% com max-width: 440px, centralizado na página, a menos que a tela atual já tenha um padrão de layout diferente estabelecido.
+Os botões são rótulos no formato de botão; tome cuidado para não usar um rótulo simples (apenas informativo) com aparência de botão.
+Evite alterar funcionalidades já existentes que estão funcionando corretamente, para não gerar retrabalho e necessidade de revalidação de todo o sistema.
+Priorize adicionar novas funcionalidades sem modificar a lógica atual, a menos que seja absolutamente necessário.
+Antes de alterar qualquer lógica existente, verifique se ela impacta outras partes do sistema.
+Mudanças em uma funcionalidade não devem quebrar comportamentos já implementados (ex: indicadores visuais como cores ou estados).
+Caso seja realmente necessário alterar algo já existente, informe previamente o que será modificado, para que seja possível validar de forma assertiva sem precisar revisar todo o sistema ou descobrir problemas apenas durante o uso.
+Sempre que houver alteração em lógica existente, preserve os comportamentos atuais ou replique-os na nova implementação.
