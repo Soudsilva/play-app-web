@@ -267,6 +267,16 @@
         font-weight: 700;
     }
 
+    .equip-maquina-pendente-ret {
+        color: #ffb3ad;
+        font-weight: 700;
+    }
+
+    .equip-maquina-pendente-add {
+        color: #7ef0a6;
+        font-weight: 700;
+    }
+
 
     .cliente-corpo {
         padding: 14px 16px 12px;
@@ -1213,44 +1223,56 @@
 
         return `<span class="equip-lista-card">${equipamentos.map(item => {
             const nomeBase = `${item.nome}${item.qtd !== '1' ? ` (${item.qtd})` : ''}`;
-            const base = `${nomeBase}${item.pix ? ` Pix ${item.pix}` : ''}`;
             const pixRetirado = item.pixRetiradoPendente || (item.manutencaoPendente === 'retirada' ? item.pix : '');
             const pixAtual = item.pixRetiradoPendente ? item.pix : item.pix;
             const duplicadoMesmoPix = pixRetirado && pixAtual && pixRetirado === pixAtual;
+
+            // Colorir o nome da máquina conforme status de manutenção pendente.
+            // Na adição: só colore o nome se NÃO houver PIX — se tiver PIX, é operação
+            // de PIX na máquina e a cor fica apenas no texto do PIX.
+            const classeNome = item.manutencaoPendente === 'retirada'
+                ? 'equip-maquina-pendente-ret'
+                : (item.manutencaoPendente === 'adicao' && !item.pix)
+                    ? 'equip-maquina-pendente-add'
+                    : '';
+            const nomeFormatado = classeNome
+                ? `<span class="${classeNome}">${nomeBase}</span>`
+                : nomeBase;
+            const base = `${nomeFormatado}${item.pix ? ` Pix ${item.pix}` : ''}`;
 
             if (duplicadoMesmoPix) {
                 const dataRetirada = Date.parse(item.retiradaPendenteEm || item.manutencaoPendenteEm || '') || 0;
                 const dataAtual = Date.parse(item.manutencaoPendenteEm || '') || 0;
                 if (dataAtual >= dataRetirada) {
                     if (item.manutencaoPendente === 'adicao' || item.aguardandoConfirmacao) {
-                        return `<span class="equip-text-card">${nomeBase} ${montarTextoPix(pixAtual, 'add')}</span>`;
+                        return `<span class="equip-text-card">${nomeFormatado} ${montarTextoPix(pixAtual, 'add')}</span>`;
                     }
-                    return `<span class="equip-text-card">${nomeBase} ${montarTextoPix(pixAtual)}</span>`;
+                    return `<span class="equip-text-card">${nomeFormatado} ${montarTextoPix(pixAtual)}</span>`;
                 }
-                return `<span class="equip-text-card">${nomeBase} ${montarTextoPix(pixRetirado, 'ret')}</span>`;
+                return `<span class="equip-text-card">${nomeFormatado} ${montarTextoPix(pixRetirado, 'ret')}</span>`;
             }
 
             if (pixRetirado && pixAtual) {
                 const pixAtualTexto = item.manutencaoPendente === 'adicao' || item.aguardandoConfirmacao
                     ? montarTextoPix(pixAtual, 'add')
                     : montarTextoPix(pixAtual);
-                return `<span class="equip-text-card">${nomeBase} ${montarTextoPix(pixRetirado, 'ret')} ${pixAtualTexto}</span>`;
+                return `<span class="equip-text-card">${nomeFormatado} ${montarTextoPix(pixRetirado, 'ret')} ${pixAtualTexto}</span>`;
             }
 
             if (pixRetirado) {
-                return `<span class="equip-text-card">${nomeBase} ${montarTextoPix(pixRetirado, 'ret')}</span>`;
+                return `<span class="equip-text-card">${nomeFormatado} ${montarTextoPix(pixRetirado, 'ret')}</span>`;
             }
 
             if (item.pix) {
                 if (item.manutencaoPendente === 'adicao' || item.aguardandoConfirmacao) {
-                    return `<span class="equip-text-card">${nomeBase} ${montarTextoPix(item.pix, 'add')}</span>`;
+                    return `<span class="equip-text-card">${nomeFormatado} ${montarTextoPix(item.pix, 'add')}</span>`;
                 }
                 if (item.manutencaoPendente !== 'retirada') {
                     return `<span class="equip-text-card">${base}</span>`;
                 }
             }
 
-            return `<span class="equip-text-card">${nomeBase}</span>`;
+            return `<span class="equip-text-card">${nomeFormatado}</span>`;
         }).join('')}</span>`;
     }
 

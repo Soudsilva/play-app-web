@@ -1695,6 +1695,70 @@ export async function dbReverterConclusaoManutencao(manutencaoId) {
     }
 }
 
+export async function dbConfirmarGestorManutencao(id, nomeGestor) {
+    try {
+        if (!id) return;
+
+        // Busca o registro de manutenção para obter cliente e equipamentos
+        const manutSnap = await get(ref(db, `manutencoes/${id}`));
+        const manut = manutSnap.exists() ? manutSnap.val() : null;
+
+        const clienteId = String(manut?.clienteId || manut?.clienteFirebaseUrl || '').trim();
+        const adicionados = Array.isArray(manut?.equipamentosAdicionados) ? manut.equipamentosAdicionados : [];
+        const retirados = Array.isArray(manut?.equipamentosRetiradosDetalhes) ? manut.equipamentosRetiradosDetalhes : [];
+
+        if (clienteId && (adicionados.length > 0 || retirados.length > 0)) {
+            const clienteSnap = await get(ref(db, `clientes/${clienteId}`));
+            if (clienteSnap.exists()) {
+                let equipamentos = _normalizarEquipDetalhesCliente(clienteSnap.val() || {});
+
+                // Máquinas ADICIONADAS confirmadas: limpa as flags de pendência
+                if (adicionados.length > 0) {
+                    const nomesAdd = new Set(adicionados.map(i => String(i?.nome || '').trim()).filter(Boolean));
+                    equipamentos = equipamentos.map(equip => {
+                        if (equip.manutencaoPendente === 'adicao' && nomesAdd.has(equip.nome)) {
+                            return {
+                                ...equip,
+                                manutencaoPendente: '',
+                                aguardandoConfirmacao: false,
+                                manutencaoPendenteEm: '',
+                                manutencaoPendentePor: ''
+                            };
+                        }
+                        return equip;
+                    });
+                }
+
+                // Máquinas RETIRADAS confirmadas: remove da lista do cliente
+                if (retirados.length > 0) {
+                    const rowIdsRet = new Set(retirados.map(i => String(i?.rowId || '')).filter(Boolean));
+                    const nomesRet  = new Set(retirados.map(i => String(i?.nome  || '').trim()).filter(Boolean));
+                    equipamentos = equipamentos.filter(equip => {
+                        const porRowId = equip.rowId && rowIdsRet.has(equip.rowId);
+                        const porNome  = !porRowId && nomesRet.has(equip.nome) && equip.manutencaoPendente === 'retirada';
+                        return !(porRowId || porNome);
+                    });
+                }
+
+                await update(ref(db, `clientes/${clienteId}`), {
+                    equipDetalhes: equipamentos,
+                    equip: _serializarEquipTextoCliente(equipamentos)
+                });
+                await _atualizarVersaoClientes();
+            }
+        }
+
+        await update(ref(db, `manutencoes/${id}`), {
+            confirmadoGestor: true,
+            confirmedBy: nomeGestor || '',
+            dataConfirmacaoGestor: new Date().toISOString()
+        });
+    } catch (erro) {
+        console.error("ERRO AO CONFIRMAR SERVICO:", erro);
+        throw erro;
+    }
+}
+
 function _normalizarChaveUsuario(nomeUsuario) {
     return String(nomeUsuario || '').trim().replace(/[.#$/[\]]/g, '_');
 }

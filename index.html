@@ -165,6 +165,11 @@
             <span>Atendimento</span>
         </div>
 
+        <div class="botao" id="btnServico" onclick="window.location.href='servico.html'">
+           <span class="icone">&#128736;</span>
+            <span>Servi&ccedil;o</span>
+        </div>
+
         <div class="botao" id="btnClientes" onclick="window.location.href='clientes.html'">
             <span class="icone">&#128269;</span>
             <span>Lista de Clientes</span>
@@ -431,6 +436,7 @@
             cadastroItens: document.getElementById('btnCadastroItens'),
             movimentacao: document.getElementById('btnMovimentacao'),
             pedidos: document.getElementById('btnPedidos'),
+            servico: document.getElementById('btnServico'),
             financeiro: document.getElementById('btnFinanceiro'),
             pix: document.getElementById('btnPix'),
             fluxoCaixa: document.getElementById('btnFluxoCaixa')
@@ -463,6 +469,7 @@
             btns.cadastroItens.style.display = 'none';
 
             btns.pedidos.style.display = 'flex';
+            btns.servico.style.display = 'none';
             btns.financeiro.style.display = 'flex';
 
             // Manutenção aparece depois de Financeiro para estoque
@@ -513,6 +520,7 @@
             btns.movimentacao.style.display = 'none';
             btns.cadastroItens.style.display = 'none';
             btns.pedidos.style.display = 'none';
+            btns.servico.style.display = 'none';
             btns.financeiro.style.display = 'none';
 
         // 3. PERFIL GESTÃƒO
@@ -536,10 +544,21 @@
             btns.movimentacao.style.display = 'none';
             
             btns.pedidos.style.display = 'flex';
-            
+            btns.servico.style.display = 'flex';
+
             btns.pix.style.display = perfil.includes('gestao') ? 'flex' : 'none'; // Apenas GestÃ£o (ou atendimento acima)
             btns.fluxoCaixa.style.display = perfil.includes('gestao') ? 'flex' : 'none';
             btns.financeiro.style.display = 'none'; // Financeiro continua restrito ao Estoque
+        }
+
+        // GESTOR NÍVEL 1: restrições sobre o perfil gestão
+        if (perfil.includes('gestao_1')) {
+            btns.cadColab.style.display = 'none';
+            btns.cadastroItens.style.display = 'none';
+            btns.pedidos.style.display = 'none';
+            btns.fluxoCaixa.style.display = 'none';
+            btns.manutencao.style.display = 'none';
+            btns.pix.style.display = 'none';
         }
 
         // Remuneração "Produção de Produtos": exibe o botão Financeiro para qualquer perfil

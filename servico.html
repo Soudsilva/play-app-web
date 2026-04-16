@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serviços</title>
+
+    <style>
+        * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+        input, textarea { -webkit-user-select: text; user-select: text; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0b2256;
+            display: flex;
+            justify-content: center;
+            color: white;
+            min-height: 100vh;
+            position: relative;
+            z-index: 0;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at top, rgba(54,105,214,0.55), transparent 34%),
+                linear-gradient(180deg, #11317a 0%, #0b2256 42%, #071634 100%);
+            z-index: -1;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 440px;
+            padding: 18px;
+            padding-bottom: 50px;
+            box-sizing: border-box;
+        }
+
+        /* ── TOPO ── */
+        .topo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 18px;
+            position: relative;
+            padding: 10px 0 2px;
+        }
+        .titulo-wrap { text-align: center; }
+        .titulo { font-size: 29px; font-weight: bold; color: #ffffff; }
+        .subtitulo { margin-top: 4px; font-size: 14px; letter-spacing: 1.4px; text-transform: uppercase; color: #8faad4; }
+
+        .btn-home {
+            position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+            cursor: pointer; background: rgba(255,255,255,0.13);
+            width: 42px; height: 42px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,255,255,0.22); transition: background 0.15s;
+        }
+        .btn-home:active { background: rgba(255,255,255,0.28); transform: translateY(-50%) scale(0.93); }
+        .btn-home svg { width: 22px; height: 22px; fill: white; }
+
+        /* ── STATS ── */
+        .stats-row { display: flex; gap: 8px; margin-bottom: 18px; }
+        .stat-card {
+            flex: 1; background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 14px; padding: 11px 6px; text-align: center;
+        }
+        .stat-num { font-size: 27px; font-weight: bold; line-height: 1; }
+        .stat-label { font-size: 13px; color: #8faad4; letter-spacing: 0.4px; margin-top: 4px; }
+        .stat-card.orange .stat-num { color: #fb923c; }
+        .stat-card.orange { border-color: rgba(251,146,60,0.25); }
+        .stat-card.green .stat-num  { color: #4ade80; }
+        .stat-card.green  { border-color: rgba(74,222,128,0.25); }
+        .stat-card.blue  .stat-num  { color: #60a5fa; }
+        .stat-card.blue   { border-color: rgba(96,165,250,0.25); }
+
+        /* ── ACCORDION ── */
+        .secao { margin-bottom: 12px; }
+        .secao-header {
+            background: #4467a8; border: 3px solid #d7dce3; border-radius: 40px;
+            padding: 12px 50px 12px 18px; display: flex; align-items: center;
+            cursor: pointer; position: relative;
+            transition: background 0.15s, border-radius 0.2s; min-height: 38px;
+        }
+        .secao-header:active { transform: translateY(1px); }
+        .secao-header.aberta { border-radius: 22px 22px 0 0; border-bottom-color: rgba(255,255,255,0.18); }
+        .secao-icone { font-size: 23px; margin-right: 10px; flex-shrink: 0; }
+        .secao-titulo { color: white; font-size: 20px; font-weight: bold; flex: 1; }
+        .badge-count {
+            background: #f97316; color: white; font-size: 15px; font-weight: bold;
+            border-radius: 999px; padding: 2px 9px; min-width: 22px; text-align: center;
+            margin-right: 6px; flex-shrink: 0;
+        }
+        .badge-count.green { background: #16a34a; }
+        .secao-seta {
+            position: absolute; right: 18px; font-size: 17px;
+            transition: transform 0.2s; color: rgba(255,255,255,0.65);
+        }
+        .secao-seta.girada { transform: rotate(180deg); }
+        .secao-corpo {
+            display: none; background: rgba(0,0,0,0.22);
+            border: 2px solid rgba(215,220,227,0.35); border-top: none;
+            border-radius: 0 0 22px 22px; padding: 14px;
+        }
+        .secao-corpo.aberto { display: block; }
+
+        /* ── FILTROS ── */
+        .filtros-row { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+        .filtro-btn {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 999px; padding: 5px 14px; font-size: 15px;
+            color: rgba(255,255,255,0.65); cursor: pointer;
+            font-family: Arial, Helvetica, sans-serif; transition: 0.15s;
+        }
+        .filtro-btn.ativo { background: #4467a8; border-color: #d7dce3; color: white; font-weight: bold; }
+        .filtro-btn:active { transform: translateY(1px); }
+
+        /* ── TABS ── */
+        .tabs-row {
+            display: flex; margin-bottom: 12px;
+            border-radius: 10px; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+        .tab-btn {
+            flex: 1; padding: 9px 4px; font-size: 16px; font-weight: bold;
+            text-align: center; cursor: pointer; background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.45); border: none;
+            font-family: Arial, Helvetica, sans-serif; transition: 0.15s;
+        }
+        .tab-btn.ativo { background: #4467a8; color: white; }
+
+        /* ── CARDS ── */
+        .card {
+            background: rgba(255,255,255,0.055);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 14px; padding: 14px; margin-bottom: 10px;
+            border-left-width: 3px;
+        }
+        .card:last-child { margin-bottom: 0; }
+        .card.pendente   { border-left-color: #f97316; }
+        .card.confirmado { border-left-color: #4ade80; }
+        .card.em-analise { border-left-color: #fb923c; }
+        .card.encerrado  { border-left-color: #f87171; }
+
+        .card-header {
+            display: flex; align-items: flex-start;
+            justify-content: space-between; gap: 8px; margin-bottom: 8px;
+        }
+        .card-titulo { font-size: 18px; font-weight: bold; color: #e2e8f0; flex: 1; line-height: 1.3; }
+
+        .tags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; flex-shrink: 0; }
+        .tag {
+            font-size: 14px; font-weight: bold; border-radius: 999px;
+            padding: 2px 9px; white-space: nowrap;
+        }
+        .tag.pendente  { background: rgba(249,115,22,0.15); color: #fb923c; border: 1px solid rgba(249,115,22,0.3); }
+        .tag.confirmado{ background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.25); }
+        .tag.em-analise{ background: rgba(251,146,60,0.12); color: #fb923c; border: 1px solid rgba(251,146,60,0.28); }
+        .tag.encerrado { background: rgba(239,68,68,0.12);  color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+        .tag.novo      { background: rgba(96,165,250,0.12); color: #93c5fd; border: 1px solid rgba(96,165,250,0.25); }
+
+        .card-info { font-size: 16px; color: #94a3b8; line-height: 1.65; }
+        .card-info strong { color: #cbd5e1; }
+
+        /* Equipment changes */
+        .equip-section { margin: 8px 0 2px; }
+        .equip-label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.8px; color: #64748b; margin-bottom: 4px; }
+        .equip-item { display: flex; align-items: center; gap: 7px; font-size: 16px; color: #cbd5e1; padding: 2px 0; }
+        .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .dot.add { background: #4ade80; }
+        .dot.rem { background: #f87171; }
+
+        /* Footer */
+        .card-footer {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-top: 12px; flex-wrap: wrap; gap: 8px;
+        }
+        .card-data { font-size: 14px; color: #475569; }
+        .card-confirmado-por { font-size: 14px; color: #4ade80; }
+
+        .btn-confirmar {
+            background: #14532d; border: 1px solid #4ade80; border-radius: 999px;
+            padding: 7px 20px; font-size: 16px; font-weight: bold; color: #4ade80;
+            cursor: pointer; font-family: Arial, Helvetica, sans-serif; transition: 0.15s;
+        }
+        .btn-confirmar:active { transform: translateY(1px); filter: brightness(0.85); }
+        .btn-confirmar:disabled { opacity: 0.5; cursor: default; }
+
+        .btn-aprovar {
+            background: #1e3a8a; border: 1px solid #60a5fa; border-radius: 999px;
+            padding: 7px 20px; font-size: 16px; font-weight: bold; color: #93c5fd;
+            cursor: pointer; font-family: Arial, Helvetica, sans-serif; transition: 0.15s;
+        }
+        .btn-aprovar:active { transform: translateY(1px); filter: brightness(0.85); }
+        .btn-aprovar:disabled { opacity: 0.5; cursor: default; }
+
+        /* Empty / loading */
+        .vazio { text-align: center; color: #3d5a8a; padding: 22px 0; font-size: 17px; }
+        .carregando { text-align: center; color: #3d5a8a; padding: 22px 0; font-size: 16px; }
+
+        /* Divider */
+        .hr { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 10px 0; }
+    </style>
+</head>
+
+<body style="visibility: hidden;">
+
+<div class="app">
+
+    <!-- TOPO -->
+    <div class="topo">
+        <div class="titulo-wrap">
+            <div class="titulo">&#128736; Servi&ccedil;os</div>
+            <div class="subtitulo">Painel do Gestor</div>
+        </div>
+        <div class="btn-home" onclick="window.location.href='index.html'" title="Início">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+        <div class="stat-card orange">
+            <div class="stat-num" id="stat-novos">—</div>
+            <div class="stat-label">Novos Pontos</div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-num" id="stat-pendentes">—</div>
+            <div class="stat-label">A Confirmar</div>
+        </div>
+        <div class="stat-card blue">
+            <div class="stat-num" id="stat-hoje">—</div>
+            <div class="stat-label">Hoje</div>
+        </div>
+    </div>
+
+    <!-- ══ SEÇÃO 1 — NOVOS PONTOS ══ -->
+    <div class="secao">
+        <div class="secao-header" id="hdr-novos" onclick="toggleSecao('novos')">
+            <span class="secao-icone">&#127968;</span>
+            <span class="secao-titulo">Novos Pontos</span>
+            <span class="badge-count" id="count-novos" style="display:none">0</span>
+            <span class="secao-seta" id="seta-novos">&#9660;</span>
+        </div>
+        <div class="secao-corpo" id="corpo-novos">
+            <div id="lista-novos"><div class="carregando">Carregando...</div></div>
+        </div>
+    </div>
+
+    <!-- ══ SEÇÃO 2 — SERVIÇOS REALIZADOS ══ -->
+    <div class="secao">
+        <div class="secao-header" id="hdr-servicos" onclick="toggleSecao('servicos')"
+             style="background:#1c5230; border-color:#4ade80;">
+            <span class="secao-icone">&#128295;</span>
+            <span class="secao-titulo">Servi&ccedil;os Realizados</span>
+            <span class="badge-count" id="count-servicos" style="display:none">0</span>
+            <span class="secao-seta" id="seta-servicos" style="color:#4ade80;">&#9660;</span>
+        </div>
+        <div class="secao-corpo" id="corpo-servicos" style="border-color:rgba(74,222,128,0.35);">
+            <div class="tabs-row" id="tabs-servicos">
+                <button class="tab-btn ativo" onclick="setTabServicos('pendente', this)">&#9203; A Confirmar</button>
+                <button class="tab-btn" onclick="setTabServicos('confirmado', this)">&#9989; Confirmados</button>
+            </div>
+            <div class="filtros-row" id="filtros-servicos">
+                <button class="filtro-btn" onclick="setFiltro('servicos','hoje',this)">Hoje</button>
+                <button class="filtro-btn ativo" onclick="setFiltro('servicos','7d',this)">7 dias</button>
+                <button class="filtro-btn" onclick="setFiltro('servicos','30d',this)">30 dias</button>
+                <button class="filtro-btn" onclick="setFiltro('servicos','tudo',this)">Tudo</button>
+            </div>
+            <div id="lista-servicos"><div class="carregando">Carregando...</div></div>
+        </div>
+    </div>
+
+    <!-- ══ SEÇÃO 3 — HISTÓRICO DE VISITAS ══ -->
+    <div class="secao">
+        <div class="secao-header" id="hdr-historico" onclick="toggleSecao('historico')"
+             style="background:#1e3a6e; border-color:#60a5fa;">
+            <span class="secao-icone">&#128203;</span>
+            <span class="secao-titulo">Hist&oacute;rico de Visitas</span>
+            <span class="secao-seta" id="seta-historico" style="color:#60a5fa;">&#9660;</span>
+        </div>
+        <div class="secao-corpo" id="corpo-historico" style="border-color:rgba(96,165,250,0.35);">
+            <div class="filtros-row" id="filtros-historico">
+                <button class="filtro-btn" onclick="setFiltro('historico','hoje',this)">Hoje</button>
+                <button class="filtro-btn ativo" onclick="setFiltro('historico','7d',this)">7 dias</button>
+                <button class="filtro-btn" onclick="setFiltro('historico','30d',this)">30 dias</button>
+            </div>
+            <div id="lista-historico"><div class="carregando">Carregando...</div></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ── ACCORDION ──────────────────────────────────────────────────────────────
+    window.toggleSecao = function(s) {
+        ['novos','servicos','historico'].forEach(id => {
+            const corpo = document.getElementById('corpo-' + id);
+            const seta  = document.getElementById('seta-'  + id);
+            const hdr   = document.getElementById('hdr-'   + id);
+            if (!corpo) return;
+            if (id === s) {
+                const abrindo = !corpo.classList.contains('aberto');
+                corpo.classList.toggle('aberto', abrindo);
+                if (seta) seta.classList.toggle('girada', abrindo);
+                if (hdr)  hdr.classList.toggle('aberta', abrindo);
+            } else {
+                corpo.classList.remove('aberto');
+                if (seta) seta.classList.remove('girada');
+                if (hdr)  hdr.classList.remove('aberta');
+            }
+        });
+    };
+</script>
+
+<script type="module">
+    import {
+        dbEscutarClientes,
+        dbSalvarCliente,
+        dbEscutarManutencoes,
+        dbConfirmarGestorManutencao,
+        dbListarAtendimentosRecentes,
+        dbEscutarColaboradores
+    } from './database.js';
+    import { verificarAutenticacao, fazerLogout } from './auth.js';
+
+    // ── ESTADO ────────────────────────────────────────────────────────────────
+    let _clientes     = [];
+    let _manutencoes  = [];
+    let _atendimentos = [];
+    let _nomeUsuario  = '';
+
+    const _filtros = { servicos: '7d', historico: '7d' };
+    let _tabServicos = 'pendente';
+
+    // ── HELPERS ───────────────────────────────────────────────────────────────
+    function formatarData(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        if (isNaN(d)) return '—';
+        return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' })
+             + ' ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+    }
+
+    function dentroPeriodo(iso, filtro) {
+        if (filtro === 'tudo') return true;
+        if (!iso) return false;
+        const diff = (Date.now() - new Date(iso)) / 86400000;
+        if (filtro === 'hoje') return diff < 1;
+        if (filtro === '7d')  return diff < 7;
+        if (filtro === '30d') return diff < 30;
+        return true;
+    }
+
+    function nomeEquip(e) {
+        if (typeof e === 'string') return e;
+        if (e && typeof e === 'object') return e.nome || e.modelo || e.tipo || JSON.stringify(e);
+        return String(e);
+    }
+
+    function renderEquipList(arr, tipo) {
+        if (!Array.isArray(arr) || arr.length === 0) return '';
+        const cor = tipo === 'add' ? 'add' : 'rem';
+        return arr.map(e => `<div class="equip-item"><span class="dot ${cor}"></span>${nomeEquip(e)}</div>`).join('');
+    }
+
+    function equipClienteStr(equip) {
+        if (!equip || typeof equip !== 'object') return '—';
+        const itens = Object.entries(equip)
+            .filter(([, v]) => Number(v) > 0)
+            .map(([k, v]) => `${v}x ${k}`);
+        return itens.length > 0 ? itens.join(', ') : '—';
+    }
+
+    // ── STATS ─────────────────────────────────────────────────────────────────
+    function atualizarStats() {
+        const novos      = _clientes.filter(c => c.statusCadastro === 'em_analise').length;
+        const pendentes  = _manutencoes.filter(m =>
+            (m.status === 'concluida' || m.status === 'concluido') && !m.confirmadoGestor
+        ).length;
+        const hoje = _atendimentos.filter(a => dentroPeriodo(a.data || a.ultimaEdicao, 'hoje')).length;
+
+        document.getElementById('stat-novos').textContent    = novos;
+        document.getElementById('stat-pendentes').textContent = pendentes;
+        document.getElementById('stat-hoje').textContent     = hoje;
+    }
+
+    // ── RENDER: NOVOS PONTOS ──────────────────────────────────────────────────
+    function renderizarNovos() {
+        const lista = _clientes
+            .filter(c => c.statusCadastro === 'em_analise')
+            .sort((a, b) => new Date(b.dataCadastro || 0) - new Date(a.dataCadastro || 0));
+
+        const badge = document.getElementById('count-novos');
+        badge.textContent = lista.length;
+        badge.style.display = lista.length > 0 ? '' : 'none';
+
+        const el = document.getElementById('lista-novos');
+        if (lista.length === 0) {
+            el.innerHTML = '<div class="vazio">&#9989; Nenhum ponto aguardando aprovação</div>';
+            return;
+        }
+        el.innerHTML = lista.map(c => {
+            const equips = equipClienteStr(c.equip);
+            return `
+            <div class="card em-analise" id="card-cl-${c.firebaseUrl}">
+                <div class="card-header">
+                    <div class="card-titulo">#${c.numero || '—'} &nbsp;${c.nome || '—'}</div>
+                    <div class="tags"><span class="tag novo">Novo Ponto</span></div>
+                </div>
+                <div class="card-info">
+                    <strong>Rota:</strong> ${c.rota || '—'} &nbsp;·&nbsp; <strong>Cidade:</strong> ${c.cidade || '—'}<br>
+                    <strong>Endereço:</strong> ${c.endereco || '—'}<br>
+                    <strong>Equipamentos:</strong> ${equips}<br>
+                    <strong>Cadastrado por:</strong> ${c.cadastradoPor || '—'}
+                    ${c.dataCadastroDia ? ' · ' + c.dataCadastroDia : ''}
+                </div>
+                <div class="card-footer">
+                    <div class="card-data">Aguardando aprovação do gestor</div>
+                    <button class="btn-aprovar" onclick="window.aprovarCliente('${c.firebaseUrl}', this)">&#10003; Aprovar</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── RENDER: SERVIÇOS REALIZADOS ───────────────────────────────────────────
+    function renderizarServicos() {
+        const filtro  = _filtros.servicos;
+        const tabPend = _tabServicos === 'pendente';
+
+        const concluidos = (m) => m.status === 'concluida' || m.status === 'concluido';
+        const dataCampo  = (m) => m.dataConclusao || m.dataRegistro;
+
+        const lista = _manutencoes
+            .filter(m => concluidos(m)
+                && (tabPend ? !m.confirmadoGestor : !!m.confirmadoGestor)
+                && dentroPeriodo(dataCampo(m), filtro))
+            .sort((a, b) => new Date(dataCampo(b)) - new Date(dataCampo(a)));
+
+        // Badge mostra sempre os pendentes independente do filtro
+        const totalPend = _manutencoes.filter(m => concluidos(m) && !m.confirmadoGestor).length;
+        const badge = document.getElementById('count-servicos');
+        badge.textContent = totalPend;
+        badge.style.display = totalPend > 0 ? '' : 'none';
+
+        const el = document.getElementById('lista-servicos');
+        if (lista.length === 0) {
+            el.innerHTML = `<div class="vazio">${tabPend ? '&#9989; Nenhum serviço pendente no período' : 'Nenhum serviço confirmado no período'}</div>`;
+            return;
+        }
+
+        el.innerHTML = lista.map(m => {
+            const isConfirmado = !!m.confirmadoGestor;
+            const tipo = m.tipoServico || m.tipoAcao || 'Serviço Realizado';
+            const tecnico = m.selecionadoPor || '—';
+            const dataStr = formatarData(dataCampo(m));
+
+            const equipAdds = renderEquipList(m.equipamentosAdicionados, 'add');
+            const equipRems = renderEquipList(m.equipamentosRetirados,   'rem');
+            const equipHtml = (equipAdds || equipRems) ? `
+                <div class="equip-section">
+                    ${equipAdds ? `<div class="equip-label">Adicionados</div>${equipAdds}` : ''}
+                    ${equipRems ? `<div class="equip-label" style="margin-top:6px">Retirados</div>${equipRems}` : ''}
+                </div>` : '';
+
+            const encTag  = m.pontoEncerrado ? `<span class="tag encerrado">Ponto Encerrado</span>` : '';
+            const statTag = isConfirmado
+                ? `<span class="tag confirmado">&#10003; Confirmado</span>`
+                : `<span class="tag pendente">Aguardando</span>`;
+
+            const rodapeAcao = isConfirmado
+                ? `<div class="card-confirmado-por">&#10003; ${m.confirmedBy || 'Gestor'} · ${formatarData(m.dataConfirmacaoGestor)}</div>`
+                : `<button class="btn-confirmar" onclick="window.confirmarServico('${m.firebaseUrl}', this)">&#10003; Confirmar</button>`;
+
+            return `
+            <div class="card ${isConfirmado ? 'confirmado' : 'pendente'}" id="card-mn-${m.firebaseUrl}">
+                <div class="card-header">
+                    <div class="card-titulo">${tipo}</div>
+                    <div class="tags">${statTag}${encTag}</div>
+                </div>
+                <div class="card-info">
+                    <strong>Cliente:</strong> #${m.clienteNumero || '—'} · ${m.clienteNome || '—'}<br>
+                    <strong>Rota:</strong> ${m.clienteRota || '—'} &nbsp;·&nbsp; <strong>Cidade:</strong> ${m.clienteCidade || '—'}<br>
+                    <strong>Técnico:</strong> ${tecnico}
+                    ${m.observacoes ? `<br><strong>Obs:</strong> ${m.observacoes}` : ''}
+                    ${m.pontoEncerrado && m.valorEncerramento ? `<br><strong>Encerramento:</strong> R$&nbsp;${m.valorEncerramento}` : ''}
+                </div>
+                ${equipHtml}
+                <hr class="hr">
+                <div class="card-footer">
+                    <div class="card-data">&#128336; ${dataStr}</div>
+                    ${rodapeAcao}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── RENDER: HISTÓRICO DE VISITAS ──────────────────────────────────────────
+    function renderizarHistorico() {
+        const filtro = _filtros.historico;
+        const lista = _atendimentos
+            .filter(a => dentroPeriodo(a.data || a.ultimaEdicao, filtro))
+            .sort((a, b) => new Date(b.data || b.ultimaEdicao || 0) - new Date(a.data || a.ultimaEdicao || 0))
+            .slice(0, 60);
+
+        const el = document.getElementById('lista-historico');
+        if (lista.length === 0) {
+            el.innerHTML = '<div class="vazio">Nenhuma visita registrada no período</div>';
+            return;
+        }
+
+        el.innerHTML = lista.map(a => {
+            const cli   = a.cliente   || {};
+            const manut = a.manutencao || {};
+            const tipo  = manut.tipoServico || 'Atendimento';
+            const dataStr = formatarData(a.data || a.ultimaEdicao);
+
+            const equipAdds = renderEquipList(manut.equipamentosAdicionados, 'add');
+            const equipRems = renderEquipList(manut.equipamentosRetirados,   'rem');
+            const equipHtml = (equipAdds || equipRems) ? `
+                <div class="equip-section">
+                    ${equipAdds ? `<div class="equip-label">Adicionados</div>${equipAdds}` : ''}
+                    ${equipRems ? `<div class="equip-label" style="margin-top:6px">Retirados</div>${equipRems}` : ''}
+                </div>` : '';
+
+            const encTag = manut.pontoEncerrado ? `<span class="tag encerrado">Ponto Encerrado</span>` : '';
+
+            // Produtos repostos
+            let prodHtml = '';
+            if (Array.isArray(a.produtos) && a.produtos.length > 0) {
+                const itens = a.produtos.filter(p => p.quantidade > 0)
+                    .map(p => `${p.quantidade}x ${p.nome}`).join(', ');
+                if (itens) prodHtml = `<br><strong>Produtos:</strong> ${itens}`;
+            }
+
+            return `
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-titulo">${tipo}</div>
+                    <div class="tags">${encTag}</div>
+                </div>
+                <div class="card-info">
+                    <strong>Técnico:</strong> ${a.atendente || '—'}<br>
+                    <strong>Cliente:</strong> #${cli.numero || '—'} · ${cli.nome || '—'}<br>
+                    <strong>Rota:</strong> ${cli.rota || '—'}
+                    ${manut.observacoes ? `<br><strong>Obs:</strong> ${manut.observacoes}` : ''}
+                    ${prodHtml}
+                </div>
+                ${equipHtml}
+                <div class="card-footer">
+                    <div class="card-data">&#128336; ${dataStr}</div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── AÇÕES GLOBAIS ─────────────────────────────────────────────────────────
+    window.aprovarCliente = async function(id, btn) {
+        if (!id) return;
+        if (btn) { btn.disabled = true; btn.textContent = 'Aprovando…'; }
+        try {
+            await dbSalvarCliente({ statusCadastro: 'aprovado' }, id);
+        } catch (e) {
+            console.error(e);
+            if (btn) { btn.disabled = false; btn.textContent = '✓ Aprovar'; }
+            alert('Erro ao aprovar. Tente novamente.');
+        }
+    };
+
+    window.confirmarServico = async function(id, btn) {
+        if (!id) return;
+        if (btn) { btn.disabled = true; btn.textContent = 'Confirmando…'; }
+        try {
+            await dbConfirmarGestorManutencao(id, _nomeUsuario);
+        } catch (e) {
+            console.error(e);
+            if (btn) { btn.disabled = false; btn.textContent = '✓ Confirmar'; }
+            alert('Erro ao confirmar. Tente novamente.');
+        }
+    };
+
+    // ── FILTROS GLOBAIS ───────────────────────────────────────────────────────
+    window.setFiltro = function(secao, valor, el) {
+        _filtros[secao] = valor;
+        const container = document.getElementById('filtros-' + secao);
+        if (container) container.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('ativo'));
+        if (el) el.classList.add('ativo');
+        if (secao === 'servicos')  renderizarServicos();
+        if (secao === 'historico') renderizarHistorico();
+    };
+
+    window.setTabServicos = function(tab, el) {
+        _tabServicos = tab;
+        document.querySelectorAll('#tabs-servicos .tab-btn').forEach(b => b.classList.remove('ativo'));
+        if (el) el.classList.add('ativo');
+        renderizarServicos();
+    };
+
+    // ── INIT ──────────────────────────────────────────────────────────────────
+    verificarAutenticacao();
+    window.sair = fazerLogout;
+    _nomeUsuario = String(localStorage.getItem('usuarioLogado') || '').trim();
+
+    // Clientes em tempo real
+    dbEscutarClientes(lista => {
+        _clientes = lista;
+        atualizarStats();
+        renderizarNovos();
+    });
+
+    // Manutenções em tempo real
+    dbEscutarManutencoes(lista => {
+        _manutencoes = lista;
+        atualizarStats();
+        renderizarServicos();
+    });
+
+    // Histórico: carrega uma vez ao abrir a seção
+    const _secaoHistorico = document.getElementById('corpo-historico');
+    let _historicoCarregado = false;
+
+    const _observer = new MutationObserver(() => {
+        if (_secaoHistorico.classList.contains('aberto') && !_historicoCarregado) {
+            _historicoCarregado = true;
+            _observer.disconnect();
+            dbListarAtendimentosRecentes(300).then(lista => {
+                _atendimentos = lista;
+                atualizarStats();
+                renderizarHistorico();
+            }).catch(() => {
+                document.getElementById('lista-historico').innerHTML =
+                    '<div class="vazio">Erro ao carregar histórico.</div>';
+            });
+        }
+    });
+    _observer.observe(_secaoHistorico, { attributes: true, attributeFilter: ['class'] });
+
+    // Exibe a página
+    dbEscutarColaboradores(() => {});
+    document.body.style.visibility = 'visible';
+</script>
+
+</body>
+</html>

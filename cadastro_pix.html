@@ -1086,7 +1086,7 @@
     <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
          SEÃ‡ÃƒO 1 â€” LOCAIS COM PIX
     â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-    <div class="secao">
+    <div class="secao" id="secao-locais">
         <div class="secao-header" id="hdr-locais" onclick="toggleSecao('locais')">
             <span class="secao-icone">&#128205;</span>
             <span class="secao-titulo">Locais com Pix</span>
@@ -1115,7 +1115,7 @@
     <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
          SEÃ‡ÃƒO 2 â€” ADICIONEI PIX
     â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-    <div class="secao">
+    <div class="secao" id="secao-adicionar">
         <div class="secao-header" id="hdr-adicionar" onclick="toggleSecao('adicionar')"
              style="background:#1e5c30; border-color:#4ade80;">
             <span class="secao-icone">&#10133;</span>
@@ -1232,6 +1232,16 @@ function aplicarPermissaoGestorRapida(lista = []) {
     if (secao) secao.style.display = _isGestor ? '' : 'none';
     if (_isGestor && typeof window.renderizarGestorPix === 'function') {
         window.renderizarGestorPix();
+    }
+
+    // GESTOR NÍVEL 1: oculta seções Locais com Pix e Adicionei Pix
+    if (perfil.includes('gestao_1')) {
+        const secaoLocais   = document.getElementById('secao-locais');
+        const secaoAdicionar = document.getElementById('secao-adicionar');
+        const btnFixo       = document.querySelector('.btn-adicionar-fixo');
+        if (secaoLocais)    secaoLocais.style.display   = 'none';
+        if (secaoAdicionar) secaoAdicionar.style.display = 'none';
+        if (btnFixo)        btnFixo.style.display        = 'none';
     }
 }
 
