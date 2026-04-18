@@ -123,6 +123,18 @@
             color: #8aaad0;
             margin-top: 3px;
         }
+        .mov-registrado-por {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 3px 9px;
+            border-radius: 99px;
+            border: 1px solid rgba(255, 213, 79, 0.35);
+            background: rgba(255, 213, 79, 0.07);
+            font-size: 12px;
+            color: #ffd54f;
+            font-weight: bold;
+            white-space: nowrap;
+        }
         .mov-acoes {
             display: flex;
             flex-direction: column;
@@ -168,38 +180,104 @@
             bottom: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: 100%;
+            width: calc(100% - 16px);
             max-width: 480px;
             background: #091845;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            border-radius: 18px 18px 0 0;
-            padding: 12px 14px 22px;
+            border: 1px solid #223768;
+            border-bottom: none;
+            border-radius: 18px;
+            padding: 12px 12px calc(14px + env(safe-area-inset-bottom, 0px));
             z-index: 100;
             box-shadow: 0 -8px 32px rgba(0,0,0,0.4);
             display: flex;
             flex-direction: column;
             gap: 8px;
+            box-sizing: border-box;
+            overflow: hidden;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .form-fixo.tipo-gasto {
+            border-color: #8f3940;
+            box-shadow: inset 0 0 0 1px #ffd4d8, 0 -8px 32px rgba(0,0,0,0.4);
+        }
+        .form-fixo.tipo-entrada {
+            border-color: #2e6d36;
+            box-shadow: inset 0 0 0 1px #d8ffd8, 0 -8px 32px rgba(0,0,0,0.4);
         }
         .seg-row {
             display: flex;
             gap: 6px;
         }
-        .seg-btn {
+        .seg-option {
             flex: 1;
+            min-width: 0;
+            position: relative;
+            padding: 2px;
+            border-radius: 12px;
+            border: 2px solid #31406f;
+            background: #122557;
+            box-sizing: border-box;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        }
+        .seg-option.gasto-wrap { position: relative; }
+        .seg-btn {
+            width: 100%;
             height: 46px;
             border-radius: 10px;
-            border: 2px solid rgba(255,255,255,0.1);
+            border: none;
             background: rgba(255,255,255,0.05);
             font-size: 18px;
             font-weight: bold;
             cursor: pointer;
+            transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
         }
         .seg-btn.gasto         { color: #ffb3ba; border-color: rgba(239,154,154,0.25); }
-        .seg-btn.entrada       { color: #b3f0b8; border-color: rgba(165,214,167,0.25); }
-        .seg-btn.gasto.ativo   { background: #ef9a9a; border-color: #ef9a9a; color: #5a0000; }
-        .seg-btn.entrada.ativo { background: #a5d6a7; border-color: #a5d6a7; color: #003d00; }
-        .seg-btn.cat           { font-size: 15px; color: rgba(255,255,255,0.5); border-color: rgba(255,255,255,0.1); }
-        .seg-btn.cat.ativo     { background: rgba(239,154,154,0.2); border-color: #ef9a9a; color: #ef9a9a; }
+        .seg-btn.entrada       { color: #b3f0b8; border-color: rgba(165,214,167,0.25); min-width: 0; }
+        .seg-btn.gasto.ativo   {
+            background: #ef9a9a;
+            border-color: #ffd4d8;
+            box-shadow: inset 0 0 0 2px #8f3940, 0 0 0 1px #ffd4d8;
+            color: #5a0000;
+        }
+        .seg-btn.entrada.ativo {
+            background: #a5d6a7;
+            border-color: #d8ffd8;
+            box-shadow: inset 0 0 0 2px #2e6d36, 0 0 0 1px #d8ffd8;
+            color: #003d00;
+        }
+        .gasto-wrap #btnGasto { width: 100%; }
+        .menu-cat {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 0;
+            z-index: 300;
+            min-width: 100%;
+        }
+        .menu-cat-inner {
+            background: #0d2560;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 -4px 24px rgba(0,0,0,0.5);
+        }
+        .menu-cat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px 20px;
+            width: 100%;
+            border: none;
+            background: transparent;
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            text-align: left;
+        }
+        .menu-cat-item + .menu-cat-item { border-top: 1px solid rgba(255,255,255,0.08); }
+        .menu-cat-item:active { background: rgba(255,255,255,0.05); }
         .form-main-row {
             display: flex;
             gap: 6px;
@@ -298,13 +376,21 @@
     </div>
 </div>
 
-<div class="form-fixo">
+<div class="form-fixo tipo-gasto" id="formFixo">
     <div class="seg-row">
-        <button class="seg-btn gasto ativo" id="btnGasto" type="button">&#11015;&#65039; Gasto</button>
-        <button class="seg-btn entrada" id="btnEntrada" type="button">&#11014;&#65039; Entrada</button>
+        <div class="seg-option gasto-wrap">
+            <button class="seg-btn gasto ativo" id="btnGasto" type="button">&#11015;&#65039; Gastos</button>
+            <div class="menu-cat" id="menuCat">
+                <div class="menu-cat-inner">
+                    <button class="menu-cat-item" type="button" data-cat="combustivel">&#9981; Combust&iacute;vel</button>
+                    <button class="menu-cat-item" type="button" data-cat="outros">&#128221; Outros</button>
+                </div>
+            </div>
+        </div>
+        <div class="seg-option entrada-wrap">
+            <button class="seg-btn entrada" id="btnEntrada" type="button">&#11014;&#65039; Entrada</button>
+        </div>
     </div>
-
-    <div class="seg-row" id="catsScroll" style="display:none"></div>
 
     <div class="form-main-row">
         <input class="campo-obs" id="inputObs" type="text" placeholder="Observacao...">
@@ -330,6 +416,7 @@
         { id: 'combustivel', label: 'Combustível', icone: '&#9981;' },
         { id: 'outros',      label: 'Outros',      icone: '&#128221;' },
     ];
+    const CATEGORIA_GASTO_PADRAO = 'outros';
 
     const ICONES = {
         gasto: Object.fromEntries(CATEGORIAS_GASTO.map(c => [c.id, c.icone])),
@@ -339,7 +426,7 @@
     const estado = {
         nomeUsuario: '',
         tipoAtual: 'gasto',
-        categoriaAtual: 'combustivel',
+        categoriaAtual: CATEGORIA_GASTO_PADRAO,
         movimentacoes: [],
         salvando: false,
         exclusoesEmAndamento: new Set()
@@ -352,7 +439,8 @@
         msgVazio: document.getElementById('msgVazio'),
         btnGasto: document.getElementById('btnGasto'),
         btnEntrada: document.getElementById('btnEntrada'),
-        catsScroll: document.getElementById('catsScroll'),
+        formFixo: document.getElementById('formFixo'),
+        menuCat: document.getElementById('menuCat'),
         inputObs: document.getElementById('inputObs'),
         inputValor: document.getElementById('inputValor'),
         btnRegistrar: document.getElementById('btnRegistrar')
@@ -397,19 +485,37 @@
         render();
     });
 
+    function toggleMenuCat(forcarAberto = false) {
+        const aberto = els.menuCat.style.display === 'block';
+        els.menuCat.style.display = (forcarAberto || !aberto) ? 'block' : 'none';
+    }
+    function fecharMenuCat() {
+        els.menuCat.style.display = 'none';
+    }
+    document.addEventListener('click', (e) => {
+        if (!els.menuCat.contains(e.target) && !els.btnGasto.contains(e.target)) fecharMenuCat();
+    });
+
     function vincularEventos() {
         els.btnGasto.addEventListener('click', () => {
+            const estavaNoGastoPadrao = estado.tipoAtual === 'gasto' && estado.categoriaAtual === CATEGORIA_GASTO_PADRAO;
+            const menuAberto = els.menuCat.style.display === 'block';
             estado.tipoAtual = 'gasto';
+            estado.categoriaAtual = CATEGORIA_GASTO_PADRAO;
             atualizarFormulario();
+            toggleMenuCat(!(estavaNoGastoPadrao && menuAberto));
         });
         els.btnEntrada.addEventListener('click', () => {
+            fecharMenuCat();
             estado.tipoAtual = 'entrada';
             atualizarFormulario();
         });
-        els.catsScroll.addEventListener('click', (e) => {
+        els.menuCat.addEventListener('click', (e) => {
             const btn = e.target.closest('[data-cat]');
             if (!btn) return;
             estado.categoriaAtual = btn.dataset.cat;
+            estado.tipoAtual = 'gasto';
+            fecharMenuCat();
             atualizarFormulario();
         });
         els.btnRegistrar.addEventListener('click', registrar);
@@ -470,16 +576,21 @@
     }
 
     function atualizarFormulario() {
-        els.btnGasto.classList.toggle('ativo', estado.tipoAtual === 'gasto');
-        els.btnEntrada.classList.toggle('ativo', estado.tipoAtual === 'entrada');
-
         const isGasto = estado.tipoAtual === 'gasto';
-        els.catsScroll.style.display = isGasto ? 'flex' : 'none';
-        els.catsScroll.innerHTML = CATEGORIAS_GASTO.map(c => `
-            <button class="seg-btn cat${estado.categoriaAtual === c.id ? ' ativo' : ''}" data-cat="${c.id}" type="button">
-                ${c.icone} ${c.label}
-            </button>
-        `).join('');
+        els.btnGasto.classList.toggle('ativo', isGasto);
+        els.btnEntrada.classList.toggle('ativo', !isGasto);
+        els.formFixo.classList.toggle('tipo-gasto', isGasto);
+        els.formFixo.classList.toggle('tipo-entrada', !isGasto);
+
+        if (isGasto) {
+            const cat = CATEGORIAS_GASTO.find(c => c.id === estado.categoriaAtual)
+                || CATEGORIAS_GASTO.find(c => c.id === CATEGORIA_GASTO_PADRAO)
+                || CATEGORIAS_GASTO[0];
+            const rotuloBotao = cat.id === CATEGORIA_GASTO_PADRAO ? 'Gastos' : cat.label;
+            els.btnGasto.innerHTML = `&#11015;&#65039; ${rotuloBotao}`;
+        } else {
+            els.btnGasto.innerHTML = '&#11015;&#65039; Gastos';
+        }
 
         els.btnRegistrar.disabled = estado.salvando || !estado.nomeUsuario;
         els.btnRegistrar.textContent = estado.salvando ? 'Salvando...' : 'Registrar';
@@ -504,7 +615,7 @@
 
     function atualizarSaldo() {
         const saldo = calcularSaldo(obterMovimentacoesFiltradas());
-        els.saldoAtual.textContent = formatarMoeda(saldo);
+        els.saldoAtual.textContent = 'R$ ' + Math.abs(saldo).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
         els.saldoAtual.className = 'saldo-valor' + (saldo < 0 ? ' negativo' : '');
     }
 
@@ -593,6 +704,7 @@
                         <div class="mov-cat ${item.tipo}">${categoria}</div>
                         ${item.descricao ? `<div class="mov-desc">${escapeHtml(item.descricao)}</div>` : ''}
                         ${hora ? `<div class="mov-hora">${hora}</div>` : ''}
+                        ${item.registradoPor ? `<div class="mov-registrado-por">Inserido por ${escapeHtml(item.registradoPor)}</div>` : ''}
                     </div>
                     <div class="mov-acoes">
                         <div class="mov-valores">

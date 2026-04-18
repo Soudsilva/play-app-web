@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -48,6 +48,31 @@
             border: 1px solid rgba(76,175,80,0.22);
             border-left: 5px solid #4caf50;
         }
+        .card-entrada.saida {
+            background: rgba(239,154,154,0.06);
+            border: 1px solid rgba(239,154,154,0.2);
+            border-left: 5px solid #ef9a9a;
+        }
+        .entrada-valor.saida { color: #ef9a9a; }
+        .entrada-qtd.saida   { color: rgba(239,154,154,0.8); }
+        .card-fluxo {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-left: 5px solid rgba(255,255,255,0.18);
+            border-radius: 12px;
+            padding: 13px 14px;
+            animation: entrar 0.2s ease;
+        }
+        .card-fluxo.entrada {
+            background: rgba(76,175,80,0.07);
+            border: 1px solid rgba(76,175,80,0.22);
+            border-left-color: #4caf50;
+        }
+        .card-fluxo.gasto {
+            background: rgba(239,154,154,0.08);
+            border: 1px solid rgba(239,154,154,0.22);
+            border-left-color: #ef9a9a;
+        }
         @keyframes entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
         .entrada-topo { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
@@ -64,12 +89,21 @@
         .entrada-preco-unit { font-size: 11px; color: rgba(255,255,255,0.3); }
         .entrada-data { font-size: 14px; color: white; }
         .entrada-regpor { font-size: 11px; color: #ffb432; margin-top: 4px; }
+        .fluxo-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+        .fluxo-titulo { font-size: 17px; font-weight: bold; color: white; line-height: 1.2; flex: 1; }
+        .fluxo-valor { font-size: 18px; font-weight: 900; white-space: nowrap; }
+        .fluxo-valor.entrada { color: #4caf50; }
+        .fluxo-valor.gasto { color: #ef9a9a; }
+        .fluxo-desc { font-size: 15px; color: white; line-height: 1.35; margin-bottom: 8px; }
+        .fluxo-desc.vazio { color: rgba(255,255,255,0.45); }
+        .fluxo-rodape { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .fluxo-categoria { font-size: 12px; font-weight: bold; letter-spacing: 0.7px; text-transform: uppercase; color: rgba(255,255,255,0.45); }
 
         /* SEM VALOR */
         .sem-valor .entrada-valor { color: rgba(255,255,255,0.3); font-size: 13px; font-weight: normal; }
         .sem-valor .entrada-qtd { color: rgba(255,255,255,0.6); }
 
-        /* CARD MÊS ANTERIOR */
+        /* CARD MÃŠS ANTERIOR */
         .card-antigo {
             transform: scale(0.93);
             transform-origin: left center;
@@ -97,7 +131,7 @@
         @keyframes girar { to { transform: rotate(360deg); } }
         .carregando-txt { color: rgba(255,255,255,0.5); font-size: 14px; }
 
-        /* BARRA FLUTUANTE ANO/MÊS */
+        /* BARRA FLUTUANTE ANO/MÃŠS */
         .filtros-periodo {
             position: fixed;
             left: 50%;
@@ -166,7 +200,7 @@
 
         <!-- SALDO -->
         <div class="card-saldo">
-            <div class="saldo-label">Valor produzido</div>
+            <div class="saldo-label">Saldo da produ&ccedil;&atilde;o</div>
             <div class="saldo-valor" id="saldoValor">R$ 0,00</div>
             <div class="saldo-sub" style="display:none;">
                 <div class="saldo-sub-item">
@@ -194,16 +228,21 @@
 
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
-import { app } from './database.js';
+import { app, dbEscutarFluxoCaixa } from './database.js';
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const db = getDatabase(app);
 
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const CATEGORIAS_GASTO = {
+    combustivel: 'Combustível',
+    outros: 'Outros'
+};
 
 let usuarioLogado = '';
 let todasEntradas = [];
+let movimentosFluxo = [];
 let mapaValoresProdutos = {};
 let anoSelecionado = '';
 let mesSelecionado = '';
@@ -211,14 +250,14 @@ let mesSelecionado = '';
 const filtroAno = document.getElementById('filtroAno');
 const filtroMes = document.getElementById('filtroMes');
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 verificarAutenticacao().then(user => {
     if (!user) return;
     usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
     inicializar();
 });
 
-// ── Inicialização ─────────────────────────────────────────────────────────────
+// â”€â”€ Inicialização â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function inicializar() {
     onValue(ref(db, 'estoque'), (snapEstoque) => {
         const itens = snapEstoque.val() || {};
@@ -249,6 +288,12 @@ function inicializar() {
         render();
     });
 
+    dbEscutarFluxoCaixa(usuarioLogado, (movimentos) => {
+        movimentosFluxo = Array.isArray(movimentos) ? movimentos : [];
+        atualizarDropdowns();
+        render();
+    });
+
     filtroAno.addEventListener('change', () => {
         anoSelecionado = filtroAno.value;
         atualizarMeses();
@@ -260,9 +305,60 @@ function inicializar() {
     });
 }
 
-// ── Dropdowns ─────────────────────────────────────────────────────────────────
+function obterDataIso(item) {
+    const dataStr = String(item?.data || '');
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) {
+        return dataStr;
+    }
+    if (dataStr) {
+        const parsed = new Date(dataStr);
+        if (!Number.isNaN(parsed.getTime())) {
+            const ano = parsed.getFullYear();
+            const mes = String(parsed.getMonth() + 1).padStart(2, '0');
+            const dia = String(parsed.getDate()).padStart(2, '0');
+            return `${ano}-${mes}-${dia}`;
+        }
+    }
+    const base = item?.criado_em ? new Date(item.criado_em) : null;
+    if (base && !Number.isNaN(base.getTime())) {
+        const ano = base.getFullYear();
+        const mes = String(base.getMonth() + 1).padStart(2, '0');
+        const dia = String(base.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+    }
+    return '';
+}
+
+function obterTimestampItem(item) {
+    if (Number.isFinite(Number(item?.criado_em))) return Number(item.criado_em);
+    if (item?.data) {
+        const data = new Date(item.data);
+        if (!Number.isNaN(data.getTime())) return data.getTime();
+    }
+    return 0;
+}
+
+function obterTodosRegistros() {
+    const producao = todasEntradas.map(item => ({
+        tipoRegistro: 'producao',
+        dataIso: obterDataIso(item),
+        timestamp: obterTimestampItem(item),
+        item
+    }));
+    const fluxo = movimentosFluxo.map(item => ({
+        tipoRegistro: 'fluxo',
+        dataIso: obterDataIso(item),
+        timestamp: obterTimestampItem(item),
+        item
+    }));
+    return [...producao, ...fluxo].filter(item => item.dataIso);
+}
+
+
+
+// â”€â”€ Dropdowns â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function atualizarDropdowns() {
-    const anos = [...new Set(todasEntradas.map(e => new Date(e.data).getFullYear()))]
+    const anos = [...new Set(obterTodosRegistros().map(e => new Date(e.dataIso).getFullYear()))]
         .filter(Boolean).sort((a, b) => b - a);
 
     if (!anos.length) return;
@@ -281,9 +377,9 @@ function atualizarDropdowns() {
 
 function atualizarMeses() {
     const mesesDoAno = [...new Set(
-        todasEntradas
-            .filter(e => String(new Date(e.data).getFullYear()) === anoSelecionado)
-            .map(e => String(new Date(e.data).getMonth() + 1).padStart(2, '0'))
+        obterTodosRegistros()
+            .filter(e => String(new Date(e.dataIso).getFullYear()) === anoSelecionado)
+            .map(e => String(new Date(e.dataIso).getMonth() + 1).padStart(2, '0'))
     )].sort((a, b) => b - a);
 
     if (!mesesDoAno.length) return;
@@ -297,42 +393,52 @@ function atualizarMeses() {
         .join('');
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
+// â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function render() {
-    // Total = todas as entradas (acumulado geral)
-    let totalValor = 0;
+    // Total base = todas as entradas de produção (acumulado geral)
+    let totalProduzido = 0;
     let totalUnidades = 0;
     todasEntradas.forEach(e => {
         const nomeProduto = String(e.itemNome || '').trim();
         const valorUnit = Number(e.valorUnitario) || mapaValoresProdutos[nomeProduto] || 0;
-        totalValor += valorUnit * (Number(e.qtd) || 0);
+        totalProduzido += valorUnit * (Number(e.qtd) || 0);
         totalUnidades += Number(e.qtd) || 0;
     });
 
-    document.getElementById('saldoValor').textContent    = formatarReais(totalValor);
+    const ajusteFluxo = movimentosFluxo.reduce((total, mov) => {
+        const valor = Number(mov?.valor || 0);
+        if (!Number.isFinite(valor)) return total;
+        return total + (mov?.tipo === 'entrada' ? valor : -valor);
+    }, 0);
+    const totalLiquido = totalProduzido + ajusteFluxo;
+
+    const saldoValorEl = document.getElementById('saldoValor');
+    saldoValorEl.textContent = (totalLiquido < 0 ? '- ' : '') + formatarReais(Math.abs(totalLiquido));
+    saldoValorEl.style.color = totalLiquido < 0 ? '#ef9a9a' : '#ffeb3b';
     document.getElementById('saldoEntradas').textContent = todasEntradas.length;
     document.getElementById('saldoUnidades').textContent = totalUnidades.toLocaleString('pt-BR');
 
     const lista = document.getElementById('lista');
     lista.innerHTML = '';
+    const registros = obterTodosRegistros().sort((a, b) => b.timestamp - a.timestamp);
 
-    if (todasEntradas.length === 0) {
+    if (registros.length === 0) {
         lista.innerHTML = `
             <div class="vazio">
-                <div class="vazio-icon">📦</div>
-                <div class="vazio-txt">Nenhuma entrada de produção encontrada.</div>
+                <div class=”vazio-icon”>📦</div>
+                <div class=”vazio-txt”>Nenhuma entrada de produção encontrada.</div>
             </div>`;
         return;
     }
 
     // Separa mês selecionado dos anteriores
-    const doMes = todasEntradas.filter(e => {
-        const d = new Date(e.data);
+    const doMes = registros.filter(e => {
+        const d = new Date(e.dataIso);
         return String(d.getFullYear()) === anoSelecionado &&
                String(d.getMonth() + 1).padStart(2, '0') === mesSelecionado;
     });
-    const anteriores = todasEntradas.filter(e => {
-        const d = new Date(e.data);
+    const anteriores = registros.filter(e => {
+        const d = new Date(e.dataIso);
         return !(String(d.getFullYear()) === anoSelecionado &&
                  String(d.getMonth() + 1).padStart(2, '0') === mesSelecionado);
     });
@@ -381,6 +487,40 @@ function render() {
         return card;
     }
 
+    function criarCardFluxo(mov, antigo) {
+        const card = document.createElement('div');
+        let classes = `card-fluxo ${mov.tipo === 'entrada' ? 'entrada' : 'gasto'}`;
+        if (antigo) classes += ' card-antigo';
+        card.className = classes;
+
+        const categoria = mov.tipo === 'entrada'
+            ? 'Entrada'
+            : (CATEGORIAS_GASTO[mov.categoria] || 'Outros');
+        const titulo = mov.tipo === 'entrada'
+            ? 'Entrada registrada'
+            : `Saída registrada · ${categoria}`;
+        const descricao = String(mov.descricao || '').trim();
+        const dataBase = mov.criado_em ? new Date(mov.criado_em) : new Date(`${mov.data}T12:00:00`);
+        const dataFmt = dataBase.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+                       + ' · '
+                       + dataBase.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const valor = Math.abs(Number(mov.valor || 0));
+        const sinal = mov.tipo === 'entrada' ? '+' : '-';
+
+        card.innerHTML = `
+            <div class="fluxo-topo">
+                <div class="fluxo-titulo">${titulo}</div>
+                <div class="fluxo-valor ${mov.tipo === 'entrada' ? 'entrada' : 'gasto'}">${sinal}${formatarReais(valor)}</div>
+            </div>
+            <div class="fluxo-desc${descricao ? '' : ' vazio'}">${descricao || 'Sem observação informada.'}</div>
+            <div class="fluxo-rodape">
+                <div class="fluxo-categoria">${categoria}</div>
+                <div class="entrada-data">${dataFmt}</div>
+            </div>
+        `;
+        return card;
+    }
+
     if (doMes.length === 0) {
         lista.innerHTML = `
             <div class="vazio">
@@ -388,7 +528,12 @@ function render() {
                 <div class="vazio-txt">Nenhuma produção neste mês.</div>
             </div>`;
     } else {
-        doMes.forEach(e => lista.appendChild(criarCard(e, false)));
+        doMes.forEach(registro => {
+            const card = registro.tipoRegistro === 'producao'
+                ? criarCard(registro.item, false)
+                : criarCardFluxo(registro.item, false);
+            lista.appendChild(card);
+        });
     }
 
     if (anteriores.length > 0) {
@@ -396,13 +541,18 @@ function render() {
         sep.className = 'separador-anterior';
         sep.textContent = '— meses anteriores —';
         lista.appendChild(sep);
-        anteriores.forEach(e => lista.appendChild(criarCard(e, true)));
+        anteriores.forEach(registro => {
+            const card = registro.tipoRegistro === 'producao'
+                ? criarCard(registro.item, true)
+                : criarCardFluxo(registro.item, true);
+            lista.appendChild(card);
+        });
     }
 }
 
-// ── Formatar moeda ────────────────────────────────────────────────────────────
+// â”€â”€ Formatar moeda â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function formatarReais(valor) {
-    return 'R$ ' + Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return 'R$ ' + Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 </script>
 </body>

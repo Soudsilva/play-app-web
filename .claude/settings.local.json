@@ -8,7 +8,14 @@
       "Bash(grep -n \"fotos\\\\.pix\\\\|\\\\.foto.*=\" /c/Users/souds/play-app-web/*.html)",
       "Bash(ls /c/Users/souds/play-app-web/manut*.html)",
       "Bash(grep -rn \"getCurrentPosition\\\\|geolocation\\\\|localizacao\\\\|linkLocalizacao\\\\|linkMapa\\\\|latitude\\\\|longitude\" c:/Users/souds/play-app-web/*.html --include=\"*.html\" -l)",
-      "Bash(ls c:/Users/souds/play-app-web/*.html)"
+      "Bash(ls c:/Users/souds/play-app-web/*.html)",
+      "Bash(node -e ' *)",
+      "Bash('\\), g\\)\\) || []\\).length; *)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const t=fs.readFileSync\\('c:/Users/souds/play-app-web/producao_produtos.html','utf8'\\);console.log\\('Ã§:',\\(\\(t.match\\(/Ã§/g\\)||[]\\).length\\)\\);console.log\\('Ã£:',\\(\\(t.match\\(/Ã£/g\\)||[]\\).length\\)\\);console.log\\('Ã­:',\\(\\(t.match\\(/Ã­/g\\)||[]\\).length\\)\\);console.log\\('Â·:',\\(\\(t.match\\(/Â·/g\\)||[]\\).length\\)\\);console.log\\('mÃªs:',\\(\\(t.match\\(/mÃªs/g\\)||[]\\).length\\)\\);\")",
+      "Bash(node c:/Users/souds/play-app-web/fix_encoding.js)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const t=fs.readFileSync\\('c:/Users/souds/play-app-web/producao_produtos.html','utf8'\\);const lines=t.split\\('\\\\n'\\);[308,315,320,455,465,469,477,501,505,515,527,528].forEach\\(n=>{if\\(lines[n-1]!==undefined\\)console.log\\(n+': '+lines[n-1].trim\\(\\).substring\\(0,100\\)\\);}\\);\")",
+      "Bash(node c:/Users/souds/play-app-web/fix_encoding2.js)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const t=fs.readFileSync\\('c:/Users/souds/play-app-web/producao_produtos.html','utf8'\\);const lines=t.split\\('\\\\n'\\);[477,527].forEach\\(n=>{if\\(lines[n-1]!==undefined\\)console.log\\(n+': '+lines[n-1].trim\\(\\).substring\\(0,100\\)\\);}\\);\")"
     ]
   }
 }

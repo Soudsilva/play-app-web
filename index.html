@@ -256,6 +256,11 @@
            <span>&Aacute;rea Pix</span>
        </div>
 
+       <div class="botao" id="btnPagamentosGestor" onclick="abrirTela('pagamentos_gestor')" style="display: none;">
+          <span class="icone">&#128179;</span>
+           <span>Financeiro</span>
+       </div>
+
        <div class="botao" id="btnFluxoCaixa" onclick="abrirTela('fluxo_caixa')" style="display: none;">
           <span class="icone">&#128184;</span>
            <span>Fluxo de Caixa</span>
@@ -404,6 +409,10 @@
             window.location.href = 'cadastro_pix.html';
             return;
         }
+        if (tela === 'pagamentos_gestor') {
+            window.location.href = 'Pagamentos_Gestor.html';
+            return;
+        }
         if (tela === 'financeiro') {
             const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
             const u = listaColaboradores.find(c => String(c?.nome || '').trim() === nomeLogado);
@@ -439,7 +448,8 @@
             servico: document.getElementById('btnServico'),
             financeiro: document.getElementById('btnFinanceiro'),
             pix: document.getElementById('btnPix'),
-            fluxoCaixa: document.getElementById('btnFluxoCaixa')
+            fluxoCaixa: document.getElementById('btnFluxoCaixa'),
+            pagamentosGestor: document.getElementById('btnPagamentosGestor')
         };
 
         // Por padrÃ£o, garante que o bloco de GestÃ£o nÃ£o vai deixar "espaÃ§o vazio" no menu.
@@ -554,6 +564,12 @@
         // GESTOR NÍVEL 2 e 3: acesso a Entr. Saídas
         if (perfil.includes('gestao_2') || perfil.includes('gestao_3')) {
             btns.movimentacao.style.display = 'flex';
+        }
+
+        // GESTOR NÍVEL 3: botão Financeiro (Pagamentos_Gestor), sem Fluxo de Caixa
+        if (perfil.includes('gestao_3')) {
+            btns.pagamentosGestor.style.display = 'flex';
+            btns.fluxoCaixa.style.display = 'none';
         }
 
         // GESTOR NÍVEL 1: restrições sobre o perfil gestão

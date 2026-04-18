@@ -281,6 +281,13 @@ export async function dbListarHistorico() {
     }
 }
 
+export function dbEscutarHistoricoCompleto(callback) {
+    onValue(ref(db, 'historico_estoque'), (snapshot) => {
+        const data = snapshot.val() || {};
+        callback(Object.keys(data).map(key => ({ firebaseUrl: key, ...data[key] })));
+    });
+}
+
 export function dbEscutarHistorico(callback) {
     const histRef = ref(db, 'historico_estoque');
     const ultimosQuery = query(histRef, limitToLast(20));
@@ -1858,10 +1865,10 @@ export function dbEscutarFluxoCaixa(nomeUsuario, callback) {
     const chave = _normalizarChaveUsuario(nomeUsuario);
     if (!chave) {
         callback([]);
-        return;
+        return () => {};
     }
 
-    onValue(ref(db, `fluxo_caixa/${chave}/movimentacoes`), (snapshot) => {
+    return onValue(ref(db, `fluxo_caixa/${chave}/movimentacoes`), (snapshot) => {
         callback(_normalizarListaFluxoCaixa(snapshot.val()));
     });
 }
