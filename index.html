@@ -414,6 +414,10 @@
             return;
         }
         if (tela === 'financeiro') {
+            if (perfil.includes('gestao')) {
+                window.location.href = 'Pagamentos_Gestor.html';
+                return;
+            }
             const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
             const u = listaColaboradores.find(c => String(c?.nome || '').trim() === nomeLogado);
             window.location.href = u?.producaoProdutos ? 'producao_produtos.html' : 'financeiro.html';

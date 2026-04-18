@@ -498,7 +498,8 @@ function render() {
             : (CATEGORIAS_GASTO[mov.categoria] || 'Outros');
         const titulo = mov.tipo === 'entrada'
             ? 'Entrada registrada'
-            : `Saída registrada · ${categoria}`;
+            : 'Pagamento';
+        const registradoPor = String(mov.registradoPor || usuarioLogado || '').trim();
         const descricao = String(mov.descricao || '').trim();
         const dataBase = mov.criado_em ? new Date(mov.criado_em) : new Date(`${mov.data}T12:00:00`);
         const dataFmt = dataBase.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
@@ -514,7 +515,7 @@ function render() {
             </div>
             <div class="fluxo-desc${descricao ? '' : ' vazio'}">${descricao || 'Sem observação informada.'}</div>
             <div class="fluxo-rodape">
-                <div class="fluxo-categoria">${categoria}</div>
+                <div class="fluxo-categoria">${registradoPor ? `Registrado por ${registradoPor}` : categoria}</div>
                 <div class="entrada-data">${dataFmt}</div>
             </div>
         `;

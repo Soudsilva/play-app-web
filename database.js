@@ -229,6 +229,7 @@ export async function dbSalvarCliente(cliente, idExistente = null) {
         }
         // Avisa todos os dispositivos que a lista mudou
         await _atualizarVersaoClientes();
+        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("ERRO AO SALVAR CLIENTE:", error);
         throw error;
@@ -240,6 +241,7 @@ export async function dbLimparHistoricoCompleto() {
     try {
         const histRef = ref(db, 'historico_estoque');
         await remove(histRef);
+        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("Erro ao limpar histórico completo:", error);
         throw error;
@@ -251,6 +253,7 @@ export async function dbExcluirHistorico(id) {
     try {
         const histRef = ref(db, `historico_estoque/${id}`);
         await remove(histRef);
+        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("Erro ao excluir histórico:", error);
         throw error;
@@ -263,6 +266,7 @@ export async function dbSalvarHistorico(movimento) {
     try {
         const histRef = ref(db, 'historico_estoque');
         await push(histRef, movimento);
+        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("Erro ao salvar histórico:", error);
     }
@@ -398,6 +402,7 @@ export async function dbSalvarColaborador(colaborador, idExistente = null) {
             const colabRef = ref(db, 'colaboradores');
             await push(colabRef, colaboradorNormalizado);
         }
+        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("Erro:", error);
         throw error;
@@ -439,6 +444,7 @@ export async function dbSalvarItemEstoque(item, id = null) {
             const estoqueRef = ref(db, 'estoque');
             await push(estoqueRef, item);
         }
+        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("Erro ao salvar no estoque:", error);
         throw error;
@@ -488,6 +494,7 @@ export async function dbExcluirItemEstoque(id) {
     try {
         const itemRef = ref(db, `estoque/${id}`);
         await remove(itemRef);
+        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("Erro ao excluir do estoque:", error);
         throw error;
@@ -754,6 +761,7 @@ export async function dbSalvarAtendimento(atendimento, idExistente = null) {
         // Atualiza a base "Media_de_Vendas" (tempo real, sem depender do cache offline)
         await _upsertMediaDeVendasPorAtendimento(atendimento);
         await _atualizarVersaoMediaDeVendas();
+        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("ERRO AO SALVAR ATENDIMENTO:", error);
         throw error;
@@ -928,6 +936,7 @@ export async function dbExcluirAtendimento(id) {
         if (atendimento) {
             await _reverterContadorClientePorAtendimentoExcluido(atendimento);
         }
+        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("ERRO AO EXCLUIR ATENDIMENTO:", error);
         throw error;
@@ -939,6 +948,7 @@ export async function dbAtualizarAtendimento(id, patch) {
         if (!id) throw new Error("ID do atendimento é obrigatório.");
         if (!patch || typeof patch !== 'object') throw new Error("Patch inválido.");
         await update(ref(db, `atendimentos/${id}`), patch);
+        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("ERRO AO ATUALIZAR ATENDIMENTO:", error);
         throw error;
@@ -1905,6 +1915,7 @@ export async function dbSalvarMovimentoFluxoCaixa(nomeUsuario, movimento) {
         const chave = _normalizarChaveUsuario(nomeUsuario);
         if (!chave) throw new Error('USUARIO_INVALIDO_FLUXO_CAIXA');
         const novoRef = await push(ref(db, `fluxo_caixa/${chave}/movimentacoes`), movimento);
+        await _tentarRecalcularRemuneracoes();
         return { firebaseKey: novoRef.key, ...movimento };
     } catch (error) {
         console.error("ERRO AO SALVAR MOVIMENTO DO FLUXO DE CAIXA:", error);
@@ -1917,6 +1928,7 @@ export async function dbExcluirMovimentoFluxoCaixa(nomeUsuario, firebaseKey) {
         const chave = _normalizarChaveUsuario(nomeUsuario);
         if (!chave) throw new Error('USUARIO_INVALIDO_FLUXO_CAIXA');
         await remove(ref(db, `fluxo_caixa/${chave}/movimentacoes/${firebaseKey}`));
+        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("ERRO AO EXCLUIR MOVIMENTO DO FLUXO DE CAIXA:", error);
         throw error;
@@ -1928,10 +1940,463 @@ export async function dbExcluirTodosMovimentosFluxoCaixa(nomeUsuario) {
         const chave = _normalizarChaveUsuario(nomeUsuario);
         if (!chave) throw new Error('USUARIO_INVALIDO_FLUXO_CAIXA');
         await remove(ref(db, `fluxo_caixa/${chave}/movimentacoes`));
+        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("ERRO AO EXCLUIR TODOS OS MOVIMENTOS DO FLUXO DE CAIXA:", error);
         throw error;
     }
+}
+
+function _normalizarNomeRemuneracao(nome) {
+    return String(nome || '').trim().toLowerCase();
+}
+
+function _parseNumeroRemuneracao(valor) {
+    const num = Number(valor || 0);
+    return Number.isFinite(num) ? num : 0;
+}
+
+function _parsePercentualRemuneracao(valor) {
+    if (typeof valor === 'number') return Number.isFinite(valor) ? valor : 0;
+    const texto = String(valor || '').trim().replace('%', '').replace(',', '.');
+    const num = Number(texto);
+    return Number.isFinite(num) ? num : 0;
+}
+
+function _obterMesAnoRemuneracao(valor) {
+    if (!valor && valor !== 0) return '';
+    if (typeof valor === 'number') {
+        const data = new Date(valor);
+        if (Number.isNaN(data.getTime())) return '';
+        return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+    }
+    const texto = String(valor).trim();
+    if (/^\d{4}-\d{2}/.test(texto)) return texto.slice(0, 7);
+    const data = new Date(texto);
+    if (Number.isNaN(data.getTime())) return '';
+    return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function _mesAnoAtualRemuneracao() {
+    const data = new Date();
+    return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function _obterSaldoParcialRemuneracao(financeiro) {
+    const fin = financeiro || {};
+    return _parseNumeroRemuneracao(fin.saldoFinal ?? (_parseNumeroRemuneracao(fin.totalGeral) - _parseNumeroRemuneracao(fin.comissaoValor)));
+}
+
+function _obterComissaoRemuneracaoParaMes(colab, mesAno) {
+    const historico = Array.isArray(colab?.comissaoHistorico) ? [...colab.comissaoHistorico] : [];
+    if (historico.length === 0) return _parsePercentualRemuneracao(colab?.comissao);
+    const sorted = historico.sort((a, b) => String(a?.inicio || '').localeCompare(String(b?.inicio || '')));
+    let taxa = _parsePercentualRemuneracao(sorted[0]?.valor);
+    for (const item of sorted) {
+        if (String(item?.inicio || '') <= mesAno) taxa = _parsePercentualRemuneracao(item?.valor);
+        else break;
+    }
+    return taxa;
+}
+
+function _obterResponsaveisItemRemuneracao(item) {
+    const lista = [
+        ...(Array.isArray(item?.responsaveis) ? item.responsaveis : []),
+        item?.tecnico
+    ];
+    const mapa = new Map();
+    lista.forEach(nome => {
+        const limpo = String(nome || '').trim();
+        const chave = _normalizarNomeRemuneracao(limpo);
+        if (!limpo || mapa.has(chave)) return;
+        mapa.set(chave, limpo);
+    });
+    return Array.from(mapa.values());
+}
+
+function _criarMapaClientesRepresentante(clientes) {
+    const porId = {};
+    const porNumero = {};
+    (clientes || []).forEach(cliente => {
+        const representante = String(cliente?.representante || '').trim();
+        if (!representante) return;
+        if (cliente?.firebaseUrl) porId[String(cliente.firebaseUrl).trim()] = representante;
+        const numero = _normalizarNumeroCliente(cliente?.numero);
+        if (numero) porNumero[String(numero)] = representante;
+    });
+    return { porId, porNumero };
+}
+
+function _obterRepresentanteAtendimentoRemuneracao(atendimento, mapaClientes) {
+    const direto = String(
+        atendimento?.representante
+        || atendimento?.cliente?.representante
+        || ''
+    ).trim();
+    if (direto) return direto;
+
+    const clienteId = String(
+        atendimento?.cliente?.id
+        || atendimento?.cliente?.firebaseUrl
+        || atendimento?.clienteId
+        || atendimento?.clienteFirebaseUrl
+        || ''
+    ).trim();
+    if (clienteId && mapaClientes?.porId?.[clienteId]) return String(mapaClientes.porId[clienteId]).trim();
+
+    const numero = _normalizarNumeroCliente(
+        atendimento?.cliente?.numero
+        || atendimento?.clienteNumero
+    );
+    if (numero && mapaClientes?.porNumero?.[numero]) return String(mapaClientes.porNumero[numero]).trim();
+
+    return '';
+}
+
+function _registrarPerfilRemuneracao(perfis, id, dados) {
+    if (!perfis || !id || !dados) return;
+    perfis[id] = dados;
+}
+
+function _somarPerfisRemuneracao(perfis) {
+    return Object.values(perfis || {}).reduce((soma, item) => soma + _parseNumeroRemuneracao(item?.valor), 0);
+}
+
+async function _tentarRecalcularRemuneracoes() {
+    try {
+        await dbRecalcularRemuneracoes();
+    } catch (erro) {
+        console.warn("NÃO FOI POSSÍVEL RECALCULAR REMUNERAÇÕES:", erro);
+    }
+}
+
+export async function dbRecalcularRemuneracoes() {
+    try {
+        const [
+            colaboradoresSnap,
+            clientesSnap,
+            atendimentosSnap,
+            historicoSnap,
+            estoqueSnap,
+            fluxoSnap
+        ] = await Promise.all([
+            get(ref(db, 'colaboradores')),
+            get(ref(db, 'clientes')),
+            get(ref(db, 'atendimentos')),
+            get(ref(db, 'historico_estoque')),
+            get(ref(db, 'estoque')),
+            get(ref(db, 'fluxo_caixa'))
+        ]);
+
+        const colaboradoresData = colaboradoresSnap.exists() ? (colaboradoresSnap.val() || {}) : {};
+        const clientesData = clientesSnap.exists() ? (clientesSnap.val() || {}) : {};
+        const atendimentosData = atendimentosSnap.exists() ? (atendimentosSnap.val() || {}) : {};
+        const historicoData = historicoSnap.exists() ? (historicoSnap.val() || {}) : {};
+        const estoqueData = estoqueSnap.exists() ? (estoqueSnap.val() || {}) : {};
+        const fluxoCaixa = fluxoSnap.exists() ? (fluxoSnap.val() || {}) : {};
+
+        const colaboradores = Object.keys(colaboradoresData).map(key => ({ firebaseUrl: key, ...colaboradoresData[key] }));
+        const clientes = Object.keys(clientesData).map(key => ({ firebaseUrl: key, ...clientesData[key] }));
+        const atendimentos = Object.keys(atendimentosData).map(key => ({ firebaseUrl: key, ...atendimentosData[key] }));
+        const historico = Object.keys(historicoData).map(key => ({ firebaseUrl: key, ...historicoData[key] }));
+        const estoque = Object.keys(estoqueData).map(key => ({ firebaseUrl: key, ...estoqueData[key] }));
+
+        const mapaClientesRepresentante = _criarMapaClientesRepresentante(clientes);
+        const mapaValoresEstoque = {};
+        const mapaValoresProdutos = {};
+        const mapaValoresPecas = {};
+
+        estoque.forEach(item => {
+            const nome = String(item?.nome || '').trim();
+            if (!nome) return;
+            const valor = _parseNumeroRemuneracao(item?.valorEquipamento);
+            mapaValoresEstoque[_normalizarNomeRemuneracao(nome)] = valor;
+            if (item?.categoria === 'produtos') mapaValoresProdutos[nome] = valor;
+            if (item?.categoria === 'peca') mapaValoresPecas[nome] = valor;
+        });
+
+        const meses = new Set([_mesAnoAtualRemuneracao()]);
+        atendimentos.forEach(item => {
+            const mesAno = _obterMesAnoRemuneracao(item?.data);
+            if (mesAno) meses.add(mesAno);
+        });
+        historico.forEach(item => {
+            const mesAno = _obterMesAnoRemuneracao(item?.data || item?.criado_em);
+            if (mesAno) meses.add(mesAno);
+        });
+
+        const mesesOrdenados = [...meses].sort();
+        const remuneracaoMensal = {};
+        const atualizadoEm = Date.now();
+
+        for (const mesAno of mesesOrdenados) {
+            const financeirosMes = atendimentos.filter(item =>
+                _obterMesAnoRemuneracao(item?.data) === mesAno &&
+                item?.origemRegistro !== 'retirada_estoque' &&
+                item?.origemRegistro !== 'entrada_estoque' &&
+                _parseNumeroRemuneracao(item?.financeiro?.totalGeral) > 0
+            );
+            const manutencoesMes = atendimentos.filter(item =>
+                _obterMesAnoRemuneracao(item?.data) === mesAno &&
+                Array.isArray(item?.manutencao?.equipamentosAdicionados) &&
+                item.manutencao.equipamentosAdicionados.length > 0
+            );
+            const historicoMes = historico.filter(item =>
+                _obterMesAnoRemuneracao(item?.data || item?.criado_em) === mesAno
+            );
+
+            const baseGlobal = financeirosMes.reduce((soma, item) => soma + _obterSaldoParcialRemuneracao(item?.financeiro), 0);
+            const registrosMes = {};
+
+            for (const colab of colaboradores) {
+                const nome = String(colab?.nome || '').trim();
+                if (!nome) continue;
+
+                const nomeNorm = _normalizarNomeRemuneracao(nome);
+                const usuarioKey = _normalizarChaveUsuario(nome);
+                const perfis = {};
+
+                const taxaComissao = _obterComissaoRemuneracaoParaMes(colab, mesAno);
+                if (taxaComissao > 0) {
+                    const baseIndividual = financeirosMes
+                        .filter(item => _normalizarNomeRemuneracao(item?.atendente) === nomeNorm)
+                        .reduce((soma, item) => soma + _obterSaldoParcialRemuneracao(item?.financeiro), 0);
+                    const valor = Math.round(baseIndividual * taxaComissao / 100);
+                    if (valor > 0) {
+                        _registrarPerfilRemuneracao(perfis, 'comissao_producao', {
+                            valor,
+                            percentual: taxaComissao,
+                            base: Math.round(baseIndividual),
+                            atualizadoEm
+                        });
+                    }
+                }
+
+                const taxaGlobal = _parsePercentualRemuneracao(colab?.comissaoGlobal);
+                if (taxaGlobal > 0 && baseGlobal > 0) {
+                    _registrarPerfilRemuneracao(perfis, 'comissao_global', {
+                        valor: Math.round(baseGlobal * taxaGlobal / 100),
+                        percentual: taxaGlobal,
+                        base: Math.round(baseGlobal),
+                        atualizadoEm
+                    });
+                }
+
+                const taxaRepresentante = _parsePercentualRemuneracao(colab?.representanteComissao);
+                if (taxaRepresentante > 0) {
+                    const baseRepresentante = financeirosMes
+                        .filter(item => _normalizarNomeRemuneracao(_obterRepresentanteAtendimentoRemuneracao(item, mapaClientesRepresentante)) === nomeNorm)
+                        .reduce((soma, item) => soma + _obterSaldoParcialRemuneracao(item?.financeiro), 0);
+                    const valor = Math.round(baseRepresentante * taxaRepresentante / 100);
+                    if (valor > 0) {
+                        _registrarPerfilRemuneracao(perfis, 'representante', {
+                            valor,
+                            percentual: taxaRepresentante,
+                            base: Math.round(baseRepresentante),
+                            atualizadoEm
+                        });
+                    }
+                }
+
+                const fixo = _parseNumeroRemuneracao(colab?.fixo);
+                if (fixo > 0) {
+                    _registrarPerfilRemuneracao(perfis, 'fixo', {
+                        valor: Math.round(fixo),
+                        atualizadoEm
+                    });
+                }
+
+                const bonusFixo = _parseNumeroRemuneracao(colab?.bonusFixo);
+                if (bonusFixo > 0) {
+                    _registrarPerfilRemuneracao(perfis, 'bonus_fixo', {
+                        valor: 0,
+                        configurado: Math.round(bonusFixo),
+                        status: 'meta_pendente',
+                        atualizadoEm
+                    });
+                }
+
+                const bonusProducao = _parseNumeroRemuneracao(colab?.bonusManutencao);
+                if (bonusProducao > 0) {
+                    _registrarPerfilRemuneracao(perfis, 'bonus_producao', {
+                        valor: 0,
+                        configurado: Math.round(bonusProducao),
+                        status: 'meta_pendente',
+                        atualizadoEm
+                    });
+                }
+
+                if (colab?.producaoEquipamentos === true) {
+                    let totalEquip = 0;
+                    manutencoesMes.forEach(item => {
+                        const equipamentos = Array.isArray(item?.manutencao?.equipamentosAdicionados)
+                            ? item.manutencao.equipamentosAdicionados
+                            : [];
+                        equipamentos.forEach(equip => {
+                            const responsaveis = _obterResponsaveisItemRemuneracao(equip);
+                            if (!responsaveis.some(resp => _normalizarNomeRemuneracao(resp) === nomeNorm)) return;
+                            const chave = _normalizarNomeRemuneracao(equip?.nome || '');
+                            const valorUnit = _parseNumeroRemuneracao(mapaValoresEstoque[chave]);
+                            const qtd = parseInt(equip?.qtd, 10) || 0;
+                            totalEquip += (qtd * valorUnit) / Math.max(1, responsaveis.length);
+                        });
+                    });
+                    totalEquip = Math.round(totalEquip);
+                    if (totalEquip > 0) {
+                        _registrarPerfilRemuneracao(perfis, 'producao_equipamentos', {
+                            valor: totalEquip,
+                            atualizadoEm
+                        });
+                    }
+                }
+
+                if (colab?.producaoPecas === true) {
+                    let totalPecas = 0;
+                    historicoMes.forEach(item => {
+                        if (item?.tipo !== 'entrada') return;
+                        if (String(item?.itemCategoria || '').trim() !== 'peca') return;
+                        if (_normalizarNomeRemuneracao(item?.responsavel) !== nomeNorm) return;
+                        const nomePeca = String(item?.itemNome || '').trim();
+                        const valorUnit = _parseNumeroRemuneracao(item?.valorUnitario) || _parseNumeroRemuneracao(mapaValoresPecas[nomePeca]);
+                        totalPecas += valorUnit * _parseNumeroRemuneracao(item?.qtd);
+                    });
+                    totalPecas = Math.round(totalPecas);
+                    if (totalPecas > 0) {
+                        _registrarPerfilRemuneracao(perfis, 'producao_pecas', {
+                            valor: totalPecas,
+                            atualizadoEm
+                        });
+                    }
+                }
+
+                if (colab?.prestacaoServico === true) {
+                    _registrarPerfilRemuneracao(perfis, 'prestacao_servico', {
+                        valor: 0,
+                        status: 'fonte_pendente',
+                        atualizadoEm
+                    });
+                }
+
+                const total = Math.round(_somarPerfisRemuneracao(perfis));
+                if (total > 0 || Object.keys(perfis).length > 0) {
+                    registrosMes[usuarioKey] = {
+                        nome,
+                        total,
+                        perfis,
+                        atualizadoEm
+                    };
+                }
+            }
+
+            remuneracaoMensal[mesAno] = registrosMes;
+        }
+
+        const acumuladoProdutos = {};
+        colaboradores
+            .filter(colab => colab?.producaoProdutos === true)
+            .forEach(colab => {
+                const nome = String(colab?.nome || '').trim();
+                if (!nome) return;
+
+                const usuarioKey = _normalizarChaveUsuario(nome);
+                const nomeNorm = _normalizarNomeRemuneracao(nome);
+                let valorProducao = 0;
+
+                historico.forEach(item => {
+                    if (item?.tipo !== 'entrada') return;
+                    if (String(item?.itemCategoria || '').trim() !== 'produtos') return;
+                    if (_normalizarNomeRemuneracao(item?.responsavel) !== nomeNorm) return;
+                    const nomeProduto = String(item?.itemNome || '').trim();
+                    const valorUnit = _parseNumeroRemuneracao(item?.valorUnitario) || _parseNumeroRemuneracao(mapaValoresProdutos[nomeProduto]);
+                    valorProducao += valorUnit * _parseNumeroRemuneracao(item?.qtd);
+                });
+
+                const fluxoUsuario = fluxoCaixa?.[usuarioKey]?.movimentacoes || {};
+                const valorFluxo = Object.values(fluxoUsuario).reduce((soma, mov) => {
+                    const valor = _parseNumeroRemuneracao(mov?.valor);
+                    return soma + (mov?.tipo === 'entrada' ? valor : -valor);
+                }, 0);
+
+                acumuladoProdutos[usuarioKey] = {
+                    nome,
+                    valor: Math.round(valorProducao + valorFluxo),
+                    atualizadoEm
+                };
+            });
+
+        await Promise.all([
+            set(ref(db, 'remuneracao/mensal'), remuneracaoMensal),
+            set(ref(db, 'remuneracao/meses'), mesesOrdenados),
+            set(ref(db, 'remuneracao/acumulado/producao_produtos'), acumuladoProdutos),
+            set(ref(db, 'remuneracao/atualizadoEm'), atualizadoEm)
+        ]);
+
+        return {
+            mensal: remuneracaoMensal,
+            meses: mesesOrdenados,
+            acumulado: acumuladoProdutos
+        };
+    } catch (error) {
+        console.error("ERRO AO RECALCULAR REMUNERAÇÕES:", error);
+        throw error;
+    }
+}
+
+export async function dbListarMesesRemuneracao() {
+    try {
+        const snapshot = await get(ref(db, 'remuneracao/meses'));
+        return snapshot.exists() ? (snapshot.val() || []) : [];
+    } catch (error) {
+        console.error("ERRO AO LISTAR MESES DE REMUNERAÇÃO:", error);
+        return [];
+    }
+}
+
+export function dbEscutarMesesRemuneracao(callback) {
+    return onValue(ref(db, 'remuneracao/meses'), (snapshot) => {
+        callback(snapshot.exists() ? (snapshot.val() || []) : []);
+    });
+}
+
+export async function dbListarRemuneracaoMensal(mesAno) {
+    try {
+        if (!mesAno) return [];
+        const snapshot = await get(ref(db, `remuneracao/mensal/${mesAno}`));
+        const data = snapshot.exists() ? (snapshot.val() || {}) : {};
+        return Object.keys(data).map(key => ({ usuarioKey: key, ...data[key] }));
+    } catch (error) {
+        console.error("ERRO AO LISTAR REMUNERAÇÃO MENSAL:", error);
+        return [];
+    }
+}
+
+export function dbEscutarRemuneracaoMensal(mesAno, callback) {
+    if (!mesAno) {
+        callback([]);
+        return () => {};
+    }
+    return onValue(ref(db, `remuneracao/mensal/${mesAno}`), (snapshot) => {
+        const data = snapshot.exists() ? (snapshot.val() || {}) : {};
+        callback(Object.keys(data).map(key => ({ usuarioKey: key, ...data[key] })));
+    });
+}
+
+export async function dbListarRemuneracaoAcumuladaProdutos() {
+    try {
+        const snapshot = await get(ref(db, 'remuneracao/acumulado/producao_produtos'));
+        const data = snapshot.exists() ? (snapshot.val() || {}) : {};
+        return Object.keys(data).map(key => ({ usuarioKey: key, ...data[key] }));
+    } catch (error) {
+        console.error("ERRO AO LISTAR REMUNERAÇÃO ACUMULADA DE PRODUTOS:", error);
+        return [];
+    }
+}
+
+export function dbEscutarRemuneracaoAcumuladaProdutos(callback) {
+    return onValue(ref(db, 'remuneracao/acumulado/producao_produtos'), (snapshot) => {
+        const data = snapshot.exists() ? (snapshot.val() || {}) : {};
+        callback(Object.keys(data).map(key => ({ usuarioKey: key, ...data[key] })));
+    });
 }
 
 /* =============================================================================

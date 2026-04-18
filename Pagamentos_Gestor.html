@@ -606,7 +606,7 @@
         .prod-sep { font-size: 10px; font-weight: bold; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255,255,255,0.3); text-align: center; padding: 8px 0; }
     </style>
 </head>
-<body style="visibility:hidden;">
+<body>
 
 <div class="app" id="appContainer">
     <div class="topo">&#128184; Fluxos Totais</div>
@@ -698,7 +698,11 @@
         dbListarHistorico,
         dbExcluirHistorico,
         dbEscutarHistoricoCompleto,
-        dbEscutarFluxoCaixa
+        dbEscutarFluxoCaixa,
+        dbRecalcularRemuneracoes,
+        dbEscutarMesesRemuneracao,
+        dbEscutarRemuneracaoMensal,
+        dbEscutarRemuneracaoAcumuladaProdutos
     } from './database.js';
 
     const CATEGORIAS_GASTO = [
@@ -731,7 +735,12 @@
         mesProducao: '',
         exclusoesProducaoEmAndamento: new Set(),
         fluxoProducaoProdutos: null,
-        _unsubProducaoFluxo: null
+        remuneracaoMensalPag: [],
+        remuneracaoProdutosPag: [],
+        _unsubProducaoFluxo: null,
+        _unsubMesesRemuneracao: null,
+        _unsubRemuneracaoMensal: null,
+        _unsubRemuneracaoProdutos: null
     };
 
     const els = {
@@ -769,12 +778,16 @@
             els.selectColab.appendChild(opt);
         });
 
-    // Pré-seleciona o gestor logado
-    els.selectColab.value = nomeGestor;
-    await trocarColaborador(nomeGestor);
-
     vincularEventos();
     atualizarFormulario();
+
+    // Pré-seleciona o gestor logado
+    els.selectColab.value = nomeGestor;
+    try {
+        await trocarColaborador(nomeGestor);
+    } catch (erro) {
+        console.warn('Falha ao carregar colaborador inicial em Pagamentos_Gestor:', erro);
+    }
 
     // Ouvintes em tempo real para manter pagamentos sempre atualizado
     const _prodUsers = colaboradores.filter(c => c?.producaoProdutos === true);
@@ -803,6 +816,24 @@
             estado.fluxoProducaoProdutos.set(nome, movs);
             if (estado.abaAtual === 'pagamentos' && estado.mesSelecionadoPag) renderPagamentos();
         });
+    });
+
+    dbRecalcularRemuneracoes().catch((erro) => {
+        console.warn('Não foi possível recalcular remunerações ao abrir Pagamentos_Gestor:', erro);
+    });
+
+    estado._unsubMesesRemuneracao = dbEscutarMesesRemuneracao((meses) => {
+        estado.mesesPag = Array.isArray(meses) ? meses : [];
+        if (!estado.mesSelecionadoPag || !estado.mesesPag.includes(estado.mesSelecionadoPag)) {
+            estado.mesSelecionadoPag = estado.mesesPag[estado.mesesPag.length - 1] || obterDataLocalISO().slice(0, 7);
+            assinarRemuneracaoMensalPag();
+        }
+        if (estado.abaAtual === 'pagamentos') renderPagamentos();
+    });
+
+    estado._unsubRemuneracaoProdutos = dbEscutarRemuneracaoAcumuladaProdutos((lista) => {
+        estado.remuneracaoProdutosPag = Array.isArray(lista) ? lista : [];
+        if (estado.abaAtual === 'pagamentos') renderPagamentos();
     });
 
     async function trocarColaborador(nome) {
@@ -857,11 +888,19 @@
         });
         document.getElementById('btnMesAnterior').addEventListener('click', () => {
             const idx = estado.mesesPag.indexOf(estado.mesSelecionadoPag);
-            if (idx > 0) { estado.mesSelecionadoPag = estado.mesesPag[idx - 1]; renderPagamentos(); }
+            if (idx > 0) {
+                estado.mesSelecionadoPag = estado.mesesPag[idx - 1];
+                assinarRemuneracaoMensalPag();
+                renderPagamentos();
+            }
         });
         document.getElementById('btnMesProximo').addEventListener('click', () => {
             const idx = estado.mesesPag.indexOf(estado.mesSelecionadoPag);
-            if (idx < estado.mesesPag.length - 1) { estado.mesSelecionadoPag = estado.mesesPag[idx + 1]; renderPagamentos(); }
+            if (idx < estado.mesesPag.length - 1) {
+                estado.mesSelecionadoPag = estado.mesesPag[idx + 1];
+                assinarRemuneracaoMensalPag();
+                renderPagamentos();
+            }
         });
         els.selectColab.addEventListener('change', () => trocarColaborador(els.selectColab.value));
         els.chipUsuario.addEventListener('click', () => {
@@ -1351,7 +1390,8 @@
         function criarCardFluxo(mov, antigo) {
             const CATS = { combustivel: 'Combustível', outros: 'Outros' };
             const categoria = mov.tipo === 'entrada' ? 'Entrada' : (CATS[mov.categoria] || 'Outros');
-            const titulo = mov.tipo === 'entrada' ? 'Entrada registrada' : `Saída registrada · ${categoria}`;
+            const titulo = mov.tipo === 'entrada' ? 'Entrada registrada' : 'Pagamento';
+            const registradoPor = String(mov.registradoPor || estado.nomeUsuario || '').trim();
             const descricao = String(mov.descricao || '').trim();
             const dataBase = mov.criado_em ? new Date(mov.criado_em) : new Date(`${mov.data}T12:00:00`);
             const ts = dataBase.getTime();
@@ -1374,7 +1414,7 @@
                 </div>
                 ${descricao ? `<div style="font-size:14px;color:rgba(255,255,255,0.7);margin-bottom:8px;">${escapeHtml(descricao)}</div>` : ''}
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div style="font-size:11px;font-weight:bold;letter-spacing:0.7px;text-transform:uppercase;color:rgba(255,255,255,0.4);">${escapeHtml(categoria)}</div>
+                    <div style="font-size:11px;font-weight:bold;letter-spacing:0.7px;text-transform:uppercase;color:rgba(255,255,255,0.4);">${escapeHtml(registradoPor ? `Registrado por ${registradoPor}` : categoria)}</div>
                     <div style="font-size:13px;color:white;">${dataFmt}</div>
                 </div>
             </div>`;
@@ -1430,9 +1470,47 @@
     }
 
     function obterMesesDisponiveis() {
-        const meses = new Set();
-        (estado.atendimentosTodos || []).forEach(a => { if (a.data) meses.add(a.data.slice(0, 7)); });
-        return [...meses].sort();
+        return Array.isArray(estado.mesesPag) ? estado.mesesPag : [];
+    }
+
+    function assinarRemuneracaoMensalPag() {
+        if (typeof estado._unsubRemuneracaoMensal === 'function') {
+            estado._unsubRemuneracaoMensal();
+            estado._unsubRemuneracaoMensal = null;
+        }
+        if (!estado.mesSelecionadoPag) {
+            estado.remuneracaoMensalPag = [];
+            return;
+        }
+        estado._unsubRemuneracaoMensal = dbEscutarRemuneracaoMensal(estado.mesSelecionadoPag, (lista) => {
+            estado.remuneracaoMensalPag = Array.isArray(lista) ? lista : [];
+            if (estado.abaAtual === 'pagamentos') renderPagamentos();
+        });
+    }
+
+    function obterValorPerfil(perfis, chave) {
+        return Number(perfis?.[chave]?.valor || 0);
+    }
+
+    function obterResumoRemuneracaoMensal(registro) {
+        const perfis = registro?.perfis || {};
+        const financeiro = (
+            obterValorPerfil(perfis, 'comissao_producao') +
+            obterValorPerfil(perfis, 'comissao_global') +
+            obterValorPerfil(perfis, 'representante') +
+            obterValorPerfil(perfis, 'fixo') +
+            obterValorPerfil(perfis, 'bonus_fixo') +
+            obterValorPerfil(perfis, 'bonus_producao')
+        );
+        const producao = (
+            obterValorPerfil(perfis, 'producao_equipamentos') +
+            obterValorPerfil(perfis, 'producao_pecas') +
+            obterValorPerfil(perfis, 'prestacao_servico')
+        );
+        const qtd = Math.round(Number(perfis?.comissao_producao?.base || 0)) > 0
+            ? 'Comissão por produção'
+            : '';
+        return { financeiro, producao, subtitulo: qtd };
     }
 
     function getComissaoParaMesPag(colab, mesAno) {
@@ -1445,12 +1523,6 @@
             else break;
         }
         return taxa;
-    }
-
-    function obterTaxaPag(colab, mesAno) {
-        const global = parseFloat(colab?.comissaoGlobal || 0);
-        if (global > 0) return global;
-        return getComissaoParaMesPag(colab, mesAno);
     }
 
     function obterLiquidoPag(fin) {
@@ -1517,23 +1589,17 @@
         document.getElementById('appContainer').classList.toggle('pag-mode', aba === 'pagamentos');
 
         if (aba === 'pagamentos') {
-            if (estado.atendimentosTodos === null || estado.estoqueTodos === null) {
-                document.getElementById('listaPagamentos').innerHTML = '<div class="vazio">Carregando...</div>';
-                [estado.atendimentosTodos, estado.estoqueTodos] = await Promise.all([
-                    estado.atendimentosTodos ?? dbListarAtendimentos(),
-                    estado.estoqueTodos ?? dbListarEstoque()
-                ]);
-            }
             const meses = obterMesesDisponiveis();
             estado.mesesPag = meses;
             if (!estado.mesSelecionadoPag || !meses.includes(estado.mesSelecionadoPag)) {
                 estado.mesSelecionadoPag = meses[meses.length - 1] || obterDataLocalISO().slice(0, 7);
             }
+            assinarRemuneracaoMensalPag();
             renderPagamentos();
         }
     }
 
-    function renderPagamentos() {
+    function renderPagamentosAntigo() {
         const mesAno = estado.mesSelecionadoPag;
         const meses = estado.mesesPag;
 
@@ -1572,17 +1638,19 @@
         for (const colab of colaboradores.filter(c => String(c.nivel_completo || '').startsWith('atendimento'))) {
             const nome = String(colab.nome || '').trim();
             if (!nome) continue;
-            const usaGlobal = parseFloat(colab.comissaoGlobal || 0) > 0;
             const isTecnico = String(colab.cargo || '').trim().toLowerCase() === 'técnico';
-            const taxa = obterTaxaPag(colab, mesAno);
-            if (taxa <= 0) continue;
-            const base = (isTecnico || usaGlobal) ? atendsMes : atendsMes.filter(a => String(a.atendente || '').trim() === nome);
-            const liquido = base.reduce((s, a) => s + obterLiquidoPag(a.financeiro), 0);
-            const valor = liquido * taxa / 100;
+            const taxaIndividual = isTecnico ? 0 : getComissaoParaMesPag(colab, mesAno);
+            const taxaGlobal = parseFloat(colab.comissaoGlobal || 0);
+            const baseIndividual = atendsMes.filter(a => String(a.atendente || '').trim() === nome);
+            const liquidoIndividual = baseIndividual.reduce((s, a) => s + obterLiquidoPag(a.financeiro), 0);
+            const liquidoGlobal = atendsMes.reduce((s, a) => s + obterLiquidoPag(a.financeiro), 0);
+            const valorIndividual = taxaIndividual > 0 ? (liquidoIndividual * taxaIndividual / 100) : 0;
+            const valorGlobal = taxaGlobal > 0 ? (liquidoGlobal * taxaGlobal / 100) : 0;
+            const valor = valorIndividual + valorGlobal;
             if (valor <= 0) continue;
             const e = entrada(nome);
             e.financeiro = valor;
-            e.qtd = atendsMes.filter(a => String(a.atendente || '').trim() === nome).length;
+            e.qtd = baseIndividual.length;
             e.nivel2 = String(colab.nivel_completo || '').includes('atendimento_2');
         }
 
@@ -1672,6 +1740,74 @@
     }
 
 
+
+    function renderPagamentos() {
+        const mesAno = estado.mesSelecionadoPag;
+        const meses = estado.mesesPag;
+
+        document.getElementById('labelMes').textContent = formatarMesLabel(mesAno);
+        const idx = meses.indexOf(mesAno);
+        document.getElementById('btnMesAnterior').disabled = idx <= 0;
+        document.getElementById('btnMesProximo').disabled = idx >= meses.length - 1;
+
+        const lista = (estado.remuneracaoMensalPag || [])
+            .map(registro => {
+                const resumo = obterResumoRemuneracaoMensal(registro);
+                return {
+                    nome: registro.nome,
+                    financeiro: resumo.financeiro,
+                    producao: resumo.producao,
+                    total: Number(registro.total || (resumo.financeiro + resumo.producao)),
+                    subtitulo: resumo.subtitulo
+                };
+            })
+            .filter(item => item.total > 0)
+            .sort((a, b) => b.total - a.total);
+
+        const listaProdutos = (estado.remuneracaoProdutosPag || [])
+            .map(item => ({
+                nome: item.nome,
+                valorTotal: Number(item.valor || 0)
+            }))
+            .filter(item => item.valorTotal > 0)
+            .sort((a, b) => b.valorTotal - a.valorTotal);
+
+        const container = document.getElementById('listaPagamentos');
+        if (lista.length === 0 && listaProdutos.length === 0) {
+            container.innerHTML = `<div class="vazio">Nenhum pagamento para ${escapeHtml(formatarMesLabel(mesAno))}.</div>`;
+            return;
+        }
+
+        const htmlProdutos = listaProdutos.length === 0 ? '' :
+            `<div class="secao-pag-label">Produ&ccedil;&atilde;o de Produtos &mdash; Saldo Acumulado</div>` +
+            listaProdutos.map(p => `
+            <div class="card-pagamento">
+                <div class="card-pag-info">
+                    <div class="card-pag-nome">${escapeHtml(p.nome)}</div>
+                </div>
+                <div class="card-pag-valor">${formatarMoeda(p.valorTotal)}</div>
+            </div>`).join('');
+
+        container.innerHTML = lista.map(p => {
+            const total = p.total;
+            const temAmbos = p.financeiro > 0 && p.producao > 0;
+            const breakdown = temAmbos ? `
+                <div class="card-pag-breakdown">
+                    <span class="card-pag-breakdown-item">Financeiro: ${formatarMoeda(p.financeiro)}</span>
+                    <span class="card-pag-breakdown-item">Produ&ccedil;&atilde;o: ${formatarMoeda(p.producao)}</span>
+                </div>` : '';
+            const subtitulo = (p.subtitulo && p.financeiro > 0 && !temAmbos)
+                ? `<div class="card-pag-taxa">${escapeHtml(p.subtitulo)}</div>` : '';
+            return `
+            <div class="card-pagamento">
+                <div class="card-pag-info">
+                    <div class="card-pag-nome">${escapeHtml(p.nome)}</div>
+                    ${subtitulo}${breakdown}
+                </div>
+                <div class="card-pag-valor">${formatarMoeda(total)}</div>
+            </div>`;
+        }).join('') + htmlProdutos;
+    }
 
 </script>
 </body>
