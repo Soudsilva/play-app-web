@@ -1816,6 +1816,7 @@
     editId = urlParams.get('edit');
     const modoSolicitar = urlParams.get('modo') === 'solicitar';
     const fromPontoNovo = urlParams.get('from');
+    const voltarPara = urlParams.get('volta') || 'clientes.html';
 
     if (editId) {
         document.querySelector('h2').innerText = "Editar Cliente";
@@ -2315,7 +2316,7 @@
             }
 
             window.liberarSaidaCadastro?.();
-            window.location.href = "clientes.html";
+            window.location.href = voltarPara;
 
         } catch (error) {
             alert("Erro: " + error.message);

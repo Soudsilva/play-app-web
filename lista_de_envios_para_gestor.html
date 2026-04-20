@@ -464,11 +464,13 @@
             }
 
             const desabilitadoOffline = !navigator.onLine;
+            const nivelGestor = obterPerfilPorNome(usuarioLogado);
+            const confirmadoEBloqueado = !!envio.confirmacao && !nivelGestor.endsWith('_3');
             const htmlAcoes = `
                 <div class="envio-acoes">
                     <div class="acoes-linha">
-                        <button class="btn-acao btn-editar btn-editar-envio" ${desabilitadoOffline ? 'disabled' : ''}>Editar</button>
-                        <button class="btn-acao btn-excluir btn-excluir-envio" ${desabilitadoOffline ? 'disabled' : ''}>Excluir</button>
+                        <button class="btn-acao btn-editar btn-editar-envio" ${desabilitadoOffline || confirmadoEBloqueado ? 'disabled' : ''}>Editar</button>
+                        <button class="btn-acao btn-excluir btn-excluir-envio" ${desabilitadoOffline || confirmadoEBloqueado ? 'disabled' : ''}>Excluir</button>
                     </div>
                 </div>
             `;

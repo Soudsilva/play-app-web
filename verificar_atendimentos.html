@@ -35,8 +35,10 @@
         .header-top {
             display: flex;
             align-items: center;
+            justify-content: flex-end;
             gap: 12px;
             margin-bottom: 14px;
+            position: relative;
         }
 
         .btn-voltar {
@@ -54,17 +56,27 @@
         .header-title {
             font-size: 20px;
             font-weight: bold;
-            flex: 1;
+            position: absolute;
+            left: 0;
+            right: 0;
             text-align: center;
+            pointer-events: none;
         }
 
-        .dot-online {
-            width: 10px;
-            height: 10px;
+        .btn-home {
+            background: rgba(255,255,255,0.1);
+            border: none;
             border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
             flex-shrink: 0;
-            transition: all 0.3s;
+            padding: 0;
         }
+        .btn-home svg { width: 20px; height: 20px; fill: white; }
 
         /* ── TABS ── */
         .tabs {
@@ -234,6 +246,7 @@
         .card {
             background: rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,0.1);
+            border-bottom-color: #ffffff;
             border-radius: 14px;
             margin-bottom: 10px;
             overflow: hidden;
@@ -447,6 +460,30 @@
             border: 1px solid rgba(255,255,255,0.08);
         }
 
+        .foto-thumb.validada {
+            border-color: #4caf50;
+        }
+
+        .foto-thumb.validada::after {
+            content: "✓";
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4caf50;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
         .foto-thumb img {
             width: 100%;
             height: 100%;
@@ -517,11 +554,26 @@
         .btn-confirmar:active { transform: scale(0.98); box-shadow: none; }
         .btn-confirmar:disabled { opacity: 0.5; cursor: default; }
 
+.validacao-chip {
+            display: none;
+            margin-bottom: 10px;
+            padding: 10px 12px;
+            border: 1px solid #ffffff;
+            border-radius: 999px;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
         .tag-ok {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+            flex-wrap: wrap;
             background: rgba(76,175,80,0.12);
             border: 1px solid rgba(76,175,80,0.4);
             border-radius: 10px;
@@ -529,6 +581,10 @@
             font-size: 14px;
             color: #81c784;
             font-weight: bold;
+        }
+
+        .tag-ok-autor {
+            white-space: nowrap;
         }
 
         /* ── LIGHTBOX ── */
@@ -539,6 +595,7 @@
             display: none;
             z-index: 1000;
             overflow: hidden;
+            touch-action: none;
         }
 
         .lightbox.active { display: block; }
@@ -550,6 +607,7 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            transition: bottom 0.32s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         #lightboxImg {
@@ -583,27 +641,81 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .lightbox-label {
+        .lightbox-action-row {
             position: absolute;
-            top: 14px;
-            left: 14px;
+            left: 16px;
+            right: 16px;
+            bottom: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .lightbox-label {
             background: rgba(0,0,0,0.6);
             border: 1px solid rgba(255,255,255,0.15);
             color: white;
-            font-size: 13px;
+            font-size: 18px;
             font-weight: bold;
-            padding: 6px 12px;
+            padding: 8px 16px;
             border-radius: 20px;
-            z-index: 20;
-            max-width: calc(100% - 72px);
+            min-width: 0;
+            flex: 1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+            pointer-events: auto;
+        }
+
+        .lightbox-ack-btn {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            padding: 0;
+            border-radius: 50%;
+            border: 1px solid #ffffff;
+            background: rgba(4, 45, 134, 0.92);
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            flex-shrink: 0;
+            pointer-events: auto;
+            transition: width 0.2s, border-radius 0.2s, padding 0.2s;
+        }
+
+        .lightbox-ack-btn.marcado {
+            border-color: #4caf50;
+            color: #ffffff;
+            background: #2e7d32;
+            box-shadow: 0 0 10px rgba(76,175,80,0.55);
+        }
+
+        .lightbox-ack-btn.aguardando {
+            width: auto;
+            border-radius: 999px;
+            padding: 0 18px;
+            font-size: 15px;
+            border-color: #f59e0b;
+            color: #fff;
+            background: #92400e;
+            box-shadow: 0 0 10px rgba(245,158,11,0.45);
         }
 
         .lb-zoom-hint {
             position: absolute;
-            bottom: 20px;
+            bottom: 64px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0,0,0,0.55);
@@ -648,14 +760,6 @@
             user-select: none;
         }
 
-        .lb-handle-bar {
-            width: 34px;
-            height: 4px;
-            background: rgba(255,255,255,0.28);
-            border-radius: 2px;
-            flex-shrink: 0;
-        }
-
         .lb-panel-summary {
             flex: 1;
             font-size: 14px;
@@ -667,27 +771,94 @@
             text-align: center;
         }
 
-        .lb-toggle-icon {
-            font-size: 13px;
-            color: rgba(255,255,255,0.45);
+        .lb-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 999px;
+            padding: 5px 13px 5px 10px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
             flex-shrink: 0;
-            transition: transform 0.32s;
+            font-family: Arial, sans-serif;
         }
 
-        .lightbox-info.collapsed .lb-toggle-icon { transform: rotate(180deg); }
+        .lb-toggle-btn svg {
+            transition: transform 0.3s;
+            flex-shrink: 0;
+            transform: rotate(180deg);
+        }
+
+        .lb-toggle-btn .txt-expandir { display: none; }
+        .lb-toggle-btn .txt-recolher { display: inline; }
+        .lightbox-info.collapsed .lb-toggle-btn .txt-expandir { display: inline; }
+        .lightbox-info.collapsed .lb-toggle-btn .txt-recolher { display: none; }
+        .lightbox-info.collapsed .lb-toggle-btn svg { transform: rotate(0deg); }
 
         .lb-info-body {
             padding: 2px 16px 28px;
             max-height: 40vh;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+        }
+
+        .lb-date-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 4px 0 10px;
         }
 
         .lb-date {
             font-size: 13px;
             color: #cfd6e3;
-            text-align: center;
-            padding: 4px 0 10px;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .lb-ficha-btn {
+            width: 34px;
+            height: 34px;
+            min-width: 34px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.35);
+            background: rgba(4,45,134,0.92);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .lb-ficha-btn.marcado {
+            border-color: #4caf50;
+            background: #2e7d32;
+            box-shadow: 0 0 8px rgba(76,175,80,0.55);
+        }
+
+        .lb-ficha-btn.aguardando {
+            width: auto;
+            border-radius: 999px;
+            padding: 0 16px;
+            border-color: #f59e0b;
+            color: #fff;
+            background: #92400e;
+            box-shadow: 0 0 10px rgba(245,158,11,0.45);
+            font-size: 14px;
         }
 
         .lb-section {
@@ -836,7 +1007,9 @@
     <div class="header">
         <div class="header-top">
             <div class="header-title">Verificar Atendimentos</div>
-            <div class="dot-online" id="dotOnline"></div>
+            <button class="btn-home" onclick="window.location.href='index.html'">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            </button>
         </div>
 
         <div class="tabs">
@@ -861,8 +1034,7 @@
             <div class="mes-lista" id="mesLista"></div>
         </div>
         <input type="text" class="filter-input" id="inputFiltro"
-               placeholder="🔍 Buscar…"
-               oninput="renderizarLista()" autocomplete="off">
+               placeholder="🔍 Buscar…" autocomplete="off">
     </div>
 
     <!-- LISTA -->
@@ -878,13 +1050,18 @@
         <img id="lightboxImg" src="" alt="">
     </div>
     <button class="lightbox-close" id="btnFecharLightbox">×</button>
-    <div class="lightbox-label" id="lightboxLabel"></div>
-    <div class="lb-zoom-hint oculto" id="lbZoomHint">Duplo toque para zoom · Pinça para ampliar</div>
-    <div class="lightbox-info" id="lightboxInfo" style="display:none;">
+    <div class="lightbox-action-row" id="lightboxActionRow">
+        <div class="lightbox-label" id="lightboxLabel"></div>
+    <button class="lightbox-ack-btn" id="lightboxAckBtn" type="button" style="display:none;">Informações corretas</button>
+    </div>
+    <div class="lightbox-info collapsed" id="lightboxInfo" style="display:none;">
         <div class="lb-panel-handle" id="lbPanelHandle">
-            <div class="lb-handle-bar"></div>
             <div class="lb-panel-summary" id="lbPanelSummary"></div>
-            <div class="lb-toggle-icon">▲</div>
+            <div class="lb-toggle-btn">
+                <span class="txt-expandir">Valores</span>
+                <span class="txt-recolher">Fechar</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+            </div>
         </div>
         <div class="lb-info-body" id="lbInfoBody"></div>
     </div>
@@ -929,6 +1106,23 @@
     let abaAtiva = 'pendente';
     let idParaConfirmar = null;
     const fotoMap = {}; // { fotoId -> { urlFull, label } }
+    const validacaoFotosMap = {}; // { atendimentoId -> { requiredKeys: [], confirmadas: {} } }
+    let lightboxFotoAtual = null;
+
+    /* ── BUSCA ── */
+    function normalizarTextoBusca(valor) {
+        return String(valor || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function quebrarTermosBusca(valor) {
+        return normalizarTextoBusca(valor).split(/\s+/).filter(Boolean);
+    }
 
     /* ── ONLINE ── */
     function atualizarDot() {
@@ -950,6 +1144,86 @@
 
     function gestorLogado() {
         return String(localStorage.getItem('usuarioLogado') || '').trim() || 'Gestor';
+    }
+
+    function normalizarUsuario(valor) {
+        return String(valor || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim()
+            .toLowerCase();
+    }
+
+    function confirmacaoDentroDoPrazo(atendimento) {
+        const emMs = atendimento?.confirmacao?.em ? new Date(atendimento.confirmacao.em).getTime() : 0;
+        return !!emMs && (Date.now() - emMs) < 3 * 60 * 60 * 1000;
+    }
+
+    function usuarioPodeCancelarConfirmacao(atendimento) {
+        return normalizarUsuario(atendimento?.confirmacao?.confirmado_por) === normalizarUsuario(gestorLogado());
+    }
+
+    function listarChavesFotosAtendimento(atendimento) {
+        const fotos = atendimento?.fotos || {};
+        const chaves = [];
+        if (fotos.ficha) chaves.push('ficha');
+        (fotos.maquinas || []).forEach((m, idx) => {
+            if (m.url) chaves.push(`maquina-${idx}-${m.url}`);
+        });
+        (fotos.pix || []).forEach((p, idx) => {
+            if (p.url) chaves.push(`pix-${p.numero ?? idx}-${p.url}`);
+        });
+        return chaves;
+    }
+
+    function sincronizarValidacaoFotos(atendimentoId, requiredKeys) {
+        if (!validacaoFotosMap[atendimentoId]) {
+            validacaoFotosMap[atendimentoId] = { requiredKeys: [], confirmadas: {} };
+        }
+        const estado = validacaoFotosMap[atendimentoId];
+        estado.requiredKeys = [...requiredKeys];
+        const permitidas = new Set(requiredKeys);
+        Object.keys(estado.confirmadas).forEach((key) => {
+            if (!permitidas.has(key)) delete estado.confirmadas[key];
+        });
+        return estado;
+    }
+
+    function obterResumoValidacaoFotos(atendimentoId, requiredKeys) {
+        const estado = sincronizarValidacaoFotos(atendimentoId, requiredKeys);
+        const concluidas = requiredKeys.filter((key) => !!estado.confirmadas[key]).length;
+        const total = requiredKeys.length;
+        return {
+            concluidas,
+            total,
+            liberado: total === 0 || concluidas === total
+        };
+    }
+
+    function marcarFotoComoValidada(atendimentoId, fotoKey) {
+        const atendimento = todosAtendimentos.find((item) => item.firebaseUrl === atendimentoId);
+        if (!atendimento) return;
+        const estado = sincronizarValidacaoFotos(atendimentoId, listarChavesFotosAtendimento(atendimento));
+        estado.confirmadas[fotoKey] = true;
+    }
+
+    function alternarValidacaoDaFoto(atendimentoId, fotoKey) {
+        const atendimento = todosAtendimentos.find((item) => item.firebaseUrl === atendimentoId);
+        if (!atendimento) return false;
+        const estado = sincronizarValidacaoFotos(atendimentoId, listarChavesFotosAtendimento(atendimento));
+        const proximoEstado = !estado.confirmadas[fotoKey];
+        if (proximoEstado) {
+            estado.confirmadas[fotoKey] = true;
+        } else {
+            delete estado.confirmadas[fotoKey];
+        }
+        return proximoEstado;
+    }
+
+    function atendimentoPodeSerConfirmado(atendimento) {
+        if (!atendimento) return false;
+        const requiredKeys = listarChavesFotosAtendimento(atendimento);
+        return obterResumoValidacaoFotos(atendimento.firebaseUrl, requiredKeys).liberado;
     }
 
     /* ── SELETOR DE MÊS ── */
@@ -1029,6 +1303,8 @@
         document.getElementById('mesBtnAtual').classList.remove('aberto');
     }
 
+    document.getElementById('inputFiltro').addEventListener('input', renderizarLista);
+
     document.getElementById('mesBtnAtual').addEventListener('click', (e) => {
         e.stopPropagation();
         document.getElementById('mesLista').classList.contains('aberta')
@@ -1051,8 +1327,10 @@
 
     /* ── RENDER ── */
     function renderizarLista() {
-        const filtro = (document.getElementById('inputFiltro')?.value || '').toLowerCase().trim();
-        const pendentes   = todosAtendimentos.filter(a => !a.confirmacao);
+        const termos = quebrarTermosBusca(document.getElementById('inputFiltro')?.value || '');
+        const pendentes   = todosAtendimentos.filter(a =>
+            !a.confirmacao && (Number(a?.financeiro?.totalGeral) || 0) >= 1
+        );
         const confirmados = todosAtendimentos.filter(a => !!a.confirmacao);
 
         // Badges
@@ -1073,13 +1351,16 @@
         });
 
         // Filtro texto
-        const filtrada = filtro
-            ? porMes.filter(a =>
-                (a.cliente?.nome   || '').toLowerCase().includes(filtro) ||
-                (a.atendente       || '').toLowerCase().includes(filtro) ||
-                (a.cliente?.rota   || '').toLowerCase().includes(filtro) ||
-                String(a.cliente?.numero || '').includes(filtro)
-              )
+        const filtrada = termos.length
+            ? porMes.filter(a => {
+                const haystack = normalizarTextoBusca([
+                    a.cliente?.nome,
+                    a.atendente,
+                    a.cliente?.rota,
+                    a.cliente?.numero
+                ].join(' '));
+                return termos.every(t => haystack.includes(t));
+              })
             : porMes;
 
         // Ordem: mais recente primeiro
@@ -1095,8 +1376,8 @@
                 <div class="empty-state">
                     <div class="empty-icon">${abaAtiva === 'pendente' ? '🎉' : '📋'}</div>
                     <p>${abaAtiva === 'pendente'
-                        ? (filtro ? 'Nenhum resultado para a busca.' : 'Nenhum atendimento neste mês.')
-                        : (filtro ? 'Nenhum resultado para a busca.' : 'Nenhum atendimento confirmado neste mês.')
+                        ? (termos.length ? 'Nenhum resultado para a busca.' : 'Nenhum atendimento neste mês.')
+                        : (termos.length ? 'Nenhum resultado para a busca.' : 'Nenhum atendimento confirmado neste mês.')
                     }</p>
                 </div>`;
             return;
@@ -1121,6 +1402,64 @@
     }
 
     /* ── HELPERS ── */
+    function atualizarStatusValidacaoNoCard(atendimentoId) {
+        const atendimento = todosAtendimentos.find((item) => item.firebaseUrl === atendimentoId);
+        if (!atendimento || atendimento.confirmacao) return;
+
+        const resumo = obterResumoValidacaoFotos(atendimentoId, listarChavesFotosAtendimento(atendimento));
+
+        document.querySelectorAll('[data-validacao-status]').forEach((el) => {
+            if (el.dataset.validacaoStatus === atendimentoId) {
+                el.textContent = resumo.total === 0
+                    ? 'Nenhuma foto para revisar'
+                    : `Fotos revisadas ${resumo.concluidas}/${resumo.total}`;
+            }
+        });
+
+        document.querySelectorAll('.btn-confirmar').forEach((btn) => {
+            if (btn.dataset.confirmarId === atendimentoId) {
+                btn.disabled = !resumo.liberado;
+            }
+        });
+    }
+
+    function atualizarValidacaoDaFotoNoGrid(fotoId) {
+        const foto = fotoMap[fotoId];
+        if (!foto) return;
+        const concluida = !!validacaoFotosMap[foto.atendimentoId]?.confirmadas?.[foto.validacaoKey];
+        document.querySelectorAll('.foto-thumb').forEach((thumb) => {
+            if (thumb.dataset.fotoId === fotoId) {
+                thumb.classList.toggle('validada', concluida);
+            }
+        });
+    }
+
+    function atualizarBotaoValidacaoLightbox() {
+        const ackBtn = document.getElementById('lightboxAckBtn');
+        const panelBtn = document.querySelector('.lb-ficha-btn');
+        if (panelBtn && lightboxFotoAtual?.validacaoKey === 'ficha') {
+            const concluida = !!validacaoFotosMap[lightboxFotoAtual.atendimentoId]?.confirmadas?.['ficha'];
+            panelBtn.classList.toggle('marcado', concluida);
+        }
+
+        if (!lightboxFotoAtual || !lightboxFotoAtual.exigeValidacao || lightboxFotoAtual.validacaoKey === 'ficha') {
+            ackBtn.style.display = 'none';
+            ackBtn.disabled = false;
+            ackBtn.classList.remove('marcado');
+            ackBtn.title = 'Confirmar informações';
+            ackBtn.setAttribute('aria-label', 'Confirmar informações');
+            return;
+        }
+
+        const concluida = !!validacaoFotosMap[lightboxFotoAtual.atendimentoId]?.confirmadas?.[lightboxFotoAtual.validacaoKey];
+        ackBtn.style.display = 'flex';
+        ackBtn.disabled = false;
+        ackBtn.textContent = '✓';
+        ackBtn.classList.toggle('marcado', concluida);
+        ackBtn.title = concluida ? 'Clique para desmarcar esta confirmação' : 'Clique para confirmar as informações';
+        ackBtn.setAttribute('aria-label', ackBtn.title);
+    }
+
     function fmtData(iso) {
         if (!iso) return '—';
         const d = new Date(iso);
@@ -1179,16 +1518,17 @@
         const todasFotos = [];
         if (fotos.ficha) {
             todasFotos.push({
+                validacaoKey: 'ficha',
                 url: fotos.fichaThumb || fotos.ficha,
                 urlFull: fotos.ficha,
                 label: 'Ficha',
                 info: { data: a.data, pixLinhas, total, saldo, comissaoValor, comissaoPct, clienteNumero: a.cliente?.numero, clienteNome: a.cliente?.nome }
             });
         }
-        (fotos.maquinas || []).forEach(m => {
+        (fotos.maquinas || []).forEach((m, idx) => {
             if (m.url) todasFotos.push({ url: m.thumbUrl || m.url, urlFull: m.url, label: m.nome || 'Máquina' });
         });
-        (fotos.pix || []).forEach(p => {
+        (fotos.pix || []).forEach((p, idx) => {
             if (!p.url) return;
             const pixFin = pixLinhas.find(pl => String(pl.numero) === String(p.numero));
             const contAtual = pixFin?.contAtual;
@@ -1198,11 +1538,37 @@
             todasFotos.push({ url: p.thumbUrl || p.url, urlFull: p.url, label });
         });
 
+        let fotoCursor = fotos.ficha ? 1 : 0;
+        (fotos.maquinas || []).forEach((m, idx) => {
+            if (m.url && todasFotos[fotoCursor]) {
+                todasFotos[fotoCursor].validacaoKey = `maquina-${idx}-${m.url}`;
+                fotoCursor += 1;
+            }
+        });
+        (fotos.pix || []).forEach((p, idx) => {
+            if (p.url && todasFotos[fotoCursor]) {
+                todasFotos[fotoCursor].validacaoKey = `pix-${p.numero ?? idx}-${p.url}`;
+                fotoCursor += 1;
+            }
+        });
+
+        const requiredKeys = listarChavesFotosAtendimento(a);
+        const resumoValidacao = obterResumoValidacaoFotos(id, requiredKeys);
+
         const fotosHTML = todasFotos.length > 0
             ? `<div class="fotos-grid">${todasFotos.map((f, fi) => {
                 const fotoId = `${cardIdx}_${fi}`;
-                fotoMap[fotoId] = { urlFull: f.urlFull, label: f.label, info: f.info || null };
-                return `<div class="foto-thumb" data-foto-id="${fotoId}">
+                const fotoValidada = !!validacaoFotosMap[id]?.confirmadas?.[f.validacaoKey];
+                fotoMap[fotoId] = {
+                    fotoId,
+                    urlFull: f.urlFull,
+                    label: f.label,
+                    info: f.info || null,
+                    atendimentoId: id,
+                    validacaoKey: f.validacaoKey,
+                    exigeValidacao: !confirmado
+                };
+                return `<div class="foto-thumb${fotoValidada ? ' validada' : ''}" data-foto-id="${fotoId}">
                     <img src="${escAttr(f.url)}" alt="${escAttr(f.label)}" loading="lazy">
                     <div class="foto-thumb-label">${f.label}</div>
                 </div>`;
@@ -1218,10 +1584,10 @@
             : '';
 
         /* -- RODAPÉ -- */
-        const emMs = a.confirmacao?.em ? new Date(a.confirmacao.em).getTime() : 0;
-        const dentroDoPrazo = confirmado && (Date.now() - emMs) < 3 * 60 * 60 * 1000;
+        const dentroDoPrazo = confirmado && confirmacaoDentroDoPrazo(a);
+        const podeCancelar = dentroDoPrazo && usuarioPodeCancelarConfirmacao(a);
 
-        const rodapeHTML = confirmado
+        let rodapeHTML = confirmado
             ? `<div class="section">
                 <div class="tag-ok">
                     ✅ Confirmado por <strong>${a.confirmacao.confirmado_por}</strong>&nbsp;· ${fmtData(a.confirmacao.em)}
@@ -1233,6 +1599,25 @@
                     ✅ Confirmar este atendimento
                 </button>
                </div>`;
+
+        if (confirmado) {
+            rodapeHTML = `<div class="section">
+                <div class="tag-ok">
+                    <span class="tag-ok-autor">Confirmado por <strong>${a.confirmacao.confirmado_por}</strong></span>
+                    <span>· ${fmtData(a.confirmacao.em)}</span>
+                </div>
+                ${podeCancelar ? `<button class="btn-cancelar-confirm" data-cancelar-id="${escAttr(id)}" data-cancelar-nome="${escAttr(a.cliente?.nome || '')}">Cancelar confirmação</button>` : ''}
+               </div>`;
+        }
+
+        if (!confirmado) {
+            rodapeHTML = `<div class="section">
+                <div class="validacao-chip" data-validacao-status="${escAttr(id)}">${resumoValidacao.total === 0 ? 'Nenhuma foto para revisar' : `Fotos revisadas ${resumoValidacao.concluidas}/${resumoValidacao.total}`}</div>
+                <button class="btn-confirmar" data-confirmar-id="${escAttr(id)}" data-confirmar-nome="${escAttr(a.cliente?.nome || '')}" ${resumoValidacao.liberado ? '' : 'disabled'}>
+                    Confirmar este atendimento
+                </button>
+               </div>`;
+        }
 
         return `
         <div class="card ${cls}" data-id="${escAttr(id)}">
@@ -1249,13 +1634,13 @@
 
             <div class="card-body">
                 <div class="section">
-                    <div class="section-title">📦 Produtos</div>
-                    ${prodsHTML}
+                    <div class="section-title">📷 Fotos</div>
+                    ${fotosHTML}
                 </div>
 
                 <div class="section">
-                    <div class="section-title">📷 Fotos</div>
-                    ${fotosHTML}
+                    <div class="section-title">📦 Produtos</div>
+                    ${prodsHTML}
                 </div>
 
                 ${rodapeHTML}
@@ -1276,13 +1661,18 @@
         const thumb = e.target.closest('.foto-thumb');
         if (thumb) {
             const foto = fotoMap[thumb.dataset.fotoId];
-            if (foto) abrirLightbox(foto.urlFull, foto.label, foto.info);
+            if (foto) abrirLightbox(foto.urlFull, foto.label, foto.info, foto);
             return;
         }
 
         // Confirmar
         const btnConf = e.target.closest('.btn-confirmar');
         if (btnConf) {
+            const atendimento = todosAtendimentos.find((item) => item.firebaseUrl === btnConf.dataset.confirmarId);
+            if (!atendimentoPodeSerConfirmado(atendimento)) {
+                mostrarToast('Revise e confirme todas as fotos antes de concluir.');
+                return;
+            }
             abrirModal(btnConf.dataset.confirmarId, btnConf.dataset.confirmarNome);
             return;
         }
@@ -1309,6 +1699,24 @@
 
     const lbWrap = document.getElementById('lbImgWrap');
 
+    function syncLightboxImageArea() {
+        const infoEl = document.getElementById('lightboxInfo');
+        const actionRowEl = document.getElementById('lightboxActionRow');
+        const labelEl = document.getElementById('lightboxLabel');
+        const ackBtn = document.getElementById('lightboxAckBtn');
+        const panelVisivel = infoEl.style.display !== 'none';
+        const panelAberto = panelVisivel && !infoEl.classList.contains('collapsed');
+        const alturaPainelVisivel = !panelVisivel
+            ? 0
+            : (panelAberto ? infoEl.offsetHeight : 46);
+        const baseBottom = alturaPainelVisivel > 0 ? alturaPainelVisivel + 14 : 18;
+        const labelVisivel = labelEl.style.display !== 'none' && labelEl.textContent.trim() !== '';
+        const ackVisivel = ackBtn.style.display !== 'none';
+        lbWrap.style.bottom = panelAberto ? `${infoEl.offsetHeight}px` : '0px';
+        actionRowEl.style.bottom = `${baseBottom}px`;
+        actionRowEl.style.display = (labelVisivel || ackVisivel) ? 'flex' : 'none';
+    }
+
     lbWrap.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
             e.preventDefault();
@@ -1317,6 +1725,8 @@
                 e.touches[0].clientY - e.touches[1].clientY
             );
             lbPinchScale0 = lbScale;
+            lbDragStart = null;
+            lbLastTap = 0;
         } else if (e.touches.length === 1) {
             const now = Date.now();
             if (now - lbLastTap < 280) {
@@ -1336,6 +1746,10 @@
                 e.touches[0].clientX - e.touches[1].clientX,
                 e.touches[0].clientY - e.touches[1].clientY
             );
+            if (!lbPinchDist0) {
+                lbPinchDist0 = dist;
+                lbPinchScale0 = lbScale;
+            }
             lbScale = Math.min(Math.max(lbPinchScale0 * (dist / lbPinchDist0), 1), 6);
             lbApplyTransform();
         } else if (e.touches.length === 1 && lbScale > 1 && lbDragStart) {
@@ -1346,19 +1760,137 @@
         }
     }, { passive: false });
 
-    lbWrap.addEventListener('touchend', () => {
-        lbPinchDist0 = null;
-        if (lbScale < 1.05) lbReset();
-    });
+    function lbFinalizarToque(e) {
+        if (e.touches.length < 2) {
+            lbPinchDist0 = null;
+        }
+
+        if (e.touches.length === 1) {
+            lbDragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            lbDragTX0 = lbTX;
+            lbDragTY0 = lbTY;
+        } else {
+            lbDragStart = null;
+        }
+
+        if (e.touches.length === 0 && lbScale < 1.01) {
+            lbReset();
+        }
+    }
+
+    lbWrap.addEventListener('touchend', lbFinalizarToque);
+    lbWrap.addEventListener('touchcancel', lbFinalizarToque);
 
     // Painel info — toggle ao tocar no handle
     document.getElementById('lbPanelHandle').addEventListener('click', () => {
         document.getElementById('lightboxInfo').classList.toggle('collapsed');
+        syncLightboxImageArea();
+    });
+
+    let _fichaPendente = false;
+    let _fichaTimer = null;
+
+    document.getElementById('lbInfoBody').addEventListener('click', (e) => {
+        const btn = e.target.closest('.lb-ficha-btn');
+        if (!btn || !lightboxFotoAtual) return;
+
+        const jaMarcado = !!validacaoFotosMap[lightboxFotoAtual.atendimentoId]?.confirmadas?.[lightboxFotoAtual.validacaoKey];
+
+        if (jaMarcado) {
+            alternarValidacaoDaFoto(lightboxFotoAtual.atendimentoId, lightboxFotoAtual.validacaoKey);
+            atualizarValidacaoDaFotoNoGrid(lightboxFotoAtual.fotoId);
+            atualizarStatusValidacaoNoCard(lightboxFotoAtual.atendimentoId);
+            atualizarBotaoValidacaoLightbox();
+            mostrarToast('Validação removida.');
+            return;
+        }
+
+        if (!_fichaPendente) {
+            _fichaPendente = true;
+            btn.classList.add('aguardando');
+            btn.textContent = 'Confirmar';
+            clearTimeout(_fichaTimer);
+            _fichaTimer = setTimeout(() => {
+                _fichaPendente = false;
+                btn.classList.remove('aguardando');
+                btn.textContent = '✓';
+            }, 3000);
+        } else {
+            clearTimeout(_fichaTimer);
+            _fichaPendente = false;
+            btn.classList.remove('aguardando');
+            alternarValidacaoDaFoto(lightboxFotoAtual.atendimentoId, lightboxFotoAtual.validacaoKey);
+            atualizarValidacaoDaFotoNoGrid(lightboxFotoAtual.fotoId);
+            atualizarStatusValidacaoNoCard(lightboxFotoAtual.atendimentoId);
+            atualizarBotaoValidacaoLightbox();
+            fecharLightbox();
+        }
+    });
+
+    let _ackPendente = false;
+    let _ackTimer = null;
+
+    document.getElementById('lightboxAckBtn').addEventListener('click', () => {
+        if (!lightboxFotoAtual || !lightboxFotoAtual.exigeValidacao) return;
+
+        const btn = document.getElementById('lightboxAckBtn');
+        const jaMarcado = !!validacaoFotosMap[lightboxFotoAtual.atendimentoId]?.confirmadas?.[lightboxFotoAtual.validacaoKey];
+
+        // Desmarcar não precisa de confirmação
+        if (jaMarcado) {
+            alternarValidacaoDaFoto(lightboxFotoAtual.atendimentoId, lightboxFotoAtual.validacaoKey);
+            atualizarValidacaoDaFotoNoGrid(lightboxFotoAtual.fotoId);
+            atualizarStatusValidacaoNoCard(lightboxFotoAtual.atendimentoId);
+            atualizarBotaoValidacaoLightbox();
+            mostrarToast('Validação removida.');
+            return;
+        }
+
+        if (!_ackPendente) {
+            // 1º toque — pede confirmação
+            _ackPendente = true;
+            btn.classList.add('aguardando');
+            btn.textContent = 'Confirmar';
+            clearTimeout(_ackTimer);
+            _ackTimer = setTimeout(() => {
+                _ackPendente = false;
+                btn.classList.remove('aguardando');
+                btn.textContent = '✓';
+            }, 3000);
+        } else {
+            // 2º toque — confirma
+            clearTimeout(_ackTimer);
+            _ackPendente = false;
+            btn.classList.remove('aguardando');
+            btn.textContent = '✓';
+            alternarValidacaoDaFoto(lightboxFotoAtual.atendimentoId, lightboxFotoAtual.validacaoKey);
+            atualizarValidacaoDaFotoNoGrid(lightboxFotoAtual.fotoId);
+            atualizarStatusValidacaoNoCard(lightboxFotoAtual.atendimentoId);
+            atualizarBotaoValidacaoLightbox();
+            fecharLightbox();
+        }
     });
 
     // Fechar lightbox
     function fecharLightbox() {
+        clearTimeout(_ackTimer);  _ackPendente = false;
+        clearTimeout(_fichaTimer); _fichaPendente = false;
+        const _btn = document.getElementById('lightboxAckBtn');
+        if (_btn) { _btn.classList.remove('aguardando'); _btn.textContent = '✓'; }
+        const _fbtn = document.querySelector('.lb-ficha-btn');
+        if (_fbtn) { _fbtn.classList.remove('aguardando'); _fbtn.textContent = '✓'; }
         document.getElementById('lightbox').classList.remove('active');
+
+        // Restaura scroll do body
+        const scrollY = parseInt(document.body.dataset.scrollY || '0');
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollY);
+        lbWrap.style.bottom = '0px';
+        lightboxFotoAtual = null;
+        atualizarBotaoValidacaoLightbox();
         lbReset();
         if (lbHistoryPushed) {
             lbHistoryPushed = false;
@@ -1370,7 +1902,16 @@
         if (document.getElementById('lightbox').classList.contains('active')) {
             lbHistoryPushed = false;
             document.getElementById('lightbox').classList.remove('active');
+            lbWrap.style.bottom = '0px';
+            lightboxFotoAtual = null;
+            atualizarBotaoValidacaoLightbox();
             lbReset();
+            const scrollY = parseInt(document.body.dataset.scrollY || '0');
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            window.scrollTo(0, scrollY);
         }
     });
 
@@ -1381,18 +1922,30 @@
         if (e.target.id === 'lightbox') fecharLightbox();
     });
 
+    // Impede que touchmove dentro do lightbox role a lista por baixo
+    document.getElementById('lightbox').addEventListener('touchmove', (e) => {
+        if (!e.target.closest('#lbInfoBody')) e.preventDefault();
+    }, { passive: false });
+
     function buildFichaInfoHTML(info) {
         const pixRows = (info.pixLinhas || []).map(p => `
             <div class="lb-row">
                 <span class="lb-label">
                     <span class="lb-pix-badge">Pix ${p.numero}</span>
-                    Cont. ${Number(p.contAtual || 0).toLocaleString('pt-BR')}
+                    <span style="color:white;font-weight:bold;font-size:15px;">Cont. ${Number(p.contAtual || 0).toLocaleString('pt-BR')}</span>
                 </span>
                 <span class="lb-val pix">${fmtMoeda(p.valor)}</span>
             </div>`).join('');
 
+        const btnFicha = info.exigeValidacao
+            ? `<button class="lb-ficha-btn${info.validada ? ' marcado' : ''}">✓</button>`
+            : '';
+
         return `
-            <div class="lb-date">📅 ${fmtData(info.data)}</div>
+            <div class="lb-date-row">
+                <span class="lb-date">📅 ${fmtData(info.data)}</span>
+                ${btnFicha}
+            </div>
             ${pixRows ? `<div class="lb-section">💠 Pix</div>${pixRows}` : ''}
             <div class="lb-row destaque">
                 <span class="lb-label bold">Total Geral</span>
@@ -1408,36 +1961,60 @@
             </div>`;
     }
 
-    function abrirLightbox(url, label, info) {
+    function abrirLightbox(url, label, info, fotoMeta) {
         const lb     = document.getElementById('lightbox');
         const infoEl = document.getElementById('lightboxInfo');
+        const labelEl = document.getElementById('lightboxLabel');
 
+        lightboxFotoAtual = fotoMeta || null;
         document.getElementById('lightboxImg').src = url;
-        document.getElementById('lightboxLabel').textContent = label;
+        labelEl.textContent = label;
+        labelEl.style.display = label === 'Ficha' ? 'none' : 'block';
+        atualizarBotaoValidacaoLightbox();
         lbReset();
 
         if (info) {
-            document.getElementById('lbInfoBody').innerHTML = buildFichaInfoHTML(info);
+            const fichaValidada = fotoMeta ? !!validacaoFotosMap[fotoMeta.atendimentoId]?.confirmadas?.['ficha'] : false;
+            document.getElementById('lbInfoBody').innerHTML = buildFichaInfoHTML({
+                ...info,
+                validada: fichaValidada,
+                exigeValidacao: fotoMeta?.exigeValidacao || false
+            });
             document.getElementById('lbPanelSummary').textContent =
                 `Nº ${info.clienteNumero || '—'}  ·  ${info.clienteNome || '—'}`;
-            infoEl.classList.remove('collapsed');
+            infoEl.classList.add('collapsed');
             infoEl.style.display = 'block';
+            syncLightboxImageArea();
         } else {
             infoEl.style.display = 'none';
+            syncLightboxImageArea();
         }
-
-        // Hint de zoom aparece por 2 s
-        const hint = document.getElementById('lbZoomHint');
-        hint.classList.remove('oculto');
-        setTimeout(() => hint.classList.add('oculto'), 2200);
 
         history.pushState({ lightbox: true }, '');
         lbHistoryPushed = true;
         lb.classList.add('active');
+
+        // Trava scroll do body (iOS laça scroll por baixo de position:fixed)
+        document.body.dataset.scrollY = window.scrollY;
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${window.scrollY}px`;
+        document.body.style.width = '100%';
     }
+
+    window.addEventListener('resize', () => {
+        if (document.getElementById('lightbox').classList.contains('active')) {
+            syncLightboxImageArea();
+        }
+    });
 
     /* ── MODAL ── */
     function abrirModal(id, nome) {
+        const atendimento = todosAtendimentos.find((item) => item.firebaseUrl === id);
+        if (!atendimentoPodeSerConfirmado(atendimento)) {
+            mostrarToast('Revise e confirme todas as fotos antes de concluir.');
+            return;
+        }
         idParaConfirmar = id;
         document.getElementById('modalDesc').textContent =
             `Você está confirmando que os dados do atendimento de "${nome}" estão corretos.`;
@@ -1466,6 +2043,9 @@
             const atendimento = todosAtendimentos.find(a => a.firebaseUrl === idParaConfirmar);
             if (!atendimento) throw new Error('Atendimento não encontrado.');
 
+            if (!atendimentoPodeSerConfirmado(atendimento)) {
+                throw new Error('Revise e confirme todas as fotos antes de concluir o atendimento.');
+            }
             const payload = { ...atendimento };
             delete payload.firebaseUrl;
 
@@ -1517,6 +2097,9 @@
             if (!atendimento) throw new Error('Atendimento não encontrado.');
             const payload = { ...atendimento };
             delete payload.firebaseUrl;
+            if (!confirmacaoDentroDoPrazo(atendimento) || !usuarioPodeCancelarConfirmacao(atendimento)) {
+                throw new Error('VocÃª sÃ³ pode cancelar confirmaÃ§Ãµes feitas pelo seu prÃ³prio usuÃ¡rio dentro do prazo permitido.');
+            }
             delete payload.confirmacao;
             await dbSalvarAtendimento(payload, idParaCancelar);
             fecharModalCancelar();

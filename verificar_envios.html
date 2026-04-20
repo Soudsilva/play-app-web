@@ -671,6 +671,10 @@
             return false;
         }
 
+        if (envio.confirmacao) {
+            return false;
+        }
+
         const nomeAutor = obterNomeAutorEnvio(envio);
         const perfilAutor = obterPerfilAutorEnvio(envio);
 

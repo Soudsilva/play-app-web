@@ -52,21 +52,47 @@
         #aba-pendentes.ativo { background: #7c3aed; }
         #aba-confirmados.ativo { background: #16a34a; }
 
-        /* ── FILTROS ── */
-        .filtros {
-            display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap;
+        /* ── BARRA MÊS + BUSCA ── */
+        .barra-filtros {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 16px;
         }
-        .filtro {
-            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 999px; padding: 6px 16px; font-size: 14px;
-            color: rgba(255,255,255,0.6); cursor: pointer; font-family: Arial, sans-serif;
-            transition: 0.15s;
+
+        .mes-selector { position: relative; flex-shrink: 0; }
+
+        .mes-btn-atual {
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; padding: 9px 12px; color: white;
+            font-size: 14px; font-weight: bold; cursor: pointer;
+            white-space: nowrap; font-family: Arial, sans-serif;
         }
-        .filtro.ativo {
-            background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.55);
-            color: white; font-weight: bold;
+        .mes-btn-atual .seta { font-size: 11px; color: rgba(255,255,255,0.5); transition: transform 0.2s; }
+        .mes-btn-atual.aberto .seta { transform: rotate(180deg); }
+
+        .mes-lista {
+            position: absolute; top: calc(100% + 6px); left: 0;
+            background: #0d2260; border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 12px; overflow: hidden; z-index: 300;
+            min-width: 170px; box-shadow: 0 8px 24px rgba(0,0,0,0.55); display: none;
         }
-        .filtro:active { transform: translateY(1px); }
+        .mes-lista.aberta { display: block; }
+
+        .mes-opcao {
+            padding: 11px 16px; font-size: 14px; color: white; cursor: pointer;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .mes-opcao:last-child { border-bottom: none; }
+        .mes-opcao:active { background: rgba(255,255,255,0.08); }
+        .mes-opcao.selecionado { color: #ffeb3b; font-weight: bold; }
+
+        .filter-input {
+            flex: 1; background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 10px;
+            color: white; padding: 10px 13px; font-size: 15px;
+            outline: none; min-width: 0; font-family: Arial, sans-serif;
+        }
+        .filter-input::placeholder { color: rgba(255,255,255,0.4); }
 
         /* ── CARD ── */
         .card {
@@ -124,6 +150,21 @@
         .btn-aprovar:active { transform: translateY(1px); filter: brightness(0.85); }
         .btn-aprovar:disabled { opacity: 0.4; cursor: default; }
 
+        .btn-desfazer {
+            background: rgba(244,67,54,0.1); border: 1px solid rgba(244,67,54,0.45);
+            border-radius: 999px; padding: 8px 20px; font-size: 15px; font-weight: bold;
+            color: #ef9a9a; cursor: pointer; font-family: Arial, sans-serif; transition: 0.15s;
+        }
+        .btn-desfazer:active { transform: translateY(1px); filter: brightness(0.85); }
+        .btn-desfazer:disabled { opacity: 0.4; cursor: default; }
+
+        .btn-editar-cliente {
+            background: rgba(255,152,0,0.12); border: 1px solid rgba(255,152,0,0.5);
+            border-radius: 999px; padding: 8px 20px; font-size: 15px; font-weight: bold;
+            color: #ffb74d; cursor: pointer; font-family: Arial, sans-serif; transition: 0.15s;
+        }
+        .btn-editar-cliente:active { transform: translateY(1px); filter: brightness(0.85); }
+
         .confirmado-por { font-size: 13px; color: #4ade80; }
 
         .vazio { text-align: center; color: rgba(255,255,255,0.3); padding: 36px 0; font-size: 17px; }
@@ -152,12 +193,17 @@
         </div>
     </div>
 
-    <!-- FILTROS -->
-    <div class="filtros">
-        <button class="filtro" onclick="setFiltro('hoje',this)">Hoje</button>
-        <button class="filtro ativo" onclick="setFiltro('7d',this)">7 dias</button>
-        <button class="filtro" onclick="setFiltro('30d',this)">30 dias</button>
-        <button class="filtro" onclick="setFiltro('tudo',this)">Tudo</button>
+    <!-- MÊS + BUSCA -->
+    <div class="barra-filtros">
+        <div class="mes-selector" id="mesSelector">
+            <button class="mes-btn-atual" id="mesBtnAtual">
+                <span id="calMesTitulo"></span>
+                <span class="seta">▼</span>
+            </button>
+            <div class="mes-lista" id="mesLista"></div>
+        </div>
+        <input type="text" class="filter-input" id="inputFiltro"
+               placeholder="🔍 Buscar…" autocomplete="off">
     </div>
 
     <!-- LISTA -->
@@ -172,17 +218,29 @@
         dbEscutarClientes,
         dbSalvarCliente,
         dbEscutarManutencoes,
-        dbConfirmarGestorManutencao
+        dbConfirmarGestorManutencao,
+        dbSalvarManutencao
     } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
 
     let _clientes    = [];
     let _manutencoes = [];
     let _abaAtual    = 'pendentes';
-    let _filtro      = '7d';
     let _nomeUsuario = '';
+    let _calAno = new Date().getFullYear();
+    let _calMes = new Date().getMonth();
 
     // ── HELPERS ───────────────────────────────────────────────────────────────
+    function normalizarTextoBusca(valor) {
+        return String(valor || '')
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    }
+
+    function quebrarTermos(valor) {
+        return normalizarTextoBusca(valor).split(/\s+/).filter(Boolean);
+    }
+
     function formatarData(iso) {
         if (!iso) return '—';
         const d = new Date(iso);
@@ -191,20 +249,21 @@
              + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     }
 
-    function dentroPeriodo(iso, filtro) {
-        if (filtro === 'tudo') return true;
+    function dentroDomes(iso) {
         if (!iso) return false;
-        const diff = (Date.now() - new Date(iso)) / 86400000;
-        if (filtro === 'hoje') return diff < 1;
-        if (filtro === '7d')   return diff < 7;
-        if (filtro === '30d')  return diff < 30;
-        return true;
+        const d = new Date(iso);
+        return d.getFullYear() === _calAno && d.getMonth() === _calMes;
+    }
+
+    function dentroDe2h(iso) {
+        if (!iso) return false;
+        return (Date.now() - new Date(iso).getTime()) < 2 * 60 * 60 * 1000;
     }
 
     // ── RENDER ────────────────────────────────────────────────────────────────
     function renderizar() {
         const pendente = _abaAtual === 'pendentes';
-        const f = _filtro;
+        const termos   = quebrarTermos(document.getElementById('inputFiltro')?.value || '');
 
         const temColocacao = (m) => Array.isArray(m.equipamentosAdicionados) && m.equipamentosAdicionados.length > 0;
         const temRetirada  = (m) => Array.isArray(m.equipamentosRetirados)   && m.equipamentosRetirados.length  > 0;
@@ -214,7 +273,7 @@
         const eventosManutencao = _manutencoes
             .filter(m => (temColocacao(m) || temRetirada(m))
                 && (pendente ? !m.confirmadoGestor : !!m.confirmadoGestor)
-                && dentroPeriodo(dataM(m), f))
+                && dentroDomes(dataM(m)))
             .map(m => ({
                 tipo: temColocacao(m) ? 'colocada' : 'retirada',
                 data: dataM(m),
@@ -227,43 +286,51 @@
                 confirmedBy: m.confirmedBy || 'Gestor',
                 dataConfirmacao: m.dataConfirmacaoGestor || '',
                 equipColocadas: temColocacao(m) ? m.equipamentosAdicionados : [],
-                equipRetiradas: temRetirada(m)  ? m.equipamentosRetirados   : []
+                equipRetiradas: temRetirada(m)  ? m.equipamentosRetirados   : [],
+                foto: m.fotoSolicitacao || m.fotoSolicitacaoThumb || ''
             }));
 
-        // Novos pontos cadastrados (só em pendentes — somem após aprovação)
-        const eventosNovos = pendente
-            ? _clientes
-                .filter(c => c.statusCadastro === 'em_analise' && dentroPeriodo(c.dataCadastro, f))
-                .map(c => {
-                    // Busca a solicitação de origem pelo ID vinculado
-                    const solicitacao = c.pontoNovoOrigemId
-                        ? _manutencoes.find(m => m.firebaseUrl === c.pontoNovoOrigemId)
-                        : null;
+        // Novos pontos — pendentes (em_analise) ou confirmados (aprovado)
+        const statusAlvo = pendente ? 'em_analise' : 'aprovado';
+        const eventosNovos = _clientes
+            .filter(c => c.statusCadastro === statusAlvo && dentroDomes(c.dataCadastro))
+            .map(c => {
+                const solicitacao = c.pontoNovoOrigemId
+                    ? _manutencoes.find(m => m.firebaseUrl === c.pontoNovoOrigemId)
+                    : null;
+                const foto = c.fotoFichaInstalacao
+                    || (Array.isArray(c.fotosMaquinasInstalacao) && c.fotosMaquinasInstalacao[0]?.url)
+                    || '';
+                return {
+                    tipo: 'novo-ponto',
+                    confirmado: !pendente,
+                    data: c.dataCadastro,
+                    dataConfirmacao: c.dataAprovacao || '',
+                    id: c.firebaseUrl,
+                    clienteNome: c.nome || '—',
+                    clienteNumero: c.numero || '',
+                    clienteRota: c.rota || '—',
+                    clienteCidade: c.cidade || '—',
+                    cadastradoPor: c.cadastradoPor || '—',
+                    equip: c.equip || '',
+                    enderecoEntrega: c.endereco || '',
+                    enderecoSolicitacao: solicitacao?.clienteEndereco || '',
+                    foto
+                };
+            });
 
-                    // Foto: ficha de instalação ou primeira foto das máquinas
-                    const foto = c.fotoFichaInstalacao
-                        || (Array.isArray(c.fotosMaquinasInstalacao) && c.fotosMaquinasInstalacao[0]?.url)
-                        || '';
-
-                    return {
-                        tipo: 'novo-ponto',
-                        data: c.dataCadastro,
-                        id: c.firebaseUrl,
-                        clienteNome: c.nome || '—',
-                        clienteNumero: c.numero || '',
-                        clienteRota: c.rota || '—',
-                        clienteCidade: c.cidade || '—',
-                        cadastradoPor: c.cadastradoPor || '—',
-                        equip: c.equip || '',
-                        enderecoEntrega: c.endereco || '',         // endereço onde foi entregue
-                        enderecoSolicitacao: solicitacao?.clienteEndereco || '', // endereço da solicitação
-                        foto
-                    };
-                })
-            : [];
-
-        const todos = [...eventosManutencao, ...eventosNovos]
+        let todos = [...eventosManutencao, ...eventosNovos]
             .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+
+        if (termos.length) {
+            todos = todos.filter(ev => {
+                const hay = normalizarTextoBusca([
+                    ev.clienteNome, ev.clienteNumero, ev.clienteRota,
+                    ev.clienteCidade, ev.tecnico, ev.cadastradoPor
+                ].join(' '));
+                return termos.every(t => hay.includes(t));
+            });
+        }
 
         const el = document.getElementById('lista');
 
@@ -289,7 +356,13 @@
 
         const rodape = pendente
             ? `<button class="btn-ok" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`
-            : `<span class="confirmado-por">&#10003; ${ev.confirmedBy} &nbsp;&middot;&nbsp; ${formatarData(ev.dataConfirmacao)}</span>`;
+            : dentroDe2h(ev.dataConfirmacao)
+                ? `<button class="btn-desfazer" onclick="window.desfazerManutencao('${ev.id}',this)">↩ Desfazer</button>`
+                : `<span class="confirmado-por">&#10003; ${ev.confirmedBy} &nbsp;&middot;&nbsp; ${formatarData(ev.dataConfirmacao)}</span>`;
+
+        const fotoHtml = ev.foto
+            ? `<img src="${ev.foto}" onclick="window.verFoto('${ev.foto}')" style="width:100%;border-radius:10px;margin:10px 0;object-fit:cover;max-height:200px;cursor:zoom-in;" />`
+            : '';
 
         return `
         <div class="card colocada${!pendente ? ' confirmado' : ''}" id="card-${ev.id}">
@@ -300,6 +373,7 @@
                 <strong>T&eacute;cnico:</strong> ${ev.tecnico}
             </div>
             <div class="equip-lista">${equips}</div>
+            ${fotoHtml}
             <div class="card-rodape">
                 <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
                 ${rodape}
@@ -315,7 +389,9 @@
 
         const rodape = pendente
             ? `<button class="btn-ok" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`
-            : `<span class="confirmado-por">&#10003; ${ev.confirmedBy} &nbsp;&middot;&nbsp; ${formatarData(ev.dataConfirmacao)}</span>`;
+            : dentroDe2h(ev.dataConfirmacao)
+                ? `<button class="btn-desfazer" onclick="window.desfazerManutencao('${ev.id}',this)">↩ Desfazer</button>`
+                : `<span class="confirmado-por">&#10003; ${ev.confirmedBy} &nbsp;&middot;&nbsp; ${formatarData(ev.dataConfirmacao)}</span>`;
 
         return `
         <div class="card retirada${!pendente ? ' confirmado' : ''}" id="card-${ev.id}">
@@ -376,7 +452,15 @@
             ${btnRotaHtml}
             <div class="card-rodape" style="margin-top:12px;">
                 <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
-                <button class="btn-aprovar" onclick="window.aprovarCliente('${ev.id}',this)">&#10003; Aprovar</button>
+                ${ev.confirmado
+                    ? dentroDe2h(ev.dataConfirmacao)
+                        ? `<button class="btn-desfazer" onclick="window.desfazerNovoPonto('${ev.id}',this)">↩ Desfazer</button>`
+                        : `<span class="confirmado-por">&#10003; Aprovado</span>`
+                    : `<div style="display:flex;gap:8px;">
+                           <button class="btn-editar-cliente" onclick="window.location.href='cadastrar_cliente.html?edit=${ev.id}&volta=servico.html'">&#9998; Editar</button>
+                           <button class="btn-aprovar" onclick="window.aprovarCliente('${ev.id}',this)">&#10003; Aprovar</button>
+                       </div>`
+                }
             </div>
         </div>`;
     }
@@ -393,11 +477,40 @@
         }
     };
 
+    window.desfazerManutencao = async function(id, btn) {
+        if (!id) return;
+        if (btn) { btn.disabled = true; btn.textContent = '…'; }
+        try {
+            const manut = _manutencoes.find(m => m.firebaseUrl === id);
+            if (!manut) throw new Error('Registro não encontrado.');
+            const payload = { ...manut };
+            delete payload.firebaseUrl;
+            delete payload.confirmadoGestor;
+            delete payload.confirmedBy;
+            delete payload.dataConfirmacaoGestor;
+            await dbSalvarManutencao(payload, id);
+        } catch (e) {
+            console.error(e);
+            if (btn) { btn.disabled = false; btn.textContent = '↩ Desfazer'; }
+        }
+    };
+
+    window.desfazerNovoPonto = async function(id, btn) {
+        if (!id) return;
+        if (btn) { btn.disabled = true; btn.textContent = '…'; }
+        try {
+            await dbSalvarCliente({ statusCadastro: 'em_analise', dataAprovacao: null }, id);
+        } catch (e) {
+            console.error(e);
+            if (btn) { btn.disabled = false; btn.textContent = '↩ Desfazer'; }
+        }
+    };
+
     window.aprovarCliente = async function(id, btn) {
         if (!id) return;
         if (btn) { btn.disabled = true; btn.textContent = '…'; }
         try {
-            await dbSalvarCliente({ statusCadastro: 'aprovado' }, id);
+            await dbSalvarCliente({ statusCadastro: 'aprovado', dataAprovacao: new Date().toISOString() }, id);
         } catch (e) {
             console.error(e);
             if (btn) { btn.disabled = false; btn.textContent = '✓ Aprovar'; }
@@ -412,12 +525,73 @@
         renderizar();
     };
 
-    window.setFiltro = function(valor, el) {
-        _filtro = valor;
-        document.querySelectorAll('.filtro').forEach(b => b.classList.remove('ativo'));
-        if (el) el.classList.add('ativo');
-        renderizar();
-    };
+    // ── SELETOR DE MÊS ────────────────────────────────────────────────────────
+    function renderCalendario() {
+        const titulo = new Date(_calAno, _calMes, 1)
+            .toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+        const el = document.getElementById('calMesTitulo');
+        if (el) el.textContent = titulo.charAt(0).toUpperCase() + titulo.slice(1);
+    }
+
+    function fecharMenuMes() {
+        document.getElementById('mesLista').classList.remove('aberta');
+        document.getElementById('mesBtnAtual').classList.remove('aberto');
+    }
+
+    function abrirMenuMes() {
+        const mesAtualStr = `${_calAno}-${String(_calMes + 1).padStart(2, '0')}`;
+        const todasDatas = [
+            ..._manutencoes.map(m => m.dataConclusao || m.dataRegistro),
+            ..._clientes.map(c => c.dataCadastro)
+        ];
+        const mesesDisp = [...new Set(
+            todasDatas.map(iso => {
+                if (!iso) return null;
+                const d = new Date(iso);
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            }).filter(Boolean)
+        )].sort((a, b) => b.localeCompare(a));
+
+        const lista = document.getElementById('mesLista');
+        lista.innerHTML = '';
+        if (mesesDisp.length === 0) {
+            const vazio = document.createElement('div');
+            vazio.className = 'mes-opcao';
+            vazio.textContent = 'Nenhum registro';
+            vazio.style.color = 'rgba(255,255,255,0.4)';
+            lista.appendChild(vazio);
+        }
+        mesesDisp.forEach(mesStr => {
+            const [a, m] = mesStr.split('-').map(Number);
+            const titulo = new Date(a, m - 1, 1)
+                .toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+            const div = document.createElement('div');
+            div.className = 'mes-opcao' + (mesStr === mesAtualStr ? ' selecionado' : '');
+            div.textContent = titulo.charAt(0).toUpperCase() + titulo.slice(1);
+            div.addEventListener('click', () => {
+                _calAno = a; _calMes = m - 1;
+                fecharMenuMes();
+                renderCalendario();
+                renderizar();
+            });
+            lista.appendChild(div);
+        });
+
+        lista.classList.add('aberta');
+        document.getElementById('mesBtnAtual').classList.add('aberto');
+    }
+
+    document.getElementById('inputFiltro').addEventListener('input', renderizar);
+
+    document.getElementById('mesBtnAtual').addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.getElementById('mesLista').classList.contains('aberta')
+            ? fecharMenuMes() : abrirMenuMes();
+    });
+
+    document.addEventListener('click', fecharMenuMes);
+
+    renderCalendario();
 
     // ── INIT ──────────────────────────────────────────────────────────────────
     verificarAutenticacao();
@@ -435,6 +609,27 @@
     });
 
     document.body.style.visibility = 'visible';
+
+    window.verFoto = function(url) {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        overlay.innerHTML = `<img src="${url}" style="max-width:96vw;max-height:92vh;border-radius:10px;object-fit:contain;" />`;
+
+        function fechar() {
+            overlay.remove();
+            window.removeEventListener('popstate', onPopState);
+        }
+
+        function onPopState() { fechar(); }
+
+        overlay.addEventListener('click', () => {
+            history.back();
+        });
+
+        window.addEventListener('popstate', onPopState);
+        history.pushState({ foto: true }, '');
+        document.body.appendChild(overlay);
+    };
 </script>
 
 </body>
