@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Atendimentos</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #042d86;
+            color: white;
+            min-height: 100vh;
+            overscroll-behavior-y: contain;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding-bottom: 80px;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #042d86;
+            padding: 16px 16px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .btn-voltar {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 13px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: bold;
+            flex: 1;
+            text-align: center;
+        }
+
+        .dot-online {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+
+        /* ── TABS ── */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            padding-bottom: 14px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 11px 8px;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.55);
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .tab.active {
+            background: rgba(255,255,255,0.13);
+            border-color: #ffeb3b;
+            color: white;
+        }
+
+        .badge {
+            background: #f44336;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 7px;
+            font-size: 13px;
+            font-weight: bold;
+            min-width: 22px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .badge.verde { background: #4caf50; }
+        .badge.zero  { background: rgba(255,255,255,0.2); }
+
+        /* ── BARRA MÊS + BUSCA ── */
+        .barra-filtros {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px 12px;
+        }
+
+        .mes-selector {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .mes-btn-atual {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 9px 12px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mes-btn-atual .seta {
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            transition: transform 0.2s;
+        }
+
+        .mes-btn-atual.aberto .seta { transform: rotate(180deg); }
+
+        .mes-lista {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            background: #0d2260;
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 12px;
+            overflow: hidden;
+            z-index: 300;
+            min-width: 170px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+            display: none;
+        }
+
+        .mes-lista.aberta { display: block; }
+
+        .mes-opcao {
+            padding: 11px 16px;
+            font-size: 14px;
+            color: white;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mes-opcao:last-child { border-bottom: none; }
+        .mes-opcao:active { background: rgba(255,255,255,0.08); }
+        .mes-opcao.selecionado { color: #ffeb3b; font-weight: bold; }
+
+        .filter-input {
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            color: white;
+            padding: 10px 13px;
+            font-size: 15px;
+            outline: none;
+            min-width: 0;
+        }
+
+        .filter-input::placeholder { color: rgba(255,255,255,0.4); }
+
+
+
+        /* ── RÓTULOS DE DIA ── */
+        .rotulo-dia {
+            font-size: 13px;
+            font-weight: bold;
+            color: #ffeb3b;
+            padding: 18px 4px 6px;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+
+        .rotulo-dia:first-child { padding-top: 4px; }
+
+        /* ── LISTA ── */
+        .content {
+            padding: 4px 16px 0;
+        }
+
+        /* ── EMPTY ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255,255,255,0.45);
+        }
+
+        .empty-icon { font-size: 52px; margin-bottom: 16px; }
+        .empty-state p { font-size: 16px; line-height: 1.5; }
+
+        /* ── LOADING ── */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255,255,255,0.45);
+            font-size: 16px;
+        }
+
+        /* ── CARD ── */
+        .card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .card.pendente { border-left: 4px solid #ffeb3b; }
+        .card.confirmado { border-left: 4px solid #4caf50; opacity: 0.85; }
+        .card.confirmado:hover { opacity: 1; }
+
+        .card-header {
+            padding: 14px 14px 14px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.15s;
+        }
+
+        .card-header:active { background: rgba(255,255,255,0.05); }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            margin-top: 7px;
+            flex-shrink: 0;
+        }
+
+        .status-dot.pendente   { background: #ffeb3b; box-shadow: 0 0 6px rgba(255,235,59,0.6); }
+        .status-dot.confirmado { background: #4caf50; box-shadow: 0 0 6px rgba(76,175,80,0.6); }
+
+        .card-info { flex: 1; min-width: 0; }
+
+        .card-nome {
+            font-size: 18px;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-meta {
+            font-size: 13px;
+            color: #cfd6e3;
+            margin-top: 3px;
+        }
+
+        .card-atendente {
+            font-size: 15px;
+            font-weight: bold;
+            color: white;
+            margin-top: 4px;
+        }
+
+        .card-hora {
+            font-size: 13px;
+            color: #b0c4e8;
+            margin-top: 2px;
+        }
+
+        .card-meta-ok {
+            font-size: 12px;
+            color: #81c784;
+            margin-top: 2px;
+        }
+
+        .card-right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .card-total-label { font-size: 12px; color: #cfd6e3; }
+        .card-total-valor { font-size: 20px; font-weight: bold; color: #ffeb3b; }
+
+        .expand-icon {
+            font-size: 14px;
+            color: rgba(255,255,255,0.35);
+            margin-top: 6px;
+            transition: transform 0.25s;
+            flex-shrink: 0;
+        }
+
+        .card.expanded .expand-icon { transform: rotate(180deg); }
+
+        /* ── CARD BODY ── */
+        .card-body {
+            display: none;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .card.expanded .card-body { display: block; }
+
+        .section {
+            padding: 14px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .section:last-child { border-bottom: none; }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: rgba(255,235,59,0.85);
+            margin-bottom: 10px;
+        }
+
+        /* ── PIX ── */
+        .pix-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 14px;
+        }
+
+        .pix-row:last-child { border-bottom: none; }
+
+        .pix-badge {
+            background: rgba(206,147,216,0.18);
+            border: 1px solid rgba(206,147,216,0.4);
+            color: #ce93d8;
+            border-radius: 6px;
+            padding: 3px 9px;
+            font-weight: bold;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        .pix-cont {
+            color: #cfd6e3;
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .pix-valor {
+            color: #ce93d8;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        /* ── FINANCEIRO ROWS ── */
+        .fin-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .fin-row:last-child { border-bottom: none; }
+
+        .fin-row.destaque {
+            border-top: 1px solid rgba(255,255,255,0.15);
+            margin-top: 4px;
+            padding-top: 10px;
+        }
+
+        .fin-label { font-size: 14px; color: #cfd6e3; }
+        .fin-label.bold { font-weight: bold; color: white; }
+
+        .fin-val { font-size: 16px; font-weight: bold; }
+        .fin-val.cash    { color: #81c784; }
+        .fin-val.total   { color: white; font-size: 18px; }
+        .fin-val.saldo   { color: #ffeb3b; }
+        .fin-val.comissao{ color: #ff8a65; }
+        .fin-val.saturno { color: #ff8a65; }
+
+        /* ── PRODUTOS ── */
+        .prod-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 15px;
+        }
+
+        .prod-row:last-child { border-bottom: none; }
+        .prod-nome { color: white; }
+
+        .prod-qtd {
+            background: rgba(255,235,59,0.15);
+            border: 1px solid rgba(255,235,59,0.4);
+            color: #ffeb3b;
+            border-radius: 6px;
+            padding: 2px 10px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* ── FOTOS ── */
+        .fotos-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .foto-thumb {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.05);
+            cursor: pointer;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .foto-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.2s;
+        }
+
+        .foto-thumb:active img { transform: scale(0.96); }
+
+        .foto-thumb-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.65);
+            color: white;
+            font-size: 11px;
+            padding: 4px 5px;
+            text-align: center;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+
+        .sem-foto {
+            color: rgba(255,255,255,0.35);
+            font-size: 14px;
+        }
+
+        /* ── CANCELAR CONFIRMAÇÃO ── */
+        .btn-cancelar-confirm {
+            background: rgba(244,67,54,0.1);
+            border: 1px solid rgba(244,67,54,0.4);
+            color: #ef9a9a;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.15s;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .btn-cancelar-confirm:active { transform: scale(0.98); }
+
+        /* ── CONFIRMAR ── */
+        .btn-confirmar {
+            background: linear-gradient(135deg, #43a047, #2e7d32);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 17px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 14px rgba(76,175,80,0.35);
+            transition: all 0.15s;
+        }
+
+        .btn-confirmar:active { transform: scale(0.98); box-shadow: none; }
+        .btn-confirmar:disabled { opacity: 0.5; cursor: default; }
+
+        .tag-ok {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(76,175,80,0.12);
+            border: 1px solid rgba(76,175,80,0.4);
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 14px;
+            color: #81c784;
+            font-weight: bold;
+        }
+
+        /* ── LIGHTBOX ── */
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            display: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .lightbox.active { display: block; }
+
+        .lb-img-wrap {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #lightboxImg {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 6px;
+            user-select: none;
+            -webkit-user-drag: none;
+            touch-action: none;
+            will-change: transform;
+            transform-origin: center center;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            font-size: 20px;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .lightbox-label {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: white;
+            font-size: 13px;
+            font-weight: bold;
+            padding: 6px 12px;
+            border-radius: 20px;
+            z-index: 20;
+            max-width: calc(100% - 72px);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lb-zoom-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.55);
+            color: rgba(255,255,255,0.65);
+            font-size: 12px;
+            padding: 5px 14px;
+            border-radius: 14px;
+            z-index: 5;
+            pointer-events: none;
+            transition: opacity 0.5s;
+            white-space: nowrap;
+        }
+
+        .lb-zoom-hint.oculto { opacity: 0; }
+
+        /* ── INFO PANEL FLUTUANTE ── */
+        .lightbox-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 15;
+            background: rgba(2, 14, 60, 0.93);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-top: 1px solid rgba(255,255,255,0.14);
+            transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .lightbox-info.collapsed {
+            transform: translateY(calc(100% - 46px));
+        }
+
+        .lb-panel-handle {
+            height: 46px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 16px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        .lb-handle-bar {
+            width: 34px;
+            height: 4px;
+            background: rgba(255,255,255,0.28);
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .lb-panel-summary {
+            flex: 1;
+            font-size: 14px;
+            font-weight: bold;
+            color: #ffeb3b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+        }
+
+        .lb-toggle-icon {
+            font-size: 13px;
+            color: rgba(255,255,255,0.45);
+            flex-shrink: 0;
+            transition: transform 0.32s;
+        }
+
+        .lightbox-info.collapsed .lb-toggle-icon { transform: rotate(180deg); }
+
+        .lb-info-body {
+            padding: 2px 16px 28px;
+            max-height: 40vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .lb-date {
+            font-size: 13px;
+            color: #cfd6e3;
+            text-align: center;
+            padding: 4px 0 10px;
+        }
+
+        .lb-section {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            color: rgba(255,235,59,0.8);
+            margin: 8px 0 5px;
+        }
+
+        .lb-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            gap: 8px;
+        }
+
+        .lb-row:last-child { border-bottom: none; }
+
+        .lb-row.destaque {
+            border-top: 1px solid rgba(255,255,255,0.13);
+            margin-top: 5px;
+            padding-top: 9px;
+        }
+
+        .lb-label { font-size: 13px; color: #cfd6e3; display: flex; align-items: center; gap: 6px; }
+        .lb-label.bold { color: white; font-weight: bold; }
+
+        .lb-pix-badge {
+            background: rgba(206,147,216,0.18);
+            border: 1px solid rgba(206,147,216,0.35);
+            color: #ce93d8;
+            border-radius: 5px;
+            padding: 1px 7px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .lb-val { font-size: 15px; font-weight: bold; flex-shrink: 0; }
+        .lb-val.pix     { color: #ce93d8; }
+        .lb-val.total   { color: white; font-size: 17px; }
+        .lb-val.saldo   { color: #ffeb3b; }
+        .lb-val.comissao{ color: #ff8a65; }
+
+        /* ── MODAL CONFIRMAÇÃO ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.72);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 990;
+            padding: 20px;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-box {
+            background: #0f2a66;
+            border: 2px solid #4caf50;
+            border-radius: 16px;
+            padding: 28px 22px;
+            width: 100%;
+            max-width: 340px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+
+        .modal-icon { font-size: 44px; margin-bottom: 12px; }
+
+        .modal-title {
+            font-size: 19px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .modal-desc {
+            font-size: 15px;
+            color: #cfd6e3;
+            line-height: 1.55;
+            margin-bottom: 22px;
+        }
+
+        .modal-buttons { display: flex; gap: 10px; }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 10px;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .modal-btn:active { transform: scale(0.97); }
+        .modal-btn.cancelar { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
+        .modal-btn.ok { background: #4caf50; color: white; }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(16px);
+            background: #2e7d32;
+            border: 1px solid #4caf50;
+            color: white;
+            padding: 13px 22px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 2000;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+
+        .toast.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ── ANIMAÇÕES ── */
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .card { animation: fadeSlideIn 0.25s ease both; }
+    </style>
+</head>
+<body>
+
+<div class="app">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-top">
+            <div class="header-title">Verificar Atendimentos</div>
+            <div class="dot-online" id="dotOnline"></div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" id="tabPendente" onclick="mudarAba('pendente')">
+                ⏳ Pendentes
+                <span class="badge" id="badgePendente">…</span>
+            </button>
+            <button class="tab" id="tabConfirmado" onclick="mudarAba('confirmado')">
+                ✅ Confirmados
+                <span class="badge verde" id="badgeConfirmado">…</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MÊS + BUSCA -->
+    <div class="barra-filtros">
+        <div class="mes-selector" id="mesSelector">
+            <button class="mes-btn-atual" id="mesBtnAtual">
+                <span id="calMesTitulo"></span>
+                <span class="seta">▼</span>
+            </button>
+            <div class="mes-lista" id="mesLista"></div>
+        </div>
+        <input type="text" class="filter-input" id="inputFiltro"
+               placeholder="🔍 Buscar…"
+               oninput="renderizarLista()" autocomplete="off">
+    </div>
+
+    <!-- LISTA -->
+    <div class="content" id="listaContainer">
+        <div class="loading">Carregando atendimentos…</div>
+    </div>
+
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+    <div class="lb-img-wrap" id="lbImgWrap">
+        <img id="lightboxImg" src="" alt="">
+    </div>
+    <button class="lightbox-close" id="btnFecharLightbox">×</button>
+    <div class="lightbox-label" id="lightboxLabel"></div>
+    <div class="lb-zoom-hint oculto" id="lbZoomHint">Duplo toque para zoom · Pinça para ampliar</div>
+    <div class="lightbox-info" id="lightboxInfo" style="display:none;">
+        <div class="lb-panel-handle" id="lbPanelHandle">
+            <div class="lb-handle-bar"></div>
+            <div class="lb-panel-summary" id="lbPanelSummary"></div>
+            <div class="lb-toggle-icon">▲</div>
+        </div>
+        <div class="lb-info-body" id="lbInfoBody"></div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL CANCELAR CONFIRMAÇÃO -->
+<div class="modal-overlay" id="modalCancelarOverlay">
+    <div class="modal-box" style="border-color:#f44336;">
+        <div class="modal-icon">↩️</div>
+        <div class="modal-title">Cancelar confirmação?</div>
+        <div class="modal-desc" id="modalCancelarDesc"></div>
+        <div class="modal-buttons">
+            <button class="modal-btn cancelar" id="btnVoltarCancelar">Voltar</button>
+            <button class="modal-btn ok" style="background:#e53935;" id="btnOkCancelar">Cancelar ✗</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+        <div class="modal-icon">✅</div>
+        <div class="modal-title">Confirmar atendimento?</div>
+        <div class="modal-desc" id="modalDesc"></div>
+        <div class="modal-buttons">
+            <button class="modal-btn cancelar" id="btnCancelarModal">Cancelar</button>
+            <button class="modal-btn ok" id="btnOkModal">Confirmar ✓</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
+    import { dbEscutarAtendimentos, dbSalvarAtendimento } from './database.js';
+
+    /* ── ESTADO ── */
+    let todosAtendimentos = [];
+    let abaAtiva = 'pendente';
+    let idParaConfirmar = null;
+    const fotoMap = {}; // { fotoId -> { urlFull, label } }
+
+    /* ── ONLINE ── */
+    function atualizarDot() {
+        const dot = document.getElementById('dotOnline');
+        if (!dot) return;
+        const on = navigator.onLine;
+        dot.style.background = on ? '#4caf50' : '#f44336';
+        dot.style.boxShadow  = `0 0 6px ${on ? 'rgba(76,175,80,0.7)' : 'rgba(244,67,54,0.7)'}`;
+    }
+    window.addEventListener('online',  atualizarDot);
+    window.addEventListener('offline', atualizarDot);
+    atualizarDot();
+
+    /* ── DADOS ── */
+    dbEscutarAtendimentos((lista) => {
+        todosAtendimentos = lista || [];
+        renderizarLista();
+    });
+
+    function gestorLogado() {
+        return String(localStorage.getItem('usuarioLogado') || '').trim() || 'Gestor';
+    }
+
+    /* ── SELETOR DE MÊS ── */
+    let calAno = new Date().getFullYear();
+    let calMes = new Date().getMonth();
+
+    function isoParaDataLocal(iso) {
+        if (!iso) return null;
+        const d = new Date(iso);
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function rotuloDia(dataStr) {
+        const hoje  = new Date(); hoje.setHours(0,0,0,0);
+        const alvo  = new Date(dataStr + 'T12:00:00');
+        const diff  = Math.round((hoje - alvo) / 86400000);
+        if (diff === 0) return 'Hoje';
+        if (diff === 1) return 'Ontem';
+        const nomeDia = alvo.toLocaleDateString('pt-BR', { weekday: 'long' });
+        const cap = nomeDia.charAt(0).toUpperCase() + nomeDia.slice(1);
+        if (diff <= 6)  return cap;
+        if (diff <= 13) return `Semana passada · ${cap}`;
+        return alvo.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' });
+    }
+
+    function renderCalendario() {
+        const titulo = new Date(calAno, calMes, 1)
+            .toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+        const el = document.getElementById('calMesTitulo');
+        if (el) el.textContent = titulo.charAt(0).toUpperCase() + titulo.slice(1);
+    }
+
+    function abrirMenuMes() {
+        const btn   = document.getElementById('mesBtnAtual');
+        const lista = document.getElementById('mesLista');
+        const mesAtualStr = `${calAno}-${String(calMes+1).padStart(2,'0')}`;
+
+        // Meses que têm pelo menos um atendimento
+        const mesesDisp = [...new Set(
+            todosAtendimentos
+                .map(a => isoParaDataLocal(a.ultimaEdicao || a.data)?.slice(0, 7))
+                .filter(Boolean)
+        )].sort((a, b) => b.localeCompare(a));
+
+        lista.innerHTML = '';
+
+        if (mesesDisp.length === 0) {
+            const vazio = document.createElement('div');
+            vazio.className = 'mes-opcao';
+            vazio.textContent = 'Nenhum atendimento';
+            vazio.style.color = 'rgba(255,255,255,0.4)';
+            lista.appendChild(vazio);
+        }
+
+        mesesDisp.forEach(mesStr => {
+            const [a, m] = mesStr.split('-').map(Number);
+            const titulo = new Date(a, m - 1, 1)
+                .toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+            const div = document.createElement('div');
+            div.className = 'mes-opcao' + (mesStr === mesAtualStr ? ' selecionado' : '');
+            div.textContent = titulo.charAt(0).toUpperCase() + titulo.slice(1);
+            div.addEventListener('click', () => {
+                calAno = a; calMes = m - 1;
+                fecharMenuMes();
+                renderCalendario();
+                renderizarLista();
+            });
+            lista.appendChild(div);
+        });
+
+        lista.classList.add('aberta');
+        btn.classList.add('aberto');
+    }
+
+    function fecharMenuMes() {
+        document.getElementById('mesLista').classList.remove('aberta');
+        document.getElementById('mesBtnAtual').classList.remove('aberto');
+    }
+
+    document.getElementById('mesBtnAtual').addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.getElementById('mesLista').classList.contains('aberta')
+            ? fecharMenuMes()
+            : abrirMenuMes();
+    });
+
+    document.addEventListener('click', fecharMenuMes);
+
+    renderCalendario();
+
+    /* ── ABAS ── */
+    window.mudarAba = function(aba) {
+        abaAtiva = aba;
+        document.getElementById('tabPendente').classList.toggle('active', aba === 'pendente');
+        document.getElementById('tabConfirmado').classList.toggle('active', aba === 'confirmado');
+        document.getElementById('inputFiltro').value = '';
+        renderizarLista();
+    };
+
+    /* ── RENDER ── */
+    function renderizarLista() {
+        const filtro = (document.getElementById('inputFiltro')?.value || '').toLowerCase().trim();
+        const pendentes   = todosAtendimentos.filter(a => !a.confirmacao);
+        const confirmados = todosAtendimentos.filter(a => !!a.confirmacao);
+
+        // Badges
+        const bP = document.getElementById('badgePendente');
+        const bC = document.getElementById('badgeConfirmado');
+        bP.textContent = pendentes.length;
+        bP.className   = 'badge' + (pendentes.length === 0 ? ' zero' : '');
+        bC.textContent = confirmados.length;
+        bC.className   = 'badge verde' + (confirmados.length === 0 ? ' zero' : '');
+
+        const lista = abaAtiva === 'pendente' ? pendentes : confirmados;
+
+        // Filtro mês
+        const mesStr = `${calAno}-${String(calMes+1).padStart(2,'0')}`;
+        const porMes = lista.filter(a => {
+            const d = isoParaDataLocal(a.ultimaEdicao || a.data);
+            return d && d.startsWith(mesStr);
+        });
+
+        // Filtro texto
+        const filtrada = filtro
+            ? porMes.filter(a =>
+                (a.cliente?.nome   || '').toLowerCase().includes(filtro) ||
+                (a.atendente       || '').toLowerCase().includes(filtro) ||
+                (a.cliente?.rota   || '').toLowerCase().includes(filtro) ||
+                String(a.cliente?.numero || '').includes(filtro)
+              )
+            : porMes;
+
+        // Ordem: mais recente primeiro
+        filtrada.sort((a, b) =>
+            Date.parse(b.ultimaEdicao || b.data || 0) -
+            Date.parse(a.ultimaEdicao || a.data || 0)
+        );
+
+        const container = document.getElementById('listaContainer');
+
+        if (filtrada.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">${abaAtiva === 'pendente' ? '🎉' : '📋'}</div>
+                    <p>${abaAtiva === 'pendente'
+                        ? (filtro ? 'Nenhum resultado para a busca.' : 'Nenhum atendimento neste mês.')
+                        : (filtro ? 'Nenhum resultado para a busca.' : 'Nenhum atendimento confirmado neste mês.')
+                    }</p>
+                </div>`;
+            return;
+        }
+
+        // Limpa mapa de fotos antes de re-renderizar
+        Object.keys(fotoMap).forEach(k => delete fotoMap[k]);
+
+        // Agrupa por data e insere rótulos de dia
+        let ultimaData = null;
+        let cardIdx = 0;
+        let html = '';
+        filtrada.forEach(a => {
+            const dataStr = isoParaDataLocal(a.ultimaEdicao || a.data) || 'sem-data';
+            if (dataStr !== ultimaData) {
+                html += `<div class="rotulo-dia">${rotuloDia(dataStr)}</div>`;
+                ultimaData = dataStr;
+            }
+            html += criarCardHTML(a, cardIdx++);
+        });
+        container.innerHTML = html;
+    }
+
+    /* ── HELPERS ── */
+    function fmtData(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        return d.toLocaleString('pt-BR', {
+            day: '2-digit', month: '2-digit', year: '2-digit',
+            hour: '2-digit', minute: '2-digit'
+        });
+    }
+
+    function fmtMoeda(val) {
+        return (Number(val) || 0).toLocaleString('pt-BR', {
+            style: 'currency', currency: 'BRL',
+            minimumFractionDigits: 0, maximumFractionDigits: 0
+        });
+    }
+
+    function escAttr(str) {
+        return String(str || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    /* ── CARD HTML ── */
+    function criarCardHTML(a, cardIdx) {
+        const id         = a.firebaseUrl || '';
+        const confirmado = !!a.confirmacao;
+        const cls        = confirmado ? 'confirmado' : 'pendente';
+
+        const total         = Number(a?.financeiro?.totalGeral)   || 0;
+        const dinheiro      = Number(a?.financeiro?.dinheiro)      || 0;
+        const comissaoValor = Number(a?.financeiro?.comissaoValor) || 0;
+        const comissaoPct   = Number(a?.financeiro?.comissaoPorcentagem) || 0;
+        const saldo         = Number(a?.financeiro?.saldoFinal ?? (total - comissaoValor));
+        const pixLinhas     = a?.financeiro?.pix  || [];
+        const produtos      = a?.produtos          || [];
+        const fotos         = a?.fotos             || {};
+
+        /* -- PIX -- */
+        const pixHTML = pixLinhas.length > 0
+            ? pixLinhas.map(p => `
+                <div class="pix-row">
+                    <span class="pix-badge">Pix ${p.numero}</span>
+                    <span class="pix-cont">${p.contAnt ?? '?'} → ${p.contAtual ?? '?'}</span>
+                    <span class="pix-valor">${fmtMoeda(p.valor)}</span>
+                </div>`).join('')
+            : '<span class="sem-foto">Nenhum Pix registrado</span>';
+
+        /* -- PRODUTOS -- */
+        const prodsHTML = produtos.length > 0
+            ? produtos.map(p => `
+                <div class="prod-row">
+                    <span class="prod-nome">${p.nome || '—'}</span>
+                    <span class="prod-qtd">${p.quantidade ?? 0}</span>
+                </div>`).join('')
+            : '<span class="sem-foto">Nenhum produto registrado</span>';
+
+        /* -- FOTOS -- */
+        const todasFotos = [];
+        if (fotos.ficha) {
+            todasFotos.push({
+                url: fotos.fichaThumb || fotos.ficha,
+                urlFull: fotos.ficha,
+                label: 'Ficha',
+                info: { data: a.data, pixLinhas, total, saldo, comissaoValor, comissaoPct, clienteNumero: a.cliente?.numero, clienteNome: a.cliente?.nome }
+            });
+        }
+        (fotos.maquinas || []).forEach(m => {
+            if (m.url) todasFotos.push({ url: m.thumbUrl || m.url, urlFull: m.url, label: m.nome || 'Máquina' });
+        });
+        (fotos.pix || []).forEach(p => {
+            if (!p.url) return;
+            const pixFin = pixLinhas.find(pl => String(pl.numero) === String(p.numero));
+            const contAtual = pixFin?.contAtual;
+            const label = contAtual != null
+                ? `Pix ${p.numero} · Cont. ${Number(contAtual).toLocaleString('pt-BR')}`
+                : `Pix ${p.numero}`;
+            todasFotos.push({ url: p.thumbUrl || p.url, urlFull: p.url, label });
+        });
+
+        const fotosHTML = todasFotos.length > 0
+            ? `<div class="fotos-grid">${todasFotos.map((f, fi) => {
+                const fotoId = `${cardIdx}_${fi}`;
+                fotoMap[fotoId] = { urlFull: f.urlFull, label: f.label, info: f.info || null };
+                return `<div class="foto-thumb" data-foto-id="${fotoId}">
+                    <img src="${escAttr(f.url)}" alt="${escAttr(f.label)}" loading="lazy">
+                    <div class="foto-thumb-label">${f.label}</div>
+                </div>`;
+            }).join('')}</div>`
+            : '<span class="sem-foto">Nenhuma foto enviada</span>';
+
+        /* -- SATURNO -- */
+        const saturnoHTML = a.saturno_contagem_bolinhas != null
+            ? `<div class="fin-row">
+                <span class="fin-label">⚙️ Saturno — bolinhas encontradas</span>
+                <span class="fin-val saturno">${a.saturno_contagem_bolinhas}</span>
+               </div>`
+            : '';
+
+        /* -- RODAPÉ -- */
+        const emMs = a.confirmacao?.em ? new Date(a.confirmacao.em).getTime() : 0;
+        const dentroDoPrazo = confirmado && (Date.now() - emMs) < 3 * 60 * 60 * 1000;
+
+        const rodapeHTML = confirmado
+            ? `<div class="section">
+                <div class="tag-ok">
+                    ✅ Confirmado por <strong>${a.confirmacao.confirmado_por}</strong>&nbsp;· ${fmtData(a.confirmacao.em)}
+                </div>
+                ${dentroDoPrazo ? `<button class="btn-cancelar-confirm" data-cancelar-id="${escAttr(id)}" data-cancelar-nome="${escAttr(a.cliente?.nome || '')}">↩ Cancelar confirmação</button>` : ''}
+               </div>`
+            : `<div class="section">
+                <button class="btn-confirmar" data-confirmar-id="${escAttr(id)}" data-confirmar-nome="${escAttr(a.cliente?.nome || '')}">
+                    ✅ Confirmar este atendimento
+                </button>
+               </div>`;
+
+        return `
+        <div class="card ${cls}" data-id="${escAttr(id)}">
+            <div class="card-header">
+                <div class="status-dot ${cls}"></div>
+                <div class="card-info">
+                    <div class="card-nome">${a.cliente?.nome || '—'}</div>
+                    <div class="card-meta">Nº ${a.cliente?.numero || '—'} · Rota ${a.cliente?.rota || '—'}</div>
+                    <div class="card-atendente">${a.atendente || '—'} · ${fmtData(a.data)}</div>
+                    ${confirmado ? `<div class="card-meta-ok">✅ Verificado</div>` : ''}
+                </div>
+                <div class="expand-icon">▼</div>
+            </div>
+
+            <div class="card-body">
+                <div class="section">
+                    <div class="section-title">📦 Produtos</div>
+                    ${prodsHTML}
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📷 Fotos</div>
+                    ${fotosHTML}
+                </div>
+
+                ${rodapeHTML}
+            </div>
+        </div>`;
+    }
+
+    /* ── DELEGAÇÃO DE EVENTOS ── */
+    document.getElementById('listaContainer').addEventListener('click', (e) => {
+        // Expandir card
+        const header = e.target.closest('.card-header');
+        if (header) {
+            header.closest('.card').classList.toggle('expanded');
+            return;
+        }
+
+        // Abrir foto
+        const thumb = e.target.closest('.foto-thumb');
+        if (thumb) {
+            const foto = fotoMap[thumb.dataset.fotoId];
+            if (foto) abrirLightbox(foto.urlFull, foto.label, foto.info);
+            return;
+        }
+
+        // Confirmar
+        const btnConf = e.target.closest('.btn-confirmar');
+        if (btnConf) {
+            abrirModal(btnConf.dataset.confirmarId, btnConf.dataset.confirmarNome);
+            return;
+        }
+    });
+
+    /* ── LIGHTBOX ── */
+
+    // Estado de zoom/pan
+    let lbScale = 1, lbTX = 0, lbTY = 0;
+    let lbHistoryPushed = false;
+    let lbLastTap = 0;
+    let lbPinchDist0 = null, lbPinchScale0 = 1;
+    let lbDragStart = null, lbDragTX0 = 0, lbDragTY0 = 0;
+
+    function lbApplyTransform() {
+        document.getElementById('lightboxImg').style.transform =
+            `scale(${lbScale}) translate(${lbTX}px, ${lbTY}px)`;
+    }
+
+    function lbReset() {
+        lbScale = 1; lbTX = 0; lbTY = 0;
+        lbApplyTransform();
+    }
+
+    const lbWrap = document.getElementById('lbImgWrap');
+
+    lbWrap.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            lbPinchDist0 = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            lbPinchScale0 = lbScale;
+        } else if (e.touches.length === 1) {
+            const now = Date.now();
+            if (now - lbLastTap < 280) {
+                e.preventDefault();
+                lbScale > 1 ? lbReset() : (lbScale = 2.5, lbApplyTransform());
+            }
+            lbLastTap = now;
+            lbDragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            lbDragTX0 = lbTX; lbDragTY0 = lbTY;
+        }
+    }, { passive: false });
+
+    lbWrap.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            lbScale = Math.min(Math.max(lbPinchScale0 * (dist / lbPinchDist0), 1), 6);
+            lbApplyTransform();
+        } else if (e.touches.length === 1 && lbScale > 1 && lbDragStart) {
+            e.preventDefault();
+            lbTX = lbDragTX0 + (e.touches[0].clientX - lbDragStart.x) / lbScale;
+            lbTY = lbDragTY0 + (e.touches[0].clientY - lbDragStart.y) / lbScale;
+            lbApplyTransform();
+        }
+    }, { passive: false });
+
+    lbWrap.addEventListener('touchend', () => {
+        lbPinchDist0 = null;
+        if (lbScale < 1.05) lbReset();
+    });
+
+    // Painel info — toggle ao tocar no handle
+    document.getElementById('lbPanelHandle').addEventListener('click', () => {
+        document.getElementById('lightboxInfo').classList.toggle('collapsed');
+    });
+
+    // Fechar lightbox
+    function fecharLightbox() {
+        document.getElementById('lightbox').classList.remove('active');
+        lbReset();
+        if (lbHistoryPushed) {
+            lbHistoryPushed = false;
+            history.back();
+        }
+    }
+
+    window.addEventListener('popstate', () => {
+        if (document.getElementById('lightbox').classList.contains('active')) {
+            lbHistoryPushed = false;
+            document.getElementById('lightbox').classList.remove('active');
+            lbReset();
+        }
+    });
+
+    document.getElementById('btnFecharLightbox').addEventListener('click', fecharLightbox);
+
+    // Toque no fundo (fora do painel e fora da imagem) fecha
+    document.getElementById('lightbox').addEventListener('click', (e) => {
+        if (e.target.id === 'lightbox') fecharLightbox();
+    });
+
+    function buildFichaInfoHTML(info) {
+        const pixRows = (info.pixLinhas || []).map(p => `
+            <div class="lb-row">
+                <span class="lb-label">
+                    <span class="lb-pix-badge">Pix ${p.numero}</span>
+                    Cont. ${Number(p.contAtual || 0).toLocaleString('pt-BR')}
+                </span>
+                <span class="lb-val pix">${fmtMoeda(p.valor)}</span>
+            </div>`).join('');
+
+        return `
+            <div class="lb-date">📅 ${fmtData(info.data)}</div>
+            ${pixRows ? `<div class="lb-section">💠 Pix</div>${pixRows}` : ''}
+            <div class="lb-row destaque">
+                <span class="lb-label bold">Total Geral</span>
+                <span class="lb-val total">${fmtMoeda(info.total)}</span>
+            </div>
+            <div class="lb-row">
+                <span class="lb-label">Saldo Parcial</span>
+                <span class="lb-val saldo">${fmtMoeda(info.saldo)}</span>
+            </div>
+            <div class="lb-row">
+                <span class="lb-label">Comissão (${info.comissaoPct}%)</span>
+                <span class="lb-val comissao">− ${fmtMoeda(info.comissaoValor)}</span>
+            </div>`;
+    }
+
+    function abrirLightbox(url, label, info) {
+        const lb     = document.getElementById('lightbox');
+        const infoEl = document.getElementById('lightboxInfo');
+
+        document.getElementById('lightboxImg').src = url;
+        document.getElementById('lightboxLabel').textContent = label;
+        lbReset();
+
+        if (info) {
+            document.getElementById('lbInfoBody').innerHTML = buildFichaInfoHTML(info);
+            document.getElementById('lbPanelSummary').textContent =
+                `Nº ${info.clienteNumero || '—'}  ·  ${info.clienteNome || '—'}`;
+            infoEl.classList.remove('collapsed');
+            infoEl.style.display = 'block';
+        } else {
+            infoEl.style.display = 'none';
+        }
+
+        // Hint de zoom aparece por 2 s
+        const hint = document.getElementById('lbZoomHint');
+        hint.classList.remove('oculto');
+        setTimeout(() => hint.classList.add('oculto'), 2200);
+
+        history.pushState({ lightbox: true }, '');
+        lbHistoryPushed = true;
+        lb.classList.add('active');
+    }
+
+    /* ── MODAL ── */
+    function abrirModal(id, nome) {
+        idParaConfirmar = id;
+        document.getElementById('modalDesc').textContent =
+            `Você está confirmando que os dados do atendimento de "${nome}" estão corretos.`;
+        document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function fecharModal() {
+        document.getElementById('modalOverlay').classList.remove('active');
+        idParaConfirmar = null;
+    }
+
+    document.getElementById('btnCancelarModal').addEventListener('click', fecharModal);
+
+    document.getElementById('modalOverlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('modalOverlay')) fecharModal();
+    });
+
+    document.getElementById('btnOkModal').addEventListener('click', async () => {
+        if (!idParaConfirmar) return;
+
+        const btn = document.getElementById('btnOkModal');
+        btn.disabled = true;
+        btn.textContent = 'Salvando…';
+
+        try {
+            const atendimento = todosAtendimentos.find(a => a.firebaseUrl === idParaConfirmar);
+            if (!atendimento) throw new Error('Atendimento não encontrado.');
+
+            const payload = { ...atendimento };
+            delete payload.firebaseUrl;
+
+            payload.confirmacao = {
+                confirmado_por: gestorLogado(),
+                em: new Date().toISOString()
+            };
+
+            await dbSalvarAtendimento(payload, idParaConfirmar);
+            fecharModal();
+            mostrarToast('✅ Atendimento confirmado!');
+        } catch (err) {
+            console.error('Erro ao confirmar:', err);
+            alert('Erro ao confirmar: ' + (err.message || err));
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Confirmar ✓';
+        }
+    });
+
+    /* ── CANCELAR CONFIRMAÇÃO ── */
+    let idParaCancelar = null;
+
+    function abrirModalCancelar(id, nome) {
+        idParaCancelar = id;
+        document.getElementById('modalCancelarDesc').textContent =
+            `Isso vai remover a confirmação do atendimento de "${nome}".`;
+        document.getElementById('modalCancelarOverlay').classList.add('active');
+    }
+
+    function fecharModalCancelar() {
+        document.getElementById('modalCancelarOverlay').classList.remove('active');
+        idParaCancelar = null;
+    }
+
+    document.getElementById('btnVoltarCancelar').addEventListener('click', fecharModalCancelar);
+
+    document.getElementById('modalCancelarOverlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('modalCancelarOverlay')) fecharModalCancelar();
+    });
+
+    document.getElementById('btnOkCancelar').addEventListener('click', async () => {
+        if (!idParaCancelar) return;
+        const btn = document.getElementById('btnOkCancelar');
+        btn.disabled = true;
+        btn.textContent = 'Cancelando…';
+        try {
+            const atendimento = todosAtendimentos.find(a => a.firebaseUrl === idParaCancelar);
+            if (!atendimento) throw new Error('Atendimento não encontrado.');
+            const payload = { ...atendimento };
+            delete payload.firebaseUrl;
+            delete payload.confirmacao;
+            await dbSalvarAtendimento(payload, idParaCancelar);
+            fecharModalCancelar();
+            mostrarToast('↩ Confirmação cancelada.');
+        } catch (err) {
+            console.error('Erro ao cancelar:', err);
+            alert('Erro ao cancelar: ' + (err.message || err));
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Cancelar ✗';
+        }
+    });
+
+    document.getElementById('listaContainer').addEventListener('click', (e) => {
+        const btnCancel = e.target.closest('.btn-cancelar-confirm');
+        if (btnCancel) {
+            abrirModalCancelar(btnCancel.dataset.cancelarId, btnCancel.dataset.cancelarNome);
+        }
+    }, true);
+
+    /* ── TOAST ── */
+    function mostrarToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('visible');
+        setTimeout(() => t.classList.remove('visible'), 2800);
+    }
+</script>
+
+</body>
+</html>
