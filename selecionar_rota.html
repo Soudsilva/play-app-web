@@ -662,34 +662,17 @@ function gerarUrlGoogleMapsRota(enderecos, origem) {
     return url;
 }
 
-function gerarUrlPreferencialMaps(urlWeb) {
+function abrirMapsUrl(urlWeb) {
     const ua = navigator.userAgent || '';
-    const isiOS = /iPhone|iPad|iPod/i.test(ua);
-    const isAndroid = /Android/i.test(ua);
-    if (isiOS) {
-        return urlWeb.replace(/^https?:\/\//i, 'comgooglemapsurl://');
-    }
-    if (isAndroid) {
-        // intent:// abre o app Google Maps se instalado; cai para web se não estiver
-        return urlWeb.replace(/^https:\/\/www\.google\.com\//i, 'intent://www.google.com/')
+    if (/Android/i.test(ua)) {
+        // intent:// faz o Android abrir o app Maps sem navegar a página atual
+        window.location.href = urlWeb.replace(/^https:\/\/www\.google\.com\//i, 'intent://www.google.com/')
             + '#Intent;scheme=https;package=com.google.android.apps.maps;end';
-    }
-    return urlWeb;
-}
-
-function abrirMapaPreferencial(novaAba, urlWeb) {
-    const urlPreferencial = gerarUrlPreferencialMaps(urlWeb);
-    novaAba.location.href = urlPreferencial;
-
-    if (urlPreferencial !== urlWeb) {
-        // Se o deep link não abrir o app, a aba fica em branco → abre URL web como fallback
-        setTimeout(() => {
-            try {
-                if (!novaAba.closed) {
-                    novaAba.location.href = urlWeb;
-                }
-            } catch (_) {}
-        }, 1200);
+    } else if (/iPhone|iPad|iPod/i.test(ua)) {
+        window.location.href = urlWeb.replace(/^https?:\/\//i, 'comgooglemapsurl://');
+        setTimeout(() => { window.location.href = urlWeb; }, 1000);
+    } else {
+        window.open(urlWeb, '_blank');
     }
 }
 
@@ -710,18 +693,7 @@ window.abrirMapaRota = function(numeroRota) {
         return;
     }
 
-    const novaAba = window.open('about:blank', '_blank');
-    if (!novaAba || novaAba === window) {
-        mostrarToast('⚠️ Permita pop-ups para abrir o mapa');
-        return;
-    }
-
-    try {
-        novaAba.document.title = 'Abrindo mapa...';
-        novaAba.document.body.innerHTML = '<div style="font-family:Arial,sans-serif;padding:16px">Abrindo mapa...</div>';
-    } catch (_) {}
-
-    // Limite prÃƒÂ¡tico de waypoints no Google Maps (origem + destino + 23 waypoints = 24 endereÃƒÂ§os)
+    // Limite prático de waypoints no Google Maps (origem + destino + 23 waypoints = 24 endereços)
     const MAX_ENDERECOS = 24;
     const enderecos = enderecosAll.length > MAX_ENDERECOS
         ? enderecosAll.slice(0, MAX_ENDERECOS)
@@ -732,8 +704,7 @@ window.abrirMapaRota = function(numeroRota) {
     }
 
     const navegar = (origem) => {
-        const urlWeb = gerarUrlGoogleMapsRota(enderecos, origem);
-        abrirMapaPreferencial(novaAba, urlWeb);
+        abrirMapsUrl(gerarUrlGoogleMapsRota(enderecos, origem));
     };
 
     if (!navigator.geolocation) {
