@@ -1104,9 +1104,14 @@
 
         function abrirMaps(urlWeb) {
             if (isAndroid) {
-                // intent:// faz o Android abrir o app Maps sem navegar a página atual
-                window.location.href = urlWeb.replace(/^https:\/\/www\.google\.com\//i, 'intent://www.google.com/')
+                const intentUrl = urlWeb.replace(/^https:\/\/www\.google\.com\//i, 'intent://www.google.com/')
                     + '#Intent;scheme=https;package=com.google.android.apps.maps;end';
+                const a = document.createElement('a');
+                a.href = intentUrl;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
             } else if (isiOS) {
                 window.location.href = urlWeb.replace(/^https?:\/\//i, 'comgooglemapsurl://');
                 setTimeout(() => { window.location.href = urlWeb; }, 1000);
@@ -1242,8 +1247,14 @@
         const urlWeb = `https://www.google.com/maps/search/?api=1&query=${query}`;
         const ua = navigator.userAgent || '';
         if (/Android/i.test(ua)) {
-            window.location.href = urlWeb.replace(/^https:\/\/www\.google\.com\//i, 'intent://www.google.com/')
+            const intentUrl = urlWeb.replace(/^https:\/\/www\.google\.com\//i, 'intent://www.google.com/')
                 + '#Intent;scheme=https;package=com.google.android.apps.maps;end';
+            const a = document.createElement('a');
+            a.href = intentUrl;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         } else if (/iPhone|iPad|iPod/i.test(ua)) {
             window.location.href = urlWeb.replace(/^https?:\/\//i, 'comgooglemapsurl://');
             setTimeout(() => { window.location.href = urlWeb; }, 1000);
