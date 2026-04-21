@@ -181,7 +181,7 @@
         .carregando { text-align: center; color: rgba(255,255,255,0.3); padding: 36px 0; font-size: 15px; }
     </style>
 </head>
-
+<script src="assets/js/play-dialogs.js"></script>
 <body style="visibility: hidden;">
 <div class="app">
 
@@ -319,7 +319,10 @@
                 dataConfirmacao: m.dataConfirmacaoGestor || '',
                 equipColocadas: temColocacao(m) ? m.equipamentosAdicionados : [],
                 equipRetiradas: temRetirada(m)  ? m.equipamentosRetirados   : [],
-                foto: m.fotoSolicitacao || m.fotoSolicitacaoThumb || ''
+                foto: m.fotoSolicitacao || m.fotoSolicitacaoThumb || '',
+                enderecoCliente: m.clienteEndereco || '',
+                enderecoMaquina: m.enderecoAlteracaoMaquina || '',
+                pontoEncerrado: m.pontoEncerrado === true
             }));
 
         // Novos pontos — pendentes (em_analise) ou confirmados (aprovado)
@@ -382,7 +385,8 @@
     function cardColocada(ev, pendente) {
         const equips = ev.equipColocadas.map(e => {
             const nome = typeof e === 'string' ? e : (e.nome || '—');
-            const qtd  = typeof e === 'object' && e.qtd ? ` &nbsp;·&nbsp; ${e.qtd}x` : '';
+            const qtdNum = typeof e === 'object' ? parseInt(e.qtd, 10) : NaN;
+            const qtd  = !isNaN(qtdNum) && qtdNum > 1 ? ` ${qtdNum}` : '';
             return `<div class="equip-item"><span class="dot add"></span>${nome}${qtd}</div>`;
         }).join('');
 
@@ -396,6 +400,29 @@
             ? `<img src="${ev.foto}" onclick="window.verFoto('${ev.foto}')" style="width:100%;border-radius:10px;margin:10px 0;object-fit:cover;max-height:200px;cursor:zoom-in;" />`
             : '';
 
+        const endCadastroHtml_add = ev.enderecoCliente
+            ? `<div style="margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.06);border-left:3px solid rgba(255,255,255,0.35);">
+                   <div style="font-size:11px;font-weight:bold;letter-spacing:1px;color:rgba(255,255,255,0.6);text-transform:uppercase;margin-bottom:3px;">Endere&ccedil;o do Cadastro</div>
+                   <div style="font-size:15px;color:#ffffff;">${ev.enderecoCliente}</div>
+               </div>`
+            : '';
+
+        const endMaquinaHtml_add = ev.enderecoMaquina
+            ? `<div style="margin-top:6px;padding:8px 10px;border-radius:8px;background:rgba(74,222,128,0.07);border-left:3px solid #4ade80;">
+                   <div style="font-size:11px;font-weight:bold;letter-spacing:1px;color:#4ade80;text-transform:uppercase;margin-bottom:3px;">Endere&ccedil;o Informado na Visita</div>
+                   <div style="font-size:15px;color:rgba(255,255,255,0.9);">${ev.enderecoMaquina}</div>
+               </div>`
+            : '';
+
+        const btnRotaHtml_add = (ev.enderecoCliente && ev.enderecoMaquina)
+            ? `<a href="https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(ev.enderecoCliente)}&destination=${encodeURIComponent(ev.enderecoMaquina)}&travelmode=driving"
+                  target="_blank" rel="noopener"
+                  style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;border-radius:999px;background:rgba(74,222,128,0.10);border:1px solid rgba(74,222,128,0.35);color:#4ade80;font-size:14px;font-weight:bold;text-decoration:none;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  Ver dist&acirc;ncia no Maps
+              </a>`
+            : '';
+
         return `
         <div class="card colocada${!pendente ? ' confirmado' : ''}" id="card-${ev.id}">
             <div class="card-tipo tipo-colocada">&#8593; M&aacute;quina Adicionada</div>
@@ -406,7 +433,10 @@
             </div>
             <div class="equip-lista">${equips}</div>
             ${fotoHtml}
-            <div class="card-rodape">
+            ${endCadastroHtml_add}
+            ${endMaquinaHtml_add}
+            ${btnRotaHtml_add}
+            <div class="card-rodape" style="margin-top:${(endCadastroHtml_add || endMaquinaHtml_add) ? '12px' : '10px'}">
                 <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
                 ${rodape}
             </div>
@@ -425,16 +455,42 @@
                 ? `<button class="btn-desfazer" onclick="window.desfazerManutencao('${ev.id}',this)">↩ Desfazer</button>`
                 : `<span class="confirmado-por">&#10003; ${ev.confirmedBy} &nbsp;&middot;&nbsp; ${formatarData(ev.dataConfirmacao)}</span>`;
 
+        const endCadastroHtml_ret = ev.enderecoCliente
+            ? `<div style="margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.06);border-left:3px solid rgba(255,255,255,0.35);">
+                   <div style="font-size:11px;font-weight:bold;letter-spacing:1px;color:rgba(255,255,255,0.6);text-transform:uppercase;margin-bottom:3px;">Endere&ccedil;o do Cadastro</div>
+                   <div style="font-size:15px;color:#ffffff;">${ev.enderecoCliente}</div>
+               </div>`
+            : '';
+
+        const endMaquinaHtml_ret = ev.enderecoMaquina
+            ? `<div style="margin-top:6px;padding:8px 10px;border-radius:8px;background:rgba(248,113,113,0.07);border-left:3px solid #f87171;">
+                   <div style="font-size:11px;font-weight:bold;letter-spacing:1px;color:#f87171;text-transform:uppercase;margin-bottom:3px;">Endere&ccedil;o Informado na Visita</div>
+                   <div style="font-size:15px;color:rgba(255,255,255,0.9);">${ev.enderecoMaquina}</div>
+               </div>`
+            : '';
+
+        const btnRotaHtml_ret = (ev.enderecoCliente && ev.enderecoMaquina)
+            ? `<a href="https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(ev.enderecoCliente)}&destination=${encodeURIComponent(ev.enderecoMaquina)}&travelmode=driving"
+                  target="_blank" rel="noopener"
+                  style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;border-radius:999px;background:rgba(248,113,113,0.10);border:1px solid rgba(248,113,113,0.35);color:#f87171;font-size:14px;font-weight:bold;text-decoration:none;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  Ver dist&acirc;ncia no Maps
+              </a>`
+            : '';
+
         return `
         <div class="card retirada${!pendente ? ' confirmado' : ''}" id="card-${ev.id}">
-            <div class="card-tipo tipo-retirada">&#8595; M&aacute;quina Retirada</div>
+            <div class="card-tipo tipo-retirada">${ev.pontoEncerrado ? '&#9940; Ponto Encerrado' : '&#8595; M&aacute;quina Retirada'}</div>
             <div class="card-cliente">N. ${ev.clienteNumero} ${ev.clienteNome}</div>
             <div class="card-detalhe">
                 <strong>Rota:</strong> ${ev.clienteRota} &nbsp;&middot;&nbsp; <strong>Cidade:</strong> ${ev.clienteCidade}<br>
                 <strong>T&eacute;cnico:</strong> ${ev.tecnico}
             </div>
             <div class="equip-lista">${equips}</div>
-            <div class="card-rodape">
+            ${endCadastroHtml_ret}
+            ${endMaquinaHtml_ret}
+            ${btnRotaHtml_ret}
+            <div class="card-rodape" style="margin-top:${(endCadastroHtml_ret || endMaquinaHtml_ret) ? '12px' : '10px'}">
                 <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
                 ${rodape}
             </div>
@@ -500,6 +556,14 @@
     // ── AÇÕES ─────────────────────────────────────────────────────────────────
     window.okManutencao = async function(id, btn) {
         if (!id) return;
+        const manut = _manutencoes.find(m => m.firebaseUrl === id);
+        if (manut?.pontoEncerrado === true) {
+            const confirmado = await window.playConfirm(
+                'Confirmar o encerramento deste ponto?\n\nO cliente será excluído do sistema e esta ação não poderá ser desfeita.',
+                { confirmLabel: 'Confirmar exclusão', cancelLabel: 'Cancelar' }
+            );
+            if (!confirmado) return;
+        }
         if (btn) { btn.disabled = true; btn.textContent = '…'; }
         try {
             await dbConfirmarGestorManutencao(id, _nomeUsuario);

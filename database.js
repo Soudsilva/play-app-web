@@ -1866,6 +1866,10 @@ export async function dbConfirmarGestorManutencao(id, nomeGestor) {
             confirmedBy: nomeGestor || '',
             dataConfirmacaoGestor: new Date().toISOString()
         });
+
+        if (manut.pontoEncerrado === true && clienteId) {
+            await dbExcluirCliente(clienteId);
+        }
     } catch (erro) {
         console.error("ERRO AO CONFIRMAR SERVICO:", erro);
         throw erro;

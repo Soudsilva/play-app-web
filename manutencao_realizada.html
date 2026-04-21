@@ -374,6 +374,61 @@
         }
         .sub-secao.visivel { display: block; animation: surgir 0.25s ease; }
         .sub-titulo { font-size: 15px; color: #b0bbd4; margin-bottom: 10px; }
+
+        .wrap-endereco-maquina {
+            display: none;
+            margin-top: 14px;
+            animation: surgir 0.25s ease;
+        }
+        .wrap-endereco-maquina.visivel { display: block; }
+        .row-endereco-maquina {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .input-endereco-wrap {
+            flex: 1;
+            position: relative;
+        }
+        .input-endereco-wrap .campo-texto {
+            padding-right: 38px;
+            cursor: default;
+        }
+        .btn-limpar-endereco {
+            display: none;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.5);
+            font-size: 17px;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+        .btn-limpar-endereco:active { color: white; }
+        .btn-abrir-maps {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.2);
+            flex-shrink: 0;
+            text-decoration: none;
+            color: white;
+        }
+        .btn-abrir-maps:active { background: rgba(255,255,255,0.18); }
+        .dica-endereco {
+            margin-top: 6px;
+            font-size: 13px;
+            color: #b0bbd4;
+            text-align: center;
+        }
         #subPixEncerramento {
             border-top: none;
             padding-top: 0;
@@ -811,6 +866,27 @@
             <div class="grade-opcoes horizontal" style="gap:10px;">
                 <button class="btn-opcao" id="btnAcaoMaquinaAdd" style="flex:1;" onclick="toggleAcaoMaquina('adicionou')">➕ Adicionou</button>
                 <button class="btn-opcao" id="btnAcaoMaquinaRet" style="flex:1;" onclick="toggleAcaoMaquina('retirou')">➖ Retirou</button>
+            </div>
+
+            <div class="wrap-endereco-maquina" id="wrapEnderecoMaquina">
+                <div class="campo-label" style="margin-bottom:8px;">Endereço do local:</div>
+                <div class="row-endereco-maquina">
+                    <div class="input-endereco-wrap">
+                        <input type="text" id="campoEnderecoMaquina" class="campo-texto" readonly
+                            placeholder="Cole o endereço aqui..."
+                            style="user-select:text; -webkit-user-select:text;">
+                        <button type="button" id="btnLimparEnderecoMaquina" class="btn-limpar-endereco"
+                            onclick="limparEnderecoMaquina()">✕</button>
+                    </div>
+                    <a class="btn-abrir-maps" href="https://maps.google.com" target="_blank" rel="noopener noreferrer"
+                        title="Abrir Google Maps" aria-label="Abrir Google Maps">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                    </a>
+                </div>
+                <div class="dica-endereco">Abra o Maps, copie o endereço e cole aqui</div>
             </div>
         </div>
 
@@ -1947,8 +2023,12 @@ function obterSlotsFotosEquipamentosAdicionados() {
         const quantidade = Math.max(Number.parseInt(item.qtd, 10) || 0, 0);
         if (!nome || quantidade <= 0) return;
 
-        for (let indiceFoto = 1; indiceFoto <= quantidade; indiceFoto += 1) {
-            const sufixo = quantidade > 1 ? ` ${indiceFoto}` : '';
+        // Maquina P com até 4 unidades é tratada como um único equipamento (1 foto só)
+        const eMaquinaP = /^maquina\s+p$/i.test(nome);
+        const slotsParaGerar = (eMaquinaP && quantidade <= 4) ? 1 : quantidade;
+
+        for (let indiceFoto = 1; indiceFoto <= slotsParaGerar; indiceFoto += 1) {
+            const sufixo = slotsParaGerar > 1 ? ` ${indiceFoto}` : '';
             slots.push({
                 slotKey: `equip_${linhaIndexValida + 1}_${indiceFoto}`,
                 linhaIndexValida,
@@ -2547,6 +2627,11 @@ function sincronizarAcoesMaquinaUI() {
         }
     }
 
+    const wrapEndereco = document.getElementById('wrapEnderecoMaquina');
+    if (wrapEndereco) {
+        wrapEndereco.classList.toggle('visivel', temAcaoMaquinaSelecionada());
+    }
+
     sincronizarSecaoProdutosUI();
 }
 
@@ -2681,6 +2766,33 @@ window.responderTemMaquinas = function(teveAlteracao) {
     sincronizarAcoesMaquinaUI();
     registrarNovoEstadoHistorico();
 };
+
+window.limparEnderecoMaquina = function() {
+    const campo = document.getElementById('campoEnderecoMaquina');
+    if (campo) campo.value = '';
+    const btn = document.getElementById('btnLimparEnderecoMaquina');
+    if (btn) btn.style.display = 'none';
+};
+
+(function() {
+    const campoEndereco = document.getElementById('campoEnderecoMaquina');
+    if (!campoEndereco) return;
+    campoEndereco.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const texto = (e.clipboardData || window.clipboardData).getData('text').trim();
+        if (/https?:\/\//i.test(texto)) {
+            exibirAlertaPadrao('Cole apenas o endereço, não um link. Copie o texto do endereço no Maps e cole aqui.');
+            return;
+        }
+        if (!/\d{5}-\d{3}$/.test(texto)) {
+            exibirAlertaPadrao('Endereço inválido. Cole o endereço completo com o CEP, por exemplo: Av. Vitória, 268 - Nova Iguaçu - RJ, 26275-480');
+            return;
+        }
+        this.value = texto;
+        const btnLimpar = document.getElementById('btnLimparEnderecoMaquina');
+        if (btnLimpar) btnLimpar.style.display = this.value ? 'block' : 'none';
+    });
+})();
 
 window.toggleAcaoMaquina = function(tipo) {
     respostas.acoesMaquinas[tipo] = !respostas.acoesMaquinas[tipo];
@@ -2825,6 +2937,12 @@ window.finalizarRegistro = async function() {
         }
 
         if (mexeuMaquinas) {
+            const enderecoMaquina = String(document.getElementById('campoEnderecoMaquina')?.value || '').trim();
+            if (!enderecoMaquina) {
+                throw new Error('Cole o endereço do local onde a máquina foi instalada ou retirada.');
+            }
+            camposExtras.enderecoAlteracaoMaquina = enderecoMaquina;
+
             if (respostas.acoesMaquinas.adicionou) {
                 if (!await validarTodosOsPixEquipamentosAdicionados()) {
                     throw new Error('Corrija os numeros Pix duplicados antes de concluir.');
@@ -3069,9 +3187,10 @@ window.finalizarRegistro = async function() {
             });
         }
 
+        sessionStorage.removeItem('manutencao_realizando');
         ocultarStatus();
         botao.textContent = '✅ Salvo com sucesso!';
-        setTimeout(() => window.location.href = 'manutencoes_solicitadas.html', 1200);
+        setTimeout(() => window.location.replace('manutencoes_solicitadas.html'), 1200);
 
     } catch (erro) {
         console.error('Erro ao salvar:', erro);

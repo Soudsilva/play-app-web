@@ -1471,6 +1471,14 @@
             return false;
         }
 
+        if (!/\d{5}-\d{3}$/.test(texto)) {
+            limparEnderecoNoFormulario();
+            if (exibirAlerta) {
+                mostrarAlertaPlay("Cole o endereço completo com o CEP, por exemplo: Av. Vitória, 268 - Nova Iguaçu - RJ, 26275-480", document.getElementById("endereco"));
+            }
+            return false;
+        }
+
         aplicarEnderecoNoFormulario(texto, "maps");
         preencherCidadePeloEndereco(true);
         return true;
