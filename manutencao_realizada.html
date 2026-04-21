@@ -290,6 +290,7 @@
             font-family: Arial, sans-serif;
             user-select: text;
             -webkit-user-select: text;
+            -webkit-touch-callout: default;
         }
         .campo-texto::placeholder { color: rgba(255,255,255,0.3); }
         .campo-texto:focus { border-color: rgba(255,235,59,0.5); }
@@ -392,7 +393,7 @@
         }
         .input-endereco-wrap .campo-texto {
             padding-right: 38px;
-            cursor: default;
+            cursor: text;
         }
         .btn-limpar-endereco {
             display: none;
@@ -872,9 +873,10 @@
                 <div class="campo-label" style="margin-bottom:8px;">Endereço do local:</div>
                 <div class="row-endereco-maquina">
                     <div class="input-endereco-wrap">
-                        <input type="text" id="campoEnderecoMaquina" class="campo-texto" readonly
+                        <input type="text" id="campoEnderecoMaquina" class="campo-texto"
                             placeholder="Cole o endereço aqui..."
-                            style="user-select:text; -webkit-user-select:text;">
+                            autocomplete="street-address" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="none"
+                            style="user-select:text; -webkit-user-select:text; -webkit-touch-callout:default;">
                         <button type="button" id="btnLimparEnderecoMaquina" class="btn-limpar-endereco"
                             onclick="limparEnderecoMaquina()">✕</button>
                     </div>
@@ -2777,21 +2779,57 @@ window.limparEnderecoMaquina = function() {
 (function() {
     const campoEndereco = document.getElementById('campoEnderecoMaquina');
     if (!campoEndereco) return;
-    campoEndereco.addEventListener('paste', function(e) {
-        e.preventDefault();
-        const texto = (e.clipboardData || window.clipboardData).getData('text').trim();
+    const atualizarBotaoLimpar = function() {
+        const btnLimpar = document.getElementById('btnLimparEnderecoMaquina');
+        if (btnLimpar) btnLimpar.style.display = campoEndereco.value.trim() ? 'block' : 'none';
+    };
+    const validarTextoEndereco = function() {
+        const texto = String(campoEndereco.value || '').trim();
+        if (!texto) {
+            atualizarBotaoLimpar();
+            return;
+        }
         if (/https?:\/\//i.test(texto)) {
+            campoEndereco.value = '';
+            atualizarBotaoLimpar();
             exibirAlertaPadrao('Cole apenas o endereço, não um link. Copie o texto do endereço no Maps e cole aqui.');
             return;
         }
         if (!/\d{5}-\d{3}$/.test(texto)) {
+            campoEndereco.value = '';
+            atualizarBotaoLimpar();
             exibirAlertaPadrao('Endereço inválido. Cole o endereço completo com o CEP, por exemplo: Av. Vitória, 268 - Nova Iguaçu - RJ, 26275-480');
             return;
         }
-        this.value = texto;
-        const btnLimpar = document.getElementById('btnLimparEnderecoMaquina');
-        if (btnLimpar) btnLimpar.style.display = this.value ? 'block' : 'none';
+        campoEndereco.value = texto;
+        atualizarBotaoLimpar();
+    };
+    campoEndereco.addEventListener('input', atualizarBotaoLimpar);
+    campoEndereco.addEventListener('beforeinput', function(e) {
+        const tipo = String(e.inputType || '');
+        const permitidos = [
+            'insertFromPaste',
+            'insertReplacementText',
+            'deleteContentBackward',
+            'deleteContentForward',
+            'deleteByCut',
+            'historyUndo',
+            'historyRedo'
+        ];
+        if (permitidos.includes(tipo)) return;
+        e.preventDefault();
     });
+    campoEndereco.addEventListener('keydown', function(e) {
+        const ctrlOuMeta = e.ctrlKey || e.metaKey;
+        const tecla = String(e.key || '').toLowerCase();
+        if (ctrlOuMeta && ['v', 'x', 'z', 'y', 'a'].includes(tecla)) return;
+        if (['tab', 'escape'].includes(tecla)) return;
+        e.preventDefault();
+    });
+    campoEndereco.addEventListener('paste', function() {
+        setTimeout(validarTextoEndereco, 0);
+    });
+    campoEndereco.addEventListener('blur', validarTextoEndereco);
 })();
 
 window.toggleAcaoMaquina = function(tipo) {

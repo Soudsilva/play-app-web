@@ -664,29 +664,32 @@ function gerarUrlGoogleMapsRota(enderecos, origem) {
 
 function gerarUrlPreferencialMaps(urlWeb) {
     const ua = navigator.userAgent || '';
-    const isiPhone = /iPhone|iPad|iPod/i.test(ua);
-    if (isiPhone) {
+    const isiOS = /iPhone|iPad|iPod/i.test(ua);
+    const isAndroid = /Android/i.test(ua);
+    if (isiOS) {
         return urlWeb.replace(/^https?:\/\//i, 'comgooglemapsurl://');
+    }
+    if (isAndroid) {
+        // intent:// abre o app Google Maps se instalado; cai para web se não estiver
+        return urlWeb.replace(/^https:\/\/www\.google\.com\//i, 'intent://www.google.com/')
+            + '#Intent;scheme=https;package=com.google.android.apps.maps;end';
     }
     return urlWeb;
 }
 
 function abrirMapaPreferencial(novaAba, urlWeb) {
     const urlPreferencial = gerarUrlPreferencialMaps(urlWeb);
-    try {
-        novaAba.location.replace(urlPreferencial);
-    } catch (_) {
-        novaAba.location.href = urlPreferencial;
-    }
+    novaAba.location.href = urlPreferencial;
 
     if (urlPreferencial !== urlWeb) {
+        // Se o deep link não abrir o app, a aba fica em branco → abre URL web como fallback
         setTimeout(() => {
             try {
-                if (!novaAba.closed && novaAba.location.href === 'about:blank') {
-                    novaAba.location.replace(urlWeb);
+                if (!novaAba.closed) {
+                    novaAba.location.href = urlWeb;
                 }
             } catch (_) {}
-        }, 900);
+        }, 1200);
     }
 }
 
@@ -708,7 +711,7 @@ window.abrirMapaRota = function(numeroRota) {
     }
 
     const novaAba = window.open('about:blank', '_blank');
-    if (!novaAba) {
+    if (!novaAba || novaAba === window) {
         mostrarToast('⚠️ Permita pop-ups para abrir o mapa');
         return;
     }

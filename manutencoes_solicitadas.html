@@ -1089,12 +1089,38 @@
             return;
         }
 
-        if (!navigator.geolocation) {
+        // Abre aba em branco agora (gesto síncrono) para evitar bloqueio de pop-up no mobile
+        const novaAba = window.open('about:blank', '_blank');
+        if (!novaAba || novaAba === window) {
+            await window.playAlert("Permita pop-ups para abrir o mapa.");
+            return;
+        }
+
+        function gerarUrlMaps(origem, enderecos) {
             const destino = encodeURIComponent(enderecos[enderecos.length - 1]);
             const waypoints = enderecos.slice(0, -1).map(e => encodeURIComponent(e)).join('|');
-            let url = `https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=${destino}&travelmode=driving`;
+            let url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${destino}&travelmode=driving`;
             if (waypoints) url += `&waypoints=${waypoints}`;
-            window.open(url, '_blank');
+            return url;
+        }
+
+        function abrirRotaNaAba(aba, urlWeb) {
+            const ua = navigator.userAgent || '';
+            let urlFinal = urlWeb;
+            if (/Android/i.test(ua)) {
+                urlFinal = urlWeb.replace(/^https:\/\/www\.google\.com\//i, 'intent://www.google.com/')
+                    + '#Intent;scheme=https;package=com.google.android.apps.maps;end';
+            } else if (/iPhone|iPad|iPod/i.test(ua)) {
+                urlFinal = urlWeb.replace(/^https?:\/\//i, 'comgooglemapsurl://');
+            }
+            aba.location.href = urlFinal;
+            if (urlFinal !== urlWeb) {
+                setTimeout(() => { try { if (!aba.closed) aba.location.href = urlWeb; } catch (_) {} }, 1200);
+            }
+        }
+
+        if (!navigator.geolocation) {
+            abrirRotaNaAba(novaAba, gerarUrlMaps('My+Location', enderecos));
             return;
         }
 
@@ -1103,34 +1129,16 @@
         btn.querySelector('.btn-navegar-label').textContent = 'Obtendo GPS...';
         btn.style.pointerEvents = 'none';
 
-        function abrirConfiguracaoGPS() {
-            const tentativas = [
-                'intent://settings#Intent;action=android.settings.LOCATION_SOURCE_SETTINGS;scheme=android-app;end',
-                'App-Prefs:root=Privacy&path=LOCATION'
-            ];
-            const link = document.createElement('a');
-            link.href = tentativas[0];
-            link.click();
-        }
-
-        function gerarRotaComOrigem(origem, enderecos) {
-            const destino = encodeURIComponent(enderecos[enderecos.length - 1]);
-            const waypoints = enderecos.slice(0, -1).map(e => encodeURIComponent(e)).join('|');
-            let url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origem)}&destination=${destino}&travelmode=driving`;
-            if (waypoints) url += `&waypoints=${waypoints}`;
-            window.open(url, '_blank');
-        }
-
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 btn.querySelector('.btn-navegar-label').textContent = labelOriginal;
                 btn.style.pointerEvents = 'auto';
-                gerarRotaComOrigem(`${pos.coords.latitude},${pos.coords.longitude}`, enderecos);
+                abrirRotaNaAba(novaAba, gerarUrlMaps(`${pos.coords.latitude},${pos.coords.longitude}`, enderecos));
             },
             async (err) => {
                 btn.querySelector('.btn-navegar-label').textContent = labelOriginal;
                 btn.style.pointerEvents = 'auto';
-
+                novaAba.close();
                 if (err.code === 1 || err.code === 2 || err.code === 3) {
                     await window.playAlert("Ative o GPS e depois aperte novamente em Gerar rota.");
                 }
@@ -1222,7 +1230,19 @@
     window.abrirLocalizacao = function abrirLocalizacao(endereco) {
         const query = encodeURIComponent(endereco || "");
         if (!query) return;
-        window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+        const urlWeb = `https://www.google.com/maps/search/?api=1&query=${query}`;
+        const ua = navigator.userAgent || '';
+        let urlFinal = urlWeb;
+        if (/Android/i.test(ua)) {
+            urlFinal = urlWeb.replace(/^https:\/\/www\.google\.com\//i, 'intent://www.google.com/')
+                + '#Intent;scheme=https;package=com.google.android.apps.maps;end';
+        } else if (/iPhone|iPad|iPod/i.test(ua)) {
+            urlFinal = urlWeb.replace(/^https?:\/\//i, 'comgooglemapsurl://');
+        }
+        const aba = window.open(urlFinal, '_blank');
+        if (aba && urlFinal !== urlWeb) {
+            setTimeout(() => { try { if (!aba.closed) aba.location.href = urlWeb; } catch (_) {} }, 1200);
+        }
     }
 
     window.confirmarConclusao = async function confirmarConclusao(id) {
