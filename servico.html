@@ -177,6 +177,194 @@
 
         .confirmado-por { font-size: 13px; color: #4ade80; }
 
+        .card.pix-servico {
+            background: #172b63;
+            border: 1px solid #8b5cf6;
+            border-left-color: #a78bfa;
+            padding: 12px;
+        }
+        .pix-servico-origem {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 28px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            background: #4c1d95;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            margin: 0 auto 10px;
+        }
+        .pix-servico-origem.adicao { background: #166534; }
+        .pix-servico-origem.retirada { background: #991b1b; }
+        .pix-servico-cliente {
+            font-size: 18px;
+            font-weight: 700;
+            color: #e9d5ff;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        .pix-servico-cliente .num-cliente {
+            color: #f9a8d4;
+            margin-right: 6px;
+        }
+        .pix-servico-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .pix-servico-item {
+            background: #1d2268;
+            border: 1px solid #4338ca;
+            border-radius: 14px;
+            padding: 10px;
+        }
+        .pix-servico-item-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .pix-servico-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 24px;
+            padding: 2px 10px;
+            border-radius: 999px;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+        }
+        .pix-servico-badge.adicao { background: #16a34a; }
+        .pix-servico-badge.retirada { background: #dc2626; }
+        .pix-servico-equip {
+            font-size: 15px;
+            font-weight: 700;
+            color: #e5e7eb;
+            text-align: center;
+        }
+        .pix-servico-meta {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .pix-servico-pill,
+        .pix-servico-resumo-item {
+            background: #22324f;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 8px;
+            text-align: center;
+        }
+        .pix-servico-pill span,
+        .pix-servico-resumo-item span,
+        .pix-servico-foto-label {
+            display: block;
+            color: #cbd5e1;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+        .pix-servico-pill strong {
+            display: block;
+            font-size: 17px;
+            font-weight: 700;
+        }
+        .pix-servico-pill.pix strong { color: #93c5fd; }
+        .pix-servico-pill.por strong {
+            color: #bbf7d0;
+            font-size: 15px;
+        }
+        .pix-servico-pill.retirada-por strong { color: #fecaca; }
+        .pix-servico-resumo {
+            margin-top: 8px;
+            border-radius: 14px;
+            padding: 10px;
+        }
+        .pix-servico-resumo.adicao {
+            background: #132f45;
+            border: 1px solid #0f766e;
+        }
+        .pix-servico-resumo.retirada {
+            background: #3b1f2f;
+            border: 1px solid #be123c;
+        }
+        .pix-servico-resumo-titulo {
+            color: #dcfce7;
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .pix-servico-resumo.retirada .pix-servico-resumo-titulo { color: #fecdd3; }
+        .pix-servico-resumo-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .pix-servico-resumo.adicao .pix-servico-resumo-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+        .pix-servico-resumo-item strong {
+            display: block;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .pix-servico-resumo-item.valor strong { color: #fde68a; }
+        .pix-servico-resumo-item.comissao strong { color: #fca5a5; }
+        .pix-servico-resumo-item.contador strong { color: #86efac; }
+        .pix-servico-foto-wrap {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .pix-servico-foto {
+            display: block;
+            width: 100%;
+            max-width: 140px;
+            height: 96px;
+            margin: 0 auto;
+            object-fit: contain;
+            border-radius: 12px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            cursor: zoom-in;
+        }
+        .pix-servico-acoes {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 8px;
+        }
+        .btn-gestor-confirmar {
+            background: #6d28d9;
+            color: #ffffff;
+            border: none;
+            border-radius: 16px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            font-family: Arial, sans-serif;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: filter 0.15s, transform 0.15s;
+        }
+        .btn-gestor-confirmar:active {
+            filter: brightness(0.85);
+            transform: translateY(1px);
+        }
+        .btn-gestor-confirmar:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
         .vazio { text-align: center; color: rgba(255,255,255,0.3); padding: 36px 0; font-size: 17px; }
         .carregando { text-align: center; color: rgba(255,255,255,0.3); padding: 36px 0; font-size: 15px; }
     </style>
@@ -228,6 +416,7 @@
         dbEscutarClientes,
         dbSalvarCliente,
         dbEscutarManutencoes,
+        dbEscutarCadastrosPix,
         dbConfirmarGestorManutencao,
         dbSalvarManutencao
     } from './database.js';
@@ -235,6 +424,7 @@
 
     let _clientes    = [];
     let _manutencoes = [];
+    let _pixCadastros = [];
     let _abaAtual    = 'pendentes';
     let _nomeUsuario = '';
     let _calAno = new Date().getFullYear();
@@ -249,6 +439,357 @@
 
     function quebrarTermos(valor) {
         return normalizarTextoBusca(valor).split(/\s+/).filter(Boolean);
+    }
+
+    function escHtml(valor) {
+        return String(valor || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function normalizarPix(valor) {
+        return String(valor || '').trim();
+    }
+
+    function normalizarEquipDetalhesCliente(cliente) {
+        if (Array.isArray(cliente?.equipDetalhes) && cliente.equipDetalhes.length > 0) {
+            return cliente.equipDetalhes
+                .map((item, index) => ({
+                    rowId: String(item?.rowId || `equip_${index + 1}`),
+                    nome: String(item?.nome || '').trim(),
+                    qtd: String(item?.qtd || item?.quantidade || '1').trim() || '1',
+                    pix: String(item?.pix || '').trim(),
+                    contador: String(item?.contador || '').trim(),
+                    tecnico: String(item?.tecnico || '').trim(),
+                    pixRetiradoPendente: String(item?.pixRetiradoPendente || '').trim(),
+                    contadorRetiradoPendente: String(item?.contadorRetiradoPendente || '').trim(),
+                    retiradaPendentePor: String(item?.retiradaPendentePor || '').trim(),
+                    manutencaoPendente: String(item?.manutencaoPendente || '').trim(),
+                    aguardandoConfirmacao: item?.aguardandoConfirmacao === true,
+                    manutencaoPendentePor: String(item?.manutencaoPendentePor || '').trim()
+                }))
+                .filter(item => item.nome);
+        }
+
+        if (!cliente?.equip) return [];
+
+        const textoEquip = String(cliente.equip || '').trim();
+        const partes = textoEquip.includes('|')
+            ? textoEquip.split(/\s*\|\s*/)
+            : textoEquip.split(/\s*,\s*/);
+
+        return partes
+            .map((item, index) => {
+                let nome = String(item || '').trim();
+                if (!nome) return null;
+                let qtd = '1';
+                let pix = '';
+
+                const matchPixLegado = nome.match(/\s*\[Pix:\s*([^\]]+)\]\s*$/i);
+                if (matchPixLegado) {
+                    pix = String(matchPixLegado[1] || '').trim();
+                    nome = nome.replace(/\s*\[Pix:\s*([^\]]+)\]\s*$/i, '').trim();
+                } else {
+                    const matchPixTexto = nome.match(/\s+Pix\s+([0-9]+)\s*$/i);
+                    if (matchPixTexto) {
+                        pix = String(matchPixTexto[1] || '').trim();
+                        nome = nome.replace(/\s+Pix\s+([0-9]+)\s*$/i, '').trim();
+                    }
+                }
+
+                const matchQtd = nome.match(/\s*\(([^)]+)\)\s*$/);
+                if (matchQtd) {
+                    qtd = String(matchQtd[1] || '1').trim() || '1';
+                    nome = nome.replace(/\s*\(([^)]+)\)\s*$/, '').trim();
+                }
+
+                return {
+                    rowId: `equip_${index + 1}`,
+                    nome,
+                    qtd,
+                    pix,
+                    contador: '',
+                    tecnico: '',
+                    pixRetiradoPendente: '',
+                    contadorRetiradoPendente: '',
+                    retiradaPendentePor: '',
+                    manutencaoPendente: '',
+                    aguardandoConfirmacao: false,
+                    manutencaoPendentePor: ''
+                };
+            })
+            .filter(Boolean);
+    }
+
+    function obterItensPixCadastroCliente(cliente) {
+        const fotos = Array.isArray(cliente?.fotosMaquinasInstalacao) ? cliente.fotosMaquinasInstalacao : [];
+        const fotoFicha = String(cliente?.fotoFichaInstalacaoThumb || cliente?.fotoFichaInstalacao || '').trim();
+
+        return normalizarEquipDetalhesCliente(cliente)
+            .flatMap((item, index) => {
+                const fotoItem = fotos[index] || fotos.find(f => String(f?.url || f?.thumbUrl || '').trim()) || null;
+                const fotoThumbBase = String(fotoItem?.thumbUrl || fotoItem?.url || fotoFicha).trim();
+                const fotoFullBase = String(fotoItem?.url || fotoItem?.thumbUrl || fotoFicha).trim();
+                const pendencias = [];
+                const pixRetirado = String(item?.pixRetiradoPendente || '').trim();
+                const pixAtual = String(item?.pix || '').trim();
+                const duplicadoMesmoPix = pixRetirado && pixAtual && pixRetirado === pixAtual;
+
+                if (pixRetirado && !duplicadoMesmoPix) {
+                    const registro = obterRegistroCadastroPixServico(cliente, {
+                        nome: item.nome,
+                        pix: pixRetirado
+                    });
+                    const percentual = Number(registro?.percentual_comissao_cliente || 0);
+                    pendencias.push({
+                        rowId: item.rowId,
+                        tipo: 'retirada',
+                        nome: item.nome,
+                        pix: pixRetirado,
+                        por: item.retiradaPendentePor || item.manutencaoPendentePor || cliente?.cadastradoPor || '-',
+                        contador: item.contadorRetiradoPendente || '',
+                        contadorAnterior: String(registro?.contador_anterior_retirada || '').trim(),
+                        contadorAtual: String(registro?.contador_atual_retirada || '').trim(),
+                        valorTotal: Number(registro?.valor_bruto_cliente || 0),
+                        valorComissao: Number(registro?.valor_comissao_cliente || 0),
+                        percentualTxt: Number.isInteger(percentual)
+                            ? `${percentual}%`
+                            : `${percentual.toFixed(2).replace('.', ',')}%`,
+                        fotoThumbUrl: String(registro?.foto_contador_retirada_thumb || registro?.foto_contador_retirada || fotoThumbBase).trim(),
+                        fotoFullUrl: String(registro?.foto_contador_retirada || registro?.foto_contador_retirada_thumb || fotoFullBase).trim(),
+                        mostrarResumoRetirada: registro?.retirou_trocou_contador === true
+                    });
+                } else if (item.aguardandoConfirmacao && item.manutencaoPendente === 'retirada' && pixAtual && !duplicadoMesmoPix) {
+                    const registro = obterRegistroCadastroPixServico(cliente, {
+                        nome: item.nome,
+                        pix: pixAtual
+                    });
+                    const percentual = Number(registro?.percentual_comissao_cliente || 0);
+                    pendencias.push({
+                        rowId: item.rowId,
+                        tipo: 'retirada',
+                        nome: item.nome,
+                        pix: pixAtual,
+                        por: item.manutencaoPendentePor || cliente?.cadastradoPor || '-',
+                        contador: item.contador || '',
+                        contadorAnterior: String(registro?.contador_anterior_retirada || '').trim(),
+                        contadorAtual: String(registro?.contador_atual_retirada || '').trim(),
+                        valorTotal: Number(registro?.valor_bruto_cliente || 0),
+                        valorComissao: Number(registro?.valor_comissao_cliente || 0),
+                        percentualTxt: Number.isInteger(percentual)
+                            ? `${percentual}%`
+                            : `${percentual.toFixed(2).replace('.', ',')}%`,
+                        fotoThumbUrl: String(registro?.foto_contador_retirada_thumb || registro?.foto_contador_retirada || fotoThumbBase).trim(),
+                        fotoFullUrl: String(registro?.foto_contador_retirada || registro?.foto_contador_retirada_thumb || fotoFullBase).trim(),
+                        mostrarResumoRetirada: registro?.retirou_trocou_contador === true
+                    });
+                }
+
+                if (item.aguardandoConfirmacao && item.manutencaoPendente === 'adicao' && pixAtual) {
+                    const registro = obterRegistroCadastroPixServico(cliente, {
+                        nome: item.nome,
+                        pix: pixAtual
+                    });
+                    pendencias.push({
+                        rowId: item.rowId,
+                        tipo: 'adicao',
+                        nome: item.nome,
+                        pix: pixAtual,
+                        por: item.tecnico || item.manutencaoPendentePor || cliente?.cadastradoPor || '-',
+                        contador: String(registro?.contador || item.contador || '').trim(),
+                        fotoThumbUrl: String(registro?.foto_contador_instalacao_thumb || registro?.foto_contador_instalacao || fotoThumbBase).trim(),
+                        fotoFullUrl: String(registro?.foto_contador_instalacao || registro?.foto_contador_instalacao_thumb || fotoFullBase).trim()
+                    });
+                }
+
+                return pendencias;
+            });
+    }
+
+    function obterItensPixManutencao(manutencao) {
+        const tecnico = manutencao?.selecionadoPor || manutencao?.cadastradoPor || '-';
+        const itens = [];
+
+        (Array.isArray(manutencao?.equipamentosAdicionados) ? manutencao.equipamentosAdicionados : [])
+            .filter(item => normalizarPix(item?.pix))
+            .forEach(item => {
+                itens.push({
+                    tipo: 'adicao',
+                    nome: String(item?.nome || '').trim(),
+                    pix: String(item?.pix || '').trim(),
+                    por: String(item?.tecnico || tecnico).trim() || '-',
+                    contador: String(item?.contador || '').trim(),
+                    fotoThumbUrl: '',
+                    fotoFullUrl: ''
+                });
+            });
+
+        (Array.isArray(manutencao?.equipamentosRetiradosDetalhes) ? manutencao.equipamentosRetiradosDetalhes : [])
+            .filter(item => normalizarPix(item?.pix))
+            .forEach(item => {
+                const percentual = Number(item?.percentual_comissao_cliente || 0);
+                itens.push({
+                    tipo: 'retirada',
+                    nome: String(item?.nome || '').trim(),
+                    pix: String(item?.pix || '').trim(),
+                    por: String(item?.tecnico || tecnico).trim() || '-',
+                    contadorAnterior: String(item?.contador_anterior_retirada || item?.contador || '').trim(),
+                    contadorAtual: String(item?.contador_atual_retirada || '').trim(),
+                    valorTotal: Number(item?.valor_bruto_cliente || 0),
+                    valorComissao: Number(item?.valor_comissao_cliente || 0),
+                    percentualTxt: Number.isInteger(percentual)
+                        ? `${percentual}%`
+                        : `${percentual.toFixed(2).replace('.', ',')}%`,
+                    fotoThumbUrl: String(item?.foto_contador_retirada_thumb || item?.foto_contador_retirada || '').trim(),
+                    fotoFullUrl: String(item?.foto_contador_retirada || item?.foto_contador_retirada_thumb || '').trim(),
+                    mostrarResumoRetirada: item?.retirou_trocou_contador === true
+                });
+            });
+
+        return itens;
+    }
+
+    function formatarNumeroResumo(valor) {
+        const texto = String(valor || '').trim();
+        return texto || 'Nao informado';
+    }
+
+    function formatarMoedaBR(valor) {
+        const numero = Number(valor || 0);
+        return numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function serializarEquipamentosTextoCliente(equipDetalhes) {
+        return (Array.isArray(equipDetalhes) ? equipDetalhes : [])
+            .filter(item => String(item?.nome || '').trim())
+            .map(item => {
+                const nome = String(item?.nome || '').trim();
+                const qtd = String(item?.qtd || '1').trim() || '1';
+                const pix = String(item?.pix || '').trim();
+                const base = `${nome}${qtd !== '1' ? ` (${qtd})` : ''}`;
+                return pix ? `${base} [Pix: ${pix}]` : base;
+            })
+            .join(', ');
+    }
+
+    function obterTimestampCadastroPix(item) {
+        return new Date(
+            item?.atualizado_em
+            || item?.criado_em
+            || item?.data
+            || item?.data_retirada
+            || 0
+        ).getTime() || 0;
+    }
+
+    function obterRegistroCadastroPixServico(cliente, pendencia) {
+        const numeroPix = normalizarPix(pendencia?.pix);
+        const equipamento = normalizarTextoBusca(pendencia?.nome);
+        const clienteNome = normalizarTextoBusca(cliente?.nome);
+        const identificacao = normalizarTextoBusca(
+            `${cliente?.numero ? `N. ${cliente.numero} - ` : ''}${cliente?.nome || ''}`
+        );
+        if (!numeroPix || !equipamento) return null;
+
+        return _pixCadastros
+            .filter(item => normalizarPix(item?.numero_pix) === numeroPix)
+            .filter(item => normalizarTextoBusca(item?.equipamento) === equipamento)
+            .filter(item => {
+                const itemCliente = normalizarTextoBusca(item?.cliente);
+                const itemIdent = normalizarTextoBusca(item?.identificacao);
+                return itemCliente === clienteNome || itemIdent === identificacao;
+            })
+            .sort((a, b) => obterTimestampCadastroPix(b) - obterTimestampCadastroPix(a))[0] || null;
+    }
+
+    function montarIdentificacaoPix(numero, nome) {
+        const numeroFmt = String(numero || '').trim();
+        const nomeFmt = String(nome || '').trim() || 'Cliente';
+        if (!numeroFmt) return escHtml(nomeFmt);
+        return `<span class="num-cliente">N. ${escHtml(numeroFmt)}</span> &mdash; ${escHtml(nomeFmt)}`;
+    }
+
+    function montarResumoPixItem(item) {
+        const fotoHtml = item.fotoThumbUrl
+            ? `<div class="pix-servico-foto-wrap">
+                   <div class="pix-servico-foto-label">Foto do contador</div>
+                   <img class="pix-servico-foto"
+                        src="${escHtml(item.fotoThumbUrl)}"
+                        data-full="${escHtml(item.fotoFullUrl || item.fotoThumbUrl)}"
+                        alt="Foto do contador"
+                        onclick="window.verFoto(this.dataset.full)">
+               </div>`
+            : '';
+
+        if (item.tipo === 'retirada' && item.mostrarResumoRetirada) {
+            return `
+                <div class="pix-servico-resumo retirada">
+                    <div class="pix-servico-resumo-titulo">Retirada/Troca do contador informada</div>
+                    <div class="pix-servico-resumo-grid">
+                        <div class="pix-servico-resumo-item">
+                            <span>Contador anterior</span>
+                            <strong>${escHtml(formatarNumeroResumo(item.contadorAnterior))}</strong>
+                        </div>
+                        <div class="pix-servico-resumo-item">
+                            <span>Contador atual</span>
+                            <strong>${escHtml(formatarNumeroResumo(item.contadorAtual))}</strong>
+                        </div>
+                        <div class="pix-servico-resumo-item valor">
+                            <span>Valor total</span>
+                            <strong>${escHtml(formatarMoedaBR(item.valorTotal))}</strong>
+                        </div>
+                        <div class="pix-servico-resumo-item comissao">
+                            <span>Comissao do cliente (${escHtml(item.percentualTxt || '0%')})</span>
+                            <strong>${escHtml(formatarMoedaBR(item.valorComissao))}</strong>
+                        </div>
+                    </div>
+                    ${fotoHtml}
+                </div>`;
+        }
+
+        if (item.tipo === 'adicao' && (item.contador || item.fotoThumbUrl)) {
+            return `
+                <div class="pix-servico-resumo adicao">
+                    <div class="pix-servico-resumo-titulo">Instalacao informada</div>
+                    <div class="pix-servico-resumo-grid">
+                        <div class="pix-servico-resumo-item contador">
+                            <span>Contador informado</span>
+                            <strong>${escHtml(formatarNumeroResumo(item.contador))}</strong>
+                        </div>
+                    </div>
+                    ${fotoHtml}
+                </div>`;
+        }
+
+        return '';
+    }
+
+    function montarListaPixServico(itens) {
+        return `
+            <div class="pix-servico-lista">
+                ${itens.map(item => `
+                    <div class="pix-servico-item">
+                        <div class="pix-servico-item-top">
+                            <span class="pix-servico-badge ${item.tipo}">${item.tipo === 'retirada' ? '&minus; Retirado' : '+ Colocado'}</span>
+                            <span class="pix-servico-equip">${escHtml(item.nome || 'Equipamento')}</span>
+                        </div>
+                        <div class="pix-servico-meta">
+                            <div class="pix-servico-pill pix">
+                                <span>${item.tipo === 'retirada' ? 'Pix retirado' : 'Pix colocado'}</span>
+                                <strong>Pix ${escHtml(item.pix || '-')}</strong>
+                            </div>
+                            <div class="pix-servico-pill ${item.tipo === 'retirada' ? 'retirada-por' : 'por'}">
+                                <span>${item.tipo === 'retirada' ? 'Retirado por' : 'Colocado por'}</span>
+                                <strong>${escHtml(item.por || 'Nao informado')}</strong>
+                            </div>
+                        </div>
+                        ${montarResumoPixItem(item)}
+                    </div>
+                `).join('')}
+            </div>`;
     }
 
     function formatarData(iso) {
@@ -306,8 +847,10 @@
             .filter(m => (temColocacao(m) || temRetirada(m))
                 && (pendente ? !m.confirmadoGestor : !!m.confirmadoGestor)
                 && dentroDomes(dataM(m)))
-            .map(m => ({
-                tipo: temColocacao(m) ? 'colocada' : 'retirada',
+            .map(m => {
+                const itensPix = obterItensPixManutencao(m);
+                return {
+                    tipo: itensPix.length > 0 ? 'pix-manutencao' : (temColocacao(m) ? 'colocada' : 'retirada'),
                 data: dataM(m),
                 id: m.firebaseUrl,
                 clienteNome: m.clienteNome || '—',
@@ -322,8 +865,11 @@
                 foto: m.fotoSolicitacao || m.fotoSolicitacaoThumb || '',
                 enderecoCliente: m.clienteEndereco || '',
                 enderecoMaquina: m.enderecoAlteracaoMaquina || '',
-                pontoEncerrado: m.pontoEncerrado === true
-            }));
+                pontoEncerrado: m.pontoEncerrado === true,
+                pixItens: itensPix,
+                buscaExtra: itensPix.map(item => `${item.nome} ${item.pix}`).join(' ')
+            };
+            });
 
         // Novos pontos — pendentes (em_analise) ou confirmados (aprovado)
         const statusAlvo = pendente ? 'em_analise' : 'aprovado';
@@ -336,8 +882,9 @@
                 const foto = c.fotoFichaInstalacao
                     || (Array.isArray(c.fotosMaquinasInstalacao) && c.fotosMaquinasInstalacao[0]?.url)
                     || '';
+                const itensPix = obterItensPixCadastroCliente(c);
                 return {
-                    tipo: 'novo-ponto',
+                    tipo: itensPix.length > 0 ? 'pix-cadastro' : 'novo-ponto',
                     confirmado: !pendente,
                     data: c.dataCadastro,
                     dataConfirmacao: c.dataAprovacao || '',
@@ -350,7 +897,9 @@
                     equip: c.equip || '',
                     enderecoEntrega: c.endereco || '',
                     enderecoSolicitacao: solicitacao?.clienteEndereco || '',
-                    foto
+                    foto,
+                    pixItens: itensPix,
+                    buscaExtra: itensPix.map(item => `${item.nome} ${item.pix}`).join(' ')
                 };
             });
 
@@ -361,7 +910,7 @@
             todos = todos.filter(ev => {
                 const hay = normalizarTextoBusca([
                     ev.clienteNome, ev.clienteNumero, ev.clienteRota,
-                    ev.clienteCidade, ev.tecnico, ev.cadastradoPor
+                    ev.clienteCidade, ev.tecnico, ev.cadastradoPor, ev.buscaExtra
                 ].join(' '));
                 return termos.every(t => hay.includes(t));
             });
@@ -375,11 +924,55 @@
         }
 
         el.innerHTML = todos.map(ev => {
+            if (ev.tipo === 'pix-manutencao') return cardPixManutencao(ev, pendente);
+            if (ev.tipo === 'pix-cadastro')   return cardPixCadastro(ev);
             if (ev.tipo === 'colocada')   return cardColocada(ev, pendente);
             if (ev.tipo === 'retirada')   return cardRetirada(ev, pendente);
             if (ev.tipo === 'novo-ponto') return cardNovoPonto(ev);
             return '';
         }).join('');
+    }
+
+    function cardPixCadastro(ev) {
+        const rodape = ev.confirmado
+            ? dentroDe2h(ev.dataConfirmacao)
+                ? `<button class="btn-desfazer" onclick="window.desfazerNovoPonto('${ev.id}',this)">&#8617; Desfazer</button>`
+                : `<span class="confirmado-por">&#10003; Aprovado</span>`
+            : `<button class="btn-gestor-confirmar" onclick="window.confirmarPixServico(this,'${ev.id}')">Confirmar</button>`;
+
+        return `
+            <div class="card pix-servico" id="card-${ev.id}">
+                <div class="pix-servico-origem">Cadastro Pix</div>
+                <div class="pix-servico-cliente">&#128205; ${montarIdentificacaoPix(ev.clienteNumero, ev.clienteNome)}</div>
+                ${montarListaPixServico(ev.pixItens)}
+                <div class="card-rodape" style="margin-top:12px;">
+                    <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
+                    ${rodape}
+                </div>
+            </div>`;
+    }
+
+    function cardPixManutencao(ev, pendente) {
+        const apenasRetirada = ev.pixItens.every(item => item.tipo === 'retirada');
+        const apenasAdicao = ev.pixItens.every(item => item.tipo === 'adicao');
+        const origemClasse = apenasRetirada ? 'retirada' : (apenasAdicao ? 'adicao' : '');
+        const origemTexto = apenasRetirada ? 'Retirada Pix' : (apenasAdicao ? 'Inclusao Pix' : 'Movimentacao Pix');
+        const rodape = pendente
+            ? `<button class="btn-ok" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`
+            : dentroDe2h(ev.dataConfirmacao)
+                ? `<button class="btn-desfazer" onclick="window.desfazerManutencao('${ev.id}',this)">&#8617; Desfazer</button>`
+                : `<span class="confirmado-por">&#10003; ${ev.confirmedBy} &nbsp;&middot;&nbsp; ${formatarData(ev.dataConfirmacao)}</span>`;
+
+        return `
+            <div class="card pix-servico" id="card-${ev.id}">
+                <div class="pix-servico-origem ${origemClasse}">${origemTexto}</div>
+                <div class="pix-servico-cliente">&#128205; ${montarIdentificacaoPix(ev.clienteNumero, ev.clienteNome)}</div>
+                ${montarListaPixServico(ev.pixItens)}
+                <div class="card-rodape" style="margin-top:12px;">
+                    <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
+                    ${rodape}
+                </div>
+            </div>`;
     }
 
     function cardColocada(ev, pendente) {
@@ -602,6 +1195,38 @@
         }
     };
 
+    window.confirmarPixServico = async function(btn, id) {
+        if (!id) return;
+        const textoOriginal = btn?.textContent || 'Confirmar';
+        if (btn) { btn.disabled = true; btn.textContent = '...'; }
+        try {
+            const cliente = _clientes.find(c => c.firebaseUrl === id);
+            if (!cliente) throw new Error('Cliente nao encontrado.');
+
+            const equips = normalizarEquipDetalhesCliente(cliente).map(item => ({
+                ...item,
+                pixRetiradoPendente: '',
+                contadorRetiradoPendente: '',
+                retiradaPendentePor: '',
+                manutencaoPendente: '',
+                aguardandoConfirmacao: false,
+                manutencaoPendenteEm: '',
+                manutencaoPendentePor: ''
+            }));
+
+            await dbSalvarCliente({
+                equipDetalhes: equips,
+                equip: serializarEquipamentosTextoCliente(equips),
+                statusCadastro: 'ativo'
+            }, id);
+        } catch (e) {
+            console.error(e);
+            if (window.playAlert) window.playAlert('Nao foi possivel confirmar este cadastro Pix.');
+            else alert('Nao foi possivel confirmar este cadastro Pix.');
+            if (btn) { btn.disabled = false; btn.textContent = textoOriginal; }
+        }
+    };
+
     window.aprovarCliente = async function(id, btn) {
         if (!id) return;
         if (btn) { btn.disabled = true; btn.textContent = '…'; }
@@ -701,6 +1326,11 @@
 
     dbEscutarManutencoes(lista => {
         _manutencoes = lista;
+        renderizar();
+    });
+
+    dbEscutarCadastrosPix(lista => {
+        _pixCadastros = Array.isArray(lista) ? lista : [];
         renderizar();
     });
 

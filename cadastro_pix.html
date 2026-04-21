@@ -1563,22 +1563,26 @@ function obterPixParaExibicao() {
     });
 }
 
-function obterRegistroCadastroPixGestor(cliente, pendencia) {
+function obterEntradaCadastroPixGestor(cliente, pendencia) {
     const numeroPix = normalizarPix(pendencia?.pix);
     const equipamento = normalizarTexto(pendencia?.nome);
     const clienteNome = normalizarTexto(cliente?.nome);
     const identificacao = normalizarTexto(montarIdentificacaoCliente(cliente));
     if (!numeroPix || !equipamento) return null;
 
-    return Object.values(window._pixData || {})
-        .filter(item => normalizarPix(item?.numero_pix) === numeroPix)
-        .filter(item => normalizarTexto(item?.equipamento) === equipamento)
-        .filter(item => {
+    return Object.entries(window._pixData || {})
+        .filter(([, item]) => normalizarPix(item?.numero_pix) === numeroPix)
+        .filter(([, item]) => normalizarTexto(item?.equipamento) === equipamento)
+        .filter(([, item]) => {
             const itemCliente = normalizarTexto(item?.cliente);
             const itemIdent = normalizarTexto(item?.identificacao);
             return itemCliente === clienteNome || itemIdent === identificacao;
         })
-        .sort((a, b) => obterTimestampRegistro(b) - obterTimestampRegistro(a))[0] || null;
+        .sort((a, b) => obterTimestampRegistro(b[1]) - obterTimestampRegistro(a[1]))[0] || null;
+}
+
+function obterRegistroCadastroPixGestor(cliente, pendencia) {
+    return obterEntradaCadastroPixGestor(cliente, pendencia)?.[1] || null;
 }
 
 function montarResumoGestorRetirada(cliente, pendencia) {
@@ -2769,9 +2773,11 @@ window.confirmarRetiradaCard = async function(clienteId, rowId, pixNum, pixKey) 
             throw new Error(descreverErroFirebase(erroStatus, 'Falha ao marcar o cliente em an\u00e1lise.'));
         }
 
-        const chaveFirebase = Object.keys(window._pixData).find(
-            k => String(window._pixData[k].numero_pix) === String(pixNum)
-        );
+        const entradaCadastro = obterEntradaCadastroPixGestor(cliente, {
+            nome: nomeEquipamento,
+            pix: pixNum
+        });
+        const chaveFirebase = String(entradaCadastro?.[0] || '').trim();
 
         if (chaveFirebase) {
             try {

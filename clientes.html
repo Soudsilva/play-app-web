@@ -1230,7 +1230,7 @@
             // Colorir o nome da máquina conforme status de manutenção pendente.
             // Na adição: só colore o nome se NÃO houver PIX — se tiver PIX, é operação
             // de PIX na máquina e a cor fica apenas no texto do PIX.
-            const classeNome = item.manutencaoPendente === 'retirada'
+            const classeNome = (item.manutencaoPendente === 'retirada' && !pixRetirado && !item.pix)
                 ? 'equip-maquina-pendente-ret'
                 : (item.manutencaoPendente === 'adicao' && !item.pix)
                     ? 'equip-maquina-pendente-add'

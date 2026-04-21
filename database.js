@@ -1509,15 +1509,44 @@ function _formatarIdentificacaoPixCliente(cliente) {
     return nome || numeroBruto || "";
 }
 
-function _encontrarRegistroPixPorNumero(registros, numeroPix) {
+function _normalizarTextoPixLookup(valor) {
+    return String(valor || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+}
+
+function _encontrarRegistroPixPorNumero(registros, numeroPix, opcoes = {}) {
     const alvo = _normalizarNumeroPix(numeroPix);
     if (!alvo) return null;
 
-    const candidatos = Object.entries(registros || {})
+    const equipamento = _normalizarTextoPixLookup(opcoes?.equipamento);
+    const clienteNome = _normalizarTextoPixLookup(opcoes?.cliente);
+    const identificacao = _normalizarTextoPixLookup(opcoes?.identificacao);
+
+    let candidatos = Object.entries(registros || {})
         .filter(([, registro]) => _normalizarNumeroPix(registro?.numero_pix) === alvo)
         .map(([key, registro]) => ({ key, registro }));
 
     if (candidatos.length === 0) return null;
+
+    if (equipamento) {
+        candidatos = candidatos.filter(({ registro }) =>
+            _normalizarTextoPixLookup(registro?.equipamento) === equipamento
+        );
+    }
+
+    if ((clienteNome || identificacao) && candidatos.length > 0) {
+        const filtradosPorCliente = candidatos.filter(({ registro }) => {
+            const itemCliente = _normalizarTextoPixLookup(registro?.cliente);
+            const itemIdent = _normalizarTextoPixLookup(registro?.identificacao);
+            return (clienteNome && itemCliente === clienteNome)
+                || (identificacao && itemIdent === identificacao);
+        });
+        if (filtradosPorCliente.length > 0) candidatos = filtradosPorCliente;
+    }
 
     candidatos.sort((a, b) => {
         const aInstalado = a.registro?.situacao === "instalado" ? 1 : 0;
@@ -1555,7 +1584,11 @@ export async function dbSincronizarCadastrosPixPorManutencao(cliente, payload = 
             const numeroPix = _normalizarNumeroPix(alteracao?.item?.pix);
             if (!numeroPix) continue;
 
-            const encontrado = _encontrarRegistroPixPorNumero(registrosAtuais, numeroPix);
+            const encontrado = _encontrarRegistroPixPorNumero(registrosAtuais, numeroPix, {
+                equipamento: alteracao?.item?.nome,
+                cliente: clienteNome,
+                identificacao
+            });
             const keyExistente = encontrado?.key || null;
             const registroBase = encontrado?.registro || {};
             const agoraIso = new Date().toISOString();
