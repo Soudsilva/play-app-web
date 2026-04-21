@@ -685,6 +685,10 @@
             return false;
         }
 
+        if (envio.contestado && envio.contestadoAte && new Date() < new Date(envio.contestadoAte)) {
+            return true;
+        }
+
         return ehMesmoDiaAtual(envio.data);
     }
 
@@ -1004,9 +1008,16 @@
                 htmlFotos = '';
             }
 
+            const estaContestado = !!(envio.contestado && envio.contestadoAte && new Date() < new Date(envio.contestadoAte));
+            const horasRestantes = estaContestado ? Math.ceil((new Date(envio.contestadoAte) - new Date()) / 3600000) : 0;
             const liberado = !ehMovimentoEstoque(envio) && podeAlterarEnvio(envio);
+            const htmlAvisoContestacao = estaContestado ? `
+                <div style="padding:10px 12px;background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.5);border-radius:10px;color:#f59e0b;font-size:14px;font-weight:bold;margin-bottom:8px;">
+                    ⚠ O gestor contestou este atendimento. Você tem ${horasRestantes}h para editar ou excluir.
+                </div>` : '';
             const htmlAcoes = liberado ? `
                 <div class="envio-acoes">
+                    ${htmlAvisoContestacao}
                     <div class="acoes-linha">
                         <button class="btn-acao btn-editar btn-editar-envio">Editar</button>
                         <button class="btn-acao btn-excluir btn-excluir-envio">Excluir</button>
@@ -1082,6 +1093,7 @@
         localStorage.setItem('rascunho_atendimento', JSON.stringify(montarRascunhoEdicao(envio)));
         localStorage.setItem('atendimento_em_edicao_id', envio.firebaseUrl);
         localStorage.setItem('atendimento_em_edicao_data', envio.data || "");
+        localStorage.setItem('atendimento_edicao_cliente_id', envio.cliente?.id || '');
         sessionStorage.setItem('atendimento_tela_origem', 'verificar_envios.html');
         window.location.href = 'atendimento_nivel_1.html';
     };

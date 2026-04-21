@@ -836,6 +836,13 @@
         // Filtro permanente: apenas clientes das rotas do usuário
         let filtrada = base.filter(c => clientesPermitidosSet.has(c.firebaseUrl));
 
+        // Em modo de edição, garante que o cliente original apareça mesmo que a rota não esteja mais ativa
+        const clienteIdEdicao = obterIdAtendimentoEmEdicao() ? (localStorage.getItem('atendimento_edicao_cliente_id') || '') : '';
+        if (clienteIdEdicao && !filtrada.some(c => c.firebaseUrl === clienteIdEdicao)) {
+            const clienteOriginal = base.find(c => c.firebaseUrl === clienteIdEdicao);
+            if (clienteOriginal) filtrada = [...filtrada, clienteOriginal];
+        }
+
         // Sub-filtro: se veio do checkin, restringe à rota específica
         const numerosRota = obterNumerosRotaFiltro();
         if (numerosRota) {
@@ -1846,6 +1853,7 @@
             localStorage.removeItem('atendimento_em_edicao_data');
             localStorage.removeItem('atendimento_em_edicao_atendente');
             localStorage.removeItem('atendimento_edicao_gestor');
+            localStorage.removeItem('atendimento_edicao_cliente_id');
             sessionStorage.removeItem(CHAVE_TELA_ORIGEM_ATENDIMENTO);
         } catch (error) {
             console.error('Falha ao limpar estado antes de sair do atendimento:', error);

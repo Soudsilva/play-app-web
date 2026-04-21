@@ -554,6 +554,25 @@
         .btn-confirmar:active { transform: scale(0.98); box-shadow: none; }
         .btn-confirmar:disabled { opacity: 0.5; cursor: default; }
 
+        .rodape-acoes { display: flex; gap: 8px; align-items: stretch; }
+        .btn-contestar {
+            background: #7c3aed;
+            color: white;
+            border: none;
+            padding: 15px 14px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .btn-contestar:active { transform: scale(0.98); }
+        .btn-contestar.aguardando { background: #b45309; border: 2px solid #f59e0b; }
+        .btn-contestar.contestado { background: #374151; color: #9ca3af; cursor: default; }
+
 .validacao-chip {
             display: none;
             margin-bottom: 10px;
@@ -1099,7 +1118,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarAtendimentos, dbSalvarAtendimento } from './database.js';
+    import { dbEscutarAtendimentos, dbSalvarAtendimento, dbContestarAtendimento, dbRemoverContestacao } from './database.js';
 
     /* ── ESTADO ── */
     let todosAtendimentos = [];
@@ -1363,11 +1382,12 @@
               })
             : porMes;
 
-        // Ordem: mais recente primeiro
-        filtrada.sort((a, b) =>
-            Date.parse(b.ultimaEdicao || b.data || 0) -
-            Date.parse(a.ultimaEdicao || a.data || 0)
-        );
+        // Ordem: mais recente primeiro (por data original; ultimaEdicao só como desempate)
+        filtrada.sort((a, b) => {
+            const diff = Date.parse(b.data || 0) - Date.parse(a.data || 0);
+            if (diff !== 0) return diff;
+            return Date.parse(b.ultimaEdicao || b.data || 0) - Date.parse(a.ultimaEdicao || a.data || 0);
+        });
 
         const container = document.getElementById('listaContainer');
 
@@ -1391,7 +1411,7 @@
         let cardIdx = 0;
         let html = '';
         filtrada.forEach(a => {
-            const dataStr = isoParaDataLocal(a.ultimaEdicao || a.data) || 'sem-data';
+            const dataStr = isoParaDataLocal(a.data) || 'sem-data';
             if (dataStr !== ultimaData) {
                 html += `<div class="rotulo-dia">${rotuloDia(dataStr)}</div>`;
                 ultimaData = dataStr;
@@ -1611,11 +1631,16 @@
         }
 
         if (!confirmado) {
+            const jaContestado = !!a.contestado;
+            const btnContestarLabel = jaContestado ? '⚠ Contestado' : '⚠ Contestar';
             rodapeHTML = `<div class="section">
                 <div class="validacao-chip" data-validacao-status="${escAttr(id)}">${resumoValidacao.total === 0 ? 'Nenhuma foto para revisar' : `Fotos revisadas ${resumoValidacao.concluidas}/${resumoValidacao.total}`}</div>
-                <button class="btn-confirmar" data-confirmar-id="${escAttr(id)}" data-confirmar-nome="${escAttr(a.cliente?.nome || '')}" ${resumoValidacao.liberado ? '' : 'disabled'}>
-                    Confirmar este atendimento
-                </button>
+                <div class="rodape-acoes">
+                    <button class="btn-contestar${jaContestado ? ' contestado' : ''}" data-contestar-id="${escAttr(id)}">${btnContestarLabel}</button>
+                    <button class="btn-confirmar" data-confirmar-id="${escAttr(id)}" data-confirmar-nome="${escAttr(a.cliente?.nome || '')}" ${resumoValidacao.liberado ? '' : 'disabled'} style="flex:1">
+                        Confirmar este atendimento
+                    </button>
+                </div>
                </div>`;
         }
 
@@ -1649,7 +1674,7 @@
     }
 
     /* ── DELEGAÇÃO DE EVENTOS ── */
-    document.getElementById('listaContainer').addEventListener('click', (e) => {
+    document.getElementById('listaContainer').addEventListener('click', async (e) => {
         // Expandir card
         const header = e.target.closest('.card-header');
         if (header) {
@@ -1674,6 +1699,48 @@
                 return;
             }
             abrirModal(btnConf.dataset.confirmarId, btnConf.dataset.confirmarNome);
+            return;
+        }
+
+        // Contestar
+        const btnCont = e.target.closest('.btn-contestar');
+        if (btnCont) {
+            const id = btnCont.dataset.contestarId;
+            const atend = todosAtendimentos.find(item => item.firebaseUrl === id);
+            if (!atend) return;
+            const jaContestado = !!atend.contestado;
+            if (jaContestado) {
+                if (!btnCont._pendente) {
+                    btnCont._pendente = true;
+                    btnCont.textContent = 'Remover?';
+                    btnCont._timer = setTimeout(() => {
+                        btnCont._pendente = false;
+                        btnCont.textContent = '⚠ Contestado';
+                    }, 3000);
+                } else {
+                    clearTimeout(btnCont._timer);
+                    btnCont._pendente = false;
+                    await dbRemoverContestacao(id);
+                    mostrarToast('Contestação removida.');
+                }
+            } else {
+                if (!btnCont._pendente) {
+                    btnCont._pendente = true;
+                    btnCont.textContent = 'Confirmar?';
+                    btnCont.classList.add('aguardando');
+                    btnCont._timer = setTimeout(() => {
+                        btnCont._pendente = false;
+                        btnCont.textContent = '⚠ Contestar';
+                        btnCont.classList.remove('aguardando');
+                    }, 3000);
+                } else {
+                    clearTimeout(btnCont._timer);
+                    btnCont._pendente = false;
+                    const gestor = String(localStorage.getItem('usuarioLogado') || '').trim() || 'Gestor';
+                    await dbContestarAtendimento(id, gestor);
+                    mostrarToast('Atendimento contestado. O técnico tem 24h para corrigir.');
+                }
+            }
             return;
         }
     });

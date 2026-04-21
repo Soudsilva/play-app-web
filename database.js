@@ -748,6 +748,22 @@ async function _sincronizarContadorAtualClientePorAtendimento(atendimento) {
     }
 }
 
+export async function dbContestarAtendimento(id, nomeGestor) {
+    await update(ref(db, `atendimentos/${id}`), {
+        contestado: true,
+        contestadoAte: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        contestadoPor: nomeGestor
+    });
+}
+
+export async function dbRemoverContestacao(id) {
+    await update(ref(db, `atendimentos/${id}`), {
+        contestado: null,
+        contestadoAte: null,
+        contestadoPor: null
+    });
+}
+
 export async function dbSalvarAtendimento(atendimento, idExistente = null) {
     try {
         if (idExistente) {

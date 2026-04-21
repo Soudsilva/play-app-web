@@ -101,6 +101,15 @@
         .botao:hover { background: #3c5f9f; }
         .botao:active { transform: translateY(2px); background: #355792; transition: 0.05s; }
 
+        @keyframes piscar-borda {
+            0%, 100% { border-color: #f59e0b; box-shadow: 0 0 0px rgba(245,158,11,0); }
+            50%       { border-color: #fcd34d; box-shadow: 0 0 10px rgba(245,158,11,0.6); }
+        }
+        .botao-pendente-alerta {
+            border-color: #f59e0b;
+            animation: piscar-borda 2s ease-in-out infinite;
+        }
+
         /* Submenu GestÃ£o */
         .submenu {
             display: none;
@@ -315,9 +324,45 @@
 </script>
 
 <script type="module">
-    import { dbEscutarColaboradores, dbSalvarAtendimento, storageSalvarFoto } from './database.js';
+    import { dbEscutarColaboradores, dbSalvarAtendimento, storageSalvarFoto, dbEscutarAtendimentos, dbEscutarManutencoes, dbEscutarClientes } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
     import { sincronizarPendentes, contarPendentes } from './offline-sync.js';
+
+    let _atendBadgeStarted = false;
+    let _servicoBadgeStarted = false;
+    let _servicoManutencoes = [];
+    let _servicoClientes = [];
+
+    function atualizarBadgeServico() {
+        const temPendente =
+            _servicoManutencoes.some(m =>
+                (Array.isArray(m.equipamentosAdicionados) && m.equipamentosAdicionados.length > 0 ||
+                 Array.isArray(m.equipamentosRetirados)   && m.equipamentosRetirados.length  > 0) &&
+                !m.confirmadoGestor
+            ) ||
+            _servicoClientes.some(c => c.statusCadastro === 'em_analise');
+        const btn = document.getElementById('btnServico');
+        if (!btn) return;
+        btn.classList.toggle('botao-pendente-alerta', temPendente);
+    }
+
+    function iniciarBadgeServico() {
+        if (_servicoBadgeStarted) return;
+        _servicoBadgeStarted = true;
+        dbEscutarManutencoes((lista) => { _servicoManutencoes = lista; atualizarBadgeServico(); });
+        dbEscutarClientes((lista)    => { _servicoClientes    = lista; atualizarBadgeServico(); });
+    }
+
+    function iniciarBadgeAtendimentos() {
+        if (_atendBadgeStarted) return;
+        _atendBadgeStarted = true;
+        dbEscutarAtendimentos((lista) => {
+            const pendentes = lista.filter(a => !a.confirmacao).length;
+            const btn = document.getElementById('btnAtendimento');
+            if (!btn) return;
+            btn.classList.toggle('botao-pendente-alerta', pendentes > 0);
+        });
+    }
 
     // â”€â”€ INDICADOR DE CONEXÃƒO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const pillOffline = document.getElementById('pill-offline');
@@ -563,6 +608,8 @@
             btns.pix.style.display = perfil.includes('gestao') ? 'flex' : 'none'; // Apenas GestÃ£o (ou atendimento acima)
             btns.fluxoCaixa.style.display = perfil.includes('gestao') ? 'flex' : 'none';
             btns.financeiro.style.display = 'none'; // Financeiro continua restrito ao Estoque
+            iniciarBadgeAtendimentos();
+            iniciarBadgeServico();
         }
 
         // GESTOR NÍVEL 2 e 3: acesso a Entr. Saídas

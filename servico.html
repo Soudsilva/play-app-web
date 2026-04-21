@@ -51,6 +51,16 @@
         .aba.ativo { opacity: 1; color: white; }
         #aba-pendentes.ativo { background: #7c3aed; }
         #aba-confirmados.ativo { background: #16a34a; }
+        .aba-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.25);
+            border-radius: 999px;
+            padding: 1px 8px;
+            font-size: 13px;
+            font-weight: bold;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
 
         /* ── BARRA MÊS + BUSCA ── */
         .barra-filtros {
@@ -186,10 +196,10 @@
     <!-- ABAS -->
     <div class="abas">
         <div class="aba ativo" id="aba-pendentes" onclick="setAba('pendentes',this)">
-            &#9203; A Confirmar
+            &#9203; A Confirmar<span id="badge-pendentes" class="aba-badge" style="display:none"></span>
         </div>
         <div class="aba" id="aba-confirmados" onclick="setAba('confirmados',this)">
-            &#9989; Confirmados
+            &#9989; Confirmados<span id="badge-confirmados" class="aba-badge" style="display:none"></span>
         </div>
     </div>
 
@@ -260,8 +270,30 @@
         return (Date.now() - new Date(iso).getTime()) < 2 * 60 * 60 * 1000;
     }
 
+    function atualizarBadgesAbas() {
+        const temColocacao = (m) => Array.isArray(m.equipamentosAdicionados) && m.equipamentosAdicionados.length > 0;
+        const temRetirada  = (m) => Array.isArray(m.equipamentosRetirados)   && m.equipamentosRetirados.length  > 0;
+        const dataM        = (m) => m.dataConclusao || m.dataRegistro;
+
+        // Pendentes: todos os meses
+        const totalPendentes =
+            _manutencoes.filter(m => (temColocacao(m) || temRetirada(m)) && !m.confirmadoGestor).length +
+            _clientes.filter(c => c.statusCadastro === 'em_analise').length;
+
+        // Confirmados: só o mês atual
+        const totalConfirmados =
+            _manutencoes.filter(m => (temColocacao(m) || temRetirada(m)) && !!m.confirmadoGestor && dentroDomes(dataM(m))).length +
+            _clientes.filter(c => c.statusCadastro === 'aprovado' && dentroDomes(c.dataCadastro)).length;
+
+        const bP = document.getElementById('badge-pendentes');
+        const bC = document.getElementById('badge-confirmados');
+        if (bP) { bP.textContent = totalPendentes; bP.style.display = totalPendentes > 0 ? 'inline-block' : 'none'; }
+        if (bC) { bC.textContent = totalConfirmados; bC.style.display = totalConfirmados > 0 ? 'inline-block' : 'none'; }
+    }
+
     // ── RENDER ────────────────────────────────────────────────────────────────
     function renderizar() {
+        atualizarBadgesAbas();
         const pendente = _abaAtual === 'pendentes';
         const termos   = quebrarTermos(document.getElementById('inputFiltro')?.value || '');
 
