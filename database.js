@@ -433,8 +433,9 @@ export async function dbExcluirColaborador(id) {
 }
 
 // [BLOCO: ESTOQUE - SALVAR ITEM]
-export async function dbSalvarItemEstoque(item, id = null) {
+export async function dbSalvarItemEstoque(item, id = null, opcoes = {}) {
     try {
+        const recalcular = opcoes?.recalcular !== false;
         if (id) {
             // Se tem ID, atualiza o item existente
             const itemRef = ref(db, `estoque/${id}`);
@@ -444,7 +445,7 @@ export async function dbSalvarItemEstoque(item, id = null) {
             const estoqueRef = ref(db, 'estoque');
             await push(estoqueRef, item);
         }
-        await _tentarRecalcularRemuneracoes();
+        if (recalcular) await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("Erro ao salvar no estoque:", error);
         throw error;
@@ -2146,6 +2147,7 @@ export async function dbRecalcularRemuneracoes() {
             clientesSnap,
             atendimentosSnap,
             historicoSnap,
+            historicoBalancoSnap,
             estoqueSnap,
             fluxoSnap
         ] = await Promise.all([
@@ -2153,6 +2155,7 @@ export async function dbRecalcularRemuneracoes() {
             get(ref(db, 'clientes')),
             get(ref(db, 'atendimentos')),
             get(ref(db, 'historico_estoque')),
+            get(ref(db, 'movimentacao_balanco_historico')),
             get(ref(db, 'estoque')),
             get(ref(db, 'fluxo_caixa'))
         ]);
@@ -2161,6 +2164,7 @@ export async function dbRecalcularRemuneracoes() {
         const clientesData = clientesSnap.exists() ? (clientesSnap.val() || {}) : {};
         const atendimentosData = atendimentosSnap.exists() ? (atendimentosSnap.val() || {}) : {};
         const historicoData = historicoSnap.exists() ? (historicoSnap.val() || {}) : {};
+        const historicoBalancoData = historicoBalancoSnap.exists() ? (historicoBalancoSnap.val() || {}) : {};
         const estoqueData = estoqueSnap.exists() ? (estoqueSnap.val() || {}) : {};
         const fluxoCaixa = fluxoSnap.exists() ? (fluxoSnap.val() || {}) : {};
 
@@ -2168,11 +2172,15 @@ export async function dbRecalcularRemuneracoes() {
         const clientes = Object.keys(clientesData).map(key => ({ firebaseUrl: key, ...clientesData[key] }));
         const atendimentos = Object.keys(atendimentosData).map(key => ({ firebaseUrl: key, ...atendimentosData[key] }));
         const historico = Object.keys(historicoData).map(key => ({ firebaseUrl: key, ...historicoData[key] }));
+        const historicoBalanco = Object.entries(historicoBalancoData).flatMap(([usuarioKey, movimentos]) =>
+            Object.entries(movimentos || {}).map(([firebaseUrl, mov]) => ({ usuarioKey, firebaseUrl, ...mov }))
+        );
         const estoque = Object.keys(estoqueData).map(key => ({ firebaseUrl: key, ...estoqueData[key] }));
 
         const mapaClientesRepresentante = _criarMapaClientesRepresentante(clientes);
         const mapaValoresEstoque = {};
         const mapaValoresProdutos = {};
+        const mapaValoresProdutosPorChave = {};
         const mapaValoresPecas = {};
 
         estoque.forEach(item => {
@@ -2180,7 +2188,11 @@ export async function dbRecalcularRemuneracoes() {
             if (!nome) return;
             const valor = _parseNumeroRemuneracao(item?.valorEquipamento);
             mapaValoresEstoque[_normalizarNomeRemuneracao(nome)] = valor;
-            if (item?.categoria === 'produtos') mapaValoresProdutos[nome] = valor;
+            if (item?.categoria === 'produtos') {
+                mapaValoresProdutos[nome] = valor;
+                const chaveProduto = String(item?.firebaseUrl || '').trim();
+                if (chaveProduto) mapaValoresProdutosPorChave[chaveProduto] = valor;
+            }
             if (item?.categoria === 'peca') mapaValoresPecas[nome] = valor;
         });
 
@@ -2371,13 +2383,18 @@ export async function dbRecalcularRemuneracoes() {
                 const nomeNorm = _normalizarNomeRemuneracao(nome);
                 let valorProducao = 0;
 
-                historico.forEach(item => {
-                    if (item?.tipo !== 'entrada') return;
-                    if (String(item?.itemCategoria || '').trim() !== 'produtos') return;
+                historicoBalanco.forEach(item => {
+                    if (item?.cancelado) return;
+                    if (String(item?.tipo || '').trim() !== 'entrada_estoque') return;
+                    if (String(item?.origemRegistro || '').trim() !== 'entrada_estoque') return;
+                    if (String(item?.categoria || '').trim() !== 'produtos') return;
                     if (_normalizarNomeRemuneracao(item?.responsavel) !== nomeNorm) return;
                     const nomeProduto = String(item?.itemNome || '').trim();
-                    const valorUnit = _parseNumeroRemuneracao(item?.valorUnitario) || _parseNumeroRemuneracao(mapaValoresProdutos[nomeProduto]);
-                    valorProducao += valorUnit * _parseNumeroRemuneracao(item?.qtd);
+                    const itemChave = String(item?.itemChave || item?.refId || '').trim();
+                    const valorUnit = _parseNumeroRemuneracao(item?.valorUnitario)
+                        || _parseNumeroRemuneracao(mapaValoresProdutosPorChave[itemChave])
+                        || _parseNumeroRemuneracao(mapaValoresProdutos[nomeProduto]);
+                    valorProducao += valorUnit * Math.abs(_parseNumeroRemuneracao(item?.movimento));
                 });
 
                 const fluxoUsuario = fluxoCaixa?.[usuarioKey]?.movimentacoes || {};
@@ -2719,6 +2736,7 @@ async function _atualizarPosseItensUsuario(entrada, movimento) {
         const estadoAtual = atual && typeof atual === 'object' ? atual : {};
         const categoriaAtual = String(entrada?.categoria || estadoAtual?.categoria || 'produto').trim();
         const origemMovimento = String(entrada?.origemRegistro || entrada?.tipo || '').trim();
+        const ignorarValidacaoPosse = entrada?.ignorarValidacaoPosse === true;
         const permitirSaldoNegativo = origemMovimento === 'atendimento'
             || origemMovimento === 'manutencao'
             || origemMovimento === 'manutencao_adicao'
@@ -2731,7 +2749,7 @@ async function _atualizarPosseItensUsuario(entrada, movimento) {
         );
         const quantidadeNova = quantidadeAtual + Number(movimento || 0);
 
-        if (quantidadeNova < 0 && !permitirSaldoNegativo) return;
+        if (quantidadeNova < 0 && !permitirSaldoNegativo && !ignorarValidacaoPosse) return;
 
         return {
             itemNome: String(entrada?.itemNome || estadoAtual?.itemNome || '').trim(),
@@ -2779,6 +2797,7 @@ async function _salvarEntradaHistoricoBalanco(chaveUsuario, entrada, totais = {}
         refId: String(entrada.refId || ''),
         ...(entrada?.atendimentoRefId ? { atendimentoRefId: String(entrada.atendimentoRefId).trim() } : {}),
         controlarPosse: entrada?.controlarPosse !== false,
+        ...(entrada?.ignorarValidacaoPosse === true ? { ignorarValidacaoPosse: true } : {}),
         isDefeitoEntry: Boolean(entrada.isDefeitoEntry),
         qtdDefeitoConsumida: Number(entrada.qtdDefeitoConsumida || 0),
         ...(entrada?.estoqueAntes != null ? { estoqueAntes: Number(entrada.estoqueAntes) } : {}),
@@ -2786,9 +2805,10 @@ async function _salvarEntradaHistoricoBalanco(chaveUsuario, entrada, totais = {}
     });
 }
 
-export async function dbSalvarHistoricoBalanco(entrada) {
+export async function dbSalvarHistoricoBalanco(entrada, opcoes = {}) {
     // entrada: { responsavel, registradoPor?, itemNome, categoria, tipo, origemRegistro?, movimento, descricao?, refId?, itemChave?, controlarPosse?, isDefeitoEntry?, qtdDefeitoConsumida? }
     try {
+        const recalcular = opcoes?.recalcular !== false;
         const chaveU = _normalizarChaveUsuario(entrada.responsavel);
         const movimento = _obterMovimentacaoHistoricoBalanco(entrada);
         if (!chaveU || !entrada.itemNome || !movimento) return;
@@ -2798,6 +2818,7 @@ export async function dbSalvarHistoricoBalanco(entrada) {
             movimento,
             itemChave: totais?.itemChave || entrada?.itemChave || ''
         }, totais);
+        if (recalcular) await _tentarRecalcularRemuneracoes();
         return novoRef?.key || null;
     } catch (e) {
         console.error('ERRO AO SALVAR MOVIMENTAÇÃO BALANÇO HISTÓRICO:', e);
@@ -3006,14 +3027,16 @@ export async function dbSincronizarItensManutencaoNoHistorico(atendimentoId, ate
     }
 }
 
-export async function dbExcluirHistoricoBalanco(id, responsavel) {
+export async function dbExcluirHistoricoBalanco(id, responsavel, opcoes = {}) {
     try {
+        const recalcular = opcoes?.recalcular !== false;
         const chaveU = _normalizarChaveUsuario(responsavel);
         const entradaRef = ref(db, `movimentacao_balanco_historico/${chaveU}/${id}`);
         const snap = await get(entradaRef);
         if (!snap.exists()) return;
         const entrada = snap.val();
         if (entrada?.cancelado) return;
+        const deveReverterPosse = entrada?.controlarPosse !== false;
 
         // Mantém o evento original como trilha e adiciona o reverso para corrigir o saldo atual.
         await dbSalvarHistoricoBalanco({
@@ -3027,13 +3050,15 @@ export async function dbExcluirHistoricoBalanco(id, responsavel) {
             movimento:     -Number(_obterMovimentacaoHistoricoBalanco(entrada) || 0),
             descricao:     `Cancelamento: ${entrada.descricao || entrada.tipo}`,
             refId:         id,
-            controlarPosse: entrada?.controlarPosse !== false
-        });
+            controlarPosse: deveReverterPosse,
+            ignorarValidacaoPosse: true
+        }, { recalcular: false });
 
         await update(entradaRef, {
             cancelado: true,
             canceladoEm: new Date().toISOString()
         });
+        if (recalcular) await _tentarRecalcularRemuneracoes();
     } catch (e) {
         console.error('ERRO AO EXCLUIR MOVIMENTAÇÃO BALANÇO HISTÓRICO:', e);
         throw e;
@@ -3108,6 +3133,31 @@ export async function dbBuscarUltimosPorItem(responsavel, itemNome, limite = 10)
             .slice(0, limiteFinal);
     } catch (e) {
         console.warn('Erro ao buscar últimos por item:', e);
+        return [];
+    }
+}
+
+export async function dbBuscarProdutosDoAtendimento(atendente, atendimentoRefId) {
+    try {
+        const chaveU = _normalizarChaveUsuario(atendente);
+        const refId = String(atendimentoRefId || '').trim();
+        if (!chaveU || !refId) return [];
+        const snap = await get(ref(db, `movimentacao_balanco_historico/${chaveU}`));
+        if (!snap.exists()) return [];
+        return Object.entries(snap.val())
+            .map(([id, v]) => ({ id, ...v }))
+            .filter(v =>
+                (String(v.atendimentoRefId || '').trim() === refId || String(v.refId || '').trim() === refId) &&
+                String(v.origemRegistro || '').trim() === 'atendimento' &&
+                !v.cancelado
+            )
+            .map(v => ({
+                nome: v.itemNome || '—',
+                movimento: Math.abs(Number(v.movimento || 0)),
+                totalApos: v.totalApos != null ? Number(v.totalApos) : null
+            }));
+    } catch (e) {
+        console.warn('Erro ao buscar produtos do atendimento:', e);
         return [];
     }
 }

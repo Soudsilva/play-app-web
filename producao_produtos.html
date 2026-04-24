@@ -228,7 +228,7 @@
 
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
-import { app, dbEscutarFluxoCaixa } from './database.js';
+import { app, dbEscutarFluxoCaixa, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const db = getDatabase(app);
@@ -262,25 +262,25 @@ function inicializar() {
     onValue(ref(db, 'estoque'), (snapEstoque) => {
         const itens = snapEstoque.val() || {};
         mapaValoresProdutos = {};
-        Object.values(itens).forEach(item => {
+        Object.entries(itens).forEach(([key, item]) => {
             if (item.nome && item.categoria === 'produtos') {
                 mapaValoresProdutos[String(item.nome).trim()] = Number(item.valorEquipamento) || 0;
+                mapaValoresProdutos[String(key).trim()] = Number(item.valorEquipamento) || 0;
             }
         });
         render();
     });
 
-    onValue(ref(db, 'historico_estoque'), (snapshot) => {
-        const data = snapshot.val() || {};
-
-        todasEntradas = Object.entries(data)
-            .map(([key, v]) => ({ firebaseUrl: key, ...v }))
+    dbEscutarHistoricoBalancoDoUsuario(usuarioLogado, (lista) => {
+        todasEntradas = (Array.isArray(lista) ? lista : [])
             .filter(v =>
-                v.tipo === 'entrada' &&
-                v.itemCategoria === 'produtos' &&
+                !v.cancelado &&
+                v.tipo === 'entrada_estoque' &&
+                v.origemRegistro === 'entrada_estoque' &&
+                v.categoria === 'produtos' &&
                 String(v.responsavel || '').trim() === usuarioLogado
             )
-            .sort((a, b) => new Date(b.data) - new Date(a.data));
+            .sort((a, b) => obterTimestampItem(b) - obterTimestampItem(a));
 
         document.getElementById('telaCarregando').style.display = 'none';
         document.getElementById('conteudo').style.display = 'block';
@@ -326,16 +326,38 @@ function obterDataIso(item) {
         const dia = String(base.getDate()).padStart(2, '0');
         return `${ano}-${mes}-${dia}`;
     }
+    const timestamp = item?.timestamp ? new Date(item.timestamp) : null;
+    if (timestamp && !Number.isNaN(timestamp.getTime())) {
+        const ano = timestamp.getFullYear();
+        const mes = String(timestamp.getMonth() + 1).padStart(2, '0');
+        const dia = String(timestamp.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+    }
     return '';
 }
 
 function obterTimestampItem(item) {
+    if (item?.timestamp) {
+        const data = new Date(item.timestamp);
+        if (!Number.isNaN(data.getTime())) return data.getTime();
+    }
     if (Number.isFinite(Number(item?.criado_em))) return Number(item.criado_em);
     if (item?.data) {
         const data = new Date(item.data);
         if (!Number.isNaN(data.getTime())) return data.getTime();
     }
     return 0;
+}
+
+function obterQuantidadeProducao(item) {
+    if (item?.qtd != null) return Number(item.qtd) || 0;
+    return Math.abs(Number(item?.movimento || 0));
+}
+
+function obterValorUnitarioProduto(item) {
+    const nomeProduto = String(item?.itemNome || '').trim();
+    const itemChave = String(item?.itemChave || item?.refId || '').trim();
+    return Number(item?.valorUnitario) || mapaValoresProdutos[itemChave] || mapaValoresProdutos[nomeProduto] || 0;
 }
 
 function obterTodosRegistros() {
@@ -399,10 +421,10 @@ function render() {
     let totalProduzido = 0;
     let totalUnidades = 0;
     todasEntradas.forEach(e => {
-        const nomeProduto = String(e.itemNome || '').trim();
-        const valorUnit = Number(e.valorUnitario) || mapaValoresProdutos[nomeProduto] || 0;
-        totalProduzido += valorUnit * (Number(e.qtd) || 0);
-        totalUnidades += Number(e.qtd) || 0;
+        const valorUnit = obterValorUnitarioProduto(e);
+        const qtd = obterQuantidadeProducao(e);
+        totalProduzido += valorUnit * qtd;
+        totalUnidades += qtd;
     });
 
     const ajusteFluxo = movimentosFluxo.reduce((total, mov) => {
@@ -444,13 +466,12 @@ function render() {
     });
 
     function criarCard(e, antigo) {
-        const nomeProduto = String(e.itemNome || '').trim();
-        const valorUnit  = Number(e.valorUnitario) || mapaValoresProdutos[nomeProduto] || 0;
-        const qtd        = Number(e.qtd) || 0;
+        const valorUnit  = obterValorUnitarioProduto(e);
+        const qtd        = obterQuantidadeProducao(e);
         const valorTotal = valorUnit * qtd;
         const temValor   = valorUnit > 0;
 
-        const dataObj = new Date(e.data);
+        const dataObj = new Date(e.timestamp || e.data);
         const dataFmt = dataObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
                        + ' · '
                        + dataObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });

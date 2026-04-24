@@ -166,7 +166,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbExcluirAtendimento, dbReverterEncerramentoCliente, dbExcluirMovimentoFluxoCaixa, dbReverterConclusaoManutencao } from './database.js';
+    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbExcluirAtendimento, dbReverterEncerramentoCliente, dbExcluirMovimentoFluxoCaixa, dbReverterConclusaoManutencao, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
 
     // Pega quem estÃ¡ logado no celular no momento
     const usuarioLogado = localStorage.getItem('usuarioLogado');
@@ -178,6 +178,7 @@
     let colaboradoresSalvos = [];
     let colaboradoresCarregados = false;
     let termoBusca = '';
+    let mapaMovimentacoesPorAtendimento = {}; // { atendimentoRefId -> [{ nome, movimento, totalApos }] }
 
     function normalizarTexto(txt) {
         return String(txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -927,18 +928,26 @@
 
             // --- 1. PRODUTOS ---
             let htmlProdutos = '';
-            if (envio.produtos && envio.produtos.length > 0) {
-                const tituloItens = ehMovimentoEstoque(envio)
-                    ? obterTituloItensMovimentoEstoque(envio)
-                    : 'Produtos';
-                htmlProdutos += `<div class="secao-titulo">${tituloItens}</div>`;
+            if (ehMovimentoEstoque(envio) && envio.produtos && envio.produtos.length > 0) {
+                htmlProdutos += `<div class="secao-titulo">${obterTituloItensMovimentoEstoque(envio)}</div>`;
                 envio.produtos.forEach(p => {
-                    if (ehMovimentoEstoque(envio)) {
-                        htmlProdutos += `<div class="info-linha info-linha-livre"><span class="item-estoque-nome">${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
-                    } else {
-                        htmlProdutos += `<div class="info-linha info-linha-livre"><span>${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
-                    }
+                    htmlProdutos += `<div class="info-linha info-linha-livre"><span class="item-estoque-nome">${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
                 });
+            } else if (!ehMovimentoEstoque(envio) && !ehRegistroManutencao(envio)) {
+                const produtosAtend = mapaMovimentacoesPorAtendimento[envio.firebaseUrl] || [];
+                if (produtosAtend.length > 0) {
+                    htmlProdutos += `<div class="secao-titulo">Produtos</div>`;
+                    produtosAtend.forEach(p => {
+                        htmlProdutos += `
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                <span style="color:white;font-size:15px;">${p.nome}</span>
+                                <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+                                    <span style="background:rgba(255,235,59,0.15);border:1px solid rgba(255,235,59,0.4);color:#ffeb3b;border-radius:6px;padding:2px 10px;font-size:14px;font-weight:bold;">${p.movimento} usados</span>
+                                    ${p.totalApos != null ? `<span style="font-size:13px;font-weight:bold;color:${p.totalApos < 0 ? '#f44336' : '#81c784'};">total ${p.totalApos}</span>` : ''}
+                                </div>
+                            </div>`;
+                    });
+                }
             }
 
             // --- 2. FINANCEIRO ---
@@ -1081,6 +1090,21 @@
             container.appendChild(card);
         });
     }
+
+    dbEscutarHistoricoBalancoDoUsuario(usuarioLogado, (historico) => {
+        mapaMovimentacoesPorAtendimento = {};
+        historico.forEach(entry => {
+            const refId = String(entry.atendimentoRefId || entry.refId || '').trim();
+            if (!refId || String(entry.origemRegistro || '').trim() !== 'atendimento' || entry.cancelado) return;
+            if (!mapaMovimentacoesPorAtendimento[refId]) mapaMovimentacoesPorAtendimento[refId] = [];
+            mapaMovimentacoesPorAtendimento[refId].push({
+                nome: entry.itemNome || '—',
+                movimento: Math.abs(Number(entry.movimento || 0)),
+                totalApos: entry.totalApos != null ? Number(entry.totalApos) : null
+            });
+        });
+        renderizarEnvios();
+    });
 
     dbEscutarColaboradores((colaboradores) => {
         colaboradoresSalvos = colaboradores;

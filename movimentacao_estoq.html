@@ -99,6 +99,91 @@
             font-size: 16px; font-weight: bold; color: white; cursor: pointer;
             letter-spacing: 0.5px; transition: 0.2s;
         }
+        .btn-confirmar:disabled {
+            cursor: wait;
+            filter: saturate(0.85);
+        }
+        .btn-confirmar.salvando {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-spinner {
+            width: 18px;
+            height: 18px;
+            border: 3px solid #ffffff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            flex: 0 0 auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-excluir-hist.salvando {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: wait;
+        }
+        .btn-excluir-hist .btn-spinner {
+            width: 12px;
+            height: 12px;
+            border-width: 2px;
+        }
+        .lista-pendente {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            margin: 0 0 14px;
+        }
+        .lista-pendente.visivel { display: flex; }
+        .pendente-card {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            align-items: center;
+            gap: 8px;
+            background: #123f9b;
+            border: 1px solid #ffffff;
+            border-radius: 10px;
+            padding: 9px 10px;
+        }
+        .pendente-info { min-width: 0; }
+        .pendente-nome {
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .pendente-meta {
+            color: #dfe8ff;
+            font-size: 13px;
+            font-weight: 400;
+            margin-top: 2px;
+        }
+        .pendente-qtd {
+            color: #ffeb3b;
+            font-size: 18px;
+            font-weight: 700;
+            min-width: 42px;
+            text-align: center;
+        }
+        .pendente-remover {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #ffffff;
+            border-radius: 50%;
+            background: #f44336;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
 
         .label-pequena { font-size: 11px; color: #ccc; margin-bottom: 4px; display: block; margin-top: 10px; }
 
@@ -396,6 +481,27 @@
         .filtro-est .f-label { color: #ffffff; }
         .filtro-est.ativo { background: rgba(255,235,59,0.18); border-color: rgba(255,235,59,0.52); }
         .filtro-est input { display: none; }
+        .campo-oculto { display: none !important; }
+        .campo-responsavel { grid-column: 2; grid-row: 1; }
+        .linhas-movimentacao {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .linha-movimentacao {
+            display: grid;
+            grid-template-columns: 1fr 110px;
+            gap: 10px;
+            animation: slideDown 0.2s ease;
+        }
+        .linha-movimentacao .input-mov-qtd {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            background: #fffde7;
+            border-color: #f9a825;
+        }
     </style>
 </head>
 <body>
@@ -425,7 +531,7 @@
                     <option value="materiais">Materiais</option>
                 </select>
             </div>
-            <div class="campo-form">
+            <div class="campo-form campo-oculto">
                 <label>Item</label>
                 <select id="selectItem" onchange="mostrarSaldoAtual()">
                     <option value="">Item</option>
@@ -434,16 +540,17 @@
 
             <div class="card-separador"></div>
 
-            <div class="campo-form">
+            <div class="campo-form campo-oculto">
                 <label>Quantidade</label>
                 <input type="text" id="qtdInput" class="inp-qtd" placeholder="0" inputmode="numeric">
             </div>
-            <div class="campo-form">
+            <div class="campo-form campo-responsavel">
                 <label>Responsável</label>
                 <select id="responsavel">
                     <option value="">Selecione...</option>
                 </select>
             </div>
+            <div class="linhas-movimentacao" id="containerMovimentacaoItens"></div>
         </div>
 
         <div class="saldo-box" id="saldoBox" style="display:none;">
@@ -484,11 +591,14 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbSalvarHistoricoBalanco, dbEscutarHistoricoBalanco, dbExcluirHistoricoBalanco } from './database.js';
+    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbSalvarHistoricoBalanco, dbEscutarHistoricoBalanco, dbExcluirHistoricoBalanco, dbRecalcularRemuneracoes } from './database.js';
 
     let listaGlobal = [];
     let historicoGlobal = [];
     let colabsGlobal = [];
+    let itensPendentes = [];
+    let timerAdicionarPendente = null;
+    let salvandoMovimentacao = false;
     let modoAtual = 'saida';
     let historicoVisivel = false;
     let itensVisivelEstoque = false;
@@ -543,6 +653,7 @@
     function ehMovimentoEstoqueHistorico(mov) {
         if (mov?.cancelado) return false;
         const tipo = String(mov?.tipo || '').trim();
+        if (tipo === 'cancelamento') return false;
         const origemRegistro = String(mov?.origemRegistro || '').trim();
         return tipo === 'entrada_estoque'
             || tipo === 'saida_estoque'
@@ -697,7 +808,7 @@
                 divAcoes.className = 'acoes-hist';
                 const movString = encodeURIComponent(JSON.stringify(mov));
                 divAcoes.innerHTML = `
-                    <button class="btn-hist btn-excluir-hist" onclick="excluirUltimo('${movString}')">EXCLUIR</button>
+                    <button class="btn-hist btn-excluir-hist" onclick="excluirUltimo('${movString}', this)">EXCLUIR</button>
                 `;
                 div.appendChild(divAcoes);
             }
@@ -951,14 +1062,448 @@
     };
 
     // ── FORMATAÇÃO CAMPO QUANTIDADE ──
+    function obterQuantidadeDigitada() {
+        return parseInt(String(document.getElementById('qtdInput').value).replace(/\./g, ''), 10);
+    }
+
+    function obterItemEstoqueAtual(idItem, mapaEstoque = null) {
+        if (mapaEstoque?.has(idItem)) return mapaEstoque.get(idItem);
+        return listaGlobal.find(i => i.firebaseUrl === idItem);
+    }
+
+    function obterSaldoProjetadoPendente(idItem) {
+        const item = obterItemEstoqueAtual(idItem);
+        if (!item) return 0;
+        let saldo = parseInt(item.quantidade, 10) || 0;
+        itensPendentes.forEach(pendente => {
+            if (pendente.idItem !== idItem) return;
+            saldo += pendente.modo === 'saida' ? -pendente.qtdMovimento : pendente.qtdMovimento;
+        });
+        return saldo;
+    }
+
+    function limparCamposAposAdicionar() {
+        document.getElementById('selectItem').value = '';
+        document.getElementById('qtdInput').value = '';
+        mostrarSaldoAtual();
+        setTimeout(() => document.getElementById('selectItem').focus(), 0);
+    }
+
+    function renderizarPendentes() {
+        const container = document.getElementById('listaPendente');
+        if (!container) return;
+        container.classList.toggle('visivel', itensPendentes.length > 0);
+        container.innerHTML = itensPendentes.map((item, idx) => `
+            <div class="pendente-card">
+                <div class="pendente-info">
+                    <div class="pendente-nome">${item.itemNome}</div>
+                    <div class="pendente-meta">${item.modo === 'saida' ? 'Saída' : 'Entrada'} - ${item.responsavel}</div>
+                </div>
+                <div class="pendente-qtd">${item.qtdMovimento.toLocaleString('pt-BR')}</div>
+                <button type="button" class="pendente-remover" onclick="removerPendente(${idx})" title="Remover">×</button>
+            </div>
+        `).join('');
+    }
+
+    window.removerPendente = function(index) {
+        itensPendentes.splice(index, 1);
+        renderizarPendentes();
+    };
+
+    function adicionarPendenteAtual({ silencioso = false } = {}) {
+        if (timerAdicionarPendente) {
+            clearTimeout(timerAdicionarPendente);
+            timerAdicionarPendente = null;
+        }
+        const idItem = document.getElementById('selectItem').value;
+        const qtdMovimento = obterQuantidadeDigitada();
+        const responsavel = document.getElementById('responsavel').value;
+        if (!idItem) {
+            if (!silencioso) alert("Selecione um item.");
+            return false;
+        }
+        if (isNaN(qtdMovimento) || qtdMovimento <= 0) {
+            if (!silencioso) alert("Informe a quantidade.");
+            return false;
+        }
+        if (!responsavel) {
+            if (!silencioso) alert("Selecione o responsável.");
+            return false;
+        }
+
+        const itemOriginal = obterItemEstoqueAtual(idItem);
+        if (!itemOriginal) {
+            if (!silencioso) alert("Erro ao localizar item.");
+            return false;
+        }
+
+        if (modoAtual === 'saida' && qtdMovimento > obterSaldoProjetadoPendente(idItem)) {
+            if (!silencioso) alert("Quantidade insuficiente em estoque!");
+            return false;
+        }
+
+        itensPendentes.push({
+            idItem,
+            qtdMovimento,
+            responsavel,
+            modo: modoAtual,
+            itemNome: itemOriginal.nome
+        });
+        renderizarPendentes();
+        limparCamposAposAdicionar();
+        return true;
+    }
+
+    function agendarAdicionarPendenteAtual() {
+        if (timerAdicionarPendente) clearTimeout(timerAdicionarPendente);
+        timerAdicionarPendente = setTimeout(() => {
+            timerAdicionarPendente = null;
+            adicionarPendenteAtual({ silencioso: true });
+        }, 650);
+    }
+
+    function tentarAdicionarPendenteSeCompleto() {
+        if (!document.getElementById('qtdInput').value.trim()) return;
+        agendarAdicionarPendenteAtual();
+    }
+
+    async function salvarItemMovimentacaoPendente({ idItem, qtdMovimento, responsavel, modo }, mapaEstoque) {
+        const itemOriginal = obterItemEstoqueAtual(idItem, mapaEstoque);
+        if (!itemOriginal) throw new Error('Erro ao localizar item.');
+
+        const isPeca = itemOriginal.categoria === 'peca';
+        let novaQtd = parseInt(itemOriginal.quantidade) || 0;
+        let novaQtdDefeito = parseInt(itemOriginal.qtd_defeito) || 0;
+        let isDefeitoEntry = false;
+        let qtdDefeitoConsumida = 0;
+
+        if (modo === 'entrada') {
+            if (isPeca) {
+                const ehFornecedor = responsavel === 'Fornecedor';
+                const responsavelEhEstoque = colabsGlobal.some(
+                    c => c.nome === responsavel && c.nivel_completo && c.nivel_completo.startsWith('estoque')
+                );
+
+                if (ehFornecedor || responsavelEhEstoque) {
+                    qtdDefeitoConsumida = Math.min(qtdMovimento, novaQtdDefeito);
+                    novaQtdDefeito -= qtdDefeitoConsumida;
+                    novaQtd += qtdMovimento - qtdDefeitoConsumida;
+                } else {
+                    novaQtdDefeito += qtdMovimento;
+                    isDefeitoEntry = true;
+                }
+            } else {
+                novaQtd += qtdMovimento;
+            }
+        } else {
+            if (qtdMovimento > novaQtd) {
+                throw new Error(`Quantidade insuficiente em estoque para ${itemOriginal.nome}.`);
+            }
+            novaQtd -= qtdMovimento;
+        }
+
+        const itemParaSalvar = {
+            ...itemOriginal,
+            nome: itemOriginal.nome,
+            categoria: itemOriginal.categoria,
+            quantidade: novaQtd,
+            qtd_defeito: novaQtdDefeito,
+            minimo: itemOriginal.minimo || 0,
+            dataAtualizacao: new Date().toISOString(),
+            ultimo_responsavel: responsavel
+        };
+
+        const estoqueAntes = parseInt(itemOriginal.quantidade) || 0;
+
+        await dbSalvarItemEstoque(itemParaSalvar, idItem, { recalcular: false });
+        await dbSalvarHistoricoBalanco({
+            responsavel:   responsavel,
+            registradoPor: String(localStorage.getItem('usuarioLogado') || '').trim(),
+            itemId:        idItem,
+            itemNome:      itemOriginal.nome,
+            categoria:     itemOriginal.categoria || 'produto',
+            tipo:          modo === 'saida' ? 'saida_estoque' : 'entrada_estoque',
+            origemRegistro: modo === 'saida' ? 'retirada_estoque' : 'entrada_estoque',
+            itemChave:     idItem,
+            movimento:     modo === 'saida' ? qtdMovimento : -qtdMovimento,
+            descricao:     modo === 'saida' ? 'Retirada de estoque' : 'Devolução ao estoque',
+            refId:         idItem,
+            controlarPosse: responsavel !== 'Fornecedor' && responsavel !== 'Máquina',
+            isDefeitoEntry,
+            qtdDefeitoConsumida,
+            estoqueAntes,
+            estoqueDepois: novaQtd
+        }, { recalcular: false });
+
+        mapaEstoque.set(idItem, { ...itemParaSalvar, firebaseUrl: idItem });
+        const idx = listaGlobal.findIndex(i => i.firebaseUrl === idItem);
+        if (idx >= 0) listaGlobal[idx] = { ...itemParaSalvar, firebaseUrl: idItem };
+        return novaQtd;
+    }
+
+    function definirEstadoSalvando(ativo) {
+        const btn = document.getElementById('btnAcao');
+        if (!btn) return;
+        btn.disabled = ativo;
+        btn.classList.toggle('salvando', ativo);
+        if (ativo) {
+            btn.dataset.textoOriginal = btn.textContent;
+            btn.innerHTML = '<span class="btn-spinner"></span><span>Salvando...</span>';
+            return;
+        }
+        btn.textContent = btn.dataset.textoOriginal || (modoAtual === 'saida' ? 'CONFIRMAR SAÍDA' : 'CONFIRMAR ENTRADA');
+    }
+
+    window.salvarMovimentacao = async function() {
+        if (salvandoMovimentacao) return;
+        if (document.getElementById('qtdInput').value.trim()) {
+            if (!adicionarPendenteAtual()) return;
+        }
+        if (itensPendentes.length === 0) return alert("Adicione ao menos um item.");
+
+        try {
+            salvandoMovimentacao = true;
+            definirEstadoSalvando(true);
+            const mapaEstoque = new Map(listaGlobal.map(item => [item.firebaseUrl, { ...item }]));
+            let ultimoSaldo = 0;
+            for (const pendente of itensPendentes) {
+                ultimoSaldo = await salvarItemMovimentacaoPendente(pendente, mapaEstoque);
+            }
+            await dbRecalcularRemuneracoes();
+
+            const totalSalvo = itensPendentes.length;
+            itensPendentes = [];
+            renderizarPendentes();
+            document.getElementById('qtdInput').value = '';
+            filtrarItens();
+            alert(totalSalvo === 1 ? "Sucesso! Novo saldo: " + ultimoSaldo : `${totalSalvo} itens salvos com sucesso.`);
+        } catch (error) {
+            alert("Erro ao salvar. Detalhe: " + (error?.message || 'desconhecido'));
+            console.error(error);
+        } finally {
+            salvandoMovimentacao = false;
+            definirEstadoSalvando(false);
+        }
+    };
+
     const qtdInput = document.getElementById('qtdInput');
     qtdInput.addEventListener('input', () => {
         const apenasNumeros = qtdInput.value.replace(/\D/g, '');
-        if (!apenasNumeros) { qtdInput.value = ''; return; }
+        if (!apenasNumeros) {
+            qtdInput.value = '';
+            if (timerAdicionarPendente) clearTimeout(timerAdicionarPendente);
+            timerAdicionarPendente = null;
+            return;
+        }
         qtdInput.value = Number(apenasNumeros).toLocaleString('pt-BR');
+        agendarAdicionarPendenteAtual();
     });
+    qtdInput.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        adicionarPendenteAtual();
+    });
+    qtdInput.addEventListener('blur', () => {
+        if (!qtdInput.value.trim()) return;
+        adicionarPendenteAtual({ silencioso: true });
+    });
+    document.getElementById('selectItem').addEventListener('change', tentarAdicionarPendenteSeCompleto);
+    document.getElementById('responsavel').addEventListener('change', tentarAdicionarPendenteSeCompleto);
 
     // ── ITENS DO ESTOQUE ──
+
+    let categoriaAtualLinhasMovimentacao = '';
+
+    function obterItensDaCategoriaAtual() {
+        const categoriaSelecionada = document.getElementById('filtroCategoria').value;
+        return listaGlobal.filter(item => item.categoria === categoriaSelecionada);
+    }
+
+    function obterLinhasMovimentacao() {
+        return Array.from(document.querySelectorAll('#containerMovimentacaoItens .linha-movimentacao'));
+    }
+
+    function linhaMovimentacaoVazia(linha) {
+        if (!linha) return false;
+        const item = (linha.querySelector('.input-mov-item')?.value || '').trim();
+        const qtd = (linha.querySelector('.input-mov-qtd')?.value || '').trim();
+        return !item && !qtd;
+    }
+
+    function normalizarLinhasMovimentacao() {
+        let encontrouVazia = false;
+        obterLinhasMovimentacao().forEach(linha => {
+            if (!linhaMovimentacaoVazia(linha)) return;
+            if (!encontrouVazia) {
+                encontrouVazia = true;
+                return;
+            }
+            linha.remove();
+        });
+    }
+
+    window.atualizarOpcoesMovimentacao = function(selectAlterado = null) {
+        normalizarLinhasMovimentacao();
+        const selects = document.querySelectorAll('#containerMovimentacaoItens .input-mov-item');
+        const selecionados = Array.from(selects).map(select => select.value).filter(Boolean);
+        const itens = obterItensDaCategoriaAtual();
+
+        selects.forEach(select => {
+            const valorAtual = select.value;
+            let opcoesHTML = '<option value="">Item</option>';
+
+            itens.forEach(item => {
+                if (item.firebaseUrl === valorAtual || !selecionados.includes(item.firebaseUrl)) {
+                    opcoesHTML += `<option value="${item.firebaseUrl}">${item.nome}</option>`;
+                }
+            });
+
+            select.innerHTML = opcoesHTML;
+            select.value = valorAtual;
+        });
+
+        mostrarSaldoAtual(selectAlterado);
+    };
+
+    window.adicionarLinhaMovimentacao = function(inputAnterior = null, valorItem = '', valorQtd = '') {
+        const container = document.getElementById('containerMovimentacaoItens');
+        if (!container) return;
+        if (inputAnterior && inputAnterior.value.trim() === '') return;
+
+        const linhas = obterLinhasMovimentacao();
+        if (!valorItem && !valorQtd && linhas.length > 0) {
+            const ultimaLinha = linhas[linhas.length - 1];
+            const ultimoItem = ultimaLinha.querySelector('.input-mov-item')?.value || '';
+            const ultimaQtd = ultimaLinha.querySelector('.input-mov-qtd')?.value || '';
+            if (!ultimoItem && !ultimaQtd) return;
+        }
+
+        const linha = document.createElement('div');
+        linha.className = 'linha-movimentacao';
+        linha.innerHTML = `
+            <select class="input-mov-item" onchange="atualizarOpcoesMovimentacao(this)"></select>
+            <input type="text" inputmode="numeric" class="input-mov-qtd" placeholder="Qtd" onfocus="mostrarSaldoAtualDaLinha(this)" onclick="mostrarSaldoAtualDaLinha(this)" oninput="this.value = this.value.replace(/[^0-9]/g, ''); mostrarSaldoAtualDaLinha(this); adicionarLinhaMovimentacao(this)">
+        `;
+
+        container.appendChild(linha);
+        atualizarOpcoesMovimentacao();
+        if (valorItem) linha.querySelector('.input-mov-item').value = valorItem;
+        if (valorQtd) linha.querySelector('.input-mov-qtd').value = valorQtd;
+        normalizarLinhasMovimentacao();
+        atualizarOpcoesMovimentacao();
+    };
+
+    window.filtrarItens = function() {
+        renderizarResponsaveis();
+        const categoriaSelecionada = document.getElementById('filtroCategoria').value;
+        const container = document.getElementById('containerMovimentacaoItens');
+        if (!container) return;
+
+        if (categoriaAtualLinhasMovimentacao !== categoriaSelecionada) {
+            categoriaAtualLinhasMovimentacao = categoriaSelecionada;
+            container.innerHTML = '';
+        }
+
+        if (!categoriaSelecionada) {
+            mostrarSaldoAtual();
+            return;
+        }
+
+        if (obterLinhasMovimentacao().length === 0) adicionarLinhaMovimentacao();
+        atualizarOpcoesMovimentacao();
+    };
+
+    window.mostrarSaldoAtualDaLinha = function(elemento) {
+        const linha = elemento?.closest?.('.linha-movimentacao');
+        const select = linha?.querySelector('.input-mov-item') || elemento;
+        mostrarSaldoAtual(select);
+    };
+
+    window.mostrarSaldoAtual = function(selectOrigem = null) {
+        const saldoBox = document.getElementById('saldoBox');
+        const select = selectOrigem || document.querySelector('#containerMovimentacaoItens .input-mov-item');
+        const idItem = select?.value || '';
+        const item = listaGlobal.find(i => i.firebaseUrl === idItem);
+
+        if (!item) {
+            saldoBox.style.display = 'none';
+            return;
+        }
+
+        const qtdBoa = parseInt(item.quantidade || 0, 10);
+        const qtdDefeito = parseInt(item.qtd_defeito || 0, 10);
+        if (item.categoria === 'peca' && qtdDefeito > 0) {
+            const total = qtdBoa + qtdDefeito;
+            document.getElementById('textoSaldo').innerHTML =
+                `<span class="saldo-total-disc">Total ${total}</span>` +
+                `<span class="saldo-defeito-label">&#9888; Defeito <span class="saldo-defeito-num">${qtdDefeito}</span></span>` +
+                `<span class="destaque-qtd">${qtdBoa}</span>`;
+        } else {
+            document.getElementById('textoSaldo').innerHTML = `<span class="destaque-qtd">${qtdBoa}</span>`;
+        }
+        saldoBox.style.display = 'flex';
+    };
+
+    function coletarMovimentacoesDasLinhas() {
+        const linhas = obterLinhasMovimentacao()
+            .map((linha, index) => {
+                const idItem = (linha.querySelector('.input-mov-item')?.value || '').trim();
+                const qtdRaw = (linha.querySelector('.input-mov-qtd')?.value || '').trim();
+                const qtdMovimento = parseInt(qtdRaw, 10) || 0;
+                return { index, idItem, qtdRaw, qtdMovimento };
+            })
+            .filter(item => item.idItem || item.qtdRaw);
+
+        if (linhas.length === 0) throw new Error('Informe ao menos um item.');
+
+        const incompletas = linhas.filter(item => !item.idItem || item.qtdMovimento <= 0);
+        if (incompletas.length > 0) {
+            const posicoes = incompletas.map(item => item.index + 1).join(', ');
+            throw new Error(`Complete item e quantidade nas linhas: ${posicoes}.`);
+        }
+
+        return linhas;
+    }
+
+    window.salvarMovimentacao = async function() {
+        if (salvandoMovimentacao) return;
+        const responsavel = document.getElementById('responsavel').value;
+        if (!responsavel) return alert("Selecione o responsável.");
+
+        let linhas;
+        try {
+            linhas = coletarMovimentacoesDasLinhas();
+        } catch (erro) {
+            return alert(erro.message);
+        }
+
+        try {
+            salvandoMovimentacao = true;
+            definirEstadoSalvando(true);
+            const mapaEstoque = new Map(listaGlobal.map(item => [item.firebaseUrl, { ...item }]));
+            let ultimoSaldo = 0;
+            for (const linha of linhas) {
+                ultimoSaldo = await salvarItemMovimentacaoPendente({
+                    idItem: linha.idItem,
+                    qtdMovimento: linha.qtdMovimento,
+                    responsavel,
+                    modo: modoAtual
+                }, mapaEstoque);
+            }
+            await dbRecalcularRemuneracoes();
+
+            document.getElementById('containerMovimentacaoItens').innerHTML = '';
+            categoriaAtualLinhasMovimentacao = '';
+            filtrarItens();
+            alert(linhas.length === 1 ? "Sucesso! Novo saldo: " + ultimoSaldo : `${linhas.length} itens salvos com sucesso.`);
+        } catch (error) {
+            alert("Erro ao salvar. Detalhe: " + (error?.message || 'desconhecido'));
+            console.error(error);
+        } finally {
+            salvandoMovimentacao = false;
+            definirEstadoSalvando(false);
+        }
+    };
 
     function atualizarBotaoItens() {
         const btn = document.getElementById('btnToggleItens');
@@ -1069,7 +1614,20 @@
     // --- FUNÇÕES DE CORREÇÃO (EDITAR/EXCLUIR ÚLTIMO) ---
 
     // Reverte o estoque e apaga o histórico
-    window.excluirUltimo = async function(movString) {
+    function definirEstadoExcluindo(botao, ativo) {
+        if (!botao) return;
+        botao.disabled = ativo;
+        botao.classList.toggle('salvando', ativo);
+        if (ativo) {
+            botao.dataset.textoOriginal = botao.textContent;
+            botao.innerHTML = '<span class="btn-spinner"></span><span>...</span>';
+            return;
+        }
+        botao.textContent = botao.dataset.textoOriginal || 'EXCLUIR';
+    }
+
+    window.excluirUltimo = async function(movString, botao = null) {
+        if (botao?.disabled) return;
         if(!(await window.playConfirm("Deseja desfazer essa movimentação? O saldo do estoque será revertido."))) return;
         
         const mov = JSON.parse(decodeURIComponent(movString));
@@ -1104,20 +1662,24 @@
         }
 
         try {
+            definirEstadoExcluindo(botao, true);
             // 1. Atualiza Estoque
-            await dbSalvarItemEstoque({ ...itemEstoque, quantidade: novaQtd, qtd_defeito: novaQtdDefeito }, mov.refId);
+            await dbSalvarItemEstoque({ ...itemEstoque, quantidade: novaQtd, qtd_defeito: novaQtdDefeito }, mov.refId, { recalcular: false });
             
             // 2. Remove do histórico único e grava o cancelamento no próprio movimentacao_balanco_historico
             if(mov.firebaseUrl && mov.responsavel) {
-               await dbExcluirHistoricoBalanco(mov.firebaseUrl, mov.responsavel);
+               await dbExcluirHistoricoBalanco(mov.firebaseUrl, mov.responsavel, { recalcular: false });
+               await dbRecalcularRemuneracoes();
             } else {
                alert("Erro de identificação do registro. Atualizando...");
                window.location.reload();
             }
 
         } catch (err) {
-            alert("Erro ao desfazer.");
+            alert("Erro ao desfazer. Detalhe: " + (err?.message || 'desconhecido'));
             console.error(err);
+        } finally {
+            definirEstadoExcluindo(botao, false);
         }
     };
 

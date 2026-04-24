@@ -27,6 +27,207 @@
         }
 
         /* Área do Cliente Encontrado */
+        .busca-cliente-linha {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            max-width: 440px;
+            margin: 0 auto;
+        }
+        #inputBuscaCliente {
+            width: 74px;
+            height: 50px;
+            flex: none;
+            min-width: 0;
+            border: none;
+            background: transparent;
+            padding: 0 10px 0 0;
+        }
+        .numero-cliente-visual {
+            width: 132px;
+            height: 50px;
+            box-sizing: border-box;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: #ffffff;
+            color: #333333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+        .numero-cliente-prefixo {
+            color: #777777;
+            font-size: 23px;
+            font-weight: 700;
+            line-height: 1;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .cliente-numero-rota-linha {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+        .rota-cliente-destaque {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            height: 50px;
+            box-sizing: border-box;
+            padding: 8px 14px;
+            border: 1px solid #ffeb3b;
+            border-radius: 8px;
+            background: #ffeb3b;
+            color: #042d86;
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .rotas-atendimento-disponiveis {
+            display: none;
+            position: relative;
+            flex: none;
+            max-width: 320px;
+            width: 320px;
+        }
+        .btn-rotas-atendimento-menu {
+            width: 100%;
+            min-height: 58px;
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            background: #ffeb3b;
+            color: #042d86;
+            padding: 9px 12px;
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.05;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 3px 10px #001847;
+            user-select: none;
+            -webkit-user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-rotas-atendimento-label {
+            display: block;
+            font-size: 18px;
+        }
+        .rotas-atendimento-painel {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 50%;
+            width: min(420px, calc(100vw - 24px));
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            background: #06286b;
+            padding: 6px;
+            z-index: 40;
+            box-shadow: 0 8px 18px #001847;
+            transform: translateX(-50%);
+        }
+        .rotas-atendimento-painel.aberto {
+            display: grid;
+            gap: 6px;
+        }
+        .btn-rota-atendimento {
+            width: 100%;
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            background: #ffeb3b;
+            color: #042d86;
+            padding: 9px 10px;
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.1;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-rota-atendimento.ativa {
+            background: #ffeb3b;
+            color: #042d86;
+            border-color: #ffeb3b;
+        }
+        .grupo-rota-atendimento {
+            display: block;
+        }
+        .rotas-atendimento-painel.tem-lista-aberta .grupo-rota-atendimento:not(.rota-grupo-aberto) {
+            display: none;
+        }
+        .btn-rota-atendimento-numero {
+            display: block;
+            font-size: 18px;
+            line-height: 1.05;
+        }
+        .clientes-rota-atendimento-lista {
+            display: none;
+            gap: 5px;
+            margin: 2px 0 6px;
+        }
+        .clientes-rota-atendimento-lista.aberta {
+            display: grid;
+        }
+        .btn-cliente-rota-atendimento {
+            width: 100%;
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            background: transparent;
+            color: #ffffff;
+            padding: 9px 8px;
+            font-size: 17px;
+            font-weight: 400;
+            line-height: 1.2;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: background 0.12s ease, color 0.12s ease, transform 0.08s ease, border-color 0.12s ease;
+            touch-action: manipulation;
+        }
+        .btn-cliente-rota-atendimento:active,
+        .btn-cliente-rota-atendimento.pressionando {
+            background: #ffeb3b;
+            color: #042d86;
+            border-color: #ffeb3b;
+            transform: scale(0.98);
+        }
+        .clientes-rota-atendimento-vazio {
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            color: #ffffff;
+            padding: 9px 8px;
+            font-size: 17px;
+            font-weight: 400;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        @media (max-width: 380px) {
+            .busca-cliente-linha { gap: 10px; }
+            #inputBuscaCliente { width: 66px; }
+            .numero-cliente-visual { width: 122px; }
+            .rota-cliente-destaque { font-size: 18px; padding: 8px 10px; }
+            .rotas-atendimento-disponiveis { max-width: 300px; width: 300px; }
+            .btn-rotas-atendimento-menu { font-size: 16px; }
+            .btn-rotas-atendimento-label { font-size: 16px; }
+        }
+
         .card-cliente {
             background: #4caf50; /* Verde quando encontrado */
             color: white;
@@ -40,6 +241,22 @@
         .card-cliente.erro { background: #f44336; } /* Vermelho se não achar */
 
         /* Lista de Produtos Dinâmica */
+        #bannerRotaFiltro { display: none !important; }
+
+        .app.aguardando-cliente .cliente-numero-rota-linha,
+        .app.aguardando-cliente #resultadoCliente,
+        .app.aguardando-cliente hr,
+        .app.aguardando-cliente .card-produtos,
+        .app.aguardando-cliente #card-saturno,
+        .app.aguardando-cliente .card-financeiro,
+        .app.aguardando-cliente .btn-finalizar {
+            display: none !important;
+        }
+        .app.aguardando-cliente .busca-cliente-linha {
+            margin-top: 18px;
+            gap: 0;
+        }
+
         .linha-produto {
             display: flex;
             gap: 10px;
@@ -267,7 +484,7 @@
 </head>
 <body>
 
-<div class="app">
+<div class="app aguardando-cliente" id="appAtendimento">
     
     <div class="topo">
         <div class="titulo">Atendimento</div>
@@ -278,12 +495,18 @@
         <span style="font-size:14px; color:#81c784; font-weight:bold;">🗺️ Rota <span id="textoRotaFiltro"></span> — apenas clientes desta rota</span>
         <button onclick="limparFiltroRota()" style="background:none; border:none; color:#b0bbd4; font-size:18px; cursor:pointer; padding:0 0 0 10px; line-height:1;">×</button>
     </div>
-    <label style="text-align: center;">Número do Cliente</label>
-    <div style="display: flex; justify-content: center;">
-        <input type="text" inputmode="numeric" id="inputBuscaCliente" name="cliente_busca_manual" placeholder="Nº"
-               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"
-               oninput="this.value = this.value.replace(/[^0-9]/g, ''); buscarCliente()"
-               style="width: 40%; font-size: 28px; text-align: center; font-weight: bold;">
+    <div class="busca-cliente-linha">
+        <div id="rotasAtendimentoDisponiveis" class="rotas-atendimento-disponiveis" aria-label="Rotas disponiveis para atendimento"></div>
+        <div class="cliente-numero-rota-linha">
+            <div class="numero-cliente-visual">
+                <span class="numero-cliente-prefixo">N.</span>
+                <input type="text" inputmode="numeric" id="inputBuscaCliente" name="cliente_busca_manual" placeholder="201"
+                       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" readonly
+                       oninput="this.value = this.value.replace(/[^0-9]/g, ''); buscarCliente()"
+                       style="font-size: 24px; text-align: center; font-weight: bold;">
+            </div>
+            <div id="rotaClienteDestaque" class="rota-cliente-destaque"></div>
+        </div>
     </div>
 
     <!-- Galeria (Card) do Resultado -->
@@ -419,7 +642,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbVerificarELiberarRota } from './database.js';
+    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbEscutarSessaoRotas, dbListarJustificativasCheckin, dbVerificarELiberarRota } from './database.js';
     import { enfileirarAtendimento } from './offline-sync.js';
 
     let listaClientes = [];
@@ -427,6 +650,8 @@
     let listaProdutos = [];
     let listaAtendimentos = [];
     let clientesPermitidosSet = null; // null = carregando | Set = pronto (vazio = nenhum cliente permitido)
+    let sessaoRotasAtendimento = null;
+    let justificativasRotasAtendimento = {};
     let numeroClientePendente = '';
     let rascunhoRestaurado = false;
     let currentFileInputId = null;
@@ -454,9 +679,267 @@
 
     atualizarModoEdicao();
 
+    function atualizarVisibilidadeFluxoAtendimento(clienteSelecionado = null) {
+        const app = document.getElementById('appAtendimento');
+        if (!app) return;
+
+        const temCliente = clienteSelecionado === null
+            ? Boolean(document.getElementById('idClienteSelecionado')?.value)
+            : Boolean(clienteSelecionado);
+        app.classList.toggle('aguardando-cliente', !temCliente);
+    }
+
+    function obterUsuarioAtendimento() {
+        return String(localStorage.getItem('usuarioLogado') || '').trim();
+    }
+
+    function obterRotasDoUsuario(sessao) {
+        const usuario = obterUsuarioAtendimento();
+        if (!usuario || !sessao?.rotas) return [];
+
+        return Object.entries(sessao.rotas)
+            .filter(([_, rota]) => rota?.selecionada_por === usuario)
+            .map(([numero, rota]) => ({ numero: String(numero), ...(rota || {}) }))
+            .sort((a, b) => Number(a.numero) - Number(b.numero));
+    }
+
+    function obterNumerosClientesDaRota(sessao, numeroRota) {
+        return ((sessao?.clientes_por_rota || {})[numeroRota] || [])
+            .map(cliente => normalizarNumeroClienteBusca(cliente?.numero))
+            .filter(Boolean);
+    }
+
+    async function carregarJustificativasRotasAtendimento(sessao = sessaoRotasAtendimento) {
+        const rotas = obterRotasDoUsuario(sessao);
+        const proximas = {};
+
+        await Promise.all(rotas.map(async (rota) => {
+            try {
+                proximas[rota.numero] = await dbListarJustificativasCheckin(rota.numero);
+            } catch (_) {
+                proximas[rota.numero] = {};
+            }
+        }));
+
+        justificativasRotasAtendimento = proximas;
+    }
+
+    function obterTimestampAtendimentoRota(valor) {
+        const ts = Date.parse(valor || '');
+        return Number.isNaN(ts) ? null : ts;
+    }
+
+    function obterTotalAtendimentoRota(atendimento) {
+        const total = Number(
+            atendimento?.financeiro?.totalGeral
+            ?? atendimento?.financeiro?.total
+            ?? atendimento?.totalGeral
+            ?? atendimento?.total
+            ?? 0
+        );
+        return Number.isFinite(total) ? total : 0;
+    }
+
+    function clienteDaRotaJaAtendido(cliente, rota) {
+        const idCliente = String(cliente?.firebaseUrl || cliente?.id || '').trim();
+        const numeroCliente = normalizarNumeroClienteBusca(cliente?.numero);
+        const inicioRotaMs = obterTimestampAtendimentoRota(rota?.timestamp_selecao);
+
+        return (listaAtendimentos || []).some(atendimento => {
+            if (!(obterTotalAtendimentoRota(atendimento) > 0)) return false;
+
+            const dataAtendimentoMs = obterTimestampAtendimentoRota(atendimento?.ultimaEdicao || atendimento?.data);
+            if (dataAtendimentoMs == null) return false;
+            if (inicioRotaMs != null && dataAtendimentoMs != null && dataAtendimentoMs < inicioRotaMs) return false;
+
+            const clienteAtendimento = atendimento?.cliente || {};
+            const idAtendimento = String(clienteAtendimento?.id || clienteAtendimento?.firebaseUrl || '').trim();
+            if (idCliente && idAtendimento && idCliente === idAtendimento) return true;
+
+            const numeroAtendimento = normalizarNumeroClienteBusca(clienteAtendimento?.numero);
+            return Boolean(numeroCliente && numeroAtendimento && numeroCliente === numeroAtendimento);
+        });
+    }
+
+    function clienteDaRotaJustificado(cliente, numeroRota) {
+        const justificativas = justificativasRotasAtendimento[numeroRota] || {};
+        const chaves = [
+            String(cliente?.firebaseUrl || '').trim(),
+            String(cliente?.id || '').trim(),
+            normalizarNumeroClienteBusca(cliente?.numero)
+        ].filter(Boolean);
+
+        return chaves.some(chave => Boolean(justificativas[chave]));
+    }
+
+    function obterResumoRotasAtendimento(sessao) {
+        return obterRotasDoUsuario(sessao).map(rota => {
+            const clientes = (sessao?.clientes_por_rota || {})[rota.numero] || [];
+            const pendentes = clientes.filter(cliente =>
+                !clienteDaRotaJaAtendido(cliente, rota)
+                && !clienteDaRotaJustificado(cliente, rota.numero)
+            );
+            return { ...rota, faltam: pendentes.length, pendentes };
+        });
+    }
+
+    function atualizarBotoesRotasAtendimento(sessao = sessaoRotasAtendimento) {
+        const container = document.getElementById('rotasAtendimentoDisponiveis');
+        if (!container) return;
+
+        const rotas = obterResumoRotasAtendimento(sessao);
+        const rotaFiltroAtual = sessionStorage.getItem('rota_filtro_numero_rota') || '';
+        container.innerHTML = '';
+
+        if (rotas.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        const btnMenu = document.createElement('button');
+        const painel = document.createElement('div');
+        btnMenu.type = 'button';
+        btnMenu.className = 'btn-rotas-atendimento-menu';
+        btnMenu.innerHTML = `
+            <span class="btn-rotas-atendimento-label">Escolha o cliente da rota selecionada</span>
+        `;
+        painel.className = 'rotas-atendimento-painel';
+        btnMenu.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const abriu = painel.classList.toggle('aberto');
+            if (!abriu) {
+                painel.classList.remove('tem-lista-aberta');
+                painel.querySelectorAll('.clientes-rota-atendimento-lista').forEach(lista => lista.classList.remove('aberta'));
+                painel.querySelectorAll('.btn-rota-atendimento').forEach(botao => botao.classList.remove('rota-lista-aberta'));
+                painel.querySelectorAll('.grupo-rota-atendimento').forEach(item => item.classList.remove('rota-grupo-aberto'));
+            }
+        });
+
+        rotas.forEach(rota => {
+            const grupo = document.createElement('div');
+            const btn = document.createElement('button');
+            const spanNumero = document.createElement('span');
+            const spanLabel = document.createElement('span');
+            const listaClientes = document.createElement('div');
+            grupo.className = 'grupo-rota-atendimento';
+            btn.type = 'button';
+            btn.className = 'btn-rota-atendimento' + (rota.numero === rotaFiltroAtual ? ' ativa' : '');
+            spanLabel.textContent = 'Rota ';
+            spanNumero.className = 'btn-rota-atendimento-numero';
+            spanNumero.textContent = rota.numero;
+            btn.appendChild(spanLabel);
+            btn.appendChild(spanNumero);
+            listaClientes.className = 'clientes-rota-atendimento-lista';
+            listaClientes.dataset.rota = rota.numero;
+
+            if (rota.pendentes.length === 0) {
+                const vazio = document.createElement('div');
+                vazio.className = 'clientes-rota-atendimento-vazio';
+                vazio.textContent = 'Nenhum cliente pendente';
+                listaClientes.appendChild(vazio);
+            } else {
+                rota.pendentes.forEach(cliente => {
+                    const btnCliente = document.createElement('button');
+                    const numeroCliente = normalizarNumeroClienteBusca(cliente?.numero);
+                    const nomeCliente = String(cliente?.nome || 'Cliente sem nome').trim();
+                    btnCliente.type = 'button';
+                    btnCliente.className = 'btn-cliente-rota-atendimento';
+                    btnCliente.textContent = numeroCliente ? `${numeroCliente} - ${nomeCliente}` : nomeCliente;
+                    btnCliente.addEventListener('pointerdown', () => {
+                        btnCliente.classList.add('pressionando');
+                    });
+                    ['pointerup', 'pointercancel', 'pointerleave'].forEach(evento => {
+                        btnCliente.addEventListener(evento, () => {
+                            btnCliente.classList.remove('pressionando');
+                        });
+                    });
+                    btnCliente.addEventListener('click', () => {
+                        painel.classList.remove('aberto');
+                        selecionarClientePendenteRota(rota.numero, numeroCliente);
+                    });
+                    listaClientes.appendChild(btnCliente);
+                });
+            }
+
+            btn.addEventListener('click', () => {
+                const listaAberta = painel.querySelector('.clientes-rota-atendimento-lista.aberta');
+                if (listaAberta && listaAberta !== listaClientes) return;
+
+                const abriu = listaClientes.classList.toggle('aberta');
+                btn.classList.toggle('rota-lista-aberta', abriu);
+                grupo.classList.toggle('rota-grupo-aberto', abriu);
+                painel.classList.toggle('tem-lista-aberta', abriu);
+            });
+            grupo.appendChild(btn);
+            grupo.appendChild(listaClientes);
+            painel.appendChild(grupo);
+        });
+
+        container.appendChild(btnMenu);
+        container.appendChild(painel);
+        container.style.display = 'block';
+    }
+
+    function aplicarFiltroRotaAtendimento(numeroRota, buscarNumeroAtual = true) {
+        const numero = String(numeroRota || '').trim();
+        if (!numero) return;
+
+        const numerosClientes = obterNumerosClientesDaRota(sessaoRotasAtendimento, numero);
+        if (numerosClientes.length === 0) {
+            window.playAlert?.(`Rota ${numero} sem clientes cadastrados para atendimento.`);
+            return;
+        }
+
+        sessionStorage.setItem('rota_filtro_numeros', JSON.stringify(numerosClientes));
+        sessionStorage.setItem('rota_filtro_numero_rota', numero);
+        aplicarFiltroClientes(listaClientesBruta);
+        aplicarBannerRotaFiltro();
+
+        const input = document.getElementById('inputBuscaCliente');
+        if (buscarNumeroAtual && input?.value) buscarCliente();
+    }
+
+    function selecionarClientePendenteRota(numeroRota, numeroCliente) {
+        aplicarFiltroRotaAtendimento(numeroRota, false);
+
+        const input = document.getElementById('inputBuscaCliente');
+        if (!input || !numeroCliente) return;
+
+        input.value = numeroCliente;
+        buscarCliente();
+    }
+
+    dbEscutarSessaoRotas(async (sessao) => {
+        sessaoRotasAtendimento = sessao;
+
+        const rotaFiltroAtual = sessionStorage.getItem('rota_filtro_numero_rota') || '';
+        const rotasUsuario = obterRotasDoUsuario(sessao);
+        const filtroAindaPertenceAoUsuario = rotasUsuario.some(rota => rota.numero === rotaFiltroAtual);
+        if (rotaFiltroAtual && !filtroAindaPertenceAoUsuario) {
+            sessionStorage.removeItem('rota_filtro_numeros');
+            sessionStorage.removeItem('rota_filtro_numero_rota');
+            aplicarFiltroClientes(listaClientesBruta);
+            aplicarBannerRotaFiltro();
+        }
+
+        await carregarJustificativasRotasAtendimento(sessao);
+        atualizarBotoesRotasAtendimento(sessao);
+    });
+
     // --- CLIENTES PERMITIDOS (rotas selecionadas pelo usuário na sessão) ---
+    document.addEventListener('click', (event) => {
+        const container = document.getElementById('rotasAtendimentoDisponiveis');
+        if (!container || container.contains(event.target)) return;
+        const painel = container.querySelector('.rotas-atendimento-painel');
+        if (!painel) return;
+        painel.classList.remove('aberto', 'tem-lista-aberta');
+        painel.querySelectorAll('.clientes-rota-atendimento-lista').forEach(lista => lista.classList.remove('aberta'));
+        painel.querySelectorAll('.btn-rota-atendimento').forEach(botao => botao.classList.remove('rota-lista-aberta'));
+        painel.querySelectorAll('.grupo-rota-atendimento').forEach(item => item.classList.remove('rota-grupo-aberto'));
+    });
+
     async function carregarClientesPermitidos() {
-        const usuario = String(localStorage.getItem('usuarioLogado') || '').trim();
+        const usuario = obterUsuarioAtendimento();
         if (!usuario) {
             clientesPermitidosSet = new Set();
             aplicarFiltroClientes(listaClientesBruta);
@@ -476,6 +959,9 @@
 
         try {
             const sessao = await dbObterSessaoRotas();
+            sessaoRotasAtendimento = sessao;
+            await carregarJustificativasRotasAtendimento(sessao);
+            atualizarBotoesRotasAtendimento(sessao);
             if (!sessao?.rotas) {
                 clientesPermitidosSet = new Set();
                 localStorage.setItem(CACHE_KEY, JSON.stringify([]));
@@ -564,6 +1050,7 @@
         } else {
             banner.style.display = 'none';
         }
+        atualizarBotoesRotasAtendimento();
     }
 
     window.limparFiltroRota = function() {
@@ -854,6 +1341,7 @@
 
     dbEscutarAtendimentos((lista) => {
         listaAtendimentos = lista;
+        atualizarBotoesRotasAtendimento();
         if (typeof window.atualizarOpcoes === 'function') window.atualizarOpcoes();
         const clienteSelecionadoId = document.getElementById('idClienteSelecionado')?.value;
         if (!clienteSelecionadoId) return;
@@ -903,6 +1391,13 @@
         
         if (!termo) {
             divResultado.style.display = 'none';
+            document.getElementById('idClienteSelecionado').value = "";
+            atualizarVisibilidadeFluxoAtendimento(false);
+            const rotaDestaque = document.getElementById('rotaClienteDestaque');
+            if (rotaDestaque) {
+                rotaDestaque.style.display = 'none';
+                rotaDestaque.textContent = '';
+            }
             document.getElementById('areaPix').style.display = 'block';
             if (document.querySelectorAll('#containerPix .linha-form').length === 0) {
                 criarLinhaPix();
@@ -938,13 +1433,18 @@
 
             divResultado.className = 'card-cliente'; // Verde
             divResultado.style.cssText = 'display:block'; // limpa estilos inline de cards de erro, mantém visível
+            const rotaDestaque = document.getElementById('rotaClienteDestaque');
+            if (rotaDestaque) {
+                rotaDestaque.textContent = `Rota: ${cliente.rota || "Não informada"}`;
+                rotaDestaque.style.display = 'inline-flex';
+            }
             divResultado.innerHTML = `
                 <div style="font-size: 28px; font-weight: bold;">${cliente.nome}</div>
-                <div style="font-size: 14px; opacity: 0.9;">Rota: ${cliente.rota || "Não informada"}</div>
                 <div style="font-size: 15px; color: #ffeb3b; margin-top:3px; font-weight:bold;">Equi.: ${equipString}</div>
                 <div style="font-size: 12px; margin-top:5px;">${cliente.endereco || "Endereço não cadastrado"}</div>
             `;
             document.getElementById('idClienteSelecionado').value = cliente.firebaseUrl;
+            atualizarVisibilidadeFluxoAtendimento(true);
             // [NOVO] Preenche a comissão automaticamente se disponível
             
             if (cliente.comissao) {
@@ -1031,6 +1531,12 @@
             salvarRascunho();
         } else {
             divResultado.className = 'card-cliente erro'; // Vermelho
+            atualizarVisibilidadeFluxoAtendimento(false);
+            const rotaDestaque = document.getElementById('rotaClienteDestaque');
+            if (rotaDestaque) {
+                rotaDestaque.style.display = 'none';
+                rotaDestaque.textContent = '';
+            }
             const existeNoCadastro = listaClientesBruta.some(c => normalizarNumeroClienteBusca(c.numero) === termoNormalizado);
             const existeForaDaRota = clientesPermitidosSet !== null && existeNoCadastro;
             divResultado.innerHTML = existeForaDaRota
@@ -1790,6 +2296,13 @@
             limparEstadoEdicao();
             document.getElementById('inputBuscaCliente').value = "";
             document.getElementById('resultadoCliente').style.display = 'none';
+            document.getElementById('idClienteSelecionado').value = "";
+            atualizarVisibilidadeFluxoAtendimento(false);
+            const rotaDestaque = document.getElementById('rotaClienteDestaque');
+            if (rotaDestaque) {
+                rotaDestaque.style.display = 'none';
+                rotaDestaque.textContent = '';
+            }
             document.getElementById('containerProdutos').innerHTML = "";
             document.getElementById('imgPreviewFicha').style.display = 'none';
             document.getElementById('textoFotoFicha').style.display = 'block';

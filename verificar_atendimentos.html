@@ -433,6 +433,12 @@
         .prod-row:last-child { border-bottom: none; }
         .prod-nome { color: white; }
 
+        .prod-saldo {
+            font-size: 13px;
+            color: #81c784;
+            font-weight: bold;
+        }
+
         .prod-qtd {
             background: rgba(255,235,59,0.15);
             border: 1px solid rgba(255,235,59,0.4);
@@ -1118,7 +1124,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarAtendimentos, dbSalvarAtendimento, dbContestarAtendimento, dbRemoverContestacao } from './database.js';
+    import { dbEscutarAtendimentos, dbSalvarAtendimento, dbContestarAtendimento, dbRemoverContestacao, dbBuscarProdutosDoAtendimento } from './database.js';
 
     /* ── ESTADO ── */
     let todosAtendimentos = [];
@@ -1127,6 +1133,38 @@
     const fotoMap = {}; // { fotoId -> { urlFull, label } }
     const validacaoFotosMap = {}; // { atendimentoId -> { requiredKeys: [], confirmadas: {} } }
     let lightboxFotoAtual = null;
+    const produtosCache = {}; // { atendimentoId -> produtos[] }
+
+    async function carregarProdutosDoCard(prodsSection) {
+        const atendimentoId = prodsSection.dataset.prodsId;
+        const atendente = prodsSection.dataset.prodsAtendente;
+        const titulo = prodsSection.querySelector('.section-title').outerHTML;
+
+        if (produtosCache[atendimentoId]) {
+            renderizarProdutosNoCard(prodsSection, titulo, produtosCache[atendimentoId]);
+            return;
+        }
+
+        const produtos = await dbBuscarProdutosDoAtendimento(atendente, atendimentoId);
+        produtosCache[atendimentoId] = produtos;
+        renderizarProdutosNoCard(prodsSection, titulo, produtos);
+    }
+
+    function renderizarProdutosNoCard(prodsSection, titulo, produtos) {
+        if (produtos.length === 0) {
+            prodsSection.innerHTML = titulo + '<span class="sem-foto">Nenhum produto registrado</span>';
+            return;
+        }
+        const html = produtos.map(p => `
+            <div class="prod-row">
+                <span class="prod-nome">${p.nome}</span>
+                <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+                    <span class="prod-qtd">${p.movimento} usados</span>
+                    ${p.totalApos != null ? `<span class="prod-saldo" style="color:${p.totalApos < 0 ? '#f44336' : '#81c784'}">total ${p.totalApos}</span>` : ''}
+                </div>
+            </div>`).join('');
+        prodsSection.innerHTML = titulo + html;
+    }
 
     /* ── BUSCA ── */
     function normalizarTextoBusca(valor) {
@@ -1525,14 +1563,7 @@
                 </div>`).join('')
             : '<span class="sem-foto">Nenhum Pix registrado</span>';
 
-        /* -- PRODUTOS -- */
-        const prodsHTML = produtos.length > 0
-            ? produtos.map(p => `
-                <div class="prod-row">
-                    <span class="prod-nome">${p.nome || '—'}</span>
-                    <span class="prod-qtd">${p.quantidade ?? 0}</span>
-                </div>`).join('')
-            : '<span class="sem-foto">Nenhum produto registrado</span>';
+        /* -- PRODUTOS (lazy load ao expandir) -- */
 
         /* -- FOTOS -- */
         const todasFotos = [];
@@ -1663,9 +1694,9 @@
                     ${fotosHTML}
                 </div>
 
-                <div class="section">
+                <div class="section" data-prods-id="${escAttr(id)}" data-prods-atendente="${escAttr(a.atendente || '')}">
                     <div class="section-title">📦 Produtos</div>
-                    ${prodsHTML}
+                    <span class="sem-foto loading-prods">carregando...</span>
                 </div>
 
                 ${rodapeHTML}
@@ -1678,7 +1709,14 @@
         // Expandir card
         const header = e.target.closest('.card-header');
         if (header) {
-            header.closest('.card').classList.toggle('expanded');
+            const card = header.closest('.card');
+            card.classList.toggle('expanded');
+            if (card.classList.contains('expanded')) {
+                const prodsSection = card.querySelector('[data-prods-id]');
+                if (prodsSection && prodsSection.querySelector('.loading-prods')) {
+                    carregarProdutosDoCard(prodsSection);
+                }
+            }
             return;
         }
 

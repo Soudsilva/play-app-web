@@ -1056,7 +1056,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbExcluirCliente, dbSalvarCliente, dbEscutarColaboradores, dbListarAtendimentos, dbEscutarManutencoes } from './database.js';
+    import { dbEscutarClientes, dbExcluirCliente, dbSalvarCliente, dbEscutarColaboradores, dbListarAtendimentos, dbEscutarManutencoes, dbBuscarProdutosDoAtendimento } from './database.js';
 
     // --- CACHE LOCAL DE CLIENTES ---
     // Salva a lista e a versão no localStorage para acesso offline e economia de dados.
@@ -1711,7 +1711,7 @@
         const subtitulo = document.getElementById('fotosSubtitulo');
 
         titulo.textContent = `N. ${cliente.numero} — ${cliente.nome}`;
-        subtitulo.textContent = 'Fotos do cliente';
+        subtitulo.textContent = '';
         corpo.innerHTML = '<div class="fotos-carregando">Carregando fotos...</div>';
         overlay.classList.add('aberto');
         document.body.style.overflow = 'hidden';
@@ -1758,19 +1758,13 @@
             // Seção de reposição de produtos
             let abastecidoHtml = '';
             if (ultimoAtendimento) {
-                const produtos = ultimoAtendimento.produtos || [];
-                const linhas = [];
-
-                if (Array.isArray(produtos) && produtos.length > 0) {
-                    produtos.forEach(p => {
-                        if (p.nome) linhas.push(`<div class="abast-linha"><span class="abast-label">${p.nome}</span><span class="abast-val">${p.quantidade ?? ''}</span></div>`);
-                    });
-
-                }
-
-                if (linhas.length > 0) {
+                const produtos = await dbBuscarProdutosDoAtendimento(ultimoAtendimento.atendente, ultimoAtendimento.firebaseUrl);
+                if (produtos.length > 0) {
                     const dataAtend = ultimoAtendimento.data ? new Date(ultimoAtendimento.data).toLocaleDateString('pt-BR') : '';
                     const atendente = ultimoAtendimento.atendente || '';
+                    const linhas = produtos.map(p =>
+                        `<div class="abast-linha"><span class="abast-label">${p.nome}</span><span class="abast-val">${p.movimento}</span></div>`
+                    );
                     abastecidoHtml = `
                         <div>
                             <div class="fotos-secao-titulo">Reposição${dataAtend ? ` — ${dataAtend}` : ''}</div>
