@@ -306,6 +306,115 @@
         }
         .fin-corpo.aberto { display: block; }
 
+        /* Modal de histórico de movimentações */
+        .hist-overlay {
+            display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
+            z-index:3500; align-items:flex-end; justify-content:center;
+        }
+        .hist-overlay.aberto { display:flex; }
+        .hist-modal {
+            background:linear-gradient(180deg, #1a3d8f 0%, #0b2256 100%);
+            border:1px solid rgba(255,255,255,0.18);
+            border-radius:20px 20px 0 0;
+            padding:0 0 30px;
+            width:100%; max-width:600px;
+            box-sizing:border-box;
+            max-height:82vh;
+            display:flex; flex-direction:column;
+        }
+        .hist-header {
+            padding:16px 18px 12px;
+            border-bottom:1px solid rgba(255,255,255,0.12);
+            flex-shrink:0;
+        }
+        .hist-titulo { font-size:22px; font-weight:bold; color:#ffeb3b; letter-spacing:0.3px; }
+        .hist-total-atual {
+            font-size:20px; font-weight:bold; color:#ffeb3b;
+            background:rgba(255,235,59,0.15); border:1px solid rgba(255,235,59,0.5);
+            border-radius:20px; padding:4px 16px; white-space:nowrap;
+        }
+        .hist-lista { overflow-y:auto; flex:1; padding:4px 0; }
+        .hist-vazio { text-align:center; padding:40px 20px; color:rgba(255,255,255,0.4); font-size:14px; }
+        .hist-data-grupo {
+            font-size:11px; font-weight:bold; letter-spacing:1px; text-transform:uppercase;
+            color:rgba(255,235,59,0.6); padding:14px 18px 6px;
+            display:flex; align-items:center; gap:8px;
+        }
+        .hist-data-grupo::after {
+            content:''; flex:1; height:1px; background:rgba(255,235,59,0.2);
+        }
+        .hist-item {
+            margin:6px 12px;
+            padding:14px 14px 12px 18px;
+            border-radius:14px;
+            background:#17377f;
+            border-left:4px solid #6f84b8;
+            border:1px solid #4967aa;
+            box-sizing:border-box;
+        }
+        .hist-item.pos { border-left-color:#69f0ae; }
+        .hist-item.neg { border-left-color:#ef9a9a; }
+        .hist-topo-linha {
+            display:flex; justify-content:center; align-items:center;
+            gap:10px; margin-bottom:10px;
+        }
+        .hist-desc {
+            font-size:15px; font-weight:700; line-height:1.25;
+            color:#ffffff;
+            flex:1;
+            text-align:center;
+        }
+        .hist-info-linha {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:12px;
+            margin-bottom:8px;
+        }
+        .hist-info-linha:last-of-type {
+            margin-bottom:10px;
+        }
+        .hist-info-label {
+            font-size:15px;
+            color:#ffffff;
+            font-weight:700;
+        }
+        .hist-info-valor {
+            font-size:19px;
+            color:#ffffff;
+            font-weight:700;
+            text-align:right;
+        }
+        .hist-item.pos .hist-info-valor.quantidade { color:#69f0ae; }
+        .hist-item.neg .hist-info-valor.quantidade { color:#ffb3b3; }
+        .hist-info-valor.total {
+            font-size:15px;
+            font-weight:400;
+            color:#ffffff;
+        }
+        .hist-rodape {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:10px;
+            padding-top:10px;
+            border-top:1px solid #4967aa;
+            flex-wrap:wrap;
+        }
+        .hist-quem {
+            font-size:13px;
+            font-weight:400;
+            color:#d7e3ff;
+        }
+        .hist-fechar-btn {
+            margin:14px 18px 0; padding:12px; background:#264a97;
+            border:1px solid #d7dce3; border-radius:12px;
+            color:#ffffff; font-size:15px; font-weight:700;
+            cursor:pointer; text-align:center; flex-shrink:0;
+            user-select:none; -webkit-user-select:none;
+        }
+        .hist-loading { text-align:center; padding:30px; color:#d7e3ff; font-size:15px; }
+
         /* Lightbox */
         .lb-overlay {
             display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92);
@@ -341,6 +450,23 @@
         </div>
     </div>
 
+</div>
+
+<!-- Modal histórico de movimentações de produto -->
+<div class="hist-overlay" id="histOverlay" onclick="fecharHistoricoOverlay(event)">
+    <div class="hist-modal">
+        <div class="hist-header">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                <div class="hist-titulo" id="histTitulo">Histórico</div>
+                <div class="hist-total-atual" id="histTotalAtual"></div>
+            </div>
+
+        </div>
+        <div class="hist-lista" id="histLista">
+            <div class="hist-loading">Carregando...</div>
+        </div>
+        <div class="hist-fechar-btn" onclick="fecharHistorico()">Fechar</div>
+    </div>
 </div>
 
 <!-- Lightbox foto ficha -->
@@ -387,27 +513,20 @@
         dbListarColaboradores,
         dbListarClientes,
         dbListarDepositos,
-        dbListarEstoque,
-        dbListarHistorico,
-        dbLerPosseAcumulada,
         dbLerPixEmPosse,
         dbEscutarAtendimentosDoUsuario,
         dbEscutarAtendimentos,
         dbEscutarDepositos,
-        dbEscutarEstoque,
-        dbEscutarHistoricoDoUsuario,
-        dbEscutarPosseAcumulada,
-        dbEscutarPixEmPosse
+        dbEscutarPixEmPosse,
+        dbEscutarPosseItensUsuario,
+        dbBuscarUltimosPorItem
     } from './database.js';
-    // dbLerPosseAcumulada: lÃª o contador persistente de produtos/mÃ¡quinas acumulados
-    // de atendimentos jÃ¡ excluÃ­dos do Firebase. Sem isso, ao excluir atendimentos antigos
-    // os totais de posse ficariam incorretos (menores do que o real).
+
     const usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
     let todosAtendimentos = [];
     let todosAtendimentosFinanceiro = [];
     let todosDepositos = [];
-    let historicoEstoque = [];
-    let estoqueAtual = [];
+    let posseAtual = [];   // lista de { nome, total, categoria } — lida de posse_itens_usuario/{usuario}
     let pixEmPosse = [];
     let datasComAtendimento = new Set();
     let comissaoUsuario = 0; // % de comissÃ£o do colaborador logado (calculado por mÃªs)
@@ -850,6 +969,16 @@
         return ordenarPixEmPosse(Object.entries(mapa));
     }
 
+    function construirPosseAtualDaPosse(lista) {
+        return (Array.isArray(lista) ? lista : [])
+            .filter(item => item.itemNome && Number(item.quantidade || 0) !== 0)
+            .map(item => ({
+                nome:      item.itemNome,
+                total:     Number(item.quantidade || 0),
+                categoria: String(item.categoria || 'produto').trim()
+            }));
+    }
+
     function formatarListaPixEmPosse(lista) {
         if (lista.length === 0) return '';
         return lista.map(([numero, qtd]) => qtd === 1 ? numero : `${numero} (${qtd})`).join(', ');
@@ -907,7 +1036,110 @@
         return getComissaoParaMes(colab, mesAno);
     }
 
-    // â”€â”€ Render principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Histórico de movimentações por produto ──────────────────────────────
+    const HIST_ICONES = {
+        saida_estoque:  '📤',
+        entrada_estoque:'📥',
+        atendimento:    '🤝',
+        cancelamento:   '↩️',
+        manutencao:     '🔧',
+        manutencao_retirada: '🔧',
+        manutencao_adicao:   '🔧',
+    };
+    const HIST_LABELS = {
+        saida_estoque:       'Saída de estoque',
+        entrada_estoque:     'Entrada no estoque',
+        atendimento:         'Entregue ao cliente',
+        manutencao:          'Manutenção',
+        manutencao_retirada: 'Retirada p/ manutenção',
+        manutencao_adicao:   'Devolução de manutenção',
+        cancelamento:   'Cancelamento'
+    };
+
+    function formatarDataHist(isoStr) {
+        if (!isoStr) return '';
+        const d = new Date(isoStr);
+        if (isNaN(d)) return isoStr;
+        return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+    }
+
+    window.abrirHistoricoProduto = async function(nomeProduto, totalAtual) {
+        const overlay = document.getElementById('histOverlay');
+        const lista   = document.getElementById('histLista');
+        const titulo  = document.getElementById('histTitulo');
+        const totalEl = document.getElementById('histTotalAtual');
+
+        titulo.textContent  = nomeProduto;
+        totalEl.textContent = `Total atual: ${totalAtual}`;
+        lista.innerHTML     = '<div class="hist-loading">Carregando...</div>';
+        overlay.classList.add('aberto');
+        history.pushState({ histAberto: true }, '');
+
+        const entradas = await dbBuscarUltimosPorItem(usuarioLogado, nomeProduto, 10);
+
+        if (!entradas.length) {
+            lista.innerHTML = '<div class="hist-vazio">Nenhuma movimentação registrada.<br><span style="font-size:13px;color:#d7e3ff;">O histórico registra movimentações a partir de agora.</span></div>';
+            return;
+        }
+
+        let ultimaData = '';
+        lista.innerHTML = entradas.map(e => {
+            const movimentacao = Number(e.movimento ?? 0);
+            const pos   = movimentacao > 0;
+            const desc  = e.descricao || HIST_LABELS[e.tipo] || e.tipo;
+            const sinal = pos ? '+' : '-';
+
+            const d = new Date(e.timestamp || '');
+            const dataStr = isNaN(d) ? '' : d.toLocaleDateString('pt-BR');
+            const horaStr = isNaN(d) ? '' : d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+            const registradoPorStr = `Registrado por: ${e.registradoPor || e.responsavel || '—'}`;
+            const dataHoraRodape = [dataStr, horaStr].filter(Boolean).join(' ');
+
+            let grupoHtml = '';
+            if (dataStr && dataStr !== ultimaData) {
+                ultimaData = dataStr;
+                grupoHtml = `<div class="hist-data-grupo">${dataStr}</div>`;
+            }
+
+            const totalStr = e.totalApos != null ? String(e.totalApos) : '—';
+
+            return `${grupoHtml}
+            <div class="hist-item ${pos ? 'pos' : 'neg'}">
+                <div class="hist-topo-linha">
+                    <span class="hist-desc">${desc}</span>
+                </div>
+                <div class="hist-info-linha">
+                    <span class="hist-info-label">Quantidade:</span>
+                    <span class="hist-info-valor quantidade">${sinal}${Math.abs(movimentacao)}</span>
+                </div>
+                <div class="hist-info-linha">
+                    <span class="hist-info-label">Total:</span>
+                    <span class="hist-info-valor total">${totalStr}</span>
+                </div>
+                <div class="hist-rodape">
+                    <span class="hist-quem">${registradoPorStr}</span>
+                    <span class="hist-quem">${dataHoraRodape || '—'}</span>
+                </div>
+            </div>`;
+        }).join('');
+    };
+
+    window.fecharHistorico = function() {
+        document.getElementById('histOverlay').classList.remove('aberto');
+        if (history.state?.histAberto) history.back();
+    };
+
+    window.fecharHistoricoOverlay = function(e) {
+        if (e.target === document.getElementById('histOverlay')) window.fecharHistorico();
+    };
+
+    window.addEventListener('popstate', function(e) {
+        if (document.getElementById('histOverlay').classList.contains('aberto')) {
+            document.getElementById('histOverlay').classList.remove('aberto');
+        }
+    });
+
+    // ── Render principal ────────────────────────────────────────────────────
     function renderizar() {
         _pararLoadingBalanco();
         const filtrados  = filtrarPorDatas(todosAtendimentos, dataDe, dataAte || dataDe);
@@ -921,27 +1153,16 @@
 
         const fin        = somarFinanceiro(doMesFinanceiro);
         const finPeriodo = somarFinanceiro(filtradosFinanceiros);
-        const mapaCategoriasEstoque = criarMapaCategoriasEstoque(estoqueAtual);
-
-        // Posse total = atendimentos ativos + acumulado dos excluÃ­dos (lido na inicializaÃ§Ã£o)
-        // window._posseAcumuladaProdutos e window._posseAcumuladaMaquinas sÃ£o populados
-        // via dbLerPosseAcumulada no bloco de inicializaÃ§Ã£o lÃ¡ embaixo.
-        const produtosPosse = somarProdutosEmPosse(
-            todosAtendimentos,
-            historicoEstoque,
-            usuarioLogado,
-            mapaCategoriasEstoque,
-            window._posseAcumuladaProdutos || {}
-        );
-        const maquinasPosse = somarMaquinasEmPosse(
-            todosAtendimentos,
-            historicoEstoque,
-            usuarioLogado,
-            mapaCategoriasEstoque,
-            window._posseAcumuladaMaquinas || {}
-        );
+        const produtosPosse = posseAtual
+            .filter(i => i.categoria !== 'maquina' && i.total !== 0)
+            .map(i => [i.nome, i.total])
+            .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0], 'pt-BR'));
+        const maquinasPosse = posseAtual
+            .filter(i => i.categoria === 'maquina' && i.total !== 0)
+            .map(i => [i.nome, i.total])
+            .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0], 'pt-BR'));
         const pixPosse      = somarPixEmPosse(pixEmPosse || [], todosAtendimentos);
-        const maxProd       = Math.max(1, ...produtosPosse.map(([, qtd]) => Math.abs(qtd)));   // usado para calcular a barra de progresso
+        const maxProd       = Math.max(1, ...produtosPosse.map(([, qtd]) => Math.abs(qtd)));
         const maxMaqPosse   = Math.max(1, ...maquinasPosse.map(([, qtd]) => Math.abs(qtd)));
 
         // MÃ¡quinas apenas do perÃ­odo selecionado (para a seÃ§Ã£o "MÃ¡quinas Atendidas no PerÃ­odo")
@@ -969,14 +1190,14 @@
                 <div class="secao-titulo">&#129371; Produtos em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
                 <div class="lista-card">
                     ${produtosPosse.map(([nome, qtd], i) => `
-                        <div class="lista-item">
+                        <div class="lista-item" data-nome="${nome.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-qtd="${qtd}" onclick="abrirHistoricoProduto(this.dataset.nome, this.dataset.qtd)" style="cursor:pointer;-webkit-tap-highlight-color:transparent;">
                             <div class="item-nome">${nome}</div>
                             <div class="item-barra-wrap">
                                 <div class="item-barra-bg">
                                     <div class="item-barra" style="width:${Math.round((Math.abs(qtd) / maxProd) * 100)}%;background:${qtd < 0 ? '#ef5350' : ''}"></div>
                                 </div>
                             </div>
-                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.45);color:#ef9a9a;' : ''}">${qtd}</div>
+                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.45);color:#ef9a9a;' : ''}">${qtd} <span style="font-size:10px;opacity:0.5;margin-left:2px;">›</span></div>
                         </div>`).join('')}
                 </div>
             </div>` : ''}
@@ -998,14 +1219,14 @@
                 <div class="secao-titulo">&#127920; M&aacute;quinas em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
                 <div class="lista-card">
                     ${maquinasPosse.map(([nome, qtd], i) => `
-                        <div class="lista-item">
+                        <div class="lista-item" data-nome="${nome.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-qtd="${qtd}" onclick="abrirHistoricoProduto(this.dataset.nome, this.dataset.qtd)" style="cursor:pointer;-webkit-tap-highlight-color:transparent;">
                             <div class="item-nome">${nome}</div>
                             <div class="item-barra-wrap">
                                 <div class="item-barra-bg">
                                     <div class="item-barra" style="width:${Math.round((Math.abs(qtd) / maxMaqPosse) * 100)}%;background:${qtd < 0 ? '#ef5350' : (i === 0 ? '#4caf50' : 'rgba(76,175,80,0.6)')}"></div>
                                 </div>
                             </div>
-                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.45);color:#ef9a9a;' : (i === 0 ? 'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;' : '')}">${qtd}</div>
+                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.45);color:#ef9a9a;' : (i === 0 ? 'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;' : '')}">${qtd} <span style="font-size:10px;opacity:0.5;margin-left:2px;">›</span></div>
                         </div>`).join('')}
                 </div>
             </div>` : ''}
@@ -1256,22 +1477,16 @@
     });
 
     // â”€â”€ InicializaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // Todas as chamadas ao Firebase rodam em paralelo para carregar mais rÃ¡pido.
     // posseAcumulada: dados de produtos/mÃ¡quinas de atendimentos jÃ¡ excluÃ­dos.
     // Sem isso, ao excluir atendimentos antigos o balanÃ§o de material ficaria errado.
-    const [todos, posseAcumulada, colaboradores, clientes, depositos, historico, pixPosseInicial, estoque] = await Promise.all([
+    const [todos, colaboradores, clientes, depositos, pixPosseInicial] = await Promise.all([
         dbListarAtendimentos(),
-        dbLerPosseAcumulada(usuarioLogado),   // â† acumulado dos atendimentos excluÃ­dos
         dbListarColaboradores(),
         dbListarClientes(),
         dbListarDepositos(usuarioLogado),
-        dbListarHistorico(),
-        dbLerPixEmPosse(usuarioLogado),
-        dbListarEstoque()
+        dbLerPixEmPosse(usuarioLogado)
     ]);
     todosDepositos = depositos;
-    historicoEstoque = historico;
-    estoqueAtual = estoque;
     pixEmPosse = pixPosseInicial;
     colaboradorObj  = colaboradores.find(c => String(c?.nome || '').trim() === usuarioLogado) || null;
     isTecnico = (colaboradorObj?.nivel_completo || '').startsWith('atendimento') &&
@@ -1304,8 +1519,6 @@
     // Salva o acumulado em variÃ¡veis globais para o renderizar() acessar sempre que
     // redesenha a tela (ex: ao trocar o perÃ­odo selecionado no calendÃ¡rio).
     // Estrutura: { produtos: { "NomeProduto": qtd }, maquinas: { "NomeMaquina": contagem } }
-    window._posseAcumuladaProdutos = posseAcumulada.produtos || {};
-    window._posseAcumuladaMaquinas = posseAcumulada.maquinas || {};
 
     renderizar();
 
@@ -1341,19 +1554,8 @@
         renderizar();
     });
 
-    dbEscutarHistoricoDoUsuario(usuarioLogado, (lista) => {
-        historicoEstoque = lista;
-        renderizar();
-    });
-
-    dbEscutarEstoque((lista) => {
-        estoqueAtual = lista;
-        renderizar();
-    });
-
-    dbEscutarPosseAcumulada(usuarioLogado, (posseAcumuladaAtual) => {
-        window._posseAcumuladaProdutos = posseAcumuladaAtual.produtos || {};
-        window._posseAcumuladaMaquinas = posseAcumuladaAtual.maquinas || {};
+    dbEscutarPosseItensUsuario(usuarioLogado, (lista) => {
+        posseAtual = construirPosseAtualDaPosse(lista);
         renderizar();
     });
 

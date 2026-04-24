@@ -419,7 +419,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbVerificarELiberarRota } from './database.js';
+    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbVerificarELiberarRota } from './database.js';
     import { enfileirarAtendimento } from './offline-sync.js';
 
     let listaClientes = [];
@@ -854,6 +854,7 @@
 
     dbEscutarAtendimentos((lista) => {
         listaAtendimentos = lista;
+        if (typeof window.atualizarOpcoes === 'function') window.atualizarOpcoes();
         const clienteSelecionadoId = document.getElementById('idClienteSelecionado')?.value;
         if (!clienteSelecionadoId) return;
 
@@ -1056,17 +1057,18 @@
 
         selects.forEach(select => {
             const valorAtual = select.value;
+            const valorForcado = select.dataset.valorOriginal || valorAtual;
             let opcoesHTML = `<option value="">Selecione o produto...</option>`;
             
             listaProdutos.forEach(p => {
-                // Adiciona se for o item já selecionado neste campo OU se não estiver selecionado em nenhum outro
-                if (p.firebaseUrl === valorAtual || !selecionados.includes(p.firebaseUrl)) {
+                if (p.firebaseUrl === valorForcado || !selecionados.includes(p.firebaseUrl)) {
                     opcoesHTML += `<option value="${p.firebaseUrl}">${p.nome}</option>`;
                 }
             });
 
             select.innerHTML = opcoesHTML;
-            select.value = valorAtual; // Mantém a seleção
+            select.value = valorForcado; // Mantém a seleção
+            delete select.dataset.valorOriginal;
         });
     }
 
@@ -1098,6 +1100,9 @@
         `;
 
         container.appendChild(div);
+        if (valorProd) {
+            div.querySelector('.input-prod').dataset.valorOriginal = valorProd;
+        }
         
         // [CORREÇÃO] Popula o select antes de definir o valor para que o browser reconheça a opção
         atualizarOpcoes();
@@ -1408,6 +1413,8 @@
                     const prodId = linha.querySelector('.input-prod').value;
                     const produtoInfo = listaProdutos.find(p => p.firebaseUrl === prodId);
                     produtos.push({
+                        itemId: prodId || "",
+                        categoria: produtoInfo?.categoria || "produtos",
                         nome: produtoInfo ? produtoInfo.nome : "Produto não encontrado",
                         quantidade: qtd
                     });
@@ -1566,7 +1573,8 @@
                 }
                 await enfileirarAtendimento(dadosAtendimento);
             } else {
-                await dbSalvarAtendimento(dadosAtendimento, atendimentoEmEdicaoId || null);
+                const atendimentoSalvoId = await dbSalvarAtendimento(dadosAtendimento, atendimentoEmEdicaoId || null);
+                await dbSincronizarProdutosAtendimentoNoHistorico(atendimentoSalvoId || atendimentoEmEdicaoId || null, dadosAtendimento);
                 try {
                     const numeroRota = String(dadosAtendimento?.cliente?.rota || '').trim();
                     if (numeroRota) {

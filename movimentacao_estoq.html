@@ -484,7 +484,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbSalvarHistorico, dbEscutarHistorico, dbExcluirHistorico, dbSalvarAtendimento } from './database.js';
+    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbSalvarHistoricoBalanco, dbEscutarHistoricoBalanco, dbExcluirHistoricoBalanco } from './database.js';
 
     let listaGlobal = [];
     let historicoGlobal = [];
@@ -540,9 +540,54 @@
         if (itensVisivelEstoque) filtrarItensLista();
     });
 
-    // [NOVO] CARREGAR HISTÓRICO
-    dbEscutarHistorico((lista) => {
-        historicoGlobal = lista.reverse();
+    function ehMovimentoEstoqueHistorico(mov) {
+        if (mov?.cancelado) return false;
+        const tipo = String(mov?.tipo || '').trim();
+        const origemRegistro = String(mov?.origemRegistro || '').trim();
+        return tipo === 'entrada_estoque'
+            || tipo === 'saida_estoque'
+            || origemRegistro === 'entrada_estoque'
+            || origemRegistro === 'retirada_estoque';
+    }
+
+    function obterMetaTipoHistorico(mov) {
+        const tipo = String(mov?.tipo || '').trim();
+        if (tipo === 'atendimento') {
+            return { classe: 'tag-saida', texto: 'ATENDIMENTO', cor: '#f44336', ehEntrada: false, ehSaida: true, ehCancelamento: false };
+        }
+        if (tipo === 'entrada_estoque') {
+            return { classe: 'tag-entrada', texto: 'ENTRADA', cor: '#4caf50', ehEntrada: true, ehSaida: false, ehCancelamento: false };
+        }
+        if (tipo === 'saida_estoque') {
+            return { classe: 'tag-saida', texto: 'SAÍDA', cor: '#f44336', ehEntrada: false, ehSaida: true, ehCancelamento: false };
+        }
+        return { classe: '', texto: 'CANCELAMENTO', cor: '#ffeb3b', ehEntrada: false, ehSaida: false, ehCancelamento: true };
+    }
+
+    function obterOrigemLabel(mov) {
+        const origem = String(mov?.origemRegistro || '').trim();
+        const tipo   = String(mov?.tipo || '').trim();
+        if (tipo === 'atendimento' || origem === 'atendimento') {
+            return { icone: '📋', texto: 'Atendimento', cor: '#ef9a9a' };
+        }
+        if (origem === 'retirada_estoque') {
+            return { icone: '📤', texto: 'Tela Movimentação', cor: '#ffcc80' };
+        }
+        if (origem === 'entrada_estoque') {
+            return { icone: '📥', texto: 'Tela Movimentação', cor: '#a5d6a7' };
+        }
+        if (origem === 'manutencao') {
+            return { icone: '🔧', texto: 'Manutenção', cor: '#90caf9' };
+        }
+        if (origem) {
+            return { icone: '📦', texto: origem, cor: '#e0e0e0' };
+        }
+        return { icone: '📦', texto: 'Manual', cor: '#e0e0e0' };
+    }
+
+    // Histórico único vindo do movimentacao_balanco_historico
+    dbEscutarHistoricoBalanco((lista) => {
+        historicoGlobal = lista.filter(ehMovimentoEstoqueHistorico);
         atualizarBotaoHistorico();
         filtrarHistorico();
     });
@@ -571,7 +616,7 @@
 
         const termo = document.getElementById('filtroHistorico').value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const listaFiltrada = historicoGlobal.filter(mov => {
-            const texto = (mov.itemNome + " " + mov.responsavel + " " + mov.tipo + " " + (mov.obs || "")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const texto = (mov.itemNome + " " + mov.responsavel + " " + mov.tipo + " " + (mov.descricao || "")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             return texto.includes(termo);
         });
         renderizarHistorico(listaFiltrada);
@@ -587,46 +632,67 @@
         }
 
         lista.forEach((mov, index) => {
-            const classeCor = mov.tipo === 'entrada' ? 'tag-entrada' : 'tag-saida';
-            const textoTipo = mov.tipo === 'entrada' ? 'ENTRADA' : 'SAÍDA';
+            const metaTipo = obterMetaTipoHistorico(mov);
+            const classeCor = metaTipo.classe;
+            const textoTipo = metaTipo.texto;
+            const movimentacao = Number(mov.movimento ?? 0);
+            const quantidade = Math.abs(movimentacao);
             
-            const dataObj = new Date(mov.data);
+            const dataObj = new Date(mov.timestamp || mov.data || '');
             const dataFormatada = dataObj.toLocaleString('pt-BR');
             
             const div = document.createElement('div');
             div.className = 'item-hist';
             div.style.flexDirection = 'column';
             div.style.alignItems = 'stretch';
-            div.style.borderColor = mov.tipo === 'entrada' ? 'rgba(76,175,80,0.6)' : 'rgba(244,67,54,0.6)';
+            div.style.borderColor = metaTipo.ehEntrada
+                ? 'rgba(76,175,80,0.6)'
+                : (metaTipo.ehSaida ? 'rgba(244,67,54,0.6)' : 'rgba(255,235,59,0.6)');
 
+            const origemInfo = obterOrigemLabel(mov);
             div.innerHTML = `
-                <div style="text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; margin-bottom: 8px;">
-                    <span class="hist-tipo-label" style="color:${mov.tipo === 'entrada' ? '#4caf50' : '#f44336'}">${textoTipo}</span>
-                    <span style="font-size: 13px; color: #ccc; margin-left: 6px;">${dataFormatada}</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; margin-bottom: 6px;">
+                    <span class="hist-tipo-label" style="color:${metaTipo.cor}">${textoTipo}</span>
+                    <span style="font-size: 12px; color: #ccc;">${dataFormatada}</span>
                 </div>
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div class="hist-esq">
-                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                            <span class="hist-nome-item">${mov.itemNome}</span>
-                            <span class="hist-resp-label" style="color:rgba(255,255,255,0.7);">· ${mov.responsavel}</span>
-                        </div>
-                        ${mov.registradoPor && mov.registradoPor !== mov.responsavel ? `<span class="hist-resp-label" style="color:rgba(255,255,255,0.55);">Reg. por: ${mov.registradoPor}</span>` : ''}
-                        ${mov.obs ? `<span class="hist-obs-label">Obs: ${mov.obs}</span>` : ''}
-                    </div>
-                    <div class="hist-dir ${classeCor}">
-                        ${mov.qtd}
-                    </div>
+                <div style="display:flex; align-items:center; gap:6px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <span style="font-size:11px; color:rgba(255,255,255,0.4); white-space:nowrap;">Origem:</span>
+                    <span style="font-size:12px; font-weight:bold; color:${origemInfo.cor};">${origemInfo.icone} ${origemInfo.texto}</span>
+                    ${mov.refId ? `<span style="font-size:11px; color:rgba(255,255,255,0.3); font-family:monospace; margin-left:auto; white-space:nowrap;">ID: ${mov.refId.slice(-8).toUpperCase()}</span>` : ''}
                 </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span class="hist-nome-item">${mov.itemNome}</span>
+                    <span class="hist-resp-label" style="color:rgba(255,255,255,0.65);">${mov.responsavel}</span>
+                </div>
+                ${mov.registradoPor && mov.registradoPor !== mov.responsavel ? `
+                <div style="padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span class="hist-resp-label" style="color:rgba(255,255,255,0.5);">Reg. por: ${mov.registradoPor}</span>
+                </div>` : ''}
+                <div style="display:flex; justify-content:space-between; align-items:center; padding: 4px 0;">
+                    <span class="hist-obs-label" style="margin:0;">${mov.descricao || ''}</span>
+                    <span class="hist-dir ${classeCor}" style="margin:0;">${quantidade}</span>
+                </div>
+                ${(mov.estoqueAntes != null && mov.estoqueDepois != null) ? `
+                <div style="padding: 3px 0; display:flex; align-items:center; gap:6px; margin-top:2px;">
+                    <span style="font-size:11px; color:rgba(255,255,255,0.4);">Saldo estoque:</span>
+                    <span style="font-size:13px; font-weight:bold; color:rgba(255,255,255,0.7);">${mov.estoqueAntes}</span>
+                    <span style="font-size:12px; color:rgba(255,255,255,0.35);">→</span>
+                    <span style="font-size:13px; font-weight:bold; color:${metaTipo.ehEntrada ? '#a5d6a7' : '#ef9a9a'};">${mov.estoqueDepois}</span>
+                </div>` : ''}
             `;
 
             // Botão excluir: só para quem registrou e dentro de 3 horas
             const usuarioAtual = String(localStorage.getItem('usuarioLogado') || '').trim();
             const foiRegistradoPorMim = mov.registradoPor
                 ? mov.registradoPor === usuarioAtual
-                : mov === historicoGlobal[0]; // registros antigos sem campo: mantém comportamento original
-            const dentroDe3h = (Date.now() - new Date(mov.data).getTime()) < 3 * 60 * 60 * 1000;
+                : false;
+            const dentroDe3h = (Date.now() - new Date(mov.timestamp || mov.data || '').getTime()) < 3 * 60 * 60 * 1000;
 
-            if (foiRegistradoPorMim && dentroDe3h) {
+            const podeExcluirPelaTela = !metaTipo.ehCancelamento
+                && mov.tipo !== 'atendimento'
+                && String(mov?.origemRegistro || '').trim() !== 'atendimento';
+
+            if (podeExcluirPelaTela && foiRegistradoPorMim && dentroDe3h) {
                 const divAcoes = document.createElement('div');
                 divAcoes.className = 'acoes-hist';
                 const movString = encodeURIComponent(JSON.stringify(mov));
@@ -853,46 +919,33 @@
             ultimo_responsavel: responsavel
         };
 
-        // Objeto para o Histórico (Registro Eterno)
-        const registroHistorico = {
-            data: new Date().toISOString(),
-            tipo: modoAtual,
-            itemUrl: idItem,
-            itemNome: itemOriginal.nome,
-            itemCategoria: itemOriginal.categoria || '',
-            qtd: qtdMovimento,
-            responsavel: responsavel,
-            registradoPor: String(localStorage.getItem('usuarioLogado') || '').trim(),
-            valorUnitario: Number(itemOriginal.valorEquipamento) || 0,
-            isDefeitoEntry: isDefeitoEntry,
-            qtdDefeitoConsumida: qtdDefeitoConsumida
-        };
+        const estoqueAntes = parseInt(itemOriginal.quantidade) || 0;
 
         try {
             await dbSalvarItemEstoque(itemParaSalvar, idItem);
-            await dbSalvarHistorico(registroHistorico);
-
-            // Saída: registra no atendimento do responsável para aparecer em Meus Envios e no Balanço
-            if (modoAtual === 'saida') {
-                const registroEnvio = {
-                    data: new Date().toISOString(),
-                    atendente: responsavel,
-                    autorizadoPor: String(localStorage.getItem('usuarioLogado') || '').trim(),
-                    origemRegistro: 'retirada_estoque',
-                    // Mantemos a categoria na raiz para telas como "Meus Envios" conseguirem rotular a retirada corretamente.
-                    itemCategoria: itemOriginal.categoria || '',
-                    cliente: { nome: 'Retirada de Estoque', numero: '' },
-                    // Compatibilidade: várias telas antigas ainda leem retirada de estoque a partir de "produtos".
-                    // Quando a estrutura for reorganizada no futuro, este ponto é o lugar certo para separar por tipo.
-                    produtos: [{ nome: itemOriginal.nome, quantidade: qtdMovimento }]
-                };
-                await dbSalvarAtendimento(registroEnvio);
-            }
+            await dbSalvarHistoricoBalanco({
+                responsavel:   responsavel,
+                registradoPor: String(localStorage.getItem('usuarioLogado') || '').trim(),
+                itemId:        idItem,
+                itemNome:      itemOriginal.nome,
+                categoria:     itemOriginal.categoria || 'produto',
+                tipo:          modoAtual === 'saida' ? 'saida_estoque' : 'entrada_estoque',
+                origemRegistro: modoAtual === 'saida' ? 'retirada_estoque' : 'entrada_estoque',
+                itemChave:     idItem,
+                movimento:     modoAtual === 'saida' ? qtdMovimento : -qtdMovimento,
+                descricao:     modoAtual === 'saida' ? 'Retirada de estoque' : 'Devolução ao estoque',
+                refId:         idItem,
+                controlarPosse: responsavel !== 'Fornecedor' && responsavel !== 'Máquina',
+                isDefeitoEntry,
+                qtdDefeitoConsumida,
+                estoqueAntes,
+                estoqueDepois: novaQtd
+            });
 
             alert("Sucesso! Novo saldo: " + novaQtd);
             document.getElementById('qtdInput').value = "";
         } catch (error) {
-            alert("Erro ao salvar.");
+            alert("Erro ao salvar. Detalhe: " + (error?.message || 'desconhecido'));
             console.error(error);
         }
     };
@@ -1021,7 +1074,7 @@
         
         const mov = JSON.parse(decodeURIComponent(movString));
         // Precisamos encontrar o item no estoque atual para atualizar o saldo
-        const itemEstoque = listaGlobal.find(i => i.firebaseUrl === mov.itemUrl);
+        const itemEstoque = listaGlobal.find(i => i.firebaseUrl === mov.refId);
 
         if(!itemEstoque) {
             alert("Erro: O item associado não existe mais no estoque.");
@@ -1032,32 +1085,32 @@
         let novaQtdDefeito = parseInt(itemEstoque.qtd_defeito) || 0;
         const isPecaRev = itemEstoque.categoria === 'peca';
 
-        if (isPecaRev && mov.tipo === 'entrada') {
+        const ehEntradaHistorico = mov.tipo === 'entrada_estoque';
+        const qtdMovimento = Math.abs(Number(mov.movimento ?? 0) || 0);
+
+        if (isPecaRev && ehEntradaHistorico) {
             if (mov.isDefeitoEntry) {
                 // Desfaz entrada defeituosa: remove do defeito
-                novaQtdDefeito -= parseInt(mov.qtd);
+                novaQtdDefeito -= qtdMovimento;
             } else {
                 // Desfaz entrada boa: restaura defeitos consumidos e remove do bom
                 novaQtdDefeito += parseInt(mov.qtdDefeitoConsumida || 0);
-                novaQtd -= parseInt(mov.qtd) - parseInt(mov.qtdDefeitoConsumida || 0);
+                novaQtd -= qtdMovimento - parseInt(mov.qtdDefeitoConsumida || 0);
             }
-        } else if (mov.tipo === 'entrada') {
-            novaQtd -= parseInt(mov.qtd);
+        } else if (ehEntradaHistorico) {
+            novaQtd -= qtdMovimento;
         } else {
-            novaQtd += parseInt(mov.qtd);
+            novaQtd += qtdMovimento;
         }
 
         try {
             // 1. Atualiza Estoque
-            await dbSalvarItemEstoque({ ...itemEstoque, quantidade: novaQtd, qtd_defeito: novaQtdDefeito }, mov.itemUrl);
+            await dbSalvarItemEstoque({ ...itemEstoque, quantidade: novaQtd, qtd_defeito: novaQtdDefeito }, mov.refId);
             
-            // 2. Remove do Histórico (Precisamos que o database.js traga a chave firebaseUrl no histórico também)
-            // NOTA IMPORTANTE: Como ajustamos o database.js para ler com Object.values, precisamos garantir que a chave venha.
-            // Vou corrigir o database.js no próximo passo se necessário, mas aqui vamos assumir que 'mov' tem firebaseUrl.
-            if(mov.firebaseUrl) {
-               await dbExcluirHistorico(mov.firebaseUrl);
+            // 2. Remove do histórico único e grava o cancelamento no próprio movimentacao_balanco_historico
+            if(mov.firebaseUrl && mov.responsavel) {
+               await dbExcluirHistoricoBalanco(mov.firebaseUrl, mov.responsavel);
             } else {
-               // Se por acaso não tiver ID, recarregamos para tentar pegar (fallback)
                alert("Erro de identificação do registro. Atualizando...");
                window.location.reload();
             }

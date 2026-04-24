@@ -766,18 +766,24 @@ export async function dbRemoverContestacao(id) {
 
 export async function dbSalvarAtendimento(atendimento, idExistente = null) {
     try {
+        let atendimentoId = String(idExistente || '').trim();
+        const payloadAtendimento = { ...(atendimento || {}) };
+        const ehAtendimentoComum = !payloadAtendimento?.origemRegistro || payloadAtendimento.origemRegistro === 'atendimento';
+        if (ehAtendimentoComum) delete payloadAtendimento.produtos;
         if (idExistente) {
-            await set(ref(db, `atendimentos/${idExistente}`), atendimento);
+            await set(ref(db, `atendimentos/${idExistente}`), payloadAtendimento);
         } else {
             // Cria uma nova entrada na coleção 'atendimentos'
             const atendimentosRef = ref(db, 'atendimentos');
-            await push(atendimentosRef, atendimento);
+            const novoRef = await push(atendimentosRef, payloadAtendimento);
+            atendimentoId = String(novoRef?.key || '').trim();
         }
         await _sincronizarContadorAtualClientePorAtendimento(atendimento);
         // Atualiza a base "Media_de_Vendas" (tempo real, sem depender do cache offline)
         await _upsertMediaDeVendasPorAtendimento(atendimento);
         await _atualizarVersaoMediaDeVendas();
         await _tentarRecalcularRemuneracoes();
+        return atendimentoId || null;
     } catch (error) {
         console.error("ERRO AO SALVAR ATENDIMENTO:", error);
         throw error;
@@ -951,6 +957,10 @@ export async function dbExcluirAtendimento(id) {
 
         if (atendimento) {
             await _reverterContadorClientePorAtendimentoExcluido(atendimento);
+            await _cancelarMovimentacoesHistoricoBalancoPorRefId(
+                atendimento.firebaseUrl,
+                atendimento.atendente
+            );
         }
         await _tentarRecalcularRemuneracoes();
     } catch (error) {
@@ -1365,8 +1375,10 @@ function _normalizarEquipDetalhesCliente(cliente) {
         return cliente.equipDetalhes
             .map((item, index) => ({
                 rowId: String(item?.rowId || `equip_${index + 1}`),
+                itemId: String(item?.itemId || "").trim(),
                 nome: String(item?.nome || "").trim(),
                 qtd: String(item?.qtd || item?.quantidade || "1").trim() || "1",
+                categoria: String(item?.categoria || "maquina").trim() || "maquina",
                 pix: String(item?.pix || "").trim(),
                 contador: String(item?.contador || "").trim(),
                 pixRetiradoPendente: String(item?.pixRetiradoPendente || "").trim(),
@@ -1419,8 +1431,10 @@ function _normalizarEquipDetalhesCliente(cliente) {
 
             return {
                 rowId: `equip_${index + 1}`,
+                itemId: "",
                 nome: String(nome || "").trim(),
                 qtd: String(qtd || "1").trim() || "1",
+                categoria: "maquina",
                 pix: String(pix || "").trim(),
                 contador: "",
                 pixRetiradoPendente: "",
@@ -1686,8 +1700,10 @@ export async function dbAplicarPendenciasManutencaoCliente(firebaseUrlCliente, p
             if (!nome) return;
             equipamentosAtualizados.push({
                 rowId: String(item?.rowId || `pend_add_${Date.now()}_${index + 1}`),
+                itemId: String(item?.itemId || "").trim(),
                 nome,
                 qtd: String(item?.qtd || "1").trim() || "1",
+                categoria: String(item?.categoria || "maquina").trim() || "maquina",
                 pix: String(item?.pix || "").trim(),
                 contador: String(item?.contador || "").trim(),
                 tecnico: String(item?.tecnico || "").trim(),
@@ -2452,63 +2468,6 @@ export function dbEscutarRemuneracaoAcumuladaProdutos(callback) {
     });
 }
 
-/* =============================================================================
-   FUNÇÕES PARA POSSE ACUMULADA (PRODUTOS E MÁQUINAS)
-   =============================================================================
-   CONTEXTO / POR QUE EXISTE:
-   Quando um atendimento é EXCLUÍDO do Firebase (ex: atendimentos antigos removidos
-   para poupar espaço ou corrigir erro), os produtos e máquinas que faziam parte
-   daquele atendimento seriam perdidos para sempre do balanço.
-
-   Para resolver isso, existe este "acumulador": antes de excluir qualquer atendimento,
-   o sistema chama `dbAcumularPosse` para somar os produtos e máquinas daquele
-   atendimento a um contador permanente no banco, no nó `posse_acumulada/{usuario}`.
-
-   Assim, o balanço em `balanco.html` pode mostrar:
-     - Produtos em posse = soma dos atendimentos ATIVOS + acumulado dos excluídos
-     - Máquinas em posse = idem
-
-   ESTRUTURA NO FIREBASE:
-   posse_acumulada/
-     {nomeUsuario}/
-       produtos/
-         "Nome do Produto": <quantidade total>
-       maquinas/
-         "Nome da Máquina": <quantidade total>
-
-   ONDE É USADO:
-   - `balanco.html` lê via `dbLerPosseAcumulada` na inicialização
-   - `[tela de exclusão de atendimento]` deve chamar `dbAcumularPosse` ANTES de excluir
-   ============================================================================= */
-
-/**
- * Lê o acumulador de posse de um usuário no Firebase.
- * Retorna { produtos: { "NomeProduto": quantidade, ... }, maquinas: { "NomeMaquina": contagem, ... } }
- * Se não houver nada salvo, retorna objetos vazios.
- */
-export async function dbLerPosseAcumulada(nomeUsuario) {
-    try {
-        const chave = _normalizarChaveUsuario(nomeUsuario);
-        const snap = await get(ref(db, `posse_acumulada/${chave}`));
-        return snap.val() || { produtos: {}, maquinas: {} };
-    } catch (error) {
-        console.error("ERRO AO LER POSSE ACUMULADA:", error);
-        return { produtos: {}, maquinas: {} };
-    }
-}
-
-export function dbEscutarPosseAcumulada(nomeUsuario, callback) {
-    const chave = _normalizarChaveUsuario(nomeUsuario);
-    if (!chave) {
-        callback({ produtos: {}, maquinas: {} });
-        return () => {};
-    }
-
-    return onValue(ref(db, `posse_acumulada/${chave}`), (snapshot) => {
-        callback(snapshot.val() || { produtos: {}, maquinas: {} });
-    });
-}
-
 function _normalizarChavePix(numeroPix) {
     return String(numeroPix || '').trim().replace(/[.#$/[\]]/g, '_');
 }
@@ -2582,13 +2541,58 @@ export function dbEscutarCadastrosPix(callback) {
     });
 }
 
-/**
- * Incrementa o acumulador de posse com os dados de UM atendimento.
- * DEVE ser chamada ANTES de excluir um atendimento para não perder os dados.
- *
- * @param {string} nomeUsuario - Nome do colaborador dono do atendimento
- * @param {object} atendimento - Objeto completo do atendimento que será excluído
- */
+/* =============================================================================
+   FUNÇÕES PARA POSSE ACUMULADA (PRODUTOS E MÁQUINAS)
+   =============================================================================
+   CONTEXTO / POR QUE EXISTE:
+   Quando um atendimento é EXCLUÍDO do Firebase (ex: atendimentos antigos removidos
+   para poupar espaço ou corrigir erro), os produtos e máquinas que faziam parte
+   daquele atendimento seriam perdidos para sempre do balanço.
+
+   Para resolver isso, existe este "acumulador": antes de excluir qualquer atendimento,
+   o sistema chama `dbAcumularPosse` para somar os produtos e máquinas daquele
+   atendimento a um contador permanente no banco, no nó `posse_acumulada/{usuario}`.
+
+   Assim, o balanço em `balanco.html` pode mostrar:
+     - Produtos em posse = soma dos atendimentos ATIVOS + acumulado dos excluídos
+     - Máquinas em posse = idem
+
+   ESTRUTURA NO FIREBASE:
+   posse_acumulada/
+     {nomeUsuario}/
+       produtos/
+         "Nome do Produto": <quantidade total>
+       maquinas/
+         "Nome da Máquina": <quantidade total>
+
+   ONDE É USADO:
+   - `balanco.html` lê via `dbLerPosseAcumulada` na inicialização
+   - `[tela de exclusão de atendimento]` deve chamar `dbAcumularPosse` ANTES de excluir
+   ============================================================================= */
+
+export async function dbLerPosseAcumulada(nomeUsuario) {
+    try {
+        const chave = _normalizarChaveUsuario(nomeUsuario);
+        const snap = await get(ref(db, `posse_acumulada/${chave}`));
+        return snap.val() || { produtos: {}, maquinas: {} };
+    } catch (error) {
+        console.error("ERRO AO LER POSSE ACUMULADA:", error);
+        return { produtos: {}, maquinas: {} };
+    }
+}
+
+export function dbEscutarPosseAcumulada(nomeUsuario, callback) {
+    const chave = _normalizarChaveUsuario(nomeUsuario);
+    if (!chave) {
+        callback({ produtos: {}, maquinas: {} });
+        return () => {};
+    }
+
+    return onValue(ref(db, `posse_acumulada/${chave}`), (snapshot) => {
+        callback(snapshot.val() || { produtos: {}, maquinas: {} });
+    });
+}
+
 export async function dbAcumularPosse(nomeUsuario, atendimento) {
     try {
         const chave = _normalizarChaveUsuario(nomeUsuario);
@@ -2598,7 +2602,6 @@ export async function dbAcumularPosse(nomeUsuario, atendimento) {
 
         const deltaProdutos = atendimento?.origemRegistro === 'retirada_estoque' ? 1 : -1;
 
-        // Acumula produtos do atendimento
         (atendimento.produtos || []).forEach(p => {
             if (!p.nome) return;
             const proximoTotal = (atual.produtos[p.nome] || 0) + (Number(p.quantidade || 0) * deltaProdutos);
@@ -2632,6 +2635,480 @@ export async function dbAcumularPosse(nomeUsuario, atendimento) {
     } catch (error) {
         console.error("ERRO AO ACUMULAR POSSE:", error);
         throw error;
+    }
+}
+
+// =============================================================================
+// MOVIMENTAÇÃO BALANÇO HISTÓRICO — nó único para todos os movimentos de produtos/máquinas/peças
+// Path: movimentacao_balanco_historico/{chaveUsuario}/{autoId}
+
+function _normalizarNomeHistoricoBalancoItem(itemNome) {
+    return String(itemNome || '').trim().toLowerCase();
+}
+
+function _obterMovimentacaoHistoricoBalanco(entrada) {
+    const valor = Number(entrada?.movimento ?? 0);
+    return Number.isFinite(valor) ? valor : 0;
+}
+
+function _normalizarChavePosseItem(itemChave, itemNome) {
+    const base = String(itemChave || _normalizarNomeHistoricoBalancoItem(itemNome) || '').trim();
+    return base.replace(/[.#$/[\]]/g, '_');
+}
+
+async function _listarHistoricoBalancoDoUsuario(chaveUsuario) {
+    if (!chaveUsuario) return [];
+    const snap = await get(ref(db, `movimentacao_balanco_historico/${chaveUsuario}`));
+    if (!snap.exists()) return [];
+    return Object.entries(snap.val() || {}).map(([id, valor]) => ({ id, ...valor }));
+}
+
+function _obterTotalAtualHistoricoBalancoDaLista(lista, itemNome, itemChave = '') {
+    const chaveAlvo = String(itemChave || '').trim();
+    if (!chaveAlvo) return 0;
+
+    return (Array.isArray(lista) ? lista : []).reduce((soma, item) => {
+        const chaveItem = String(item?.itemChave || '').trim();
+        if (chaveItem !== chaveAlvo) return soma;
+        return soma + _obterMovimentacaoHistoricoBalanco(item);
+    }, 0);
+}
+
+async function _obterTotalAtualHistoricoBalanco(chaveUsuario, itemNome, itemChave = '') {
+    try {
+        const chaveItem = String(itemChave || '').trim();
+        if (!chaveUsuario || !chaveItem) return 0;
+
+        const lista = await _listarHistoricoBalancoDoUsuario(chaveUsuario);
+        return _obterTotalAtualHistoricoBalancoDaLista(lista, '', chaveItem);
+    } catch (e) {
+        console.warn('ERRO AO LER TOTAL ATUAL DA MOVIMENTAÇÃO BALANÇO HISTÓRICO:', e);
+        return 0;
+    }
+}
+
+async function _resolverChavePosseItemUsuario(chaveUsuario, itemChavePreferida, entrada, movimento = 0) {
+    const chavePreferida = String(itemChavePreferida || '').trim();
+    return chavePreferida;
+}
+
+async function _atualizarPosseItensUsuario(entrada, movimento) {
+    const controlarPosse = entrada?.controlarPosse !== false;
+    const itemChaveBase = _normalizarChavePosseItem(
+        entrada?.itemChave || entrada?.itemId || (String(entrada?.tipo || '').includes('_estoque') ? entrada?.refId : ''),
+        entrada?.itemNome
+    );
+
+    if (!controlarPosse) {
+        return { itemChave: itemChaveBase, totalAntes: null, totalApos: null };
+    }
+
+    const chaveUsuario = _normalizarChaveUsuario(entrada?.responsavel);
+    const itemChave = await _resolverChavePosseItemUsuario(chaveUsuario, itemChaveBase, entrada, movimento);
+    if (!chaveUsuario || !itemChave) {
+        throw new Error('Não foi possível identificar a posse do item.');
+    }
+
+    const posseRef = ref(db, `posse_itens_usuario/${chaveUsuario}/${itemChave}`);
+    const posseAtualSnap = await get(posseRef);
+    const quantidadeInicialFallback = posseAtualSnap.exists()
+        ? null
+        : await _obterTotalAtualHistoricoBalanco(chaveUsuario, entrada?.itemNome, itemChave);
+    const atualizadoEm = new Date().toISOString();
+    const resultado = await runTransaction(posseRef, (atual) => {
+        const estadoAtual = atual && typeof atual === 'object' ? atual : {};
+        const categoriaAtual = String(entrada?.categoria || estadoAtual?.categoria || 'produto').trim();
+        const origemMovimento = String(entrada?.origemRegistro || entrada?.tipo || '').trim();
+        const permitirSaldoNegativo = origemMovimento === 'atendimento'
+            || origemMovimento === 'manutencao'
+            || origemMovimento === 'manutencao_adicao'
+            || origemMovimento === 'entrada_estoque';
+        const quantidadeAtualBase = estadoAtual?.quantidade;
+        const quantidadeAtual = Number(
+            quantidadeAtualBase != null
+                ? quantidadeAtualBase
+                : (quantidadeInicialFallback != null ? quantidadeInicialFallback : 0)
+        );
+        const quantidadeNova = quantidadeAtual + Number(movimento || 0);
+
+        if (quantidadeNova < 0 && !permitirSaldoNegativo) return;
+
+        return {
+            itemNome: String(entrada?.itemNome || estadoAtual?.itemNome || '').trim(),
+            categoria: categoriaAtual,
+            quantidade: quantidadeNova,
+            atualizadoEm,
+            itemChave,
+            itemId: String(
+                entrada?.itemId
+                || (String(entrada?.tipo || '').includes('_estoque') ? entrada?.refId : '')
+                || estadoAtual?.itemId
+                || ''
+            ).trim()
+        };
+    });
+
+    if (!resultado?.committed || !resultado?.snapshot?.exists()) {
+        throw new Error(`Posse insuficiente para ${String(entrada?.responsavel || 'o usuário').trim()} em ${String(entrada?.itemNome || 'o item').trim()}.`);
+    }
+
+    const totalApos = Number(resultado.snapshot.val()?.quantidade || 0);
+    return {
+        itemChave,
+        totalAntes: totalApos - Number(movimento || 0),
+        totalApos
+    };
+}
+
+async function _salvarEntradaHistoricoBalanco(chaveUsuario, entrada, totais = {}) {
+    const movimento = _obterMovimentacaoHistoricoBalanco(entrada);
+    return push(ref(db, `movimentacao_balanco_historico/${chaveUsuario}`), {
+        timestamp: new Date().toISOString(),
+        tipo: String(entrada.tipo || ''),
+        origemRegistro: String(entrada.origemRegistro || entrada.tipo || '').trim(),
+        categoria: String(entrada.categoria || 'produto'),
+        itemNome: String(entrada.itemNome).trim(),
+        itemNomeNormalizado: _normalizarNomeHistoricoBalancoItem(entrada.itemNome),
+        itemChave: String(totais?.itemChave || entrada?.itemChave || '').trim(),
+        movimento,
+        totalAntes: totais?.totalAntes ?? null,
+        totalApos: totais?.totalApos ?? null,
+        responsavel: String(entrada.responsavel).trim(),
+        registradoPor: String(entrada.registradoPor || entrada.responsavel).trim(),
+        descricao: String(entrada.descricao || ''),
+        refId: String(entrada.refId || ''),
+        ...(entrada?.atendimentoRefId ? { atendimentoRefId: String(entrada.atendimentoRefId).trim() } : {}),
+        controlarPosse: entrada?.controlarPosse !== false,
+        isDefeitoEntry: Boolean(entrada.isDefeitoEntry),
+        qtdDefeitoConsumida: Number(entrada.qtdDefeitoConsumida || 0),
+        ...(entrada?.estoqueAntes != null ? { estoqueAntes: Number(entrada.estoqueAntes) } : {}),
+        ...(entrada?.estoqueDepois != null ? { estoqueDepois: Number(entrada.estoqueDepois) } : {})
+    });
+}
+
+export async function dbSalvarHistoricoBalanco(entrada) {
+    // entrada: { responsavel, registradoPor?, itemNome, categoria, tipo, origemRegistro?, movimento, descricao?, refId?, itemChave?, controlarPosse?, isDefeitoEntry?, qtdDefeitoConsumida? }
+    try {
+        const chaveU = _normalizarChaveUsuario(entrada.responsavel);
+        const movimento = _obterMovimentacaoHistoricoBalanco(entrada);
+        if (!chaveU || !entrada.itemNome || !movimento) return;
+        const totais = await _atualizarPosseItensUsuario(entrada, movimento);
+        const novoRef = await _salvarEntradaHistoricoBalanco(chaveU, {
+            ...entrada,
+            movimento,
+            itemChave: totais?.itemChave || entrada?.itemChave || ''
+        }, totais);
+        return novoRef?.key || null;
+    } catch (e) {
+        console.error('ERRO AO SALVAR MOVIMENTAÇÃO BALANÇO HISTÓRICO:', e);
+        throw e;
+    }
+}
+
+async function _cancelarMovimentacoesHistoricoBalancoPorRefId(refId, responsavel) {
+    const chaveU = _normalizarChaveUsuario(responsavel);
+    const refIdLimpo = String(refId || '').trim();
+    if (!chaveU || !refIdLimpo) return;
+
+    // Busca tudo e filtra no cliente para não depender de índice no Firebase
+    const snap = await get(ref(db, `movimentacao_balanco_historico/${chaveU}`));
+
+    if (!snap.exists()) return;
+
+    const entradas = Object.entries(snap.val() || {})
+        .map(([id, valor]) => ({ id, ...valor }))
+        .filter(item => {
+            if (item?.cancelado) return false;
+            const refHistorico = String(item?.refId || '').trim();
+            const refAtendimento = String(item?.atendimentoRefId || '').trim();
+            return refHistorico === refIdLimpo || refAtendimento === refIdLimpo;
+        });
+
+    for (const entrada of entradas) {
+        await dbExcluirHistoricoBalanco(entrada.id, responsavel);
+    }
+}
+
+export async function dbSincronizarProdutosAtendimentoNoHistorico(atendimentoId, atendimento) {
+    try {
+        const idRef = String(atendimentoId || '').trim();
+        const responsavel = String(atendimento?.atendente || '').trim();
+        const nomeCliente = String(atendimento?.cliente?.nome || '').trim();
+        const descricaoAtendimento = nomeCliente ? `Atendimento - ${nomeCliente}` : 'Atendimento';
+        if (!idRef || !responsavel) return;
+
+        await _cancelarMovimentacoesHistoricoBalancoPorRefId(idRef, responsavel);
+
+        if (atendimento?.origemRegistro && atendimento.origemRegistro !== 'atendimento') return;
+
+        const produtos = Array.isArray(atendimento?.produtos) ? atendimento.produtos : [];
+        const itensValidos = produtos
+            .map(item => ({
+                itemId: String(item?.itemId || item?.itemChave || item?.refId || '').trim(),
+                categoria: String(item?.categoria || 'produtos').trim() || 'produtos',
+                nome: String(item?.nome || '').trim(),
+                quantidade: Number(item?.quantidade || 0)
+            }))
+            .filter(item => item.nome && item.quantidade > 0);
+
+        const itemSemId = itensValidos.find(item => !item.itemId);
+        if (itemSemId) {
+            throw new Error(`Item sem ID técnico no atendimento: ${itemSemId.nome}. Limpe a base antiga e use apenas itens do estoque atual.`);
+        }
+
+        if (itensValidos.length === 0) return;
+
+        for (const produto of itensValidos) {
+            await dbSalvarHistoricoBalanco({
+                responsavel,
+                registradoPor: atendimento?.atendente || responsavel,
+                itemNome: produto.nome,
+                categoria: produto.categoria,
+                tipo: 'atendimento',
+                origemRegistro: 'atendimento',
+                itemChave: produto.itemId,
+                movimento: -Number(produto.quantidade || 0),
+                descricao: descricaoAtendimento,
+                refId: produto.itemId,
+                atendimentoRefId: idRef,
+                controlarPosse: true,
+                isDefeitoEntry: false,
+                qtdDefeitoConsumida: 0
+            });
+        }
+    } catch (e) {
+        console.error('ERRO AO SINCRONIZAR PRODUTOS DO ATENDIMENTO NO HISTORICO:', e);
+        throw e;
+    }
+}
+
+export async function dbSincronizarItensManutencaoNoHistorico(atendimentoId, atendimento) {
+    try {
+        const idRef = String(atendimentoId || '').trim();
+        const responsavel = String(atendimento?.atendente || '').trim();
+        const nomeCliente = String(atendimento?.cliente?.nome || '').trim();
+        const descricaoManutencao = nomeCliente ? `Serviço realizado - ${nomeCliente}` : 'Serviço realizado';
+        if (!idRef || !responsavel) return;
+
+        await _cancelarMovimentacoesHistoricoBalancoPorRefId(idRef, responsavel);
+
+        if (String(atendimento?.origemRegistro || '').trim() !== 'manutencao') return;
+
+        const produtos = Array.isArray(atendimento?.produtos) ? atendimento.produtos : [];
+        const equipamentosAdicionados = Array.isArray(atendimento?.manutencao?.equipamentosAdicionados)
+            ? atendimento.manutencao.equipamentosAdicionados
+            : [];
+        const equipamentosRetirados = Array.isArray(atendimento?.manutencao?.equipamentosRetiradosDetalhes)
+            ? atendimento.manutencao.equipamentosRetiradosDetalhes
+            : [];
+
+        const produtosValidos = produtos
+            .map(item => ({
+                itemId: String(item?.itemId || item?.itemChave || item?.refId || '').trim(),
+                categoria: String(item?.categoria || 'produtos').trim() || 'produtos',
+                nome: String(item?.nome || '').trim(),
+                quantidade: Number(item?.quantidade || 0)
+            }))
+            .filter(item => item.nome && item.quantidade > 0);
+
+        const produtoSemId = produtosValidos.find(item => !item.itemId);
+        if (produtoSemId) {
+            throw new Error(`Produto sem ID técnico na manutenção: ${produtoSemId.nome}. Limpe a base antiga e use apenas itens do estoque atual.`);
+        }
+
+        for (const produto of produtosValidos) {
+            await dbSalvarHistoricoBalanco({
+                responsavel,
+                registradoPor: atendimento?.atendente || responsavel,
+                itemNome: produto.nome,
+                categoria: produto.categoria,
+                tipo: 'manutencao',
+                origemRegistro: 'manutencao',
+                itemChave: produto.itemId,
+                movimento: -Number(produto.quantidade || 0),
+                descricao: descricaoManutencao,
+                refId: produto.itemId,
+                atendimentoRefId: idRef,
+                controlarPosse: true,
+                isDefeitoEntry: false,
+                qtdDefeitoConsumida: 0
+            });
+        }
+
+        const adicionadosValidos = equipamentosAdicionados
+            .map(item => ({
+                itemId: String(item?.itemId || item?.itemChave || item?.refId || '').trim(),
+                categoria: String(item?.categoria || 'maquina').trim() || 'maquina',
+                nome: String(item?.nome || '').trim(),
+                quantidade: Number(item?.qtd || item?.quantidade || 0)
+            }))
+            .filter(item => item.nome && item.quantidade > 0);
+
+        const maquinaAdicionadaSemId = adicionadosValidos.find(item => !item.itemId);
+        if (maquinaAdicionadaSemId) {
+            throw new Error(`Máquina sem ID técnico na manutenção: ${maquinaAdicionadaSemId.nome}. Limpe a base antiga e use apenas itens do estoque atual.`);
+        }
+
+        for (const maquina of adicionadosValidos) {
+            await dbSalvarHistoricoBalanco({
+                responsavel,
+                registradoPor: atendimento?.atendente || responsavel,
+                itemNome: maquina.nome,
+                categoria: maquina.categoria,
+                tipo: 'manutencao_adicao',
+                origemRegistro: 'manutencao',
+                itemChave: maquina.itemId,
+                movimento: -Number(maquina.quantidade || 0),
+                descricao: descricaoManutencao,
+                refId: maquina.itemId,
+                atendimentoRefId: idRef,
+                controlarPosse: true,
+                isDefeitoEntry: false,
+                qtdDefeitoConsumida: 0
+            });
+        }
+
+        const retiradosValidos = equipamentosRetirados
+            .map(item => ({
+                itemId: String(item?.itemId || item?.itemChave || '').trim(),
+                categoria: String(item?.categoria || 'maquina').trim() || 'maquina',
+                nome: String(item?.nome || '').trim(),
+                quantidade: Number(item?.qtd || item?.quantidade || 0)
+            }))
+            .filter(item => item.nome && item.quantidade > 0);
+
+        const maquinaRetiradaSemId = retiradosValidos.find(item => !item.itemId);
+        if (maquinaRetiradaSemId) {
+            throw new Error(`Máquina retirada sem ID técnico na manutenção: ${maquinaRetiradaSemId.nome}. Limpe a base antiga e use apenas itens do estoque atual.`);
+        }
+
+        for (const maquina of retiradosValidos) {
+            await dbSalvarHistoricoBalanco({
+                responsavel,
+                registradoPor: atendimento?.atendente || responsavel,
+                itemNome: maquina.nome,
+                categoria: maquina.categoria,
+                tipo: 'manutencao_retirada',
+                origemRegistro: 'manutencao',
+                itemChave: maquina.itemId,
+                movimento: Number(maquina.quantidade || 0),
+                descricao: descricaoManutencao,
+                refId: maquina.itemId,
+                atendimentoRefId: idRef,
+                controlarPosse: true,
+                isDefeitoEntry: false,
+                qtdDefeitoConsumida: 0
+            });
+        }
+    } catch (e) {
+        console.error('ERRO AO SINCRONIZAR ITENS DA MANUTENCAO NO HISTORICO:', e);
+        throw e;
+    }
+}
+
+export async function dbExcluirHistoricoBalanco(id, responsavel) {
+    try {
+        const chaveU = _normalizarChaveUsuario(responsavel);
+        const entradaRef = ref(db, `movimentacao_balanco_historico/${chaveU}/${id}`);
+        const snap = await get(entradaRef);
+        if (!snap.exists()) return;
+        const entrada = snap.val();
+        if (entrada?.cancelado) return;
+
+        // Mantém o evento original como trilha e adiciona o reverso para corrigir o saldo atual.
+        await dbSalvarHistoricoBalanco({
+            responsavel:   entrada.responsavel,
+            registradoPor: entrada.registradoPor,
+            itemNome:      entrada.itemNome,
+            categoria:     entrada.categoria,
+            tipo:          'cancelamento',
+            origemRegistro: entrada?.origemRegistro || entrada?.tipo || '',
+            itemChave:     entrada.itemChave || '',
+            movimento:     -Number(_obterMovimentacaoHistoricoBalanco(entrada) || 0),
+            descricao:     `Cancelamento: ${entrada.descricao || entrada.tipo}`,
+            refId:         id,
+            controlarPosse: entrada?.controlarPosse !== false
+        });
+
+        await update(entradaRef, {
+            cancelado: true,
+            canceladoEm: new Date().toISOString()
+        });
+    } catch (e) {
+        console.error('ERRO AO EXCLUIR MOVIMENTAÇÃO BALANÇO HISTÓRICO:', e);
+        throw e;
+    }
+}
+
+export function dbEscutarPosseItensUsuario(responsavel, callback) {
+    const chaveU = _normalizarChaveUsuario(responsavel);
+    if (!chaveU) { callback([]); return () => {}; }
+    return onValue(ref(db, `posse_itens_usuario/${chaveU}`), (snap) => {
+        if (!snap.exists()) { callback([]); return; }
+        const lista = Object.entries(snap.val() || {})
+            .map(([chave, v]) => ({
+                chave,
+                itemNome:    String(v?.itemNome || '').trim(),
+                categoria:   String(v?.categoria || 'produto').trim(),
+                quantidade:  Number(v?.quantidade || 0),
+                atualizadoEm: String(v?.atualizadoEm || '')
+            }))
+            .filter(item => item.itemNome && item.quantidade !== 0);
+        callback(lista);
+    });
+}
+
+export function dbEscutarHistoricoBalancoDoUsuario(responsavel, callback) {
+    const chaveU = _normalizarChaveUsuario(responsavel);
+    if (!chaveU) { callback([]); return () => {}; }
+    return onValue(ref(db, `movimentacao_balanco_historico/${chaveU}`), (snap) => {
+        if (!snap.exists()) { callback([]); return; }
+        callback(
+            Object.entries(snap.val())
+                .map(([id, v]) => ({ id, firebaseUrl: id, ...v }))
+                .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+        );
+    });
+}
+
+export function dbEscutarHistoricoBalanco(callback) {
+    return onValue(ref(db, 'movimentacao_balanco_historico'), (snap) => {
+        if (!snap.exists()) { callback([]); return; }
+
+        const lista = [];
+        const data = snap.val() || {};
+
+        Object.entries(data).forEach(([chaveUsuario, registros]) => {
+            Object.entries(registros || {}).forEach(([id, valor]) => {
+                lista.push({ firebaseUrl: id, chaveUsuario, ...valor });
+            });
+        });
+
+        callback(
+            lista
+                .sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')))
+                .slice(0, 60)
+        );
+    });
+}
+
+export async function dbBuscarUltimosPorItem(responsavel, itemNome, limite = 10) {
+    try {
+        const chaveU = _normalizarChaveUsuario(responsavel);
+        const nomeItem = String(itemNome || '').trim().toLowerCase();
+        const limiteFinal = Math.max(1, Math.min(Number(limite) || 10, 100));
+        if (!chaveU || !nomeItem) return [];
+
+        const snap = await get(ref(db, `movimentacao_balanco_historico/${chaveU}`));
+        if (!snap.exists()) return [];
+        return Object.entries(snap.val())
+            .map(([id, v]) => ({ id, ...v }))
+            .filter(v => String(v.itemNome || '').trim().toLowerCase() === nomeItem)
+            .sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')))
+            .slice(0, limiteFinal);
+    } catch (e) {
+        console.warn('Erro ao buscar últimos por item:', e);
+        return [];
     }
 }
 

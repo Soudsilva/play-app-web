@@ -141,7 +141,7 @@ export async function contarPendentes() {
 // ─── SINCRONIZAÇÃO ────────────────────────────────────────────────────────────
 // Pega tudo da fila, faz upload das fotos (ainda base64), salva no Firebase e limpa.
 // Retorna quantos atendimentos foram sincronizados com sucesso.
-export async function sincronizarPendentes(storageSalvarFoto, dbSalvarAtendimento) {
+export async function sincronizarPendentes(storageSalvarFoto, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico = null) {
     if (!navigator.onLine) return 0;
     const pendentes = await listarPendentes();
     let ok = 0;
@@ -160,7 +160,10 @@ export async function sincronizarPendentes(storageSalvarFoto, dbSalvarAtendiment
             for (const f of (d.fotos?.pix || []))
                 if (f.url?.startsWith('data:')) f.url = await storageSalvarFoto(f.url);
 
-            await dbSalvarAtendimento(d);
+            const atendimentoId = await dbSalvarAtendimento(d);
+            if (typeof dbSincronizarProdutosAtendimentoNoHistorico === 'function') {
+                await dbSincronizarProdutosAtendimentoNoHistorico(atendimentoId, d);
+            }
             await removerPendente(item.id);
             ok++;
         } catch(e) {

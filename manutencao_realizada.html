@@ -978,7 +978,7 @@
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
 verificarAutenticacao();
-import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbEscutarColaboradores, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, storageSalvarFotoComThumb, dbSalvarMovimentoFluxoCaixa } from './database.js';
+import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbEscutarColaboradores, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, storageSalvarFotoComThumb, dbSalvarMovimentoFluxoCaixa, dbSincronizarItensManutencaoNoHistorico } from './database.js';
 
 // ════════════════════════════════════════════════
 // DADOS DA MANUTENÇÃO
@@ -1006,6 +1006,12 @@ let maquinasDisponiveis = [];
 let tecnicosProducaoEquip = [];
 let clientesCadastrados = [];
 const _pixEncerramentoFotos = {};
+
+function obterMetaMaquinaDisponivel(nomeMaquina = '') {
+    const nomeAlvo = String(nomeMaquina || '').trim();
+    if (!nomeAlvo) return null;
+    return maquinasDisponiveis.find(maquina => String(maquina?.nome || '').trim() === nomeAlvo) || null;
+}
 
 // Respostas acumuladas para salvar no final
 const respostas = {
@@ -1532,13 +1538,19 @@ async function carregarEquipamentosDoCliente() {
         // Formato novo: array equipDetalhes
         if (Array.isArray(clienteEncontrado.equipDetalhes) && clienteEncontrado.equipDetalhes.length > 0) {
             equipamentosDoCliente = clienteEncontrado.equipDetalhes
-                .map((e, indice) => ({
-                    rowId: String(e?.rowId || `equip_${indice + 1}`),
-                    nome: String(e?.nome || '').trim(),
-                    qtd: String(e?.qtd || '1').trim(),
-                    pix: String(e?.pix || '').trim(),
-                    contador: String(e?.contador || '').trim()
-                }))
+                .map((e, indice) => {
+                    const nome = String(e?.nome || '').trim();
+                    const maquinaInfo = obterMetaMaquinaDisponivel(nome);
+                    return {
+                        rowId: String(e?.rowId || `equip_${indice + 1}`),
+                        itemId: String(e?.itemId || maquinaInfo?.firebaseUrl || '').trim(),
+                        nome,
+                        qtd: String(e?.qtd || '1').trim(),
+                        categoria: String(e?.categoria || maquinaInfo?.categoria || 'maquina').trim() || 'maquina',
+                        pix: String(e?.pix || '').trim(),
+                        contador: String(e?.contador || '').trim()
+                    };
+                })
                 .filter(e => e.nome);
             return;
         }
@@ -1549,10 +1561,14 @@ async function carregarEquipamentosDoCliente() {
                 .split(', ')
                 .map((trecho, indice) => {
                     const matchPix = String(trecho || '').match(/\[Pix:\s*([^\]]+)\]/i);
+                    const nome = trecho.replace(/\s*\[Pix:[^\]]*\]/g, '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+                    const maquinaInfo = obterMetaMaquinaDisponivel(nome);
                     return {
                         rowId: `legacy_${indice + 1}`,
-                        nome: trecho.replace(/\s*\[Pix:[^\]]*\]/g, '').replace(/\s*\([^)]*\)\s*$/, '').trim(),
+                        itemId: String(maquinaInfo?.firebaseUrl || '').trim(),
+                        nome,
                         qtd: '1',
+                        categoria: String(maquinaInfo?.categoria || 'maquina').trim() || 'maquina',
                         pix: matchPix ? String(matchPix[1] || '').trim() : '',
                         contador: ''
                     };
@@ -2176,7 +2192,14 @@ function coletarEquipamentosAdicionadosParaSalvar() {
         throw new Error('Selecione o técnico responsável em todos os equipamentos adicionados.');
     }
 
-    return linhas;
+    return linhas.map(item => {
+        const maquinaInfo = maquinasDisponiveis.find(maquina => maquina.nome === item.nome);
+        return {
+            ...item,
+            itemId: maquinaInfo?.firebaseUrl || '',
+            categoria: maquinaInfo?.categoria || 'maquina'
+        };
+    });
 }
 
 async function coletarFotosEquipamentosAdicionadosParaSalvar() {
@@ -2262,9 +2285,9 @@ function renderizarEquipamentosSelecionar(equipamentos) {
                 indicesEquipamentosRetirados.delete(indice);
                 item.classList.remove('marcado');
             }
-            // Se selecionou todos, pergunta encerramento
+            // Só pergunta encerramento quando houve apenas retirada.
             const gradeEnc = document.querySelector('#subEncerramento .grade-opcoes');
-            if (indicesEquipamentosRetirados.size === equipamentos.length) {
+            if (fluxoEncerramentoPermitido() && indicesEquipamentosRetirados.size === equipamentos.length) {
                 if (gradeEnc) gradeEnc.style.display = respostas.encerramentoRespondido ? 'none' : 'flex';
                 mostrarSubSecao('subEncerramento');
                 if (respostas.encerramentoRespondido && respostas.pontoEncerrado) {
@@ -2273,12 +2296,7 @@ function renderizarEquipamentosSelecionar(equipamentos) {
                     document.getElementById('subValorEncerramento').classList.remove('visivel');
                 }
             } else {
-                if (gradeEnc) gradeEnc.style.display = 'flex';
-                document.getElementById('subEncerramento').classList.remove('visivel');
-                document.getElementById('subValorEncerramento').classList.remove('visivel');
-                respostas.encerramentoRespondido = false;
-                respostas.pontoEncerrado = false;
-                respostas.valorEncerramento = '';
+                limparEstadoEncerramento();
             }
             renderizarPixEncerramento();
             sincronizarEtapaProdutosAposMaquinas();
@@ -2463,6 +2481,8 @@ function coletarProdutosRepostosParaSalvar() {
     return linhas.map(item => {
         const produtoInfo = listaProdutos.find(produto => produto.firebaseUrl === item.produtoId);
         return {
+            itemId: item.produtoId,
+            categoria: produtoInfo?.categoria || 'produtos',
             nome: produtoInfo ? produtoInfo.nome : 'Produto não encontrado',
             quantidade: item.quantidade
         };
@@ -2477,9 +2497,24 @@ function pontoEncerradoPulaProdutos() {
     return respostas.pontoEncerrado === true;
 }
 
-function precisaResponderEncerramento() {
+function fluxoEncerramentoPermitido() {
     return respostas.acoesMaquinas.retirou === true
-        && equipamentosDoCliente.length > 0
+        && respostas.acoesMaquinas.adicionou !== true
+        && equipamentosDoCliente.length > 0;
+}
+
+function limparEstadoEncerramento() {
+    const gradeEnc = document.querySelector('#subEncerramento .grade-opcoes');
+    if (gradeEnc) gradeEnc.style.display = 'flex';
+    document.getElementById('subEncerramento')?.classList.remove('visivel');
+    document.getElementById('subValorEncerramento')?.classList.remove('visivel');
+    respostas.encerramentoRespondido = false;
+    respostas.pontoEncerrado = false;
+    respostas.valorEncerramento = '';
+}
+
+function precisaResponderEncerramento() {
+    return fluxoEncerramentoPermitido()
         && indicesEquipamentosRetirados.size === equipamentosDoCliente.length;
 }
 
@@ -2510,7 +2545,7 @@ function sincronizarPosicaoProdutos() {
     const secaoProdutos = document.getElementById('secaoProdutos');
     if (!subProdutos || !hostObrigatorio || !hostPadrao || !secaoProdutos) return;
 
-    if (pontoEncerradoPulaProdutos() || encerramentoEstaPendente() || retiradaEstaPendente()) {
+    if (pontoEncerradoPulaProdutos()) {
         if (subProdutos.parentElement !== hostPadrao) {
             hostPadrao.appendChild(subProdutos);
         }
@@ -2536,7 +2571,7 @@ function sincronizarSecaoProdutosUI() {
 
     sincronizarPosicaoProdutos();
 
-    if (pontoEncerradoPulaProdutos() || encerramentoEstaPendente() || retiradaEstaPendente()) {
+    if (pontoEncerradoPulaProdutos()) {
         secao?.classList.add('oculta-por-fluxo');
         document.getElementById('subProdutos')?.classList.remove('visivel');
         return;
@@ -2560,7 +2595,7 @@ function sincronizarSecaoProdutosUI() {
 function sincronizarEtapaProdutosAposMaquinas() {
     sincronizarSecaoProdutosUI();
 
-    if (!temAcaoMaquinaSelecionada() || retiradaEstaPendente() || encerramentoEstaPendente() || pontoEncerradoPulaProdutos()) {
+    if (!temAcaoMaquinaSelecionada() || pontoEncerradoPulaProdutos()) {
         document.getElementById('subProdutos')?.classList.remove('visivel');
         return;
     }
@@ -2616,16 +2651,15 @@ function sincronizarAcoesMaquinaUI() {
     if (subRetirar) {
         subRetirar.classList.toggle('visivel', respostas.acoesMaquinas.retirou);
         if (respostas.acoesMaquinas.retirou) {
+            if (!fluxoEncerramentoPermitido()) {
+                limparEstadoEncerramento();
+            }
             renderizarEquipamentosSelecionar(equipamentosDoCliente);
             renderizarPixEncerramento();
         } else {
-            document.getElementById('subEncerramento').classList.remove('visivel');
-            document.getElementById('subValorEncerramento').classList.remove('visivel');
+            limparEstadoEncerramento();
             document.getElementById('subPixEncerramento').classList.remove('visivel');
             document.getElementById('listaPixEncerramento').innerHTML = '';
-            respostas.encerramentoRespondido = false;
-            respostas.pontoEncerrado = false;
-            respostas.valorEncerramento = '';
         }
     }
 
@@ -3025,8 +3059,10 @@ window.finalizarRegistro = async function() {
                         .filter(Boolean)
                         .map(item => ({
                             rowId: item.rowId || '',
+                            itemId: item.itemId || '',
                             nome: item.nome,
                             qtd: item.qtd || '1',
+                            categoria: item.categoria || 'maquina',
                             pix: item.pix || '',
                             contador: item.contador || ''
                         }));
@@ -3117,6 +3153,8 @@ window.finalizarRegistro = async function() {
         delete dadosFinais.firebaseUrl;
         await dbSalvarManutencao(dadosFinais, dadosManutencao.firebaseUrl);
 
+        // ── Registra movimentações de máquinas no movimentacao_balanco_historico ──
+
         // ── Marca cliente encerrado se necessário ──
         const temMovimentacaoParaHistorico = Boolean(
             (camposExtras.produtosRepostos && camposExtras.produtosRepostos.length)
@@ -3159,11 +3197,13 @@ window.finalizarRegistro = async function() {
                 }
             }
 
-            await dbSalvarAtendimento({
+            const atendimentoManutencaoPayload = {
                 atendente: usuarioLogado,
                 data: new Date().toISOString(),
                 cliente: clienteSnapshotAtendimento,
                 produtos: (camposExtras.produtosRepostos || []).map(item => ({
+                    itemId: item.itemId || '',
+                    categoria: item.categoria || 'produtos',
                     nome: item.nome,
                     quantidade: item.quantidade
                 })),
@@ -3182,7 +3222,9 @@ window.finalizarRegistro = async function() {
                     pontoEncerrado: camposExtras.pontoEncerrado === true,
                     valorEncerramento: camposExtras.valorEncerramento || ''
                 }
-            });
+            };
+            const atendimentoManutencaoId = await dbSalvarAtendimento(atendimentoManutencaoPayload);
+            await dbSincronizarItensManutencaoNoHistorico(atendimentoManutencaoId, atendimentoManutencaoPayload);
         }
 
         if (clienteEncontrado?.firebaseUrl && (

@@ -324,7 +324,7 @@
 </script>
 
 <script type="module">
-    import { dbEscutarColaboradores, dbSalvarAtendimento, storageSalvarFoto, dbEscutarAtendimentos, dbEscutarManutencoes, dbEscutarClientes } from './database.js';
+    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarAtendimentos, dbEscutarManutencoes, dbEscutarClientes } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
     import { sincronizarPendentes, contarPendentes } from './offline-sync.js';
 
@@ -374,14 +374,14 @@
     window.addEventListener('online', async () => {
         atualizarConexao();
         try {
-            const n = await sincronizarPendentes(storageSalvarFoto, dbSalvarAtendimento);
+            const n = await sincronizarPendentes(storageSalvarFoto, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico);
             if (n > 0) await window.playAlert(`Sucesso: ${n} atendimento${n > 1 ? 's' : ''} enviado${n > 1 ? 's' : ''} com sucesso!`);
         } catch(e) { console.warn('Sync ao reconectar falhou:', e); }
     });
 
     // Sincroniza pendentes que ficaram da sessÃ£o anterior
     if (navigator.onLine) {
-        sincronizarPendentes(storageSalvarFoto, dbSalvarAtendimento).then(async n => {
+        sincronizarPendentes(storageSalvarFoto, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico).then(async n => {
             if (n > 0) await window.playAlert(`Sucesso: ${n} atendimento${n > 1 ? 's' : ''} pendente${n > 1 ? 's' : ''} enviado${n > 1 ? 's' : ''} com sucesso!`);
         }).catch(() => {});
     }
@@ -459,12 +459,13 @@
             return;
         }
         if (tela === 'financeiro') {
+            const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
+            const u = listaColaboradores.find(c => String(c?.nome || '').trim() === nomeLogado);
+            const perfil = u ? (u.nivel_completo || "") : "";
             if (perfil.includes('gestao')) {
                 window.location.href = 'Pagamentos_Gestor.html';
                 return;
             }
-            const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
-            const u = listaColaboradores.find(c => String(c?.nome || '').trim() === nomeLogado);
             window.location.href = u?.producaoProdutos ? 'producao_produtos.html' : 'financeiro.html';
             return;
         }

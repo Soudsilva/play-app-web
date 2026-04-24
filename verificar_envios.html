@@ -656,6 +656,18 @@
         return html;
     }
 
+    function obterOrigemAtendimento(envio) {
+        if (ehRegistroManutencao(envio))  return { icone: '🔧', texto: 'Manutenção',      cor: '#90caf9' };
+        if (ehRetiradaEstoque(envio))     return { icone: '📤', texto: 'Saída Estoque',   cor: '#ffcc80' };
+        if (ehEntradaEstoque(envio))      return { icone: '📥', texto: 'Entrada Estoque', cor: '#a5d6a7' };
+        return { icone: '📋', texto: 'Atendimento', cor: '#ef9a9a' };
+    }
+
+    function idCurto(firebaseUrl) {
+        if (!firebaseUrl) return '—';
+        return firebaseUrl.replace(/^historico_/, '').slice(-8).toUpperCase();
+    }
+
     function ehMesmoDiaAtual(dataIso) {
         if (!dataIso) return false;
         const dataEnvio = new Date(dataIso);
@@ -888,13 +900,29 @@
             const htmlCadastroPix = montarHtmlCadastroPix(envio);
 
             // Cabeçalho
+            const origemAtend = obterOrigemAtendimento(envio);
+            const idAtend = idCurto(envio.firebaseUrl);
             let htmlHeader;
             if (ehMovimentoEstoque(envio)) {
-                htmlHeader = `<div class="envio-header"><div class="envio-cliente">${obterCabecalhoMovimentoEstoque(envio)}</div></div>`;
+                htmlHeader = `
+                    <div class="envio-header">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <span style="font-size:12px; font-weight:bold; color:${origemAtend.cor};">${origemAtend.icone} ${origemAtend.texto}</span>
+                            <span style="font-size:11px; color:rgba(255,255,255,0.35); font-family:monospace; letter-spacing:0.5px;">ID: ${idAtend}</span>
+                        </div>
+                        <div class="envio-cliente">${obterCabecalhoMovimentoEstoque(envio)}</div>
+                    </div>`;
             } else {
                 const clienteNome = envio.cliente?.nome || 'Cliente Desconhecido';
                 const clienteNumero = envio.cliente?.numero || 'S/N';
-                htmlHeader = `<div class="envio-header"><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>`;
+                htmlHeader = `
+                    <div class="envio-header">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <span style="font-size:12px; font-weight:bold; color:${origemAtend.cor};">${origemAtend.icone} ${origemAtend.texto}</span>
+                            <span style="font-size:11px; color:rgba(255,255,255,0.35); font-family:monospace; letter-spacing:0.5px;">ID: ${idAtend}</span>
+                        </div>
+                        <div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div>
+                    </div>`;
             }
 
             // --- 1. PRODUTOS ---
