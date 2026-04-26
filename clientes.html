@@ -284,14 +284,12 @@
 
     .cliente-header {
         display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 12px;
-        gap: 10px;
+        flex-direction: column;
+        gap: 0;
     }
 
     .cliente-col-esq {
-        flex: 1;
+        width: 100%;
         min-width: 0;
     }
 
@@ -309,17 +307,32 @@
 
     .cliente-icones {
         display: flex;
-        flex-direction: column;
-        gap: 12px;
-        flex-shrink: 0;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-around;
+        gap: 4px;
+        width: 100%;
+        margin-top: 6px;
+        padding-top: 4px;
     }
 
     .icone-acao-cliente {
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;
         gap: 4px;
         cursor: pointer;
+        flex: 1;
+        padding: 6px 0;
+        border-right: 1px solid rgba(255,255,255,0.15);
+        transition: transform 0.12s ease, opacity 0.12s ease;
+    }
+
+
+    .icone-acao-cliente:active {
+        transform: scale(0.82);
+        opacity: 0.7;
     }
 
     .icone-acao-cliente img {
@@ -333,6 +346,10 @@
         letter-spacing: 0.3px;
     }
 
+    .icone-acao-cliente span.label-sm {
+        font-size: 8px;
+    }
+
     /* Campos de info */
     .cliente-campos {
         display: flex;
@@ -344,15 +361,17 @@
 
     .campo-linha {
         display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
+        flex-direction: column;
     }
 
     .campo-item {
-        font-size: 15px;
+        font-size: 17px;
         color: #ffffff;
-        line-height: 1.5;
+        line-height: 1.4;
+        padding: 10px 0 0;
+        border-bottom: 1px solid rgba(255,255,255,0.22);
     }
+
 
     .campo-item b { color: #ff9800; }
 
@@ -886,24 +905,116 @@
     .edicao-btn-salvar:disabled { opacity: 0.6; cursor: not-allowed; }
     /* Botão lápis discreto no canto inferior direito do card */
     .btn-edicao-rapida {
-        position: absolute;
-        bottom: 10px;
-        right: 12px;
-        width: 28px;
-        height: 28px;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: rgba(255,255,255,0.07);
-        border: 1px solid rgba(255,255,255,0.15);
-        border-radius: 50%;
+        gap: 4px;
+        background: none;
+        border: none;
+        border-right: 1px solid rgba(255,255,255,0.15);
         cursor: pointer;
-        padding: 0;
-        transition: background 0.15s;
+        padding: 6px 0;
+        flex: 1;
+        transition: transform 0.12s ease, opacity 0.12s ease;
     }
-    .btn-edicao-rapida:active { background: rgba(255,235,59,0.2); }
-    .btn-edicao-rapida svg { width: 13px; height: 13px; stroke: rgba(255,255,255,0.45); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; transition: stroke 0.15s; }
-    .btn-edicao-rapida:hover svg { stroke: #ffeb3b; }
+
+    .btn-edicao-rapida:active {
+        transform: scale(0.82);
+        opacity: 0.7;
+    }
+    .btn-edicao-rapida::after {
+        content: 'Editar';
+        font-size: 9px;
+        font-weight: bold;
+        color: #ffeb3b;
+        letter-spacing: 0.3px;
+    }
+    .btn-edicao-rapida:active { opacity: 0.7; }
+    .btn-edicao-rapida svg { width: 34px; height: 34px; stroke: #ffeb3b; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* === BOTTOM SHEET REPOSIÇÃO DE PRODUTOS === */
+    .reposicao-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.65);
+        z-index: 1000;
+        align-items: flex-end;
+        justify-content: center;
+    }
+    .reposicao-overlay.aberto { display: flex; }
+    .reposicao-sheet {
+        width: 100%;
+        max-width: 440px;
+        background: linear-gradient(180deg, #11317a 0%, #0b2256 100%);
+        border-radius: 22px 22px 0 0;
+        padding: 0 0 env(safe-area-inset-bottom, 20px);
+        display: flex;
+        flex-direction: column;
+        max-height: 85vh;
+        box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+        border-top: 1px solid rgba(255,255,255,0.18);
+        animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .reposicao-sheet-corpo {
+        padding: 14px 20px 10px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .linha-produto-repor {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    .prod-select-repor {
+        flex: 1 1 0%;
+        min-width: 0;
+        padding: 12px 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.22);
+        background: rgba(255,255,255,0.09);
+        color: white;
+        font-size: 16px;
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+        -webkit-user-select: auto;
+        user-select: auto;
+    }
+    .prod-select-repor option { background: #0b2256; color: white; }
+    .qtd-input-repor {
+        flex: 0 0 76px;
+        width: 76px;
+        padding: 12px 6px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.22);
+        background: rgba(255,255,255,0.09);
+        color: white;
+        font-size: 20px;
+        font-weight: bold;
+        text-align: center;
+        outline: none;
+        -webkit-user-select: auto;
+        user-select: auto;
+    }
+    .qtd-input-repor::placeholder { color: rgba(255,255,255,0.4); }
+    .prod-select-repor:focus, .qtd-input-repor:focus { border-color: #ffeb3b; }
+    .btn-add-prod-repor {
+        background: transparent;
+        border: 1px dashed rgba(255,255,255,0.3);
+        color: rgba(255,255,255,0.75);
+        padding: 11px;
+        border-radius: 10px;
+        font-size: 15px;
+        cursor: pointer;
+        width: 100%;
+        text-align: center;
+        margin-top: 2px;
+    }
+    .btn-add-prod-repor:active { opacity: 0.55; transform: scale(0.98); }
 </style>
 </head>
 <body>
@@ -968,6 +1079,24 @@
             <div class="edicao-secao-label">Observações</div>
             <textarea class="edicao-obs-textarea" id="edicaoObsTexto" placeholder="Observações do cliente..."></textarea>
             <button class="edicao-btn-salvar" id="edicaoBtnSalvar" onclick="salvarEdicaoDiasObs()">SALVAR</button>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Sheet: Reposição de Produtos -->
+<div class="reposicao-overlay" id="reposicaoOverlay" onclick="fecharReposicao(event)">
+    <div class="reposicao-sheet" onclick="event.stopPropagation()">
+        <div class="edicao-sheet-header">
+            <div></div>
+            <div class="edicao-sheet-titulo">📦 Reposição de Produtos</div>
+            <div class="edicao-sheet-fechar" onclick="fecharReposicaoBtn()">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </div>
+        </div>
+        <div class="edicao-nome-destaque" id="reposicaoSubtitulo"></div>
+        <div class="reposicao-sheet-corpo">
+            <div id="containerProdutosRepor"></div>
+            <button class="edicao-btn-salvar" id="reposicaoBtnSalvar" onclick="salvarReposicao()">SALVAR E CONCLUIR ✓</button>
         </div>
     </div>
 </div>
@@ -1056,7 +1185,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbExcluirCliente, dbSalvarCliente, dbEscutarColaboradores, dbListarAtendimentos, dbEscutarManutencoes, dbBuscarProdutosDoAtendimento } from './database.js';
+    import { dbEscutarClientes, dbExcluirCliente, dbSalvarCliente, dbEscutarColaboradores, dbListarAtendimentos, dbEscutarManutencoes, dbBuscarProdutosDoAtendimento, dbEscutarEstoque, dbSalvarAtendimento, dbSincronizarItensManutencaoNoHistorico } from './database.js';
 
     // --- CACHE LOCAL DE CLIENTES ---
     // Salva a lista e a versão no localStorage para acesso offline e economia de dados.
@@ -1135,6 +1264,8 @@
     })();
     let clientesSalvos = [];
     let pontosNovos = [];
+    let listaProdutosRepor = [];
+    let reposicaoClienteAtivo = null;
     const urlParamsClientes = new URLSearchParams(window.location.search);
     const abrirCadastroClienteAoEntrar = urlParamsClientes.get('abrirCadastroCliente') === '1';
     function normalizarTexto(valor) {
@@ -1357,9 +1488,9 @@
             if (equipHtml) campos.push(`<div class="campo-item"><b>Equip.:</b> ${equipHtml}</div>`);
             if (c.aberto) campos.push(`<div class="campo-item"><b>Aberto:</b> ${c.aberto}</div>`);
 
+            if (c.endereco) campos.push(`<div class="campo-item"><b>End.:</b> <span>${c.endereco}</span></div>`);
+            if (c.obs) campos.push(`<div class="campo-item obs-item"><b>Obs:</b> ${c.obs}</div>`);
             const camposLargura = [];
-            if (c.endereco) camposLargura.push(`<div class="campo-item"><b>End.:</b> <span>${c.endereco}</span></div>`);
-            if (c.obs) camposLargura.push(`<div class="campo-item obs-item"><b>Obs:</b> ${c.obs}</div>`);
 
             const acoesVisuaisHtml = usuarioPodeGerenciarCliente(c) ? `
                 <div class="acoes-cliente">
@@ -1406,12 +1537,18 @@
                         </div>
                         <div class="cliente-icones">
                             <div class="icone-acao-cliente" onclick="abrirConfiguracoes('${c.firebaseUrl}')">
-                                <img src="assets/img/engrenagen.png" alt="Manutenção">
-                                <span>Manutenção</span>
+                                <svg viewBox="0 0 24 24" style="width:34px;height:34px;stroke:#ffeb3b;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                </svg>
+                                <span class="label-sm">Manutenção</span>
                             </div>
                             <div class="icone-acao-cliente" onclick="abrirMapa('${c.endereco || ""}')">
-                                <img src="assets/img/Localizacao.png" alt="Localização">
-                                <span>Localização</span>
+                                <svg viewBox="0 0 24 24" style="width:34px;height:34px;stroke:#ffeb3b;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;" aria-hidden="true">
+                                    <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/>
+                                    <circle cx="12" cy="10" r="3"/>
+                                </svg>
+                                <span class="label-sm">Localização</span>
                             </div>
                             <div class="icone-acao-cliente" onclick="abrirFotos('${c.firebaseUrl}')">
                                 <svg viewBox="0 0 24 24" style="width:34px;height:34px;stroke:#ffeb3b;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;" aria-hidden="true">
@@ -1422,15 +1559,24 @@
                                 </svg>
                                 <span>Fotos</span>
                             </div>
+                            ${perfilUsuarioLogado.includes('atendimento') ? `
+                            <div class="icone-acao-cliente" onclick="abrirReposicao('${c.firebaseUrl}')">
+                                <svg viewBox="0 0 24 24" style="width:34px;height:34px;stroke:#ffeb3b;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;" aria-hidden="true">
+                                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                                    <line x1="3" y1="6" x2="21" y2="6"/>
+                                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                                </svg>
+                                <span>Repor</span>
+                            </div>` : ''}
+                            ${!perfilUsuarioLogado.startsWith('gestao') ? `
+                            <button class="btn-edicao-rapida" onclick="abrirEdicaoDiasObs('${c.firebaseUrl}')" title="Editar dias / obs">
+                                <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4z"/></svg>
+                            </button>` : ''}
                         </div>
                      </div>
                      ${camposLargura.length > 0 ? `<div class="cliente-campos-largura">${camposLargura.join('')}</div>` : ''}
                      ${acoesVisuaisHtml}
                  </div>
-                 ${!perfilUsuarioLogado.startsWith('gestao') ? `
-                 <button class="btn-edicao-rapida" onclick="abrirEdicaoDiasObs('${c.firebaseUrl}')" title="Editar dias / obs">
-                     <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4z"/></svg>
-                 </button>` : ''}
              `;
             _fragment.appendChild(card);
         });
@@ -1826,6 +1972,7 @@
         const overlay = document.getElementById('edicaoOverlay');
         overlay.classList.add('aberto');
         document.body.style.overflow = 'hidden';
+        history.pushState({ modal: 'edicao' }, '');
     };
 
     function _fecharEdicaoSheet() {
@@ -1834,6 +1981,12 @@
         document.body.style.overflow = '';
         edicaoClienteAtivo = null;
     }
+
+    window.addEventListener('popstate', function(e) {
+        if (document.getElementById('edicaoOverlay').classList.contains('aberto')) {
+            _fecharEdicaoSheet();
+        }
+    });
 
     window.fecharEdicaoDiasObs = function(e) {
         if (e && e.target !== document.getElementById('edicaoOverlay')) return;
@@ -1915,6 +2068,176 @@
         }
     });
 
+    dbEscutarEstoque((lista) => {
+        const nomesVistos = new Set();
+        listaProdutosRepor = [];
+        lista.forEach(item => {
+            if (item.categoria === 'produtos' && !nomesVistos.has(item.nome)) {
+                nomesVistos.add(item.nome);
+                listaProdutosRepor.push(item);
+            }
+        });
+    });
+
+    // --- REPOSIÇÃO DE PRODUTOS ---
+    function _popularSelectRepor(select, valorAtual) {
+        const selecionados = Array.from(document.querySelectorAll('#containerProdutosRepor .prod-select-repor'))
+            .map(s => s.value).filter(Boolean);
+        let html = '<option value="">Selecione o produto...</option>';
+        listaProdutosRepor.forEach(p => {
+            if (p.firebaseUrl === valorAtual || !selecionados.includes(p.firebaseUrl)) {
+                html += `<option value="${p.firebaseUrl}">${p.nome}</option>`;
+            }
+        });
+        select.innerHTML = html;
+        if (valorAtual) select.value = valorAtual;
+    }
+
+    function _limitarUmaQtdVaziaRepor(linhaPreferida = null) {
+        const container = document.getElementById('containerProdutosRepor');
+        const linhas = Array.from(container.querySelectorAll('.linha-produto-repor'));
+        const linhasComQtdVazia = linhas.filter(linha => {
+            const qtd = linha.querySelector('.qtd-input-repor')?.value.trim() || '';
+            return qtd === '';
+        });
+
+        if (linhasComQtdVazia.length <= 1) return;
+
+        const linhaParaManter = linhasComQtdVazia.includes(linhaPreferida)
+            ? linhaPreferida
+            : linhasComQtdVazia[0];
+
+        linhasComQtdVazia.forEach(linha => {
+            if (linha !== linhaParaManter) linha.remove();
+        });
+    }
+
+    window.adicionarLinhaProdutoRepor = function(inputAnterior = null) {
+        const container = document.getElementById('containerProdutosRepor');
+        const linhaAtual = inputAnterior?.closest('.linha-produto-repor') || null;
+
+        // Se a quantidade foi apagada, remove linhas sem qty que ficaram abaixo
+        if (inputAnterior && inputAnterior.value.trim() === '') {
+            _limitarUmaQtdVaziaRepor(linhaAtual);
+            return;
+        }
+
+        _limitarUmaQtdVaziaRepor(linhaAtual);
+
+        // Só adiciona nova linha se a quantidade atual foi preenchida
+        if (inputAnterior) {
+            const qtdAtual = parseInt(inputAnterior.value.trim(), 10) || 0;
+            if (qtdAtual <= 0) return;
+        }
+
+        // Não adiciona se já existe uma linha sem qty (permite apenas um campo vazio)
+        const linhasExistentes = container.querySelectorAll('.linha-produto-repor');
+        if (linhasExistentes.length > 0) {
+            const ultima = linhasExistentes[linhasExistentes.length - 1];
+            const ultQtd = ultima.querySelector('.qtd-input-repor')?.value || '';
+            if (!ultQtd) return;
+        }
+
+        const div = document.createElement('div');
+        div.className = 'linha-produto-repor';
+        div.innerHTML = `
+            <select class="prod-select-repor"></select>
+            <input type="text" inputmode="numeric" class="qtd-input-repor" placeholder="Qtd"
+                   oninput="this.value=this.value.replace(/[^0-9]/g,''); adicionarLinhaProdutoRepor(this)">
+        `;
+        container.appendChild(div);
+        // Popula o novo select sem usar addEventListener('change') para evitar
+        // cascata de eventos que aciona adições indevidas em alguns browsers
+        const novoSelect = div.querySelector('.prod-select-repor');
+        _popularSelectRepor(novoSelect, '');
+    };
+
+    window.abrirReposicao = function(firebaseUrl) {
+        const cliente = clientesSalvos.find(c => c.firebaseUrl === firebaseUrl);
+        if (!cliente) return;
+        reposicaoClienteAtivo = cliente;
+        document.getElementById('reposicaoSubtitulo').textContent = `N. ${cliente.numero} — ${cliente.nome}`;
+        document.getElementById('containerProdutosRepor').innerHTML = '';
+        const btn = document.getElementById('reposicaoBtnSalvar');
+        btn.disabled = false;
+        btn.textContent = 'SALVAR E CONCLUIR ✓';
+        adicionarLinhaProdutoRepor();
+        const overlay = document.getElementById('reposicaoOverlay');
+        overlay.classList.add('aberto');
+        document.body.style.overflow = 'hidden';
+        history.pushState({ reposicaoSheet: true }, '');
+    };
+
+    function _fecharReposicaoSheet() {
+        const overlay = document.getElementById('reposicaoOverlay');
+        if (!overlay.classList.contains('aberto')) return;
+        overlay.classList.remove('aberto');
+        document.body.style.overflow = '';
+        reposicaoClienteAtivo = null;
+    }
+
+    window.fecharReposicao = function(e) {
+        if (e && e.target !== document.getElementById('reposicaoOverlay')) return;
+        _fecharReposicaoSheet();
+        if (history.state?.reposicaoSheet) history.back();
+    };
+
+    window.fecharReposicaoBtn = function() {
+        _fecharReposicaoSheet();
+        if (history.state?.reposicaoSheet) history.back();
+    };
+
+    window.salvarReposicao = async function() {
+        const cliente = reposicaoClienteAtivo;
+        if (!cliente) return;
+
+        _limitarUmaQtdVaziaRepor();
+
+        const produtos = [];
+        document.querySelectorAll('#containerProdutosRepor .linha-produto-repor').forEach((linha) => {
+            const prodId = linha.querySelector('.prod-select-repor').value;
+            const qtd = parseInt((linha.querySelector('.qtd-input-repor').value || '').replace(/\D/g, ''), 10) || 0;
+            if (!prodId || qtd <= 0) return; // ignora linhas incompletas ou em branco
+            const produto = listaProdutosRepor.find(p => p.firebaseUrl === prodId);
+            produtos.push({ itemId: prodId, categoria: produto?.categoria || 'produtos', nome: produto?.nome || '', quantidade: qtd });
+        });
+
+        if (produtos.length === 0) { await window.playAlert('Informe ao menos um produto para repor.'); return; }
+
+        const btn = document.getElementById('reposicaoBtnSalvar');
+        btn.disabled = true;
+        btn.textContent = 'SALVANDO...';
+
+        try {
+            const atendente = String(localStorage.getItem('usuarioLogado') || '').trim() || 'N/A';
+            const payload = {
+                atendente,
+                data: new Date().toISOString(),
+                cliente: {
+                    id: cliente.firebaseUrl,
+                    nome: cliente.nome || '',
+                    numero: cliente.numero || '',
+                    rota: cliente.rota || '',
+                    cidade: cliente.cidade || '',
+                    endereco: cliente.endereco || ''
+                },
+                produtos,
+                origemRegistro: 'manutencao',
+                manutencao: { equipamentosAdicionados: [], equipamentosRetiradosDetalhes: [] },
+                tipoRegistro: 'reposicao_direta'
+            };
+            const idSalvo = await dbSalvarAtendimento(payload, null);
+            await dbSincronizarItensManutencaoNoHistorico(idSalvo, payload);
+            _fecharReposicaoSheet();
+            if (history.state?.reposicaoSheet) history.back();
+            await window.playAlert('✅ Reposição registrada com sucesso!');
+        } catch (e) {
+            await window.playAlert('Erro ao salvar: ' + (e?.message || 'Tente novamente.'));
+            btn.disabled = false;
+            btn.textContent = 'SALVAR E CONCLUIR ✓';
+        }
+    };
+
     function escaparHtmlLocal(valor) {
         return String(valor || "")
             .replace(/&/g, "&amp;").replace(/</g, "&lt;")
@@ -1979,6 +2302,10 @@
         if (lb.classList.contains('aberto')) {
             lb.classList.remove('aberto');
             document.getElementById('lightboxImg').src = '';
+            return;
+        }
+        if (document.getElementById('reposicaoOverlay').classList.contains('aberto')) {
+            _fecharReposicaoSheet();
             return;
         }
         if (document.getElementById('escolhaOverlay').classList.contains('aberto')) {

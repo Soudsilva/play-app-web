@@ -720,12 +720,13 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbAdicionarPixEmPosse, dbSalvarHistoricoBalanco, dbEscutarHistoricoBalanco, dbExcluirHistoricoBalanco, dbRecalcularRemuneracoes, dbEscutarClientes } from './database.js';
+    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbAdicionarPixEmPosse, dbSalvarHistoricoBalanco, dbEscutarHistoricoBalanco, dbExcluirHistoricoBalanco, dbRecalcularRemuneracoes, dbEscutarClientes, dbEscutarTodosPixEmPosse } from './database.js';
 
     let listaGlobal = [];
     let historicoGlobal = [];
     let colabsGlobal = [];
     let clientesGlobal = [];
+    let pixEmPosseGlobal = new Set();
     let itensPendentes = [];
     let timerAdicionarPendente = null;
     let salvandoMovimentacao = false;
@@ -958,6 +959,10 @@
         clientesGlobal = Array.isArray(lista) ? lista : [];
     });
 
+    dbEscutarTodosPixEmPosse((numeros) => {
+        pixEmPosseGlobal = numeros;
+    });
+
     function pixEmUsoSet() {
         const emUso = new Set();
         clientesGlobal.forEach(cliente => {
@@ -976,6 +981,11 @@
         if (!valor) return;
         if (pixEmUsoSet().has(valor)) {
             await window.playAlert(`Pix ${valor} já está instalado em outro equipamento.`);
+            if (input) { input.value = ''; input.focus(); }
+            return;
+        }
+        if (pixEmPosseGlobal.has(valor)) {
+            await window.playAlert(`Pix ${valor} já está em posse de outro usuário.`);
             if (input) { input.value = ''; input.focus(); }
         }
     };

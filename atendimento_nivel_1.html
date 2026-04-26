@@ -78,9 +78,10 @@
             display: none;
             align-items: center;
             justify-content: center;
+            gap: 6px;
             height: 50px;
             box-sizing: border-box;
-            padding: 8px 14px;
+            padding: 8px 12px;
             border: 1px solid #ffeb3b;
             border-radius: 8px;
             background: #ffeb3b;
@@ -90,100 +91,33 @@
             text-align: center;
             user-select: none;
             -webkit-user-select: none;
-        }
-        .rotas-atendimento-disponiveis {
-            display: none;
-            position: relative;
-            flex: none;
-            max-width: 320px;
-            width: 320px;
-        }
-        .btn-rotas-atendimento-menu {
-            width: 100%;
-            min-height: 58px;
-            border: 1px solid #ffffff;
-            border-radius: 8px;
-            background: #ffeb3b;
-            color: #042d86;
-            padding: 9px 12px;
-            font-size: 18px;
-            font-weight: 700;
-            line-height: 1.05;
-            text-align: center;
             cursor: pointer;
-            box-shadow: 0 3px 10px #001847;
-            user-select: none;
-            -webkit-user-select: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            box-shadow: 0 0 8px rgba(255,235,59,0.45), 0 0 18px rgba(255,235,59,0.18);
+            transition: box-shadow 0.2s;
         }
-        .btn-rotas-atendimento-label {
-            display: block;
-            font-size: 18px;
+        .rota-cliente-destaque:active {
+            box-shadow: 0 0 4px rgba(255,235,59,0.3);
         }
-        .rotas-atendimento-painel {
+        .rota-seta {
+            font-size: 11px;
+            opacity: 0.6;
+            line-height: 1;
+        }
+        .clientes-rota-painel {
             display: none;
-            position: absolute;
-            top: calc(100% + 6px);
-            left: 50%;
-            width: min(420px, calc(100vw - 24px));
+            width: 100%;
+            max-width: 360px;
             border: 1px solid #ffffff;
             border-radius: 8px;
             background: #06286b;
             padding: 6px;
-            z-index: 40;
-            box-shadow: 0 8px 18px #001847;
-            transform: translateX(-50%);
+            box-sizing: border-box;
         }
-        .rotas-atendimento-painel.aberto {
+        .clientes-rota-painel.aberto {
             display: grid;
             gap: 6px;
         }
-        .btn-rota-atendimento {
-            width: 100%;
-            border: 1px solid #ffffff;
-            border-radius: 8px;
-            background: #ffeb3b;
-            color: #042d86;
-            padding: 9px 10px;
-            font-size: 18px;
-            font-weight: 700;
-            line-height: 1.1;
-            text-align: center;
-            cursor: pointer;
-            user-select: none;
-            -webkit-user-select: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .btn-rota-atendimento.ativa {
-            background: #ffeb3b;
-            color: #042d86;
-            border-color: #ffeb3b;
-        }
-        .grupo-rota-atendimento {
-            display: block;
-        }
-        .rotas-atendimento-painel.tem-lista-aberta .grupo-rota-atendimento:not(.rota-grupo-aberto) {
-            display: none;
-        }
-        .btn-rota-atendimento-numero {
-            display: block;
-            font-size: 18px;
-            line-height: 1.05;
-        }
-        .clientes-rota-atendimento-lista {
-            display: none;
-            gap: 5px;
-            margin: 2px 0 6px;
-        }
-        .clientes-rota-atendimento-lista.aberta {
-            display: grid;
-        }
-        .btn-cliente-rota-atendimento {
+        .btn-cliente-rota {
             width: 100%;
             border: 1px solid #ffffff;
             border-radius: 8px;
@@ -197,17 +131,13 @@
             cursor: pointer;
             user-select: none;
             -webkit-user-select: none;
-            transition: background 0.12s ease, color 0.12s ease, transform 0.08s ease, border-color 0.12s ease;
-            touch-action: manipulation;
         }
-        .btn-cliente-rota-atendimento:active,
-        .btn-cliente-rota-atendimento.pressionando {
+        .btn-cliente-rota:active {
             background: #ffeb3b;
             color: #042d86;
             border-color: #ffeb3b;
-            transform: scale(0.98);
         }
-        .clientes-rota-atendimento-vazio {
+        .clientes-rota-vazio {
             border: 1px solid #ffffff;
             border-radius: 8px;
             color: #ffffff;
@@ -223,9 +153,6 @@
             #inputBuscaCliente { width: 66px; }
             .numero-cliente-visual { width: 122px; }
             .rota-cliente-destaque { font-size: 18px; padding: 8px 10px; }
-            .rotas-atendimento-disponiveis { max-width: 300px; width: 300px; }
-            .btn-rotas-atendimento-menu { font-size: 16px; }
-            .btn-rotas-atendimento-label { font-size: 16px; }
         }
 
         .card-cliente {
@@ -242,20 +169,6 @@
 
         /* Lista de Produtos Dinâmica */
         #bannerRotaFiltro { display: none !important; }
-
-        .app.aguardando-cliente .cliente-numero-rota-linha,
-        .app.aguardando-cliente #resultadoCliente,
-        .app.aguardando-cliente hr,
-        .app.aguardando-cliente .card-produtos,
-        .app.aguardando-cliente #card-saturno,
-        .app.aguardando-cliente .card-financeiro,
-        .app.aguardando-cliente .btn-finalizar {
-            display: none !important;
-        }
-        .app.aguardando-cliente .busca-cliente-linha {
-            margin-top: 18px;
-            gap: 0;
-        }
 
         .linha-produto {
             display: flex;
@@ -344,9 +257,54 @@
             text-align: center;
         }
         .linha-form { display: flex; gap: 10px; margin-bottom: 10px; }
+        #areaPix { padding-left: 6px; padding-right: 6px; }
+        #containerPix .linha-form { gap: 6px; }
         .lbl-fin { font-size: 13px; color: #ccc; margin-bottom: 2px; display: block; }
+        .pix-topo-linha {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+        .pix-topo-linha .titulo-sub {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 0;
+            white-space: nowrap;
+        }
+        .pix-topo-linha .pix-devolucao-input-wrap {
+            margin-left: auto;
+        }
+        .pix-devolucao-input-wrap {
+            position: relative;
+            width: 110px;
+        }
+        .pix-devolucao-input-wrap input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 7px 8px 7px 30px;
+            text-align: center;
+            border: 1px solid rgba(200,0,0,0.55);
+            background: rgba(255,255,255,0.35);
+            color: white;
+            font-weight: 400;
+        }
+        .pix-devolucao-icone {
+            position: absolute;
+            left: 9px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 15px;
+            line-height: 1;
+            pointer-events: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
         
         /* Readonly inputs visual style */
+        .pixNumero { padding-left: 4px; padding-right: 4px; text-align: center; }
         .input-readonly {
             background: transparent;
             color: white;
@@ -496,17 +454,17 @@
         <button onclick="limparFiltroRota()" style="background:none; border:none; color:#b0bbd4; font-size:18px; cursor:pointer; padding:0 0 0 10px; line-height:1;">×</button>
     </div>
     <div class="busca-cliente-linha">
-        <div id="rotasAtendimentoDisponiveis" class="rotas-atendimento-disponiveis" aria-label="Rotas disponiveis para atendimento"></div>
         <div class="cliente-numero-rota-linha">
             <div class="numero-cliente-visual">
-                <span class="numero-cliente-prefixo">N.</span>
-                <input type="text" inputmode="numeric" id="inputBuscaCliente" name="cliente_busca_manual" placeholder="201"
-                       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" readonly
+                <span class="numero-cliente-prefixo">Nº</span>
+                <input type="text" inputmode="numeric" id="inputBuscaCliente" name="cliente_busca_manual" placeholder=""
+                       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"
                        oninput="this.value = this.value.replace(/[^0-9]/g, ''); buscarCliente()"
-                       style="font-size: 24px; text-align: center; font-weight: bold;">
+                       style="font-size: 24px; text-align: left; font-weight: bold;">
             </div>
             <div id="rotaClienteDestaque" class="rota-cliente-destaque"></div>
         </div>
+        <div id="clientesRotaPainel" class="clientes-rota-painel"></div>
     </div>
 
     <!-- Galeria (Card) do Resultado -->
@@ -548,10 +506,16 @@
 
         <!-- Área Pix -->
         <div class="sub-card" id="areaPix">
-            <div class="titulo-sub titulo-sub-balanceado">
-                <span class="titulo-sub-icone" style="font-size:18px">💠</span>
-                <span class="titulo-sub-texto">Área Pix</span>
-                <span class="titulo-sub-espaco" aria-hidden="true"></span>
+            <div class="pix-topo-linha">
+                <div class="titulo-sub titulo-sub-balanceado" style="margin-bottom:0">
+                    <span class="titulo-sub-icone" style="font-size:18px">💠</span>
+                    <span class="titulo-sub-texto">Área Pix</span>
+                    <span class="titulo-sub-espaco" aria-hidden="true"></span>
+                </div>
+                <div class="pix-devolucao-input-wrap">
+                    <span class="pix-devolucao-icone" aria-hidden="true">💸</span>
+                    <input type="text" inputmode="numeric" id="valorPixDevolvido" placeholder="0" oninput="formatarNumero(this, 8); calcularTotais(); salvarRascunho()">
+                </div>
             </div>
             <div id="containerPix">
                 <!-- As linhas de Pix serão inseridas aqui via JS -->
@@ -642,7 +606,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbEscutarSessaoRotas, dbListarJustificativasCheckin, dbVerificarELiberarRota } from './database.js';
+    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbVerificarELiberarRota } from './database.js';
     import { enfileirarAtendimento } from './offline-sync.js';
 
     let listaClientes = [];
@@ -650,8 +614,6 @@
     let listaProdutos = [];
     let listaAtendimentos = [];
     let clientesPermitidosSet = null; // null = carregando | Set = pronto (vazio = nenhum cliente permitido)
-    let sessaoRotasAtendimento = null;
-    let justificativasRotasAtendimento = {};
     let numeroClientePendente = '';
     let rascunhoRestaurado = false;
     let currentFileInputId = null;
@@ -693,251 +655,7 @@
         return String(localStorage.getItem('usuarioLogado') || '').trim();
     }
 
-    function obterRotasDoUsuario(sessao) {
-        const usuario = obterUsuarioAtendimento();
-        if (!usuario || !sessao?.rotas) return [];
-
-        return Object.entries(sessao.rotas)
-            .filter(([_, rota]) => rota?.selecionada_por === usuario)
-            .map(([numero, rota]) => ({ numero: String(numero), ...(rota || {}) }))
-            .sort((a, b) => Number(a.numero) - Number(b.numero));
-    }
-
-    function obterNumerosClientesDaRota(sessao, numeroRota) {
-        return ((sessao?.clientes_por_rota || {})[numeroRota] || [])
-            .map(cliente => normalizarNumeroClienteBusca(cliente?.numero))
-            .filter(Boolean);
-    }
-
-    async function carregarJustificativasRotasAtendimento(sessao = sessaoRotasAtendimento) {
-        const rotas = obterRotasDoUsuario(sessao);
-        const proximas = {};
-
-        await Promise.all(rotas.map(async (rota) => {
-            try {
-                proximas[rota.numero] = await dbListarJustificativasCheckin(rota.numero);
-            } catch (_) {
-                proximas[rota.numero] = {};
-            }
-        }));
-
-        justificativasRotasAtendimento = proximas;
-    }
-
-    function obterTimestampAtendimentoRota(valor) {
-        const ts = Date.parse(valor || '');
-        return Number.isNaN(ts) ? null : ts;
-    }
-
-    function obterTotalAtendimentoRota(atendimento) {
-        const total = Number(
-            atendimento?.financeiro?.totalGeral
-            ?? atendimento?.financeiro?.total
-            ?? atendimento?.totalGeral
-            ?? atendimento?.total
-            ?? 0
-        );
-        return Number.isFinite(total) ? total : 0;
-    }
-
-    function clienteDaRotaJaAtendido(cliente, rota) {
-        const idCliente = String(cliente?.firebaseUrl || cliente?.id || '').trim();
-        const numeroCliente = normalizarNumeroClienteBusca(cliente?.numero);
-        const inicioRotaMs = obterTimestampAtendimentoRota(rota?.timestamp_selecao);
-
-        return (listaAtendimentos || []).some(atendimento => {
-            if (!(obterTotalAtendimentoRota(atendimento) > 0)) return false;
-
-            const dataAtendimentoMs = obterTimestampAtendimentoRota(atendimento?.ultimaEdicao || atendimento?.data);
-            if (dataAtendimentoMs == null) return false;
-            if (inicioRotaMs != null && dataAtendimentoMs != null && dataAtendimentoMs < inicioRotaMs) return false;
-
-            const clienteAtendimento = atendimento?.cliente || {};
-            const idAtendimento = String(clienteAtendimento?.id || clienteAtendimento?.firebaseUrl || '').trim();
-            if (idCliente && idAtendimento && idCliente === idAtendimento) return true;
-
-            const numeroAtendimento = normalizarNumeroClienteBusca(clienteAtendimento?.numero);
-            return Boolean(numeroCliente && numeroAtendimento && numeroCliente === numeroAtendimento);
-        });
-    }
-
-    function clienteDaRotaJustificado(cliente, numeroRota) {
-        const justificativas = justificativasRotasAtendimento[numeroRota] || {};
-        const chaves = [
-            String(cliente?.firebaseUrl || '').trim(),
-            String(cliente?.id || '').trim(),
-            normalizarNumeroClienteBusca(cliente?.numero)
-        ].filter(Boolean);
-
-        return chaves.some(chave => Boolean(justificativas[chave]));
-    }
-
-    function obterResumoRotasAtendimento(sessao) {
-        return obterRotasDoUsuario(sessao).map(rota => {
-            const clientes = (sessao?.clientes_por_rota || {})[rota.numero] || [];
-            const pendentes = clientes.filter(cliente =>
-                !clienteDaRotaJaAtendido(cliente, rota)
-                && !clienteDaRotaJustificado(cliente, rota.numero)
-            );
-            return { ...rota, faltam: pendentes.length, pendentes };
-        });
-    }
-
-    function atualizarBotoesRotasAtendimento(sessao = sessaoRotasAtendimento) {
-        const container = document.getElementById('rotasAtendimentoDisponiveis');
-        if (!container) return;
-
-        const rotas = obterResumoRotasAtendimento(sessao);
-        const rotaFiltroAtual = sessionStorage.getItem('rota_filtro_numero_rota') || '';
-        container.innerHTML = '';
-
-        if (rotas.length === 0) {
-            container.style.display = 'none';
-            return;
-        }
-
-        const btnMenu = document.createElement('button');
-        const painel = document.createElement('div');
-        btnMenu.type = 'button';
-        btnMenu.className = 'btn-rotas-atendimento-menu';
-        btnMenu.innerHTML = `
-            <span class="btn-rotas-atendimento-label">Escolha o cliente da rota selecionada</span>
-        `;
-        painel.className = 'rotas-atendimento-painel';
-        btnMenu.addEventListener('click', (event) => {
-            event.stopPropagation();
-            const abriu = painel.classList.toggle('aberto');
-            if (!abriu) {
-                painel.classList.remove('tem-lista-aberta');
-                painel.querySelectorAll('.clientes-rota-atendimento-lista').forEach(lista => lista.classList.remove('aberta'));
-                painel.querySelectorAll('.btn-rota-atendimento').forEach(botao => botao.classList.remove('rota-lista-aberta'));
-                painel.querySelectorAll('.grupo-rota-atendimento').forEach(item => item.classList.remove('rota-grupo-aberto'));
-            }
-        });
-
-        rotas.forEach(rota => {
-            const grupo = document.createElement('div');
-            const btn = document.createElement('button');
-            const spanNumero = document.createElement('span');
-            const spanLabel = document.createElement('span');
-            const listaClientes = document.createElement('div');
-            grupo.className = 'grupo-rota-atendimento';
-            btn.type = 'button';
-            btn.className = 'btn-rota-atendimento' + (rota.numero === rotaFiltroAtual ? ' ativa' : '');
-            spanLabel.textContent = 'Rota ';
-            spanNumero.className = 'btn-rota-atendimento-numero';
-            spanNumero.textContent = rota.numero;
-            btn.appendChild(spanLabel);
-            btn.appendChild(spanNumero);
-            listaClientes.className = 'clientes-rota-atendimento-lista';
-            listaClientes.dataset.rota = rota.numero;
-
-            if (rota.pendentes.length === 0) {
-                const vazio = document.createElement('div');
-                vazio.className = 'clientes-rota-atendimento-vazio';
-                vazio.textContent = 'Nenhum cliente pendente';
-                listaClientes.appendChild(vazio);
-            } else {
-                rota.pendentes.forEach(cliente => {
-                    const btnCliente = document.createElement('button');
-                    const numeroCliente = normalizarNumeroClienteBusca(cliente?.numero);
-                    const nomeCliente = String(cliente?.nome || 'Cliente sem nome').trim();
-                    btnCliente.type = 'button';
-                    btnCliente.className = 'btn-cliente-rota-atendimento';
-                    btnCliente.textContent = numeroCliente ? `${numeroCliente} - ${nomeCliente}` : nomeCliente;
-                    btnCliente.addEventListener('pointerdown', () => {
-                        btnCliente.classList.add('pressionando');
-                    });
-                    ['pointerup', 'pointercancel', 'pointerleave'].forEach(evento => {
-                        btnCliente.addEventListener(evento, () => {
-                            btnCliente.classList.remove('pressionando');
-                        });
-                    });
-                    btnCliente.addEventListener('click', () => {
-                        painel.classList.remove('aberto');
-                        selecionarClientePendenteRota(rota.numero, numeroCliente);
-                    });
-                    listaClientes.appendChild(btnCliente);
-                });
-            }
-
-            btn.addEventListener('click', () => {
-                const listaAberta = painel.querySelector('.clientes-rota-atendimento-lista.aberta');
-                if (listaAberta && listaAberta !== listaClientes) return;
-
-                const abriu = listaClientes.classList.toggle('aberta');
-                btn.classList.toggle('rota-lista-aberta', abriu);
-                grupo.classList.toggle('rota-grupo-aberto', abriu);
-                painel.classList.toggle('tem-lista-aberta', abriu);
-            });
-            grupo.appendChild(btn);
-            grupo.appendChild(listaClientes);
-            painel.appendChild(grupo);
-        });
-
-        container.appendChild(btnMenu);
-        container.appendChild(painel);
-        container.style.display = 'block';
-    }
-
-    function aplicarFiltroRotaAtendimento(numeroRota, buscarNumeroAtual = true) {
-        const numero = String(numeroRota || '').trim();
-        if (!numero) return;
-
-        const numerosClientes = obterNumerosClientesDaRota(sessaoRotasAtendimento, numero);
-        if (numerosClientes.length === 0) {
-            window.playAlert?.(`Rota ${numero} sem clientes cadastrados para atendimento.`);
-            return;
-        }
-
-        sessionStorage.setItem('rota_filtro_numeros', JSON.stringify(numerosClientes));
-        sessionStorage.setItem('rota_filtro_numero_rota', numero);
-        aplicarFiltroClientes(listaClientesBruta);
-        aplicarBannerRotaFiltro();
-
-        const input = document.getElementById('inputBuscaCliente');
-        if (buscarNumeroAtual && input?.value) buscarCliente();
-    }
-
-    function selecionarClientePendenteRota(numeroRota, numeroCliente) {
-        aplicarFiltroRotaAtendimento(numeroRota, false);
-
-        const input = document.getElementById('inputBuscaCliente');
-        if (!input || !numeroCliente) return;
-
-        input.value = numeroCliente;
-        buscarCliente();
-    }
-
-    dbEscutarSessaoRotas(async (sessao) => {
-        sessaoRotasAtendimento = sessao;
-
-        const rotaFiltroAtual = sessionStorage.getItem('rota_filtro_numero_rota') || '';
-        const rotasUsuario = obterRotasDoUsuario(sessao);
-        const filtroAindaPertenceAoUsuario = rotasUsuario.some(rota => rota.numero === rotaFiltroAtual);
-        if (rotaFiltroAtual && !filtroAindaPertenceAoUsuario) {
-            sessionStorage.removeItem('rota_filtro_numeros');
-            sessionStorage.removeItem('rota_filtro_numero_rota');
-            aplicarFiltroClientes(listaClientesBruta);
-            aplicarBannerRotaFiltro();
-        }
-
-        await carregarJustificativasRotasAtendimento(sessao);
-        atualizarBotoesRotasAtendimento(sessao);
-    });
-
     // --- CLIENTES PERMITIDOS (rotas selecionadas pelo usuário na sessão) ---
-    document.addEventListener('click', (event) => {
-        const container = document.getElementById('rotasAtendimentoDisponiveis');
-        if (!container || container.contains(event.target)) return;
-        const painel = container.querySelector('.rotas-atendimento-painel');
-        if (!painel) return;
-        painel.classList.remove('aberto', 'tem-lista-aberta');
-        painel.querySelectorAll('.clientes-rota-atendimento-lista').forEach(lista => lista.classList.remove('aberta'));
-        painel.querySelectorAll('.btn-rota-atendimento').forEach(botao => botao.classList.remove('rota-lista-aberta'));
-        painel.querySelectorAll('.grupo-rota-atendimento').forEach(item => item.classList.remove('rota-grupo-aberto'));
-    });
-
     async function carregarClientesPermitidos() {
         const usuario = obterUsuarioAtendimento();
         if (!usuario) {
@@ -959,9 +677,6 @@
 
         try {
             const sessao = await dbObterSessaoRotas();
-            sessaoRotasAtendimento = sessao;
-            await carregarJustificativasRotasAtendimento(sessao);
-            atualizarBotoesRotasAtendimento(sessao);
             if (!sessao?.rotas) {
                 clientesPermitidosSet = new Set();
                 localStorage.setItem(CACHE_KEY, JSON.stringify([]));
@@ -1021,6 +736,94 @@
         } catch { return null; }
     }
 
+    function fecharPainelClientesRota() {
+        const painel = document.getElementById('clientesRotaPainel');
+        if (!painel) return;
+        painel.classList.remove('aberto');
+        painel.innerHTML = '';
+    }
+
+    async function alternarPainelClientesRota(numeroRota) {
+        const painel = document.getElementById('clientesRotaPainel');
+        if (!painel) return;
+
+        if (painel.classList.contains('aberto') && painel.dataset.rota === String(numeroRota || '').trim()) {
+            fecharPainelClientesRota();
+            return;
+        }
+
+        if (!navigator.onLine) {
+            fecharPainelClientesRota();
+            await window.playAlert?.('Sem internet. Digite o número do cliente.');
+            return;
+        }
+
+        painel.innerHTML = '';
+        painel.dataset.rota = String(numeroRota || '').trim();
+        const carregando = document.createElement('div');
+        carregando.className = 'clientes-rota-vazio';
+        carregando.textContent = 'Carregando clientes...';
+        painel.appendChild(carregando);
+        painel.classList.add('aberto');
+
+        let clientes = [];
+        try {
+            const usuario = obterUsuarioAtendimento();
+            const sessao = await dbObterSessaoRotas();
+            const rotaDados = sessao?.rotas?.[numeroRota] || {};
+            const clientesDaRota = (sessao?.clientes_por_rota || {})[numeroRota] || [];
+            const [atendimentos, justificativas] = await Promise.all([
+                dbListarAtendimentos(),
+                dbListarJustificativasCheckin(numeroRota)
+            ]);
+            const status = calcularStatusLiberacaoRota({
+                rotaNumero: numeroRota,
+                rotaDados: { numero: numeroRota, ...rotaDados },
+                clientesDaRota,
+                atendimentos,
+                justificativas,
+                nomeUsuario: usuario
+            });
+            clientes = status?.pendentes || [];
+        } catch (error) {
+            console.warn('Falha ao carregar clientes pendentes da rota:', error);
+            painel.innerHTML = '';
+            const erro = document.createElement('div');
+            erro.className = 'clientes-rota-vazio';
+            erro.textContent = 'Não foi possível carregar agora';
+            painel.appendChild(erro);
+            return;
+        }
+
+        painel.innerHTML = '';
+        if (clientes.length === 0) {
+            const vazio = document.createElement('div');
+            vazio.className = 'clientes-rota-vazio';
+            vazio.textContent = 'Nenhum cliente pendente nesta rota';
+            painel.appendChild(vazio);
+        } else {
+            clientes.forEach(cliente => {
+                const botao = document.createElement('button');
+                const numero = normalizarNumeroClienteBusca(cliente?.numero);
+                const nome = String(cliente?.nome || 'Cliente sem nome').trim();
+                botao.type = 'button';
+                botao.className = 'btn-cliente-rota';
+                botao.textContent = numero ? `${numero} - ${nome}` : nome;
+                botao.addEventListener('click', () => {
+                    const input = document.getElementById('inputBuscaCliente');
+                    if (input && numero) {
+                        input.value = numero;
+                        buscarCliente();
+                    }
+                    fecharPainelClientesRota();
+                });
+                painel.appendChild(botao);
+            });
+        }
+
+        painel.classList.add('aberto');
+    }
+
     function tentarAplicarClientePendente() {
         if (!numeroClientePendente) return;
 
@@ -1050,13 +853,13 @@
         } else {
             banner.style.display = 'none';
         }
-        atualizarBotoesRotasAtendimento();
     }
 
     window.limparFiltroRota = function() {
         sessionStorage.removeItem('rota_filtro_numeros');
         sessionStorage.removeItem('rota_filtro_numero_rota');
         sessionStorage.removeItem('cliente_pre_selecionado');
+        fecharPainelClientesRota();
         aplicarFiltroClientes(listaClientesBruta);
         aplicarBannerRotaFiltro();
     };
@@ -1277,19 +1080,19 @@
         div.className = 'linha-form';
         div.style.gap = '5px';
         div.innerHTML = `
-            <div style="flex:1">
+            <div style="flex:1.4">
                 <label class="lbl-fin">Pix Nº</label>
                 <input type="number" class="pixNumero input-readonly" readonly placeholder="Nº" value="${data.numero || ''}">
             </div>
-            <div style="flex:2">
+            <div style="flex:2.5">
                 <label class="lbl-fin">Cont. Ant</label>
                 <input type="text" inputmode="numeric" class="pixContAnt input-readonly" readonly placeholder="0" value="${data.contAnt || ''}">
             </div>
-            <div style="flex:2">
+            <div style="flex:2.5">
                 <label class="lbl-fin">Cont. Atual</label>
                 <input type="text" inputmode="numeric" class="pixContAtual" placeholder="0" oninput="formatarNumero(this, 6); atualizarValorLinhaPix(this.closest('.linha-form'))" value="${data.contAtual || ''}">
             </div>
-            <div style="flex:1.5">
+            <div style="flex:2">
                 <label class="lbl-fin">Valor</label>
                 <input type="text" inputmode="numeric" class="valorPix input-readonly" readonly placeholder="0" value="${data.valor || ''}">
             </div>
@@ -1341,7 +1144,6 @@
 
     dbEscutarAtendimentos((lista) => {
         listaAtendimentos = lista;
-        atualizarBotoesRotasAtendimento();
         if (typeof window.atualizarOpcoes === 'function') window.atualizarOpcoes();
         const clienteSelecionadoId = document.getElementById('idClienteSelecionado')?.value;
         if (!clienteSelecionadoId) return;
@@ -1397,7 +1199,9 @@
             if (rotaDestaque) {
                 rotaDestaque.style.display = 'none';
                 rotaDestaque.textContent = '';
+                rotaDestaque.onclick = null;
             }
+            fecharPainelClientesRota();
             document.getElementById('areaPix').style.display = 'block';
             if (document.querySelectorAll('#containerPix .linha-form').length === 0) {
                 criarLinhaPix();
@@ -1435,9 +1239,11 @@
             divResultado.style.cssText = 'display:block'; // limpa estilos inline de cards de erro, mantém visível
             const rotaDestaque = document.getElementById('rotaClienteDestaque');
             if (rotaDestaque) {
-                rotaDestaque.textContent = `Rota: ${cliente.rota || "Não informada"}`;
+                rotaDestaque.innerHTML = `Rota: ${cliente.rota || "Não informada"}<span class="rota-seta">&#9660;</span>`;
                 rotaDestaque.style.display = 'inline-flex';
+                rotaDestaque.onclick = () => alternarPainelClientesRota(cliente.rota);
             }
+            fecharPainelClientesRota();
             divResultado.innerHTML = `
                 <div style="font-size: 28px; font-weight: bold;">${cliente.nome}</div>
                 <div style="font-size: 15px; color: #ffeb3b; margin-top:3px; font-weight:bold;">Equi.: ${equipString}</div>
@@ -1459,6 +1265,7 @@
             const containerFotosPix = document.getElementById('containerFotosPix');
             const containerFotosMaquinas = document.getElementById('containerFotosMaquinas');
             containerPix.innerHTML = ''; // Limpa as linhas existentes
+            document.getElementById('valorPixDevolvido').value = '';
             containerFotosMaquinas.innerHTML = ''; // Limpa as fotos das maquinas existentes
             containerFotosPix.innerHTML = ''; // Limpa as fotos pix existentes
 
@@ -1536,7 +1343,9 @@
             if (rotaDestaque) {
                 rotaDestaque.style.display = 'none';
                 rotaDestaque.textContent = '';
+                rotaDestaque.onclick = null;
             }
+            fecharPainelClientesRota();
             const existeNoCadastro = listaClientesBruta.some(c => normalizarNumeroClienteBusca(c.numero) === termoNormalizado);
             const existeForaDaRota = clientesPermitidosSet !== null && existeNoCadastro;
             divResultado.innerHTML = existeForaDaRota
@@ -1670,10 +1479,12 @@
 
     // --- CÁLCULOS FINANCEIROS ---
     window.calcularTotais = function() {
-        let vPixTotal = 0;
+        let vPixBruto = 0;
         document.querySelectorAll('.valorPix').forEach(input => {
-            vPixTotal += window.parseFormatted(input.value);
+            vPixBruto += window.parseFormatted(input.value);
         });
+        const vPixDevolvido = window.parseFormatted(document.getElementById('valorPixDevolvido')?.value || '');
+        const vPixTotal = Math.max(vPixBruto - vPixDevolvido, 0);
         const vDin = window.parseFormatted(document.getElementById('valorDinheiro').value);
         const pct = parseFloat(document.getElementById('porcComissao').value) || 0;
 
@@ -1939,10 +1750,18 @@
             });
 
             const dinheiroValor = window.parseFormatted(document.getElementById('valorDinheiro').value);
+            const pixTotalBruto = pixLinhas.reduce((soma, item) => soma + Number(item.valor || 0), 0);
+            const pixDevolvido = window.parseFormatted(document.getElementById('valorPixDevolvido')?.value || '');
+            if (pixDevolvido > pixTotalBruto) {
+                return alert('O valor devolvido não pode ser maior que o total bruto de Pix.');
+            }
             const comissaoValor = window.parseFormatted(document.getElementById('valorComissao').value);
             const totalGeralValor = window.parseFormatted(document.getElementById('totalGeral').value);
             const financeiro = {
                 pix: pixLinhas,
+                pixTotalBruto,
+                pixDevolvido,
+                pixTotalLiquido: Math.max(pixTotalBruto - pixDevolvido, 0),
                 dinheiro: dinheiroValor,
                 comissaoPorcentagem: parseFloat(document.getElementById('porcComissao').value) || 0,
                 comissaoValor,
@@ -2119,6 +1938,7 @@
         const dados = {
             clienteBusca: document.getElementById('inputBuscaCliente').value || "",
             pixLinhas: [],
+            valorPixDevolvido: document.getElementById('valorPixDevolvido')?.value || "",
             valorDinheiro: document.getElementById('valorDinheiro').value || "",
             porcComissao: document.getElementById('porcComissao').value || "",
             produtos: [],
@@ -2219,6 +2039,8 @@
 
                 document.getElementById('valorDinheiro').value = dados.valorDinheiro ?? "";
                 formatarNumero(document.getElementById('valorDinheiro'), 8);
+                document.getElementById('valorPixDevolvido').value = dados.valorPixDevolvido ?? "";
+                formatarNumero(document.getElementById('valorPixDevolvido'), 8);
 
                 document.getElementById('porcComissao').value = dados.porcComissao ? String(dados.porcComissao).replace('%','').trim() + '%' : "";
                 calcularTotais(); // Atualiza os cálculos visuais
@@ -2302,13 +2124,16 @@
             if (rotaDestaque) {
                 rotaDestaque.style.display = 'none';
                 rotaDestaque.textContent = '';
+                rotaDestaque.onclick = null;
             }
+            fecharPainelClientesRota();
             document.getElementById('containerProdutos').innerHTML = "";
             document.getElementById('imgPreviewFicha').style.display = 'none';
             document.getElementById('textoFotoFicha').style.display = 'block';
             document.getElementById('containerFotosPix').innerHTML = '';
             document.getElementById('containerFotosMaquinas').innerHTML = '';
             document.getElementById('areaPix').style.display = 'block';
+            document.getElementById('valorPixDevolvido').value = '';
             document.getElementById('containerPix').innerHTML = "";
             // Se estiver vazio, tenta criar a primeira linha novamente
             if (document.querySelectorAll('.linha-produto').length === 0 && typeof window.adicionarLinhaProduto === 'function') {

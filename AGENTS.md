@@ -20,3 +20,9 @@ Caso seja realmente necessário alterar algo já existente, informe previamente 
 Sempre que houver alteração em lógica existente, preserve os comportamentos atuais ou replique-os na nova implementação.
 padrão para o nó movimentação_balanço_historico ..atendimentoRefId: "-OqwfhY1DG8Lg3pTjlfc", categoria: "maquina", controlarPosse: true, descricao: "Serviço realizado", isDefeitoEntry: false, itemChave: "-OpcO1UEcy_qo_lZtH5y", itemNome: "Kid", itemNomeNormalizado: "kid", movimento: 2, origemRegistro: "manutencao", qtdDefeitoConsumida: 0, refId: "-OpcO1UEcy_qo_lZtH5y", registradoPor: "Joab", responsavel: "Joab", timestamp: "2026-04-23T23:31:11.773Z", tipo: "manutencao_retirada", totalAntes: 0, totalApos: 2
 Não tente ficar carregando compatibilidade. Me informe sobre o formato novo e onde preciso modificar para que fique no formato novo. E se tiver que apagar algum dado também no Firebase para não conflitar, é só me informar onde fazer.
+
+Credenciais para acessar e testar as telas localmente:
+- Atendimento nível 1: usuário Joab, senha 0000A.
+- Atendimento nível 2: usuário Felipe, senha 0000A.
+- Gestor: usuário Anderson, senha 0000A.
+Use essas credenciais apenas para validação/testes do sistema.

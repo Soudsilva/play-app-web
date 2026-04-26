@@ -2550,6 +2550,22 @@ export function dbEscutarPixEmPosse(nomeUsuario, callback) {
     });
 }
 
+export function dbEscutarTodosPixEmPosse(callback) {
+    return onValue(ref(db, 'pix_em_posse'), (snapshot) => {
+        const data = snapshot.val() || {};
+        const numeros = new Set();
+        Object.values(data).forEach(usuario => {
+            if (usuario && typeof usuario === 'object') {
+                Object.values(usuario).forEach(registro => {
+                    const pix = String(registro?.numero_pix || '').trim();
+                    if (pix) numeros.add(pix);
+                });
+            }
+        });
+        callback(numeros);
+    });
+}
+
 export function dbEscutarCadastrosPix(callback) {
     return onValue(ref(db, 'cadastros_pix'), (snapshot) => {
         const data = snapshot.val() || {};

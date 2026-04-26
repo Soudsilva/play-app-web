@@ -1550,6 +1550,7 @@
         const comissaoPct   = Number(a?.financeiro?.comissaoPorcentagem) || 0;
         const saldo         = Number(a?.financeiro?.saldoFinal ?? (total - comissaoValor));
         const pixLinhas     = a?.financeiro?.pix  || [];
+        const pixDevolvido  = Number(a?.financeiro?.pixDevolvido) || 0;
         const produtos      = a?.produtos          || [];
         const fotos         = a?.fotos             || {};
 
@@ -1573,7 +1574,7 @@
                 url: fotos.fichaThumb || fotos.ficha,
                 urlFull: fotos.ficha,
                 label: 'Ficha',
-                info: { data: a.data, pixLinhas, total, saldo, comissaoValor, comissaoPct, clienteNumero: a.cliente?.numero, clienteNome: a.cliente?.nome }
+                info: { data: a.data, pixLinhas, pixDevolvido, total, saldo, comissaoValor, comissaoPct, clienteNumero: a.cliente?.numero, clienteNome: a.cliente?.nome }
             });
         }
         (fotos.maquinas || []).forEach((m, idx) => {
@@ -2041,6 +2042,7 @@
                 </span>
                 <span class="lb-val pix">${fmtMoeda(p.valor)}</span>
             </div>`).join('');
+        const pixDevolvido = Number(info.pixDevolvido || 0);
 
         const btnFicha = info.exigeValidacao
             ? `<button class="lb-ficha-btn${info.validada ? ' marcado' : ''}">✓</button>`
@@ -2052,6 +2054,11 @@
                 ${btnFicha}
             </div>
             ${pixRows ? `<div class="lb-section">💠 Pix</div>${pixRows}` : ''}
+            ${pixDevolvido > 0 ? `
+            <div class="lb-row">
+                <span class="lb-label">Pix devolvido</span>
+                <span class="lb-val comissao">− ${fmtMoeda(pixDevolvido)}</span>
+            </div>` : ''}
             <div class="lb-row destaque">
                 <span class="lb-label bold">Total Geral</span>
                 <span class="lb-val total">${fmtMoeda(info.total)}</span>
