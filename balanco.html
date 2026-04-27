@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Balan&ccedil;o</title>
     <style>
-        body { margin:0; font-family:Arial, sans-serif; background:#0b2256; display:flex; justify-content:center; color:white; user-select:none; -webkit-user-select:none; }
-        .app { width:100%; max-width:600px; padding:15px; box-sizing:border-box; min-height:100vh; padding-bottom:50px; }
+        html { background:#0b2870; }
+        body { margin:0; font-family:Arial, sans-serif; background:#0b2870; display:flex; justify-content:center; color:white; user-select:none; -webkit-user-select:none; }
+        .app { width:100%; max-width:600px; padding:15px 15px 50px 15px; box-sizing:border-box; min-height:100vh; }
 
         /* Topo */
-        .topo { display:flex; align-items:center; justify-content:center; margin-bottom:20px; position:sticky; top:0; z-index:100; width:100%; min-height:45px; background:#0b2256; padding:8px 0 4px; }
-        .titulo { font-size:24px; font-weight:bold; text-align:center; }
+        .topo { display:flex; align-items:center; justify-content:center; margin-bottom:20px; position:sticky; top:0; z-index:100; width:100%; min-height:45px; background:#0b2870; padding:8px 0 4px; }
+        .titulo { font-size:24px; font-weight:bold; text-align:center; letter-spacing:0.5px; text-shadow:0 0 20px rgba(255,235,59,0.15); }
         .btn-home { background:rgba(255,255,255,0.1); padding:8px; border-radius:50%; cursor:pointer; display:flex; position:absolute; right:0; }
         .btn-home img { width:20px; height:20px; filter:brightness(0) invert(1); }
         .topo-fin { display:none; flex-direction:column; align-items:center; gap:4px; width:100%; }
@@ -140,12 +141,19 @@
         .resumo-label { font-size:11px; color:rgba(255,255,255,0.55); margin-top:2px; text-transform:uppercase; letter-spacing:0.5px; }
 
         /* SeÃ§Ã£o */
-        .secao { margin-bottom:20px; }
+        .secao { margin-bottom:24px; }
         .secao-titulo {
-            font-size:12px; font-weight:bold; color:#ffeb3b; text-transform:uppercase;
-            letter-spacing:1px; margin-bottom:10px; padding-bottom:5px;
-            border-bottom:1px dashed rgba(255,235,59,0.3);
-            display:flex; align-items:center; justify-content:center; gap:6px;
+            font-size:11px; font-weight:bold; color:#ffeb3b; text-transform:uppercase;
+            letter-spacing:1.5px; margin-bottom:12px;
+            display:flex; align-items:center; justify-content:center; gap:10px;
+            position:relative;
+        }
+        .secao-titulo::before, .secao-titulo::after {
+            content:''; flex:1; height:1px;
+            background:linear-gradient(90deg, transparent, rgba(255,235,59,0.35));
+        }
+        .secao-titulo::after {
+            background:linear-gradient(270deg, transparent, rgba(255,235,59,0.35));
         }
         .pix-resumo-card {
             background:rgba(255,255,255,0.06);
@@ -174,15 +182,106 @@
             border-radius:10px;
             padding:6px 10px;
         }
-        .lista-card { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:14px; overflow:hidden; }
-        .lista-item { display:flex; align-items:center; justify-content:space-between; padding:11px 16px; border-bottom:1px solid rgba(255,255,255,0.07); }
-        .lista-item:last-child { border-bottom:none; }
-        .item-nome { font-size:14px; color:rgba(255,255,255,0.88); }
-        .item-badge { font-size:14px; font-weight:bold; color:#fff; background:rgba(68,103,168,0.7); border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 14px; min-width:40px; text-align:center; }
-        .item-badge.destaque { background:rgba(255,235,59,0.2); border-color:rgba(255,235,59,0.4); color:#ffeb3b; }
+        /* Lista: cada item vira card individual */
+        .lista-card { display:flex; flex-direction:column; gap:8px; }
+        .lista-item {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:13px 14px;
+            background:linear-gradient(135deg, rgba(68,103,168,0.22) 0%, rgba(15,42,102,0.35) 100%);
+            border:1px solid rgba(255,255,255,0.1);
+            border-left:3px solid rgba(255,235,59,0.55);
+            border-radius:14px;
+            transition:border-color 0.2s, background 0.2s;
+            position:relative;
+            overflow:hidden;
+        }
+        .lista-item:active {
+            background:linear-gradient(135deg, rgba(68,103,168,0.4) 0%, rgba(15,42,102,0.55) 100%);
+            border-left-color:#ffeb3b;
+        }
+        .lista-item:last-child { border-bottom:1px solid rgba(255,255,255,0.1); }
+
+        /* Quando há tag: nome-bloco vira linha, a barra some, a tag ocupa o espaço da barra */
+        .lista-item:has(.item-contestacao) {
+            gap:10px;
+        }
+        .lista-item:has(.item-contestacao) .item-nome-bloco {
+            flex-direction:row;
+            align-items:center;
+            flex:1;
+            min-width:0;
+            gap:10px;
+        }
+        .lista-item:has(.item-contestacao) .item-barra-wrap {
+            display:none;
+        }
+
+        .item-nome-bloco { display:flex; flex-direction:column; gap:4px; min-width:80px; }
+        .item-nome { font-size:15px; font-weight:600; color:#fff; letter-spacing:0.2px; flex-shrink:0; }
+
+        /* Tag no lugar da barra */
+        .item-contestacao {
+            flex:1;
+            display:inline-flex; align-items:center; justify-content:center; gap:7px;
+            border-radius:8px;
+            background:rgba(107,79,0,0.75);
+            border:1px solid rgba(255,235,59,0.3);
+            color:#ffeb3b;
+            font-size:12px;
+            font-weight:700;
+            padding:6px 12px;
+            line-height:1.2;
+            white-space:nowrap;
+            user-select:none;
+            -webkit-user-select:none;
+            min-width:0;
+        }
+        .item-contestacao::before {
+            content:''; width:6px; height:6px; border-radius:50%;
+            background:#ffeb3b; flex-shrink:0;
+            animation:pulso-tag 1.5s ease-in-out infinite;
+        }
+        @keyframes pulso-tag {
+            0%, 100% { opacity:1; transform:scale(1); }
+            50%       { opacity:0.3; transform:scale(0.65); }
+        }
+        .item-contestacao.aprovada {
+            background:rgba(22,101,52,0.75);
+            border-color:rgba(134,239,172,0.3);
+            color:#a7f3d0;
+        }
+        .item-contestacao.aprovada::before {
+            background:#86efac;
+            animation:none;
+        }
+        .item-badge {
+            font-size:15px; font-weight:bold; color:#fff;
+            background:rgba(68,103,168,0.55);
+            border:1px solid rgba(255,255,255,0.18);
+            border-radius:22px; padding:4px 8px 4px 14px;
+            min-width:44px; text-align:center;
+            backdrop-filter:blur(4px);
+            box-shadow:0 2px 8px rgba(0,0,0,0.2);
+            white-space:nowrap;
+        }
+        .item-badge.destaque {
+            background:rgba(68,103,168,0.55);
+            border-color:rgba(255,255,255,0.18);
+            color:#fff;
+            box-shadow:0 2px 8px rgba(0,0,0,0.2);
+        }
         .item-barra-wrap { flex:1; margin:0 12px; }
-        .item-barra-bg { background:rgba(255,255,255,0.1); border-radius:10px; height:5px; overflow:hidden; }
-        .item-barra { background:#ffeb3b; height:100%; border-radius:10px; transition:width 0.5s ease; }
+        .item-barra-bg {
+            background:rgba(255,255,255,0.08);
+            border-radius:999px; height:8px; overflow:hidden;
+            box-shadow:inset 0 1px 3px rgba(0,0,0,0.35);
+        }
+        .item-barra {
+            background:linear-gradient(90deg, #f9a825, #ffeb3b);
+            height:100%; border-radius:999px;
+            transition:width 0.6s cubic-bezier(.4,0,.2,1);
+            box-shadow:0 0 7px rgba(255,235,59,0.45);
+        }
         .dia-item { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-bottom:1px solid rgba(255,255,255,0.07); }
         .dia-item:last-child { border-bottom:none; }
         .dia-data { font-size:16px; color:#fff; font-weight:bold; }
@@ -269,8 +368,8 @@
         }
         /* Botão expansível Balanço Financeiro */
         .fin-header {
-            background: #4467a8;
-            border: 3px solid #d7dce3;
+            background: #1a3d8f;
+            border: 3px solid rgba(255,255,255,0.2);
             border-radius: 40px;
             padding: 12px 20px;
             display: flex;
@@ -282,7 +381,7 @@
             min-height: 38px;
             margin: 24px 0 0;
         }
-        .fin-header:active { background: #3a5a9a; }
+        .fin-header:active { background: #152f70; }
         .fin-header { -webkit-tap-highlight-color: transparent; }
         .fin-header.aberta { border-radius: 22px 22px 0 0; border-bottom-color: rgba(255,255,255,0.2); }
         .fin-titulo { color: white; font-size: 20px; font-weight: bold; }
@@ -308,13 +407,13 @@
 
         /* Modal de histórico de movimentações */
         .hist-overlay {
-            display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
+            display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8);
             z-index:3500; align-items:flex-end; justify-content:center;
         }
         .hist-overlay.aberto { display:flex; }
         .hist-modal {
-            background:linear-gradient(180deg, #1a3d8f 0%, #0b2256 100%);
-            border:1px solid rgba(255,255,255,0.18);
+            background:linear-gradient(160deg, #0e2a6e 0%, #081840 100%);
+            border:1px solid rgba(255,255,255,0.14);
             border-radius:20px 20px 0 0;
             padding:0 0 30px;
             width:100%; max-width:600px;
@@ -323,95 +422,245 @@
             display:flex; flex-direction:column;
         }
         .hist-header {
-            padding:16px 18px 12px;
-            border-bottom:1px solid rgba(255,255,255,0.12);
+            padding:16px 15px 12px;
+            border-bottom:1px solid rgba(255,255,255,0.1);
             flex-shrink:0;
         }
-        .hist-titulo { font-size:22px; font-weight:bold; color:#ffeb3b; letter-spacing:0.3px; }
+        .hist-titulo {
+            font-size:24px; font-weight:bold; color:#ffeb3b;
+            letter-spacing:0.3px;
+            text-shadow:0 0 14px rgba(255,235,59,0.35);
+        }
         .hist-total-atual {
-            font-size:20px; font-weight:bold; color:#ffeb3b;
-            background:rgba(255,235,59,0.15); border:1px solid rgba(255,235,59,0.5);
-            border-radius:20px; padding:4px 16px; white-space:nowrap;
+            font-size:16px; font-weight:bold; color:#ffeb3b;
+            background:rgba(255,235,59,0.12);
+            border:1px solid rgba(255,235,59,0.45);
+            border-radius:22px; padding:5px 16px; white-space:nowrap;
+            box-shadow:0 0 12px rgba(255,235,59,0.15);
         }
-        .hist-lista { overflow-y:auto; flex:1; padding:4px 0; }
+        .hist-total-atual.negativo {
+            color:#ef9a9a;
+            background:rgba(239,83,80,0.18);
+            border-color:rgba(239,83,80,0.5);
+            box-shadow:0 0 10px rgba(239,83,80,0.2);
+        }
+        .hist-lista { overflow-y:auto; flex:1; padding:8px 0; }
         .hist-vazio { text-align:center; padding:40px 20px; color:rgba(255,255,255,0.4); font-size:14px; }
+
+        /* Separador de data — igual ao secao-titulo */
         .hist-data-grupo {
-            font-size:11px; font-weight:bold; letter-spacing:1px; text-transform:uppercase;
-            color:rgba(255,235,59,0.6); padding:14px 18px 6px;
-            display:flex; align-items:center; gap:8px;
+            font-size:11px; font-weight:bold; letter-spacing:1.5px; text-transform:uppercase;
+            color:#ffeb3b; padding:12px 14px 8px;
+            display:flex; align-items:center; gap:10px;
         }
-        .hist-data-grupo::after {
-            content:''; flex:1; height:1px; background:rgba(255,235,59,0.2);
+        .hist-data-grupo::before, .hist-data-grupo::after {
+            content:''; flex:1; height:1px;
+            background:linear-gradient(90deg, transparent, rgba(255,235,59,0.35));
         }
+        .hist-data-grupo::before {
+            background:linear-gradient(270deg, transparent, rgba(255,235,59,0.35));
+        }
+
+        /* Card de item */
         .hist-item {
-            margin:6px 12px;
-            padding:14px 14px 12px 18px;
+            margin:5px 12px;
+            padding:12px 14px 10px;
             border-radius:14px;
-            background:#17377f;
-            border-left:4px solid #6f84b8;
-            border:1px solid #4967aa;
+            background:linear-gradient(135deg, #1e3f7a 0%, #122c60 100%);
+            border:1px solid #2a4a8a;
+            border-left:3px solid #4a6aaa;
             box-sizing:border-box;
+            position:relative;
         }
-        .hist-item.pos { border-left-color:#69f0ae; }
-        .hist-item.neg { border-left-color:#ef9a9a; }
+        .hist-item.pos  { border-left-color:#69f0ae; }
+        .hist-item.neg  { border-left-color:#ef9a9a; }
+        .hist-item.contestacao { border-left-color:#ffeb3b; }
+        .hist-item.aprovacao {
+            border-left-color:#86efac;
+            border-color:rgba(134,239,172,0.25);
+            box-shadow:0 0 12px rgba(20,83,45,0.4);
+        }
+
+        /* Título: fluxo normal, cresce com o texto */
         .hist-topo-linha {
-            display:flex; justify-content:center; align-items:center;
-            gap:10px; margin-bottom:10px;
+            display:flex; align-items:flex-start; justify-content:flex-start;
+            padding:0 65px 10px 0; /* espaço à direita para o valor absoluto */
+            border-bottom:1px solid rgba(255,255,255,0.12);
+            margin:0 0 0 0;
         }
         .hist-desc {
-            font-size:15px; font-weight:700; line-height:1.25;
-            color:#ffffff;
-            flex:1;
-            text-align:center;
+            font-size:16px; font-weight:700; line-height:1.4;
+            color:#ffffff; flex:1; text-align:left;
         }
+
+        /* Quantidade: flutua no canto superior direito */
+        .hist-info-linha:has(.hist-info-valor.quantidade) {
+            position:absolute; top:12px; right:14px;
+            margin:0; padding:0; border:none;
+        }
+        .hist-info-linha:has(.hist-info-valor.quantidade) .hist-info-label { display:none; }
+
+        /* Aprovação ("Valor conferido"): valor flutua no canto superior direito */
+        .hist-item.aprovacao .hist-info-linha {
+            position:absolute; top:12px; right:14px;
+            margin:0; padding:0; border:none;
+        }
+        .hist-item.aprovacao .hist-info-linha .hist-info-label { display:none; }
+
+        /* Linhas de info — cada uma com linha abaixo para o texto sentar */
         .hist-info-linha {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            gap:12px;
-            margin-bottom:8px;
-        }
-        .hist-info-linha:last-of-type {
-            margin-bottom:10px;
+            display:flex; justify-content:space-between; align-items:center;
+            gap:12px; margin-bottom:0;
+            padding:6px 0;
+            border-bottom:1px solid rgba(255,255,255,0.1);
         }
         .hist-info-label {
-            font-size:15px;
-            color:#ffffff;
-            font-weight:700;
+            font-size:13px; color:#ffffff; font-weight:600;
         }
         .hist-info-valor {
-            font-size:19px;
-            color:#ffffff;
-            font-weight:700;
-            text-align:right;
+            font-size:17px; color:#fff; font-weight:700; text-align:right;
         }
         .hist-item.pos .hist-info-valor.quantidade { color:#69f0ae; }
         .hist-item.neg .hist-info-valor.quantidade { color:#ffb3b3; }
-        .hist-info-valor.total {
-            font-size:15px;
-            font-weight:400;
-            color:#ffffff;
-        }
+        .hist-item.contestacao .hist-info-valor.quantidade { color:#ffeb3b; }
+        .hist-item.aprovacao .hist-info-valor.quantidade { color:#86efac; }
+        .hist-item.aprovacao .hist-info-valor.total { color:#86efac; font-size:17px; font-weight:700; }
+        .hist-info-valor.total { font-size:14px; font-weight:500; color:#ffffff; }
+
+        /* Rodapé do card — sem border-top própria (a última info-linha já tem border-bottom) */
         .hist-rodape {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            gap:10px;
-            padding-top:10px;
-            border-top:1px solid #4967aa;
+            display:flex; justify-content:space-between; align-items:center;
+            gap:10px; padding-top:8px; margin-top:0;
+            border-top:none;
             flex-wrap:wrap;
         }
+        /* Aprovação: info-linha é absoluta, então o rodapé precisa da própria linha */
+        .hist-item.aprovacao .hist-rodape { border-top:1px solid rgba(255,255,255,0.12); }
         .hist-quem {
-            font-size:13px;
-            font-weight:400;
-            color:#d7e3ff;
+            font-size:12px; font-weight:400; color:#d7e3ff;
         }
         .hist-fechar-btn {
-            margin:14px 18px 0; padding:12px; background:#264a97;
-            border:1px solid #d7dce3; border-radius:12px;
-            color:#ffffff; font-size:15px; font-weight:700;
+            margin:14px 15px 0; padding:12px;
+            background:rgba(68,103,168,0.55);
+            border:1px solid rgba(255,255,255,0.18); border-radius:14px;
+            color:#fff; font-size:15px; font-weight:700;
             cursor:pointer; text-align:center; flex-shrink:0;
             user-select:none; -webkit-user-select:none;
+            backdrop-filter:blur(4px);
+        }
+        .hist-modal:has(.hist-contestacao-box.aberto) .hist-acoes { display:none; }
+        .hist-acoes {
+            display:flex;
+            gap:10px;
+            margin:14px 15px 0;
+            flex-shrink:0;
+        }
+        .hist-contestar-btn,
+        .hist-aprovar-btn,
+        .hist-contestar-cancelar,
+        .hist-contestar-salvar {
+            padding:12px;
+            border-radius:12px;
+            color:#ffffff;
+            font-size:15px;
+            font-weight:700;
+            cursor:pointer;
+            text-align:center;
+            user-select:none;
+            -webkit-user-select:none;
+        }
+        .hist-contestar-btn {
+            flex:1;
+            background:#6b4f00;
+            border:1px solid #ffeb3b;
+            color:#ffeb3b;
+        }
+        .hist-contestar-btn.cancelar {
+            background:#7f1d1d;
+            border-color:#fecaca;
+            color:#ffffff;
+        }
+        .hist-aprovar-btn {
+            flex:1;
+            background:#166534;
+            border:1px solid #86efac;
+            color:#ffffff;
+        }
+        .hist-aprovar-btn:disabled {
+            background:#334155;
+            border-color:#94a3b8;
+            color:#d7e3ff;
+            cursor:not-allowed;
+        }
+        .hist-fechar-btn.compacto {
+            flex:1;
+            margin:0;
+        }
+        .hist-contestacao-box {
+            display:none;
+            margin:12px 18px 0;
+            padding:12px;
+            border:1px solid #ffffff;
+            border-radius:14px;
+            background:#17377f;
+            flex-shrink:0;
+        }
+        .hist-contestacao-box.aberto { display:block; }
+        .hist-contestacao-label {
+            font-size:15px;
+            font-weight:700;
+            color:#ffffff;
+            text-align:center;
+            margin-bottom:8px;
+            user-select:none;
+            -webkit-user-select:none;
+        }
+        .hist-contestacao-input {
+            width:100%;
+            box-sizing:border-box;
+            padding:12px;
+            border-radius:10px;
+            border:1px solid #ffffff;
+            background:#0b2256;
+            color:#ffffff;
+            font-size:17px;
+            font-weight:700;
+            text-align:center;
+            outline:none;
+            user-select:text;
+            -webkit-user-select:text;
+        }
+        .hist-contestacao-input::placeholder { color:#d7e3ff; }
+        .hist-contestacao-resumo {
+            margin-top:8px;
+            font-size:15px;
+            font-weight:700;
+            color:#ffeb3b;
+            text-align:center;
+            min-height:18px;
+            user-select:none;
+            -webkit-user-select:none;
+        }
+        .hist-contestacao-acoes {
+            display:flex;
+            gap:8px;
+            margin-top:10px;
+        }
+        .hist-contestar-cancelar {
+            flex:1;
+            background:#264a97;
+            border:1px solid #d7dce3;
+        }
+        .hist-contestar-salvar {
+            flex:1.5;
+            background:#166534;
+            border:1px solid #86efac;
+        }
+        .hist-contestar-salvar:disabled {
+            background:#334155;
+            border-color:#94a3b8;
+            color:#d7e3ff;
+            cursor:not-allowed;
         }
         .hist-loading { text-align:center; padding:30px; color:#d7e3ff; font-size:15px; }
 
@@ -465,7 +714,20 @@
         <div class="hist-lista" id="histLista">
             <div class="hist-loading">Carregando...</div>
         </div>
-        <div class="hist-fechar-btn" onclick="fecharHistorico()">Fechar</div>
+        <div class="hist-contestacao-box" id="histContestacaoBox">
+            <div class="hist-contestacao-label">Valor que você acredita ser o correto</div>
+            <input class="hist-contestacao-input" id="histContestacaoInput" type="number" inputmode="decimal" placeholder="Digite a quantidade" oninput="atualizarResumoContestacao()">
+            <div class="hist-contestacao-resumo" id="histContestacaoResumo"></div>
+            <div class="hist-contestacao-acoes">
+                <button class="hist-contestar-cancelar" type="button" onclick="fecharContestacaoBalanco()">Cancelar</button>
+                <button class="hist-contestar-salvar" id="histContestacaoSalvar" type="button" onclick="salvarContestacaoBalanco()" disabled>Salvar contestação</button>
+            </div>
+        </div>
+        <div class="hist-acoes">
+            <button class="hist-contestar-btn" id="histContestarBtn" type="button" onclick="acaoContestacaoBalanco()">Contestar</button>
+            <button class="hist-aprovar-btn" id="histAprovarBtn" type="button" onclick="aprovarContestacaoBalanco()" disabled>Aprovar</button>
+            <div class="hist-fechar-btn compacto" onclick="fecharHistorico()">Fechar</div>
+        </div>
     </div>
 </div>
 
@@ -519,7 +781,11 @@
         dbEscutarDepositos,
         dbEscutarPixEmPosse,
         dbEscutarPosseItensUsuario,
-        dbBuscarUltimosPorItem
+        dbSalvarContestacaoBalanco,
+        dbEscutarContestacoesBalanco,
+        dbAprovarContestacaoBalanco,
+        dbCancelarContestacaoBalanco,
+        dbEscutarUltimosPorItem
     } from './database.js';
 
     const usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
@@ -528,12 +794,17 @@
     let todosDepositos = [];
     let posseAtual = [];   // lista de { nome, total, categoria } — lida de posse_itens_usuario/{usuario}
     let pixEmPosse = [];
+    let contestacoesBalanco = [];
     let datasComAtendimento = new Set();
     let comissaoUsuario = 0; // % de comissÃ£o do colaborador logado (calculado por mÃªs)
     let colaboradorObj  = null;
     let isTecnico = false;
     let usaComissaoGlobal = false;
     let mapaRotas = {};
+    let contestacaoContexto = null;
+    let historicoAbertoContexto = null;
+    let unsubscribeHistoricoItem = null;
+    let ultimasEntradasHistorico = [];
     const _loadingMsgsBalanco = [
         'Buscando os dados do balanço...',
         'Conferindo atendimentos...',
@@ -975,8 +1246,165 @@
             .map(item => ({
                 nome:      item.itemNome,
                 total:     Number(item.quantidade || 0),
-                categoria: String(item.categoria || 'produto').trim()
+                categoria: String(item.categoria || 'produto').trim(),
+                itemChave: String(item.chave || item.itemChave || '').trim()
             }));
+    }
+
+    function normalizarTextoBusca(valor) {
+        return String(valor || '').trim().toLowerCase();
+    }
+
+    function obterContestacaoAbertaItem(itemChave, itemNome = '', categoria = '') {
+        const chave = String(itemChave || '').trim();
+        const nome = normalizarTextoBusca(itemNome);
+        const cat = normalizarTextoBusca(categoria);
+        return (contestacoesBalanco || []).find(c => {
+            const chaveContestacao = String(c?.itemChave || '').trim();
+            if (chave && chaveContestacao === chave) return true;
+            return nome
+                && normalizarTextoBusca(c?.itemNome) === nome
+                && (!cat || normalizarTextoBusca(c?.categoria) === cat);
+        }) || null;
+    }
+
+    function formatarDiferencaContestacao(contestacao) {
+        const diferenca = Number(contestacao?.diferenca || 0);
+        const sinal = diferenca > 0 ? '+' : '';
+        return `${sinal}${diferenca}`;
+    }
+
+    function montarTarjaContestacao(contestacao) {
+        if (!contestacao) return '';
+        if (String(contestacao?.status || '').trim() === 'aprovado') {
+            return '<div class="item-contestacao aprovada">Conferido</div>';
+        }
+        return `<div class="item-contestacao">Análise ${formatarDiferencaContestacao(contestacao)}</div>`;
+    }
+
+    function montarEventosContestacaoHistorico(itemChave, itemNome, categoria) {
+        const chave = String(itemChave || '').trim();
+        const nome = normalizarTextoBusca(itemNome);
+        const cat = normalizarTextoBusca(categoria);
+        return (contestacoesBalanco || [])
+            .filter(c => {
+                const chaveContestacao = String(c?.itemChave || '').trim();
+                if (chave && chaveContestacao === chave) return true;
+                return nome
+                    && normalizarTextoBusca(c?.itemNome) === nome
+                    && (!cat || normalizarTextoBusca(c?.categoria) === cat);
+            })
+            .filter(c => String(c?.status || '').trim() === 'aprovado')
+            .map(c => ({
+                tipoLinha: 'aprovacao',
+                timestamp: c.aprovadoEm || c.timestamp,
+                descricao: 'Valor conferido',
+                quantidade: 0,
+                totalApos: Number(c?.quantidadeInformada ?? c?.quantidadeAtual ?? 0),
+                registradoPor: c.aprovadoPor || c.registradoPor || c.responsavel,
+                valorConferido: Number(c?.quantidadeInformada ?? c?.quantidadeAtual ?? 0)
+            }));
+    }
+
+    function obterTotalAtualItemAberto(itemChave, itemNome, categoria) {
+        const chave = String(itemChave || '').trim();
+        const nome = normalizarTextoBusca(itemNome);
+        const cat = normalizarTextoBusca(categoria);
+        const item = (posseAtual || []).find(i => {
+            const chaveItem = String(i?.itemChave || '').trim();
+            if (chave && chaveItem === chave) return true;
+            return nome
+                && normalizarTextoBusca(i?.nome) === nome
+                && (!cat || normalizarTextoBusca(i?.categoria) === cat);
+        });
+        return item ? Number(item.total || 0) : null;
+    }
+
+    function renderizarHistoricoAberto() {
+        if (!historicoAbertoContexto) return;
+        const lista = document.getElementById('histLista');
+        if (!lista) return;
+
+        const { itemChave, nomeProduto, categoria } = historicoAbertoContexto;
+        const totalAtualAberto = obterTotalAtualItemAberto(itemChave, nomeProduto, categoria);
+        if (totalAtualAberto !== null) {
+            const totalEl = document.getElementById('histTotalAtual');
+            if (totalEl) {
+                totalEl.textContent = `Total atual: ${totalAtualAberto}`;
+                totalEl.classList.toggle('negativo', totalAtualAberto < 0);
+            }
+            if (contestacaoContexto) contestacaoContexto.quantidadeAtual = totalAtualAberto;
+        }
+
+        const entradas = Array.isArray(ultimasEntradasHistorico) ? ultimasEntradasHistorico : [];
+        const eventosContestacao = montarEventosContestacaoHistorico(itemChave, nomeProduto, categoria);
+        const timeline = [
+            ...entradas.map(e => ({ ...e, tipoLinha: 'movimento' })),
+            ...eventosContestacao
+        ].sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+
+        if (!timeline.length) {
+            lista.innerHTML = '<div class="hist-vazio">Nenhuma movimentação registrada.<br><span style="font-size:13px;color:#d7e3ff;">O histórico registra movimentações a partir de agora.</span></div>';
+            return;
+        }
+
+        let ultimaData = '';
+        lista.innerHTML = timeline.map(e => {
+            const tipoLinha = String(e.tipoLinha || 'movimento');
+            const movimentacao = Number(e.movimento ?? 0);
+            const quantidade = tipoLinha === 'movimento' ? movimentacao : Number(e.quantidade || 0);
+            const pos   = quantidade > 0;
+            const desc  = e.descricao || HIST_LABELS[e.tipo] || e.tipo;
+            const sinal = quantidade > 0 ? '+' : (quantidade < 0 ? '-' : '');
+
+            const d = new Date(e.timestamp || '');
+            const dataStr = isNaN(d) ? '' : d.toLocaleDateString('pt-BR');
+            const horaStr = isNaN(d) ? '' : d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+            const nomeRegistro = String(e.registradoPor || e.responsavel || '').trim();
+            const registradoPorStr = nomeRegistro && !nomesIguais(nomeRegistro, usuarioLogado)
+                ? `Registrado por: ${nomeRegistro}`
+                : '';
+            const dataHoraRodape = [dataStr, horaStr].filter(Boolean).join(' ');
+
+            let grupoHtml = '';
+            if (dataStr && dataStr !== ultimaData) {
+                ultimaData = dataStr;
+                grupoHtml = `<div class="hist-data-grupo">${dataStr}</div>`;
+            }
+
+            const totalStr = e.totalApos != null ? String(e.totalApos) : '—';
+            const classeLinha = tipoLinha === 'contestacao'
+                ? 'contestacao'
+                : (tipoLinha === 'aprovacao' ? 'aprovacao' : (pos ? 'pos' : 'neg'));
+
+            return `${grupoHtml}
+            <div class="hist-item ${classeLinha}">
+                <div class="hist-topo-linha">
+                    <span class="hist-desc">${desc}</span>
+                </div>
+                ${tipoLinha === 'aprovacao' ? `
+                <div class="hist-info-linha">
+                    <span class="hist-info-label">Valor conferido:</span>
+                    <span class="hist-info-valor total">${e.valorConferido ?? totalStr}</span>
+                </div>` : `
+                <div class="hist-info-linha">
+                    <span class="hist-info-label">Quantidade:</span>
+                    <span class="hist-info-valor quantidade">${sinal}${Math.abs(quantidade)}</span>
+                </div>
+                <div class="hist-info-linha">
+                    <span class="hist-info-label">Total:</span>
+                    <span class="hist-info-valor total">${totalStr}</span>
+                </div>`}
+                ${e.detalheTotal ? `<div class="hist-info-linha">
+                    <span class="hist-info-label">${e.detalheTotal}</span>
+                    <span class="hist-info-valor total"></span>
+                </div>` : ''}
+                <div class="hist-rodape">
+                    ${registradoPorStr ? `<span class="hist-quem">${registradoPorStr}</span>` : '<span></span>'}
+                    <span class="hist-quem">${dataHoraRodape || '—'}</span>
+                </div>
+            </div>`;
+        }).join('');
     }
 
     function formatarListaPixEmPosse(lista) {
@@ -1063,70 +1491,265 @@
         return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
     }
 
-    window.abrirHistoricoProduto = async function(nomeProduto, totalAtual) {
+    function nomesIguais(a, b) {
+        return String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+    }
+
+    function normalizarNumeroContestacao(valor) {
+        const texto = String(valor ?? '').trim().replace(',', '.');
+        if (!texto) return null;
+        const numero = Number(texto);
+        return Number.isFinite(numero) ? numero : null;
+    }
+
+    function fecharBoxContestacao() {
+        const box = document.getElementById('histContestacaoBox');
+        const input = document.getElementById('histContestacaoInput');
+        const resumo = document.getElementById('histContestacaoResumo');
+        const salvar = document.getElementById('histContestacaoSalvar');
+        if (box) box.classList.remove('aberto');
+        if (input) input.value = '';
+        if (resumo) resumo.textContent = '';
+        if (salvar) {
+            salvar.disabled = true;
+            salvar.textContent = 'Salvar contestação';
+        }
+        atualizarBotoesContestacaoHistorico();
+    }
+
+    function atualizarBotaoAprovarContestacao() {
+        const btn = document.getElementById('histAprovarBtn');
+        if (!btn) return;
+        const contestacao = obterContestacaoAbertaItem(
+            contestacaoContexto?.itemChave,
+            contestacaoContexto?.itemNome,
+            contestacaoContexto?.categoria
+        );
+        const aprovado = String(contestacao?.status || '').trim() === 'aprovado';
+        btn.disabled = !contestacaoContexto?.itemChave || aprovado;
+        btn.textContent = aprovado ? 'Aprovado' : 'Aprovar';
+    }
+
+    function atualizarBotaoContestarContestacao() {
+        const btn = document.getElementById('histContestarBtn');
+        if (!btn) return;
+        const contestacao = obterContestacaoAbertaItem(
+            contestacaoContexto?.itemChave,
+            contestacaoContexto?.itemNome,
+            contestacaoContexto?.categoria
+        );
+        const emAnalise = contestacao && String(contestacao?.status || '').trim() !== 'aprovado';
+        btn.textContent = emAnalise ? 'Cancelar contestação' : 'Contestar';
+        btn.classList.toggle('cancelar', Boolean(emAnalise));
+        btn.disabled = !contestacaoContexto?.itemChave;
+    }
+
+    function atualizarBotoesContestacaoHistorico() {
+        atualizarBotaoAprovarContestacao();
+        atualizarBotaoContestarContestacao();
+    }
+
+    window.abrirHistoricoProduto = async function(nomeProduto, totalAtual, categoria = 'produto', itemChave = '') {
         const overlay = document.getElementById('histOverlay');
         const lista   = document.getElementById('histLista');
         const titulo  = document.getElementById('histTitulo');
         const totalEl = document.getElementById('histTotalAtual');
+        const totalNumero = Number(totalAtual || 0);
 
         titulo.textContent  = nomeProduto;
-        totalEl.textContent = `Total atual: ${totalAtual}`;
+        totalEl.textContent = `Total atual: ${totalNumero}`;
+        totalEl.classList.toggle('negativo', totalNumero < 0);
         lista.innerHTML     = '<div class="hist-loading">Carregando...</div>';
+        contestacaoContexto = {
+            responsavel: usuarioLogado,
+            registradoPor: usuarioLogado,
+            categoria: String(categoria || 'produto').trim(),
+            itemNome: String(nomeProduto || '').trim(),
+            itemChave: String(itemChave || '').trim(),
+            quantidadeAtual: totalNumero
+        };
+        fecharBoxContestacao();
+        atualizarBotoesContestacaoHistorico();
         overlay.classList.add('aberto');
         history.pushState({ histAberto: true }, '');
 
-        const entradas = await dbBuscarUltimosPorItem(usuarioLogado, nomeProduto, 10);
-
-        if (!entradas.length) {
-            lista.innerHTML = '<div class="hist-vazio">Nenhuma movimentação registrada.<br><span style="font-size:13px;color:#d7e3ff;">O histórico registra movimentações a partir de agora.</span></div>';
-            return;
-        }
-
-        let ultimaData = '';
-        lista.innerHTML = entradas.map(e => {
-            const movimentacao = Number(e.movimento ?? 0);
-            const pos   = movimentacao > 0;
-            const desc  = e.descricao || HIST_LABELS[e.tipo] || e.tipo;
-            const sinal = pos ? '+' : '-';
-
-            const d = new Date(e.timestamp || '');
-            const dataStr = isNaN(d) ? '' : d.toLocaleDateString('pt-BR');
-            const horaStr = isNaN(d) ? '' : d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
-            const registradoPorStr = `Registrado por: ${e.registradoPor || e.responsavel || '—'}`;
-            const dataHoraRodape = [dataStr, horaStr].filter(Boolean).join(' ');
-
-            let grupoHtml = '';
-            if (dataStr && dataStr !== ultimaData) {
-                ultimaData = dataStr;
-                grupoHtml = `<div class="hist-data-grupo">${dataStr}</div>`;
-            }
-
-            const totalStr = e.totalApos != null ? String(e.totalApos) : '—';
-
-            return `${grupoHtml}
-            <div class="hist-item ${pos ? 'pos' : 'neg'}">
-                <div class="hist-topo-linha">
-                    <span class="hist-desc">${desc}</span>
-                </div>
-                <div class="hist-info-linha">
-                    <span class="hist-info-label">Quantidade:</span>
-                    <span class="hist-info-valor quantidade">${sinal}${Math.abs(movimentacao)}</span>
-                </div>
-                <div class="hist-info-linha">
-                    <span class="hist-info-label">Total:</span>
-                    <span class="hist-info-valor total">${totalStr}</span>
-                </div>
-                <div class="hist-rodape">
-                    <span class="hist-quem">${registradoPorStr}</span>
-                    <span class="hist-quem">${dataHoraRodape || '—'}</span>
-                </div>
-            </div>`;
-        }).join('');
+        if (typeof unsubscribeHistoricoItem === 'function') unsubscribeHistoricoItem();
+        historicoAbertoContexto = { nomeProduto, categoria, itemChave };
+        ultimasEntradasHistorico = [];
+        unsubscribeHistoricoItem = dbEscutarUltimosPorItem(usuarioLogado, nomeProduto, 20, (entradas) => {
+            ultimasEntradasHistorico = Array.isArray(entradas) ? entradas : [];
+            renderizarHistoricoAberto();
+        });
     };
 
     window.fecharHistorico = function() {
+        if (typeof unsubscribeHistoricoItem === 'function') unsubscribeHistoricoItem();
+        unsubscribeHistoricoItem = null;
+        historicoAbertoContexto = null;
+        ultimasEntradasHistorico = [];
+        fecharBoxContestacao();
+        contestacaoContexto = null;
         document.getElementById('histOverlay').classList.remove('aberto');
         if (history.state?.histAberto) history.back();
+    };
+
+    window.acaoContestacaoBalanco = async function() {
+        const contestacao = obterContestacaoAbertaItem(
+            contestacaoContexto?.itemChave,
+            contestacaoContexto?.itemNome,
+            contestacaoContexto?.categoria
+        );
+        const emAnalise = contestacao && String(contestacao?.status || '').trim() !== 'aprovado';
+        if (emAnalise) {
+            await cancelarContestacaoBalanco(contestacao);
+            return;
+        }
+        abrirContestacaoBalanco();
+    };
+
+    function abrirContestacaoBalanco() {
+        if (!contestacaoContexto?.itemChave) {
+            alert('Não foi possível identificar o item para contestar.');
+            return;
+        }
+        const box = document.getElementById('histContestacaoBox');
+        const input = document.getElementById('histContestacaoInput');
+        if (box) box.classList.add('aberto');
+        if (input) {
+            input.value = '';
+            input.focus();
+        }
+        window.atualizarResumoContestacao();
+    }
+
+    window.fecharContestacaoBalanco = function() {
+        fecharBoxContestacao();
+    };
+
+    async function cancelarContestacaoBalanco(contestacao) {
+        if (!contestacao?.id) return;
+        const btn = document.getElementById('histContestarBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Cancelando...';
+        }
+
+        try {
+            await dbCancelarContestacaoBalanco(usuarioLogado, contestacao.id);
+            contestacoesBalanco = contestacoesBalanco.filter(c => c.id !== contestacao.id);
+            fecharBoxContestacao();
+            atualizarBotoesContestacaoHistorico();
+            renderizar();
+            alert('Contestação cancelada.');
+        } catch (erro) {
+            console.error(erro);
+            alert('Erro ao cancelar a contestação.');
+            atualizarBotoesContestacaoHistorico();
+        }
+    }
+
+    window.atualizarResumoContestacao = function() {
+        const input = document.getElementById('histContestacaoInput');
+        const resumo = document.getElementById('histContestacaoResumo');
+        const salvar = document.getElementById('histContestacaoSalvar');
+        const informado = normalizarNumeroContestacao(input?.value);
+        const atual = Number(contestacaoContexto?.quantidadeAtual || 0);
+        const valido = informado !== null;
+
+        if (salvar) salvar.disabled = !valido;
+        if (!resumo) return;
+        if (!valido) {
+            resumo.textContent = '';
+            return;
+        }
+
+        const diferenca = informado - atual;
+        const sinal = diferenca > 0 ? '+' : '';
+        resumo.textContent = `Diferença: ${sinal}${diferenca}`;
+    };
+
+    window.salvarContestacaoBalanco = async function() {
+        if (!contestacaoContexto?.itemChave) return;
+        const input = document.getElementById('histContestacaoInput');
+        const btn = document.getElementById('histContestacaoSalvar');
+        const informado = normalizarNumeroContestacao(input?.value);
+        if (informado === null) return;
+
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Salvando...';
+        }
+
+        try {
+            const novaContestacao = await dbSalvarContestacaoBalanco({
+                ...contestacaoContexto,
+                quantidadeInformada: informado
+            });
+            if (novaContestacao?.id) {
+                contestacoesBalanco = [
+                    { ...novaContestacao, firebaseUrl: novaContestacao.id },
+                    ...contestacoesBalanco.filter(c => c.id !== novaContestacao.id)
+                ];
+            }
+            fecharBoxContestacao();
+            atualizarBotoesContestacaoHistorico();
+            renderizar();
+            alert('Contestação registrada.');
+        } catch (erro) {
+            console.error(erro);
+            alert('Erro ao salvar a contestação.');
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = 'Salvar contestação';
+            }
+        }
+    };
+
+    window.aprovarContestacaoBalanco = async function() {
+        const contestacao = obterContestacaoAbertaItem(
+            contestacaoContexto?.itemChave,
+            contestacaoContexto?.itemNome,
+            contestacaoContexto?.categoria
+        );
+        if (!contestacaoContexto?.itemChave) return;
+
+        const btn = document.getElementById('histAprovarBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Aprovando...';
+        }
+
+        try {
+            const aprovadoEm = new Date().toISOString();
+            if (contestacao?.id) {
+                await dbAprovarContestacaoBalanco(usuarioLogado, contestacao.id, usuarioLogado);
+                contestacoesBalanco = contestacoesBalanco.map(c =>
+                    c.id === contestacao.id
+                        ? { ...c, status: 'aprovado', aprovadoEm, aprovadoPor: usuarioLogado }
+                        : c
+                );
+            } else {
+                const novaAprovacao = await dbSalvarContestacaoBalanco({
+                    ...contestacaoContexto,
+                    quantidadeInformada: contestacaoContexto.quantidadeAtual,
+                    status: 'aprovado',
+                    aprovadoPor: usuarioLogado
+                });
+                if (novaAprovacao?.id) {
+                    contestacoesBalanco = [
+                        { ...novaAprovacao, firebaseUrl: novaAprovacao.id },
+                        ...contestacoesBalanco.filter(c => c.id !== novaAprovacao.id)
+                    ];
+                }
+            }
+            renderizar();
+            if (btn) btn.textContent = 'Aprovado';
+            alert('Valor aprovado.');
+        } catch (erro) {
+            console.error(erro);
+            alert('Erro ao aprovar o valor.');
+            atualizarBotoesContestacaoHistorico();
+        }
     };
 
     window.fecharHistoricoOverlay = function(e) {
@@ -1135,6 +1758,12 @@
 
     window.addEventListener('popstate', function(e) {
         if (document.getElementById('histOverlay').classList.contains('aberto')) {
+            if (typeof unsubscribeHistoricoItem === 'function') unsubscribeHistoricoItem();
+            unsubscribeHistoricoItem = null;
+            historicoAbertoContexto = null;
+            ultimasEntradasHistorico = [];
+            fecharBoxContestacao();
+            contestacaoContexto = null;
             document.getElementById('histOverlay').classList.remove('aberto');
         }
     });
@@ -1155,11 +1784,11 @@
         const finPeriodo = somarFinanceiro(filtradosFinanceiros);
         const produtosPosse = posseAtual
             .filter(i => i.categoria !== 'maquina' && i.total !== 0)
-            .map(i => [i.nome, i.total])
+            .map(i => [i.nome, i.total, i.categoria, i.itemChave])
             .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0], 'pt-BR'));
         const maquinasPosse = posseAtual
             .filter(i => i.categoria === 'maquina' && i.total !== 0)
-            .map(i => [i.nome, i.total])
+            .map(i => [i.nome, i.total, i.categoria, i.itemChave])
             .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0], 'pt-BR'));
         const pixPosse      = somarPixEmPosse(pixEmPosse || [], todosAtendimentos);
         const maxProd       = Math.max(1, ...produtosPosse.map(([, qtd]) => Math.abs(qtd)));
@@ -1189,16 +1818,24 @@
             <div class="secao">
                 <div class="secao-titulo">&#129371; Produtos em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
                 <div class="lista-card">
-                    ${produtosPosse.map(([nome, qtd], i) => `
-                        <div class="lista-item" data-nome="${nome.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-qtd="${qtd}" onclick="abrirHistoricoProduto(this.dataset.nome, this.dataset.qtd)" style="cursor:pointer;-webkit-tap-highlight-color:transparent;">
-                            <div class="item-nome">${nome}</div>
+                    ${produtosPosse.map(([nome, qtd, categoria, itemChave], i) => `
+                        ${(() => {
+                            const contestacao = obterContestacaoAbertaItem(itemChave, nome, categoria);
+                            const contestacaoHtml = montarTarjaContestacao(contestacao);
+                            return `
+                        <div class="lista-item" data-nome="${nome.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-qtd="${qtd}" data-categoria="${String(categoria || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-item-chave="${String(itemChave || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" onclick="abrirHistoricoProduto(this.dataset.nome, this.dataset.qtd, this.dataset.categoria, this.dataset.itemChave)" style="cursor:pointer;-webkit-tap-highlight-color:transparent;">
+                            <div class="item-nome-bloco">
+                                <div class="item-nome">${nome}</div>
+                                ${contestacaoHtml}
+                            </div>
                             <div class="item-barra-wrap">
                                 <div class="item-barra-bg">
-                                    <div class="item-barra" style="width:${Math.round((Math.abs(qtd) / maxProd) * 100)}%;background:${qtd < 0 ? '#ef5350' : ''}"></div>
+                                    <div class="item-barra" style="width:${Math.round((Math.abs(qtd) / maxProd) * 100)}%;background:${qtd < 0 ? 'linear-gradient(90deg,#b71c1c,#ef5350)' : ''};box-shadow:${qtd < 0 ? '0 0 7px rgba(239,83,80,0.45)' : ''}"></div>
                                 </div>
                             </div>
-                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.45);color:#ef9a9a;' : ''}">${qtd} <span style="font-size:10px;opacity:0.5;margin-left:2px;">›</span></div>
-                        </div>`).join('')}
+                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.5);color:#ef9a9a;box-shadow:0 0 10px rgba(239,83,80,0.2);' : ''}">${qtd} <span style="font-size:9px;opacity:0.45;margin-left:3px;letter-spacing:-1px;">··</span></div>
+                        </div>`;
+                        })()}`).join('')}
                 </div>
             </div>` : ''}
 
@@ -1218,16 +1855,24 @@
             <div class="secao">
                 <div class="secao-titulo">&#127920; M&aacute;quinas em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
                 <div class="lista-card">
-                    ${maquinasPosse.map(([nome, qtd], i) => `
-                        <div class="lista-item" data-nome="${nome.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-qtd="${qtd}" onclick="abrirHistoricoProduto(this.dataset.nome, this.dataset.qtd)" style="cursor:pointer;-webkit-tap-highlight-color:transparent;">
-                            <div class="item-nome">${nome}</div>
+                    ${maquinasPosse.map(([nome, qtd, categoria, itemChave], i) => `
+                        ${(() => {
+                            const contestacao = obterContestacaoAbertaItem(itemChave, nome, categoria);
+                            const contestacaoHtml = montarTarjaContestacao(contestacao);
+                            return `
+                        <div class="lista-item" data-nome="${nome.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-qtd="${qtd}" data-categoria="${String(categoria || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-item-chave="${String(itemChave || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" onclick="abrirHistoricoProduto(this.dataset.nome, this.dataset.qtd, this.dataset.categoria, this.dataset.itemChave)" style="cursor:pointer;-webkit-tap-highlight-color:transparent;">
+                            <div class="item-nome-bloco">
+                                <div class="item-nome">${nome}</div>
+                                ${contestacaoHtml}
+                            </div>
                             <div class="item-barra-wrap">
                                 <div class="item-barra-bg">
                                     <div class="item-barra" style="width:${Math.round((Math.abs(qtd) / maxMaqPosse) * 100)}%;background:${qtd < 0 ? '#ef5350' : (i === 0 ? '#4caf50' : 'rgba(76,175,80,0.6)')}"></div>
                                 </div>
                             </div>
-                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.45);color:#ef9a9a;' : (i === 0 ? 'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;' : '')}">${qtd} <span style="font-size:10px;opacity:0.5;margin-left:2px;">›</span></div>
-                        </div>`).join('')}
+                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.45);color:#ef9a9a;' : (i === 0 ? 'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;' : '')}">${qtd} <span style="font-size:9px;opacity:0.45;margin-left:3px;letter-spacing:-1px;">··</span></div>
+                        </div>`;
+                        })()}`).join('')}
                 </div>
             </div>` : ''}
 
@@ -1556,6 +2201,14 @@
 
     dbEscutarPosseItensUsuario(usuarioLogado, (lista) => {
         posseAtual = construirPosseAtualDaPosse(lista);
+        renderizarHistoricoAberto();
+        renderizar();
+    });
+
+    dbEscutarContestacoesBalanco(usuarioLogado, (lista) => {
+        contestacoesBalanco = Array.isArray(lista) ? lista : [];
+        atualizarBotoesContestacaoHistorico();
+        renderizarHistoricoAberto();
         renderizar();
     });
 

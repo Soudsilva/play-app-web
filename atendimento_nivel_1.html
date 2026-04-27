@@ -279,17 +279,35 @@
         }
         .pix-devolucao-input-wrap {
             position: relative;
-            width: 110px;
+            width: 75px;
         }
         .pix-devolucao-input-wrap input {
             width: 100%;
             box-sizing: border-box;
-            padding: 7px 8px 7px 30px;
+            padding: 7px 4px;
             text-align: center;
             border: 1px solid rgba(200,0,0,0.55);
             background: rgba(255,255,255,0.35);
             color: white;
             font-weight: 400;
+        }
+        .pix-devolucao-label {
+            position: absolute;
+            top: 50%;
+            right: 6px;
+            transform: translateY(-50%);
+            text-align: right;
+            color: rgba(255,255,255,0.80);
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            pointer-events: none;
+            transition: opacity 0.15s;
+        }
+        #valorPixDevolvido:not(:placeholder-shown) ~ .pix-devolucao-icone,
+        #valorPixDevolvido:not(:placeholder-shown) ~ .pix-devolucao-label {
+            display: none;
         }
         .pix-devolucao-icone {
             position: absolute;
@@ -301,6 +319,7 @@
             pointer-events: none;
             -webkit-user-select: none;
             user-select: none;
+            transition: opacity 0.15s;
         }
         
         /* Readonly inputs visual style */
@@ -512,9 +531,10 @@
                     <span class="titulo-sub-texto">Área Pix</span>
                     <span class="titulo-sub-espaco" aria-hidden="true"></span>
                 </div>
-                <div class="pix-devolucao-input-wrap">
+                <div class="pix-devolucao-input-wrap" id="pixDevolucaoWrap">
+                    <input type="text" inputmode="numeric" id="valorPixDevolvido" placeholder="0" oninput="formatarNumero(this, 4); calcularTotais(); salvarRascunho()">
                     <span class="pix-devolucao-icone" aria-hidden="true">💸</span>
-                    <input type="text" inputmode="numeric" id="valorPixDevolvido" placeholder="0" oninput="formatarNumero(this, 8); calcularTotais(); salvarRascunho()">
+                    <span class="pix-devolucao-label">Devol.</span>
                 </div>
             </div>
             <div id="containerPix">
@@ -618,7 +638,7 @@
     let rascunhoRestaurado = false;
     let currentFileInputId = null;
 
-    function obterIdAtendimentoEmEdicao() {
+function obterIdAtendimentoEmEdicao() {
         return localStorage.getItem('atendimento_em_edicao_id') || "";
     }
 

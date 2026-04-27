@@ -210,6 +210,7 @@ export function dbEscutarVersaoMediaDeVendas(callback) {
 // Se tiver ID (idExistente), ele atualiza os dados. Se não, cria um novo registro.
 export async function dbSalvarCliente(cliente, idExistente = null) {
     try {
+        let clienteId = String(idExistente || '').trim();
         if (idExistente) {
             // Modo Edição: Atualiza o cliente específico
             const clienteRef = ref(db, `clientes/${idExistente}`);
@@ -224,12 +225,14 @@ export async function dbSalvarCliente(cliente, idExistente = null) {
             // Modo Criação: Cria um novo cliente com chave única
             const clientesRef = ref(db, 'clientes');
             const novoRef = await push(clientesRef, cliente);
+            clienteId = novoRef.key || '';
             await _upsertMediaDeVendasPorCliente(cliente, novoRef.key || null, null);
             await _atualizarVersaoMediaDeVendas();
         }
         // Avisa todos os dispositivos que a lista mudou
         await _atualizarVersaoClientes();
         await _tentarRecalcularRemuneracoes();
+        return clienteId || null;
     } catch (error) {
         console.error("ERRO AO SALVAR CLIENTE:", error);
         throw error;
@@ -3133,6 +3136,96 @@ export function dbEscutarHistoricoBalanco(callback) {
     });
 }
 
+export async function dbSalvarContestacaoBalanco(dados) {
+    try {
+        const chaveU = _normalizarChaveUsuario(dados?.responsavel);
+        if (!chaveU) throw new Error('Usuário inválido para contestação do balanço.');
+
+        const itemChave = String(dados?.itemChave || '').trim();
+        const itemNome = String(dados?.itemNome || '').trim();
+        const quantidadeAtual = Number(dados?.quantidadeAtual);
+        const quantidadeInformada = Number(dados?.quantidadeInformada);
+
+        if (!itemChave || !itemNome) throw new Error('Item inválido para contestação do balanço.');
+        if (!Number.isFinite(quantidadeAtual) || !Number.isFinite(quantidadeInformada)) {
+            throw new Error('Quantidade inválida para contestação do balanço.');
+        }
+
+        const timestamp = new Date().toISOString();
+        const status = String(dados?.status || '').trim();
+        const registro = {
+            timestamp,
+            responsavel: String(dados.responsavel).trim(),
+            registradoPor: String(dados?.registradoPor || dados.responsavel).trim(),
+            categoria: String(dados?.categoria || 'produto').trim(),
+            itemNome,
+            itemNomeNormalizado: _normalizarNomeHistoricoBalancoItem(itemNome),
+            itemChave,
+            quantidadeAtual,
+            quantidadeInformada,
+            diferenca: quantidadeInformada - quantidadeAtual,
+            origemRegistro: 'balanco',
+            tipo: 'contestacao_balanco',
+            ...(status ? { status } : {}),
+            ...(status === 'aprovado' ? {
+                aprovadoEm: timestamp,
+                aprovadoPor: String(dados?.aprovadoPor || dados?.registradoPor || dados.responsavel).trim()
+            } : {})
+        };
+
+        const novoRef = await push(ref(db, `contestacao_balanco/${chaveU}`), registro);
+        return { id: novoRef?.key || null, ...registro };
+    } catch (e) {
+        console.error('ERRO AO SALVAR CONTESTAÇÃO DO BALANÇO:', e);
+        throw e;
+    }
+}
+
+export function dbEscutarContestacoesBalanco(responsavel, callback) {
+    const chaveU = _normalizarChaveUsuario(responsavel);
+    if (!chaveU) { callback([]); return () => {}; }
+
+    return onValue(ref(db, `contestacao_balanco/${chaveU}`), (snap) => {
+        if (!snap.exists()) { callback([]); return; }
+
+        const lista = Object.entries(snap.val() || {})
+            .map(([id, valor]) => ({ id, firebaseUrl: id, ...valor }))
+            .sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+
+        callback(lista);
+    });
+}
+
+export async function dbAprovarContestacaoBalanco(responsavel, contestacaoId, aprovadoPor) {
+    try {
+        const chaveU = _normalizarChaveUsuario(responsavel);
+        const id = String(contestacaoId || '').trim();
+        if (!chaveU || !id) throw new Error('Contestação inválida para aprovação.');
+
+        await update(ref(db, `contestacao_balanco/${chaveU}/${id}`), {
+            status: 'aprovado',
+            aprovadoEm: new Date().toISOString(),
+            aprovadoPor: String(aprovadoPor || responsavel).trim()
+        });
+    } catch (e) {
+        console.error('ERRO AO APROVAR CONTESTAÇÃO DO BALANÇO:', e);
+        throw e;
+    }
+}
+
+export async function dbCancelarContestacaoBalanco(responsavel, contestacaoId) {
+    try {
+        const chaveU = _normalizarChaveUsuario(responsavel);
+        const id = String(contestacaoId || '').trim();
+        if (!chaveU || !id) throw new Error('Contestação inválida para cancelamento.');
+
+        await remove(ref(db, `contestacao_balanco/${chaveU}/${id}`));
+    } catch (e) {
+        console.error('ERRO AO CANCELAR CONTESTAÇÃO DO BALANÇO:', e);
+        throw e;
+    }
+}
+
 export async function dbBuscarUltimosPorItem(responsavel, itemNome, limite = 10) {
     try {
         const chaveU = _normalizarChaveUsuario(responsavel);
@@ -3151,6 +3244,31 @@ export async function dbBuscarUltimosPorItem(responsavel, itemNome, limite = 10)
         console.warn('Erro ao buscar últimos por item:', e);
         return [];
     }
+}
+
+export function dbEscutarUltimosPorItem(responsavel, itemNome, limite = 20, callback) {
+    const chaveU = _normalizarChaveUsuario(responsavel);
+    const nomeItem = String(itemNome || '').trim().toLowerCase();
+    const limiteFinal = Math.max(1, Math.min(Number(limite) || 20, 100));
+    if (!chaveU || !nomeItem) {
+        callback([]);
+        return () => {};
+    }
+
+    return onValue(ref(db, `movimentacao_balanco_historico/${chaveU}`), (snap) => {
+        if (!snap.exists()) {
+            callback([]);
+            return;
+        }
+
+        const lista = Object.entries(snap.val() || {})
+            .map(([id, v]) => ({ id, ...v }))
+            .filter(v => String(v.itemNome || '').trim().toLowerCase() === nomeItem)
+            .sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')))
+            .slice(0, limiteFinal);
+
+        callback(lista);
+    });
 }
 
 export async function dbBuscarProdutosDoAtendimento(atendente, atendimentoRefId) {

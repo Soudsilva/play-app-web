@@ -208,10 +208,6 @@
                     <span class="icone">&#128200;</span>
                     <span>Balan&ccedil;o</span>
                 </div>
-                <div class="botao-sub" id="btnCheckinRotas" onclick="abrirTela('checkin')">
-                    <span class="icone">&#128205;</span>
-                    <span>Check in de Rotas</span>
-                </div>
                 <div class="botao-sub" id="btnDepositos" onclick="abrirTela('depositos')">
                     <span class="icone">&#127974;</span>
                     <span>Dep&oacute;sitos</span>
@@ -438,10 +434,6 @@
             window.location.href = 'depositos.html';
             return;
         }
-        if (tela === 'checkin') {
-            window.location.href = 'checkin_rotas.html';
-            return;
-        }
         if (tela === 'rotas') {
             window.location.href = 'selecionar_rota.html';
             return;
@@ -487,7 +479,6 @@
             verificarEnvios: document.getElementById('btnVerificarEnvios'),
             mediaVendas: document.getElementById('btnMediaVendas'),
             balanco: document.getElementById('btnBalanco'),
-            checkinRotas: document.getElementById('btnCheckinRotas'),
             depositos: document.getElementById('btnDepositos'),
             importarHistorico: document.getElementById('btnImportarHistorico'),
             rotas: document.getElementById('btnRotas'),
@@ -554,7 +545,6 @@
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'flex';
             btns.mediaVendas.style.display = ehAtendimentoNivel2 ? 'flex' : 'none';
-            btns.checkinRotas.style.display = ehAtendimentoNivel2 ? 'none' : 'flex';
             btns.depositos.style.display = ehAtendimentoNivel2 ? 'none' : 'flex';
             btns.importarHistorico.style.display = 'none';
             
@@ -590,7 +580,6 @@
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'flex';
             btns.mediaVendas.style.display = 'flex';
-            btns.checkinRotas.style.display = 'flex';
             btns.depositos.style.display = 'flex';
             btns.importarHistorico.style.display = 'flex';
             
@@ -633,7 +622,6 @@
             btns.manutencao.style.display = 'none';
             btns.pix.style.display = 'none';
             btns.mediaVendas.style.display = 'none';
-            btns.checkinRotas.style.display = 'none';
             btns.importarHistorico.style.display = 'none';
         }
 

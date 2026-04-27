@@ -1185,7 +1185,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbExcluirCliente, dbSalvarCliente, dbEscutarColaboradores, dbListarAtendimentos, dbEscutarManutencoes, dbBuscarProdutosDoAtendimento, dbEscutarEstoque, dbSalvarAtendimento, dbSincronizarItensManutencaoNoHistorico } from './database.js';
+    import { dbEscutarClientes, dbExcluirCliente, dbSalvarCliente, dbEscutarColaboradores, dbListarAtendimentos, dbEscutarManutencoes, dbBuscarProdutosDoAtendimento, dbEscutarEstoque, dbSalvarHistoricoBalanco } from './database.js';
 
     // --- CACHE LOCAL DE CLIENTES ---
     // Salva a lista e a versão no localStorage para acesso offline e economia de dados.
@@ -2210,24 +2210,27 @@
 
         try {
             const atendente = String(localStorage.getItem('usuarioLogado') || '').trim() || 'N/A';
-            const payload = {
-                atendente,
-                data: new Date().toISOString(),
-                cliente: {
-                    id: cliente.firebaseUrl,
-                    nome: cliente.nome || '',
-                    numero: cliente.numero || '',
-                    rota: cliente.rota || '',
-                    cidade: cliente.cidade || '',
-                    endereco: cliente.endereco || ''
-                },
-                produtos,
-                origemRegistro: 'manutencao',
-                manutencao: { equipamentosAdicionados: [], equipamentosRetiradosDetalhes: [] },
-                tipoRegistro: 'reposicao_direta'
-            };
-            const idSalvo = await dbSalvarAtendimento(payload, null);
-            await dbSincronizarItensManutencaoNoHistorico(idSalvo, payload);
+            const reposicaoRefId = `reposicao_produtos_${cliente.firebaseUrl || 'cliente'}_${Date.now()}`;
+            const descricao = `Reposicao de produtos - ${cliente.numero ? `N. ${cliente.numero} ` : ''}${cliente.nome || 'Cliente'}`;
+
+            for (const produto of produtos) {
+                await dbSalvarHistoricoBalanco({
+                    responsavel: atendente,
+                    registradoPor: atendente,
+                    itemNome: produto.nome,
+                    categoria: produto.categoria || 'produtos',
+                    tipo: 'manutencao',
+                    origemRegistro: 'manutencao',
+                    itemChave: produto.itemId,
+                    movimento: -Number(produto.quantidade || 0),
+                    descricao,
+                    refId: produto.itemId,
+                    atendimentoRefId: reposicaoRefId,
+                    controlarPosse: true,
+                    isDefeitoEntry: false,
+                    qtdDefeitoConsumida: 0
+                });
+            }
             _fecharReposicaoSheet();
             if (history.state?.reposicaoSheet) history.back();
             await window.playAlert('✅ Reposição registrada com sucesso!');

@@ -112,6 +112,17 @@
         .card-rota-cliente-chip.atendido { border-color:rgba(74,222,128,0.5); color:#bbf7d0; }
         .card-rota-cliente-chip.justificado { border-style:dashed; border-color:rgba(230,100,60,0.85); color:rgba(255,255,255,0.9); }
         .card-rota-cliente-chip.justificado::before { content:"⚠️"; font-size:11px; margin-right:7px; vertical-align:middle; }
+        .card-rota-cliente-item { display:flex; flex-direction:column; gap:8px; padding:10px; border:1px solid #3b5791; border-radius:10px; background:#132f6c; }
+        .card-rota-cliente-nome { color:#ffffff; font-size:15px; font-weight:700; text-align:center; line-height:1.25; }
+        .card-rota-cliente-acoes { display:grid; grid-template-columns:1fr 1.7fr; gap:8px; }
+        .btn-justificar-rota, .btn-atender-rota, .btn-ver-justif-rota { min-height:34px; border-radius:9px; font-size:14px; font-weight:700; cursor:pointer; text-align:center; }
+        .btn-justificar-rota { background:#4a3c50; border:1px solid #b46545; color:#ff9b45; }
+        .btn-justificar-rota:active { background:#5c4658; transform:scale(0.98); }
+        .btn-justificar-rota:disabled { background:#2f3548; border-color:#667085; color:#cbd5e1; cursor:not-allowed; transform:none; }
+        .btn-atender-rota { background:#16a34a; border:1px solid #16a34a; color:#ffffff; }
+        .btn-atender-rota:active { background:#15803d; transform:scale(0.98); }
+        .btn-ver-justif-rota { width:100%; background:#4a3c50; border:1px solid #b46545; color:#ffb74d; }
+        .btn-ver-justif-rota:active { background:#5c4658; transform:scale(0.98); }
         .card-rota-cliente-vazio { padding:10px 12px; border:1px solid #ffffff; border-radius:12px; background:transparent; color:#ffffff; font-size:15px; font-weight:400; text-align:center; }
         .card-rota-acoes { display:flex; gap:8px; margin-top:4px; }
         .btn-ver-clientes { flex:1; padding:10px; border-radius:10px; background:#ffeb3b; color:#0b2256; font-size:14px; font-weight:bold; text-align:center; cursor:pointer; border:none; }
@@ -139,6 +150,32 @@
         .btn-encerrar { background:rgba(255,80,80,0.08); border:1px solid rgba(255,80,80,0.22); color:#ff8282; }
         .btn-encerrar-teste { background:rgba(255,150,50,0.08); border:1px solid rgba(255,150,50,0.22); color:#ffaf64; }
         .btn-fechar-modal { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#e5e7eb; }
+        .modal-box, .modal-ver-box { background:linear-gradient(180deg,#173d8f,#0f2a66); border:1px solid #31518d; border-radius:20px 20px 0 0; padding:6px 18px 36px; width:100%; max-width:600px; box-sizing:border-box; animation:subirModal 0.25s ease; }
+        .modal-handle { width:40px; height:4px; background:#8297c7; border-radius:2px; margin:12px auto 18px; }
+        .motivos-grid { display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:16px; }
+        .btn-motivo { background:#17366f; border:1px solid #526da2; border-radius:12px; padding:13px 10px; font-size:15px; font-weight:700; color:#ffffff; cursor:pointer; text-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; }
+        .btn-motivo .motivo-icon { font-size:22px; }
+        .btn-motivo:active { transform:scale(0.98); }
+        .btn-motivo.selecionado { background:#304172; border-color:#ffeb3b; color:#ffeb3b; }
+        .obs-label { font-size:14px; color:#ffffff; margin-bottom:6px; letter-spacing:0.5px; text-align:center; }
+        .obs-input { width:100%; background:#102b63; border:1px solid #526da2; border-radius:12px; padding:12px 14px; font-size:16px; color:#ffffff; outline:none; resize:none; font-family:Arial,sans-serif; margin-bottom:18px; user-select:text; -webkit-user-select:text; }
+        .obs-input::placeholder { color:#c7d2ee; }
+        .obs-input:focus { border-color:#ffeb3b; }
+        .modal-acoes { display:flex; gap:10px; }
+        .btn-modal-cancelar, .btn-modal-confirmar, .btn-remover-justif, .btn-fechar-ver { padding:13px; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; text-align:center; }
+        .btn-modal-cancelar { flex:1; background:#20396f; border:1px solid #526da2; color:#ffffff; }
+        .btn-modal-confirmar { flex:2; background:#ffeb3b; border:none; color:#0b2256; }
+        .btn-modal-confirmar:disabled { background:#31436f; color:#c7d2ee; cursor:not-allowed; }
+        .detalhe-justif { background:#1b346b; border:1px solid #b46545; border-radius:14px; padding:14px; margin-bottom:14px; }
+        .detalhe-justif-linha { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:7px; font-size:15px; }
+        .detalhe-justif-label { color:#ffffff; font-size:13px; }
+        .detalhe-justif-valor { color:#ffffff; font-weight:700; text-align:right; }
+        .detalhe-justif-obs { font-size:15px; color:#ffffff; font-style:italic; margin-top:7px; padding-top:7px; border-top:1px solid #526da2; text-align:center; }
+        .chip-expiracao { display:inline-flex; align-items:center; gap:4px; font-size:13px; border-radius:20px; padding:3px 10px; font-weight:700; border:1px solid #ffffff; color:#ffffff; }
+        .chip-exp-ativa { background:#1c5f36; }
+        .chip-exp-expirada { background:#7c2424; }
+        .btn-remover-justif { width:100%; background:#3e2440; border:1px solid #ff6e6e; color:#ff9a9a; margin-bottom:10px; }
+        .btn-fechar-ver { width:100%; background:#20396f; border:1px solid #526da2; color:#ffffff; }
 
         /* TOAST */
         .toast { position:fixed; bottom:70px; left:50%; transform:translateX(-50%) translateY(12px); background:#0f2a66; border:1px solid rgba(255,255,255,0.13); border-radius:50px; padding:11px 22px; font-size:14px; color:white; z-index:500; opacity:0; transition:opacity 0.25s, transform 0.25s; white-space:nowrap; pointer-events:none; }
@@ -225,6 +262,47 @@
     <img id="lightboxImg" src="" alt="">
 </div>
 
+<!-- Modal: adicionar justificativa -->
+<div class="modal-overlay" id="modalJustif" onclick="fecharModalJustif(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-handle"></div>
+        <div class="modal-titulo" id="modalJustifTitulo">Justificar Cliente</div>
+        <div class="modal-subtitulo" id="modalJustifSubtitulo">Informe o motivo do não atendimento</div>
+
+        <div class="motivos-grid">
+            <button class="btn-motivo" data-motivo="proximo" onclick="selecionarMotivo(this)">
+                <span class="motivo-icon">⏭️</span>Vou deixar pro próximo, tem pouco tempo desde a última visita
+            </button>
+            <button class="btn-motivo" data-motivo="nao_quero" onclick="selecionarMotivo(this)">
+                <span class="motivo-icon">🚫</span>Não quero atender esse cliente
+            </button>
+            <button class="btn-motivo" data-motivo="outros" onclick="selecionarMotivo(this)">
+                <span class="motivo-icon">📝</span>Outros (descreva abaixo)
+            </button>
+        </div>
+
+        <div class="obs-label" id="obsLabel">OBSERVAÇÃO (OPCIONAL)</div>
+        <textarea class="obs-input" id="obsInput" rows="3" placeholder="Descreva o que aconteceu..."></textarea>
+
+        <div class="modal-acoes">
+            <button class="btn-modal-cancelar" onclick="fecharModalJustif()">Cancelar</button>
+            <button class="btn-modal-confirmar" id="btnConfirmarJustif" onclick="confirmarJustificativa()" disabled>Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: ver justificativa -->
+<div class="modal-overlay" id="modalVerJustif" onclick="fecharModalVerJustif(event)">
+    <div class="modal-ver-box" onclick="event.stopPropagation()">
+        <div class="modal-handle"></div>
+        <div class="modal-titulo" id="verJustifTitulo">Justificativa</div>
+        <div class="modal-subtitulo" id="verJustifSubtitulo"></div>
+        <div class="detalhe-justif" id="verJustifDetalhe"></div>
+        <button class="btn-remover-justif" id="btnRemoverJustif" onclick="removerJustificativa()">Remover Justificativa</button>
+        <button class="btn-fechar-ver" onclick="fecharModalVerJustif()">Fechar</button>
+    </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -241,7 +319,9 @@ import {
     dbSelecionarRota,
     dbEscutarVersaoClientes,
     dbEscutarVersaoMediaDeVendas,
+    dbSalvarJustificativaCheckin,
     dbListarJustificativasCheckin,
+    dbRemoverJustificativaCheckin,
     dbLiberarRota,
     calcularStatusLiberacaoRota
 } from './database.js';
@@ -262,6 +342,11 @@ let timerResetSlot = null;
 let versaoClientesAtual = null;
 let versaoMediaDeVendasAtual = null;
 let timerAtualizacaoLiberacaoRotas = null;
+let modalRota = null;
+let modalCliente = null;
+let motivoSelecionado = null;
+let verRota = null;
+let verClienteKey = null;
 const _loadingMsgsRotas = [
     'Carregando rotas...',
     'Conferindo clientes...',
@@ -534,6 +619,20 @@ function obterChaveCliente(cliente) {
     return String(cliente?.id || cliente?.firebaseUrl || '').trim();
 }
 
+function obterChaveJustificativaCliente(cliente, justificativas = {}) {
+    const chaves = [
+        String(cliente?.firebaseUrl || '').trim(),
+        String(cliente?.id || '').trim(),
+        String(cliente?.numero || '').replace(/\D+/g, '').trim()
+    ].filter(Boolean);
+
+    for (const chave of chaves) {
+        if (justificativas?.[chave]) return chave;
+    }
+
+    return chaves[0] || '';
+}
+
 function obterNumeroCliente(cliente) {
     const numeroDireto = String(cliente?.numero || '').trim();
     if (numeroDireto) return numeroDireto;
@@ -627,6 +726,22 @@ async function processarLiberacoesMinhasRotas(sessao) {
 
 function atualizarClientesAtendidosRecentes(atendimentos) {
     todosAtendimentosRotas = Array.isArray(atendimentos) ? atendimentos : [];
+}
+
+function rotaTemClienteAtendido(numeroRota) {
+    const rota = String(numeroRota || '');
+    const clientesDaRota = (sessaoAtual?.clientes_por_rota || {})[rota] || [];
+    const rotaDados = (sessaoAtual?.rotas || {})[rota] || {};
+    const statusRota = calcularStatusLiberacaoRota({
+        rotaNumero: rota,
+        rotaDados: { numero: rota, ...rotaDados },
+        clientesDaRota,
+        atendimentos: todosAtendimentosRotas,
+        justificativas: justificativasPorRota[rota] || {},
+        nomeUsuario: usuarioAtual
+    });
+
+    return (statusRota.atendidos || []).length > 0;
 }
 
 async function carregarClientesAtendidosRecentes() {
@@ -751,15 +866,33 @@ async function mostrarMinhasRotas(numerosRota, sessao) {
         const clientesAtendidos = statusRota.atendidos;
         const clientesPendentes = [...statusRota.pendentes, ...statusRota.justificados];
         const textoLiberacao = obterTextoLiberacaoRota(statusRota);
+        const podeJustificar = clientesAtendidos.length > 0;
         const clientesPendentesHtml = clientesPendentes.length > 0
             ? clientesPendentes.map((cliente) => {
                 const justificado = Boolean(cliente?.justif);
                 const numero = escaparHtml(obterNumeroCliente(cliente));
                 const nome = escaparHtml(String(cliente?.nome || 'Cliente sem nome').trim());
                 const texto = numero ? `${numero} - ${nome}` : nome;
-                const clickAttr = (!justificado && numero) ? ` onclick="window.irParaAtendimentoPorCliente('${escaparHtml(obterNumeroCliente(cliente))}')"` : '';
-                const cursorStyle = (!justificado && numero) ? ' style="cursor:pointer;"' : '';
-                return `<div class="card-rota-cliente-chip${justificado ? ' justificado' : ''}"${cursorStyle}${clickAttr}>${texto}</div>`;
+                const clienteJson = JSON.stringify(cliente).replace(/"/g, '&quot;');
+                const clienteKey = escaparHtml(obterChaveJustificativaCliente(cliente, justifs));
+                const atenderAttr = numero ? ` onclick="window.irParaAtendimentoPorCliente('${escaparHtml(obterNumeroCliente(cliente))}')"` : ' disabled';
+
+                if (justificado) {
+                    return `
+                        <div class="card-rota-cliente-item">
+                            <div class="card-rota-cliente-nome">⚠️ ${texto}</div>
+                            <button class="btn-ver-justif-rota" onclick="window.abrirModalVerJustif('${numeroRota}', '${clienteKey}')">Ver justificativa</button>
+                        </div>`;
+                }
+
+                return `
+                    <div class="card-rota-cliente-item">
+                        <div class="card-rota-cliente-nome">${texto}</div>
+                        <div class="card-rota-cliente-acoes">
+                            <button class="btn-justificar-rota" ${podeJustificar ? `onclick="window.abrirModalJustif('${numeroRota}', ${clienteJson})"` : 'disabled'}>Justificar</button>
+                            <button class="btn-atender-rota"${atenderAttr}>Atender</button>
+                        </div>
+                    </div>`;
             }).join('')
             : `<div class="card-rota-cliente-vazio">${clientes.length > 0 ? 'Nenhum cliente pendente nesta rota.' : 'Nenhum cliente cadastrado nesta rota.'}</div>`;
         const clientesAtendidosHtml = clientesAtendidos.length > 0
@@ -833,6 +966,178 @@ window.irParaAtendimentoPorCliente = function(numeroCliente) {
     sessionStorage.setItem('atendimento_tela_origem', 'selecionar_rota.html');
 
     window.location.href = `atendimento_nivel_1.html?numero=${encodeURIComponent(numero)}`;
+};
+
+window.abrirModalJustif = function(routeNumber, cliente) {
+    modalRota = String(routeNumber || '');
+    if (!rotaTemClienteAtendido(modalRota)) {
+        mostrarToast('Atenda pelo menos um cliente antes de justificar.');
+        return;
+    }
+
+    modalCliente = typeof cliente === 'string' ? JSON.parse(cliente.replace(/&quot;/g, '"')) : cliente;
+    motivoSelecionado = null;
+
+    document.getElementById('modalJustifTitulo').textContent = modalCliente?.nome || 'Cliente';
+    document.getElementById('modalJustifSubtitulo').textContent = `Rota ${modalRota} · Informe o motivo`;
+    document.getElementById('obsInput').value = '';
+    document.getElementById('obsLabel').textContent = 'OBSERVAÇÃO (OPCIONAL)';
+    document.getElementById('obsLabel').style.color = '';
+    document.getElementById('obsInput').placeholder = 'Descreva o que aconteceu...';
+    document.getElementById('obsInput').oninput = null;
+    document.getElementById('btnConfirmarJustif').disabled = true;
+    document.getElementById('btnConfirmarJustif').textContent = 'Confirmar';
+    document.querySelectorAll('.btn-motivo').forEach(b => b.classList.remove('selecionado'));
+    document.getElementById('modalJustif').classList.add('ativo');
+};
+
+window.fecharModalJustif = function(e) {
+    if (e && e.target !== document.getElementById('modalJustif')) return;
+    document.getElementById('modalJustif').classList.remove('ativo');
+    motivoSelecionado = null;
+};
+
+window.selecionarMotivo = function(btn) {
+    document.querySelectorAll('.btn-motivo').forEach(b => b.classList.remove('selecionado'));
+    btn.classList.add('selecionado');
+    motivoSelecionado = btn.dataset.motivo;
+
+    const obsLabel = document.getElementById('obsLabel');
+    const obsInput = document.getElementById('obsInput');
+    const btnConfirmar = document.getElementById('btnConfirmarJustif');
+
+    if (motivoSelecionado === 'outros') {
+        obsLabel.textContent = 'OBSERVAÇÃO (OBRIGATÓRIA)';
+        obsLabel.style.color = '#fb923c';
+        obsInput.placeholder = 'Descreva o motivo...';
+        obsInput.oninput = () => {
+            btnConfirmar.disabled = !obsInput.value.trim();
+        };
+        btnConfirmar.disabled = !obsInput.value.trim();
+        return;
+    }
+
+    obsLabel.textContent = 'OBSERVAÇÃO (OPCIONAL)';
+    obsLabel.style.color = '';
+    obsInput.placeholder = 'Descreva o que aconteceu...';
+    obsInput.oninput = null;
+    btnConfirmar.disabled = false;
+};
+
+const motivoLabels = {
+    proximo: 'Deixar pro próximo - pouco tempo desde a última visita',
+    nao_quero: 'Não quer atender esse cliente',
+    outros: 'Outros'
+};
+
+window.confirmarJustificativa = async function() {
+    if (!motivoSelecionado || !modalRota || !modalCliente) return;
+
+    const clienteKey = obterChaveJustificativaCliente(modalCliente, justificativasPorRota[modalRota] || {});
+    if (!clienteKey) {
+        mostrarToast('⚠️ Cliente sem chave para justificar');
+        return;
+    }
+
+    const btn = document.getElementById('btnConfirmarJustif');
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    try {
+        const dados = {
+            usuario: usuarioAtual,
+            motivo: motivoSelecionado,
+            motivo_label: motivoLabels[motivoSelecionado] || motivoSelecionado,
+            observacao: document.getElementById('obsInput').value.trim(),
+            timestamp: Date.now(),
+            data_iso: new Date().toISOString()
+        };
+
+        await dbSalvarJustificativaCheckin(modalRota, clienteKey, dados);
+        if (!justificativasPorRota[modalRota]) justificativasPorRota[modalRota] = {};
+        justificativasPorRota[modalRota][clienteKey] = dados;
+
+        document.getElementById('modalJustif').classList.remove('ativo');
+        mostrarToast('✅ Justificativa registrada!');
+        await processarLiberacoesMinhasRotas(sessaoAtual);
+        if (sessaoAtual) mostrarTelaSessaoAtiva(sessaoAtual);
+    } catch (err) {
+        console.error(err);
+        mostrarToast('Erro ao salvar. Tente novamente.');
+        btn.disabled = false;
+        btn.textContent = 'Confirmar';
+    }
+};
+
+window.abrirModalVerJustif = function(routeNumber, clienteKey) {
+    verRota = String(routeNumber || '');
+    verClienteKey = String(clienteKey || '');
+
+    const justif = (justificativasPorRota[verRota] || {})[verClienteKey];
+    const clientesDaRota = (sessaoAtual?.clientes_por_rota || {})[verRota] || [];
+    const cliente = clientesDaRota.find(c => obterChaveJustificativaCliente(c, justificativasPorRota[verRota] || {}) === verClienteKey);
+    if (!justif) return;
+
+    const rotaDados = (sessaoAtual?.rotas || {})[verRota] || {};
+    const statusRota = calcularStatusLiberacaoRota({
+        rotaNumero: verRota,
+        rotaDados: { numero: verRota, ...rotaDados },
+        clientesDaRota,
+        atendimentos: todosAtendimentosRotas,
+        justificativas: justificativasPorRota[verRota] || {},
+        nomeUsuario: usuarioAtual
+    });
+    const textoLiberacao = obterTextoLiberacaoRota(statusRota);
+    const expirou = Boolean(statusRota.liberarAgora);
+
+    document.getElementById('verJustifTitulo').textContent = cliente?.nome || 'Cliente';
+    document.getElementById('verJustifSubtitulo').textContent = `Rota ${verRota}`;
+    document.getElementById('verJustifDetalhe').innerHTML = `
+        <div class="detalhe-justif-linha">
+            <span class="detalhe-justif-label">Motivo</span>
+            <span class="detalhe-justif-valor">${escaparHtml(justif.motivo_label || justif.motivo || '')}</span>
+        </div>
+        <div class="detalhe-justif-linha">
+            <span class="detalhe-justif-label">Registrado em</span>
+            <span class="detalhe-justif-valor">${new Date(justif.timestamp).toLocaleString('pt-BR')}</span>
+        </div>
+        <div class="detalhe-justif-linha">
+            <span class="detalhe-justif-label">Liberação</span>
+            <span class="chip-expiracao ${expirou ? 'chip-exp-expirada' : 'chip-exp-ativa'}">
+                ${expirou ? 'Pronta para liberar' : escaparHtml(textoLiberacao || 'Aguardando cálculo da rota')}
+            </span>
+        </div>
+        ${justif.observacao ? `<div class="detalhe-justif-obs">"${escaparHtml(justif.observacao)}"</div>` : ''}
+    `;
+    document.getElementById('btnRemoverJustif').disabled = false;
+    document.getElementById('btnRemoverJustif').textContent = 'Remover Justificativa';
+    document.getElementById('modalVerJustif').classList.add('ativo');
+};
+
+window.fecharModalVerJustif = function(e) {
+    if (e && e.target !== document.getElementById('modalVerJustif')) return;
+    document.getElementById('modalVerJustif').classList.remove('ativo');
+};
+
+window.removerJustificativa = async function() {
+    if (!verRota || !verClienteKey) return;
+    const btn = document.getElementById('btnRemoverJustif');
+    btn.disabled = true;
+    btn.textContent = 'Removendo...';
+
+    try {
+        await dbRemoverJustificativaCheckin(verRota, verClienteKey);
+        if (justificativasPorRota[verRota]) delete justificativasPorRota[verRota][verClienteKey];
+        document.getElementById('modalVerJustif').classList.remove('ativo');
+        mostrarToast('Justificativa removida.');
+        await processarLiberacoesMinhasRotas(sessaoAtual);
+        if (sessaoAtual) mostrarTelaSessaoAtiva(sessaoAtual);
+    } catch (err) {
+        console.error(err);
+        mostrarToast('Erro ao remover.');
+        btn.disabled = false;
+        btn.textContent = 'Remover Justificativa';
+    }
 };
 
 //Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬

@@ -71,6 +71,45 @@
             color: #333;
             text-align: center;
         }
+        .produtos-instalacao-card {
+            margin-bottom: 12px;
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.07);
+        }
+        .produtos-instalacao-titulo {
+            font-size: 15px;
+            font-weight: bold;
+            color: #ffeb3b;
+            text-align: center;
+            margin-bottom: 8px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .linha-produto-instalacao {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .linha-produto-instalacao:last-child {
+            margin-bottom: 0;
+        }
+        .produto-instalacao-select {
+            flex: 1;
+            min-width: 0;
+            margin-bottom: 0;
+        }
+        .produto-instalacao-qtd {
+            width: 76px;
+            min-width: 76px;
+            margin-bottom: 0;
+            border: 2px solid #2196f3;
+            text-align: center;
+            padding: 10px 5px;
+        }
         .campo-cidade {
             background: #b8c0d1;
             color: #1f2f57;
@@ -462,6 +501,11 @@
     
     <div id="container-equipamentos">
     </div>
+
+    <div class="produtos-instalacao-card">
+        <div class="produtos-instalacao-titulo">Produtos utilizados</div>
+        <div id="container-produtos-instalacao"></div>
+    </div>
     
     <textarea id="obs" placeholder="Observações"></textarea>
     
@@ -571,9 +615,10 @@
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
     // Importamos as ferramentas de banco de dados do seu arquivo externo
-    import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, dbEscutarSessaoRotas, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
+    import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, dbEscutarSessaoRotas, dbSincronizarItensManutencaoNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
 
     let maquinasDisponiveis = [];
+    let produtosDisponiveis = [];
     let tecnicosProducaoEquip = [];
     let clientesCadastrados = [];
     let perfilUsuarioLogado = "";
@@ -971,6 +1016,167 @@
             contador: grupo.querySelector('.contador-input')?.value.trim() || "",
             tecnico: grupo.querySelector('.equip-tecnico-select')?.value.trim() || ""
         }));
+    }
+
+    function atualizarOpcoesProdutosInstalacao() {
+        const selects = document.querySelectorAll('#container-produtos-instalacao .produto-instalacao-select');
+        const selecionados = Array.from(selects).map(select => select.value).filter(Boolean);
+
+        selects.forEach(select => {
+            const valorAtual = select.value;
+            let opcoes = '<option value="">Selecione o produto...</option>';
+            produtosDisponiveis.forEach(produto => {
+                if (produto.firebaseUrl === valorAtual || !selecionados.includes(produto.firebaseUrl)) {
+                    opcoes += `<option value="${produto.firebaseUrl}">${escaparHtml(produto.nome || '')}</option>`;
+                }
+            });
+            select.innerHTML = opcoes;
+            select.value = valorAtual;
+        });
+    }
+
+    function obterLinhasProdutosInstalacao() {
+        return Array.from(document.querySelectorAll('#container-produtos-instalacao .linha-produto-instalacao'));
+    }
+
+    function linhaProdutoInstalacaoEstaVazia(linha) {
+        const produtoId = linha?.querySelector('.produto-instalacao-select')?.value.trim() || "";
+        const quantidade = linha?.querySelector('.produto-instalacao-qtd')?.value.trim() || "";
+        return !produtoId && !quantidade;
+    }
+
+    function linhaProdutoInstalacaoCompleta(linha) {
+        const produtoId = linha?.querySelector('.produto-instalacao-select')?.value.trim() || "";
+        const quantidade = linha?.querySelector('.produto-instalacao-qtd')?.value.trim() || "";
+        return !!produtoId && !!quantidade;
+    }
+
+    function normalizarLinhasProdutosInstalacao() {
+        const container = document.getElementById('container-produtos-instalacao');
+        if (!container) return;
+
+        let encontrouVazia = false;
+        obterLinhasProdutosInstalacao().forEach(linha => {
+            if (!linhaProdutoInstalacaoEstaVazia(linha)) return;
+            if (!encontrouVazia) {
+                encontrouVazia = true;
+                return;
+            }
+            linha.remove();
+        });
+
+        const linhas = obterLinhasProdutosInstalacao();
+        const ultima = linhas[linhas.length - 1];
+        if (!ultima || linhaProdutoInstalacaoCompleta(ultima)) {
+            adicionarLinhaProdutoInstalacao();
+        }
+
+        atualizarOpcoesProdutosInstalacao();
+    }
+
+    function adicionarLinhaProdutoInstalacao(produtoId = "", quantidade = "", normalizarDepois = true) {
+        const container = document.getElementById('container-produtos-instalacao');
+        if (!container) return;
+
+        const linha = document.createElement('div');
+        linha.className = 'linha-produto-instalacao';
+        linha.innerHTML = `
+            <select class="produto-instalacao-select"></select>
+            <input class="produto-instalacao-qtd" value="${escaparHtml(quantidade)}" placeholder="Qtd" inputmode="numeric" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);">
+        `;
+        container.appendChild(linha);
+        atualizarOpcoesProdutosInstalacao();
+        linha.querySelector('.produto-instalacao-select').value = produtoId;
+        if (normalizarDepois) normalizarLinhasProdutosInstalacao();
+    }
+
+    function restaurarProdutosInstalacao(produtos = []) {
+        const container = document.getElementById('container-produtos-instalacao');
+        if (!container) return;
+        container.innerHTML = "";
+
+        if (Array.isArray(produtos) && produtos.length > 0) {
+            produtos.forEach(item => {
+                adicionarLinhaProdutoInstalacao(
+                    String(item?.itemId || item?.produtoId || "").trim(),
+                    String(item?.quantidade || item?.qtd || "").trim(),
+                    false
+                );
+            });
+        }
+
+        normalizarLinhasProdutosInstalacao();
+    }
+
+    function coletarProdutosInstalacaoParaSalvar() {
+        const linhas = obterLinhasProdutosInstalacao()
+            .map(linha => {
+                const produtoId = linha.querySelector('.produto-instalacao-select')?.value.trim() || "";
+                const quantidadeBruta = linha.querySelector('.produto-instalacao-qtd')?.value.trim() || "";
+                const quantidade = Number.parseInt(quantidadeBruta, 10) || 0;
+                return { produtoId, quantidadeBruta, quantidade };
+            })
+            .filter(item => item.produtoId || item.quantidadeBruta);
+
+        const incompletas = linhas.filter(item => !item.produtoId || item.quantidade <= 0);
+        if (incompletas.length > 0) {
+            throw new Error("Preencha produto e quantidade em todas as linhas de produtos utilizados.");
+        }
+
+        return linhas.map(item => {
+            const produto = produtosDisponiveis.find(p => p.firebaseUrl === item.produtoId);
+            return {
+                itemId: item.produtoId,
+                categoria: produto?.categoria || "produtos",
+                nome: produto?.nome || "Produto não encontrado",
+                quantidade: item.quantidade
+            };
+        });
+    }
+
+    function haMaquinaPreenchidaNoFormulario() {
+        return obterEquipamentosDetalhadosDoFormulario().some(item => String(item.nome || "").trim());
+    }
+
+    function validarProdutosObrigatoriosPorMaquina() {
+        if (!haMaquinaPreenchidaNoFormulario()) return [];
+
+        const produtos = coletarProdutosInstalacaoParaSalvar();
+        if (produtos.length === 0) {
+            throw new Error("Como houve inclusão de máquina, informe os produtos utilizados.");
+        }
+        return produtos;
+    }
+
+    async function sincronizarProdutosCadastroClienteNoHistorico(clienteId, dadosCliente, produtosInstalacao) {
+        const idRef = String(clienteId || "").trim();
+        if (!idRef) return;
+
+        const payloadHistorico = {
+            atendente: nomeUsuarioLogado || "N/A",
+            data: new Date().toISOString(),
+            cliente: {
+                id: idRef,
+                nome: dadosCliente?.nome || "",
+                numero: dadosCliente?.numero || "",
+                rota: dadosCliente?.rota || "",
+                cidade: dadosCliente?.cidade || "",
+                endereco: dadosCliente?.endereco || ""
+            },
+            produtos: Array.isArray(produtosInstalacao) ? produtosInstalacao : [],
+            origemRegistro: "manutencao",
+            manutencao: {
+                id: idRef,
+                tipoServico: "Cadastro de cliente",
+                servicoRealizado: true,
+                observacoes: dadosCliente?.obs || "",
+                equipamentosAdicionados: [],
+                equipamentosRetirados: [],
+                equipamentosRetiradosDetalhes: []
+            }
+        };
+
+        await dbSincronizarItensManutencaoNoHistorico(idRef, payloadHistorico);
     }
 
     function obterEquipamentosDetalhadosDoCliente(cliente) {
@@ -1504,9 +1710,21 @@
         definirEstadoBotaoMapa(true);
 
         try {
-            const novaAba = window.open(urlMapa, "_blank", "noopener,noreferrer");
-            if (!novaAba) {
-                window.location.href = urlMapa;
+            const ua = navigator.userAgent || '';
+            if (/Android/i.test(ua)) {
+                const intentUrl = urlMapa.replace(/^https:\/\/www\.google\.com\//i, 'intent://www.google.com/')
+                    + '#Intent;scheme=https;package=com.google.android.apps.maps;end';
+                const a = document.createElement('a');
+                a.href = intentUrl;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else if (/iPhone|iPad|iPod/i.test(ua)) {
+                window.location.href = urlMapa.replace(/^https?:\/\//i, 'comgooglemapsurl://');
+                setTimeout(() => { window.location.href = urlMapa; }, 1000);
+            } else {
+                window.open(urlMapa, "_blank");
             }
         } finally {
             window.setTimeout(() => definirEstadoBotaoMapa(false), 180);
@@ -1770,6 +1988,15 @@
 
     dbEscutarEstoque((lista) => {
         maquinasDisponiveis = lista.filter(item => item.categoria === 'maquina');
+        const nomesProdutosVistos = new Set();
+        produtosDisponiveis = lista
+            .filter(item => item.categoria === 'produtos')
+            .filter(item => {
+                const nome = String(item.nome || "").trim();
+                if (!nome || nomesProdutosVistos.has(nome)) return false;
+                nomesProdutosVistos.add(nome);
+                return true;
+            });
         
         // Atualiza os selects existentes que estiverem na tela
         document.querySelectorAll('.equip-select').forEach(select => {
@@ -1784,6 +2011,7 @@
             });
         });
         renderizarTecnicoNasLinhasEquipamento();
+        atualizarOpcoesProdutosInstalacao();
     });
 
     window.adicionarLinhaEquipamento = function(nome = "", pix = "", qtd = "", contador = "", rowId = "", tecnico = "") {
@@ -1831,6 +2059,7 @@
         carregarDadosCliente(editId);
     } else {
         adicionarLinhaEquipamento();
+        restaurarProdutosInstalacao();
         renderizarFotosMaquinasInstalacao();
         const campoPontoAberto = document.getElementById('ponto_aberto');
         if (nomeUsuarioLogado) {
@@ -1858,6 +2087,8 @@
     });
 
     if (modoSolicitar) {
+        document.querySelector('.produtos-instalacao-card')?.style.setProperty('display', 'none');
+
         // --- visual ---
         const estiloSolicitar = document.createElement('style');
         estiloSolicitar.textContent = `
@@ -2028,6 +2259,8 @@
                     }
                 }
 
+                restaurarProdutosInstalacao(cliente.produtos || []);
+
                 const fotoFichaInstalacao = cliente.fotoFichaInstalacao || cliente.fotosInstalacao?.ficha || "";
                 if (fotoFichaInstalacao) {
                     definirPreviewFoto('imgPreviewFichaInstalacao', 'textoFotoFichaInstalacao', fotoFichaInstalacao);
@@ -2072,6 +2305,7 @@
                 adicionarLinhaEquipamento(item.nome, "", item.qtd, "", item.rowId, item.tecnico || "");
             });
             adicionarLinhaEquipamento();
+            restaurarProdutosInstalacao(ponto.produtos || []);
 
             if (ponto.aberto) {
                 const diasSalvos = ponto.aberto.split(", ");
@@ -2124,6 +2358,18 @@
 
         if (e.target.classList.contains('qtd-input')) {
             renderizarTecnicoNasLinhasEquipamento();
+        }
+    });
+
+    document.getElementById('container-produtos-instalacao').addEventListener('change', (e) => {
+        if (e.target.classList.contains('produto-instalacao-select')) {
+            normalizarLinhasProdutosInstalacao();
+        }
+    });
+
+    document.getElementById('container-produtos-instalacao').addEventListener('input', (e) => {
+        if (e.target.classList.contains('produto-instalacao-qtd')) {
+            normalizarLinhasProdutosInstalacao();
         }
     });
 
@@ -2207,6 +2453,8 @@
                 str += ` (${item.qtd})`;
                 listaEquipFinal.push(str);
             });
+
+            const produtosInstalacao = modoSolicitar ? [] : validarProdutosObrigatoriosPorMaquina();
 
             const fotosMaquinasInstalacao = [];
             for (const equipamento of equipamentosDetalhados) {
@@ -2304,6 +2552,7 @@
                     aberto: dias.join(", "),
                     equip: listaEquipFinal.join(", "),
                     equipDetalhes: equipamentosDetalhados,
+                    produtos: produtosInstalacao,
                     fotoFichaInstalacao,
                     fotoFichaInstalacaoThumb,
                     fotosMaquinasInstalacao,
@@ -2316,7 +2565,8 @@
                     ...(representantePontoNovo ? { representante: representantePontoNovo } : {}),
                     ...(fromPontoNovo ? { pontoNovoOrigemId: fromPontoNovo } : {})
                 };
-                await dbSalvarCliente(dadosFinal, idParaSalvar);
+                const clienteIdSalvo = await dbSalvarCliente(dadosFinal, idParaSalvar);
+                await sincronizarProdutosCadastroClienteNoHistorico(clienteIdSalvo || idParaSalvar, dadosFinal, produtosInstalacao);
 
                 if (fromPontoNovo && pontoNovoCarregado) {
                     await dbSalvarManutencao({ ...pontoNovoCarregado, status: "concluido" }, fromPontoNovo);
