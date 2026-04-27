@@ -626,8 +626,26 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbVerificarELiberarRota } from './database.js';
+    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbVerificarELiberarRota, dbVerificarRestricaoBalanco } from './database.js';
     import { enfileirarAtendimento } from './offline-sync.js';
+
+    async function bloquearAtendimentoSeBalancoPendente() {
+        if (navigator.onLine === false) return false;
+        const usuario = String(localStorage.getItem('usuarioLogado') || '').trim();
+        try {
+            const restricao = await dbVerificarRestricaoBalanco(usuario, 2);
+            if (restricao?.bloqueado) {
+                alert('Balanço pendente. Regularize o balanço para liberar o atendimento.');
+                window.location.replace('index.html');
+                return true;
+            }
+        } catch (erro) {
+            console.warn('Nao foi possivel verificar restricao de balanco:', erro);
+        }
+        return false;
+    }
+
+    if (await bloquearAtendimentoSeBalancoPendente()) throw new Error('Acesso bloqueado.');
 
     let listaClientes = [];
     let listaClientesBruta = [];

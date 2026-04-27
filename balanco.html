@@ -270,6 +270,36 @@
             color:#fff;
             box-shadow:0 2px 8px rgba(0,0,0,0.2);
         }
+        .pendencias-balanco {
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:10px;
+            margin:0 0 22px;
+        }
+        .pendencias-label {
+            font-size:15px;
+            font-weight:700;
+            color:#fff;
+            text-align:center;
+            user-select:none;
+            -webkit-user-select:none;
+        }
+        .pendencias-input {
+            width:58px;
+            height:36px;
+            box-sizing:border-box;
+            border:1px solid #fff;
+            border-radius:18px;
+            background:transparent;
+            color:#fff;
+            font-size:18px;
+            font-weight:700;
+            text-align:center;
+            outline:none;
+            user-select:text;
+            -webkit-user-select:text;
+        }
         .item-barra-wrap { flex:1; margin:0 12px; }
         .item-barra-bg {
             background:rgba(255,255,255,0.08);
@@ -782,9 +812,12 @@
         dbEscutarPixEmPosse,
         dbEscutarPosseItensUsuario,
         dbSalvarContestacaoBalanco,
+        dbAtualizarContestacaoBalanco,
         dbEscutarContestacoesBalanco,
         dbAprovarContestacaoBalanco,
+        dbRemoverStatusAprovadoContestacaoBalanco,
         dbCancelarContestacaoBalanco,
+        dbSalvarHistoricoBalanco,
         dbEscutarUltimosPorItem
     } from './database.js';
 
@@ -793,8 +826,10 @@
     let todosAtendimentosFinanceiro = [];
     let todosDepositos = [];
     let posseAtual = [];   // lista de { nome, total, categoria } — lida de posse_itens_usuario/{usuario}
+    let posseAtualCarregada = false;
     let pixEmPosse = [];
     let contestacoesBalanco = [];
+    const contestacoesAprovadasEmAtualizacao = new Set();
     let datasComAtendimento = new Set();
     let comissaoUsuario = 0; // % de comissÃ£o do colaborador logado (calculado por mÃªs)
     let colaboradorObj  = null;
@@ -1268,10 +1303,69 @@
         }) || null;
     }
 
+    function obterItemPosseAtual(itemChave, itemNome = '', categoria = '') {
+        const chave = String(itemChave || '').trim();
+        const nome = normalizarTextoBusca(itemNome);
+        const cat = normalizarTextoBusca(categoria);
+        return (posseAtual || []).find(item => {
+            const chaveItem = String(item?.itemChave || '').trim();
+            if (chave && chaveItem === chave) return true;
+            return nome
+                && normalizarTextoBusca(item?.nome) === nome
+                && (!cat || normalizarTextoBusca(item?.categoria) === cat);
+        }) || null;
+    }
+
+    async function removerAprovacoesDivergentes() {
+        const aprovadas = (contestacoesBalanco || []).filter(c => String(c?.status || '').trim() === 'aprovado');
+        if (!posseAtualCarregada || !aprovadas.length) return;
+
+        for (const contestacao of aprovadas) {
+            const id = String(contestacao?.id || contestacao?.firebaseUrl || '').trim();
+            if (!id || contestacoesAprovadasEmAtualizacao.has(id)) continue;
+
+            const itemAtual = obterItemPosseAtual(contestacao?.itemChave, contestacao?.itemNome, contestacao?.categoria);
+
+            const quantidadeAprovada = Number(contestacao?.quantidadeInformada);
+            const quantidadeAtual = itemAtual ? Number(itemAtual?.total) : 0;
+            if (!Number.isFinite(quantidadeAprovada) || !Number.isFinite(quantidadeAtual)) continue;
+            if (quantidadeAprovada === quantidadeAtual) continue;
+
+            contestacoesAprovadasEmAtualizacao.add(id);
+            const contestacoesAntes = contestacoesBalanco;
+            if (quantidadeAtual === 0) {
+                contestacoesBalanco = contestacoesBalanco.filter(c => String(c?.id || c?.firebaseUrl || '').trim() !== id);
+            } else {
+                contestacoesBalanco = contestacoesBalanco.map(c => {
+                    const chaveContestacao = String(c?.id || c?.firebaseUrl || '').trim();
+                    return chaveContestacao === id ? { ...c, status: null } : c;
+                });
+            }
+            try {
+                if (quantidadeAtual === 0) {
+                    await dbCancelarContestacaoBalanco(usuarioLogado, id);
+                } else {
+                    await dbRemoverStatusAprovadoContestacaoBalanco(usuarioLogado, id);
+                }
+            } catch (e) {
+                console.warn('Nao foi possivel atualizar contestacao aprovada divergente:', e);
+                contestacoesBalanco = contestacoesAntes;
+                contestacoesAprovadasEmAtualizacao.delete(id);
+            }
+        }
+    }
+
     function formatarDiferencaContestacao(contestacao) {
         const diferenca = Number(contestacao?.diferenca || 0);
         const sinal = diferenca > 0 ? '+' : '';
         return `${sinal}${diferenca}`;
+    }
+
+    function contestacaoEstaEmAnalise(contestacao) {
+        if (!contestacao) return false;
+        const status = String(contestacao?.status || '').trim();
+        if (status === 'aprovado') return false;
+        return !contestacao?.aprovadoEm && !contestacao?.aprovadoPor;
     }
 
     function montarTarjaContestacao(contestacao) {
@@ -1279,7 +1373,25 @@
         if (String(contestacao?.status || '').trim() === 'aprovado') {
             return '<div class="item-contestacao aprovada">Conferido</div>';
         }
+        if (!contestacaoEstaEmAnalise(contestacao)) return '';
         return `<div class="item-contestacao">Análise ${formatarDiferencaContestacao(contestacao)}</div>`;
+    }
+
+    function contarItensSemConferenciaNemAnalise(itens) {
+        return (Array.isArray(itens) ? itens : []).reduce((total, item) => {
+            const contestacao = obterContestacaoAbertaItem(item.itemChave, item.nome, item.categoria);
+            const quantidadeAprovada = Number(contestacao?.quantidadeInformada ?? contestacao?.quantidadeAtual);
+            const conferido = String(contestacao?.status || '').trim() === 'aprovado'
+                && Number.isFinite(quantidadeAprovada)
+                && quantidadeAprovada === Number(item.total || 0);
+            const emAnalise = contestacaoEstaEmAnalise(contestacao);
+            return total + (!conferido && !emAnalise ? 1 : 0);
+        }, 0);
+    }
+
+    function movimentoHistoricoEhAprovacaoBalanco(entrada) {
+        return String(entrada?.tipo || '').trim() === 'balanco_aprovado'
+            || entrada?.valorConferido != null;
     }
 
     function montarEventosContestacaoHistorico(itemChave, itemNome, categoria) {
@@ -1337,9 +1449,13 @@
         }
 
         const entradas = Array.isArray(ultimasEntradasHistorico) ? ultimasEntradasHistorico : [];
-        const eventosContestacao = montarEventosContestacaoHistorico(itemChave, nomeProduto, categoria);
+        const temAprovacaoPersistida = entradas.some(movimentoHistoricoEhAprovacaoBalanco);
+        const eventosContestacao = temAprovacaoPersistida ? [] : montarEventosContestacaoHistorico(itemChave, nomeProduto, categoria);
         const timeline = [
-            ...entradas.map(e => ({ ...e, tipoLinha: 'movimento' })),
+            ...entradas.map(e => ({
+                ...e,
+                tipoLinha: movimentoHistoricoEhAprovacaoBalanco(e) ? 'aprovacao' : 'movimento'
+            })),
             ...eventosContestacao
         ].sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
 
@@ -1481,6 +1597,7 @@
         manutencao:          'Manutenção',
         manutencao_retirada: 'Retirada p/ manutenção',
         manutencao_adicao:   'Devolução de manutenção',
+        balanco_aprovado:    'Valor conferido',
         cancelamento:   'Cancelamento'
     };
 
@@ -1500,6 +1617,26 @@
         if (!texto) return null;
         const numero = Number(texto);
         return Number.isFinite(numero) ? numero : null;
+    }
+
+    async function registrarAprovacaoBalancoNoHistorico(quantidadeAprovada) {
+        if (!contestacaoContexto?.itemChave) return;
+        await dbSalvarHistoricoBalanco({
+            responsavel: usuarioLogado,
+            registradoPor: usuarioLogado,
+            itemNome: contestacaoContexto.itemNome,
+            categoria: contestacaoContexto.categoria || 'produto',
+            tipo: 'balanco_aprovado',
+            origemRegistro: 'balanco',
+            itemChave: contestacaoContexto.itemChave,
+            movimento: 0,
+            descricao: 'Valor conferido',
+            refId: contestacaoContexto.itemChave,
+            controlarPosse: false,
+            totalAntes: quantidadeAprovada,
+            totalApos: quantidadeAprovada,
+            valorConferido: quantidadeAprovada
+        }, { recalcular: false });
     }
 
     function fecharBoxContestacao() {
@@ -1538,7 +1675,7 @@
             contestacaoContexto?.itemNome,
             contestacaoContexto?.categoria
         );
-        const emAnalise = contestacao && String(contestacao?.status || '').trim() !== 'aprovado';
+        const emAnalise = contestacaoEstaEmAnalise(contestacao);
         btn.textContent = emAnalise ? 'Cancelar contestação' : 'Contestar';
         btn.classList.toggle('cancelar', Boolean(emAnalise));
         btn.disabled = !contestacaoContexto?.itemChave;
@@ -1599,7 +1736,7 @@
             contestacaoContexto?.itemNome,
             contestacaoContexto?.categoria
         );
-        const emAnalise = contestacao && String(contestacao?.status || '').trim() !== 'aprovado';
+        const emAnalise = contestacaoEstaEmAnalise(contestacao);
         if (emAnalise) {
             await cancelarContestacaoBalanco(contestacao);
             return;
@@ -1681,14 +1818,23 @@
         }
 
         try {
-            const novaContestacao = await dbSalvarContestacaoBalanco({
+            const contestacaoExistente = obterContestacaoAbertaItem(
+                contestacaoContexto?.itemChave,
+                contestacaoContexto?.itemNome,
+                contestacaoContexto?.categoria
+            );
+            const dadosContestacao = {
                 ...contestacaoContexto,
                 quantidadeInformada: informado
-            });
-            if (novaContestacao?.id) {
+            };
+            const contestacaoSalva = contestacaoExistente?.id
+                ? await dbAtualizarContestacaoBalanco(usuarioLogado, contestacaoExistente.id, dadosContestacao)
+                : await dbSalvarContestacaoBalanco(dadosContestacao);
+
+            if (contestacaoSalva?.id) {
                 contestacoesBalanco = [
-                    { ...novaContestacao, firebaseUrl: novaContestacao.id },
-                    ...contestacoesBalanco.filter(c => c.id !== novaContestacao.id)
+                    { ...contestacaoSalva, firebaseUrl: contestacaoSalva.id },
+                    ...contestacoesBalanco.filter(c => c.id !== contestacaoSalva.id)
                 ];
             }
             fecharBoxContestacao();
@@ -1721,17 +1867,30 @@
 
         try {
             const aprovadoEm = new Date().toISOString();
+            const quantidadeAprovada = Number(contestacaoContexto?.quantidadeAtual || 0);
             if (contestacao?.id) {
-                await dbAprovarContestacaoBalanco(usuarioLogado, contestacao.id, usuarioLogado);
+                await dbAprovarContestacaoBalanco(usuarioLogado, contestacao.id, usuarioLogado, {
+                    quantidadeAtual: quantidadeAprovada,
+                    quantidadeInformada: quantidadeAprovada
+                });
                 contestacoesBalanco = contestacoesBalanco.map(c =>
                     c.id === contestacao.id
-                        ? { ...c, status: 'aprovado', aprovadoEm, aprovadoPor: usuarioLogado }
+                        ? {
+                            ...c,
+                            quantidadeAtual: quantidadeAprovada,
+                            quantidadeInformada: quantidadeAprovada,
+                            diferenca: 0,
+                            status: 'aprovado',
+                            aprovadoEm,
+                            aprovadoPor: usuarioLogado
+                        }
                         : c
                 );
             } else {
                 const novaAprovacao = await dbSalvarContestacaoBalanco({
                     ...contestacaoContexto,
-                    quantidadeInformada: contestacaoContexto.quantidadeAtual,
+                    quantidadeAtual: quantidadeAprovada,
+                    quantidadeInformada: quantidadeAprovada,
                     status: 'aprovado',
                     aprovadoPor: usuarioLogado
                 });
@@ -1742,6 +1901,7 @@
                     ];
                 }
             }
+            await registrarAprovacaoBalancoNoHistorico(quantidadeAprovada);
             renderizar();
             if (btn) btn.textContent = 'Aprovado';
             alert('Valor aprovado.');
@@ -1790,6 +1950,9 @@
             .filter(i => i.categoria === 'maquina' && i.total !== 0)
             .map(i => [i.nome, i.total, i.categoria, i.itemChave])
             .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0], 'pt-BR'));
+        const itensPosseBalanco = [...produtosPosse, ...maquinasPosse]
+            .map(([nome, total, categoria, itemChave]) => ({ nome, total, categoria, itemChave }));
+        const totalItensPendentesBalanco = contarItensSemConferenciaNemAnalise(itensPosseBalanco);
         const pixPosse      = somarPixEmPosse(pixEmPosse || [], todosAtendimentos);
         const maxProd       = Math.max(1, ...produtosPosse.map(([, qtd]) => Math.abs(qtd)));
         const maxMaqPosse   = Math.max(1, ...maquinasPosse.map(([, qtd]) => Math.abs(qtd)));
@@ -1874,6 +2037,12 @@
                         </div>`;
                         })()}`).join('')}
                 </div>
+            </div>` : ''}
+
+            ${itensPosseBalanco.length > 0 ? `
+            <div class="pendencias-balanco">
+                <label class="pendencias-label" for="itensPendentesBalanco">Itens pendentes</label>
+                <input class="pendencias-input" id="itensPendentesBalanco" type="text" value="${totalItensPendentesBalanco}" readonly inputmode="numeric" aria-label="Itens pendentes">
             </div>` : ''}
 
             ${pixPosse.length > 0 ? `
@@ -2201,12 +2370,22 @@
 
     dbEscutarPosseItensUsuario(usuarioLogado, (lista) => {
         posseAtual = construirPosseAtualDaPosse(lista);
+        posseAtualCarregada = true;
+        removerAprovacoesDivergentes();
         renderizarHistoricoAberto();
         renderizar();
     });
 
     dbEscutarContestacoesBalanco(usuarioLogado, (lista) => {
         contestacoesBalanco = Array.isArray(lista) ? lista : [];
+        const aprovadasAtuais = new Set(contestacoesBalanco
+            .filter(c => String(c?.status || '').trim() === 'aprovado')
+            .map(c => String(c?.id || c?.firebaseUrl || '').trim())
+            .filter(Boolean));
+        [...contestacoesAprovadasEmAtualizacao].forEach(id => {
+            if (!aprovadasAtuais.has(id)) contestacoesAprovadasEmAtualizacao.delete(id);
+        });
+        removerAprovacoesDivergentes();
         atualizarBotoesContestacaoHistorico();
         renderizarHistoricoAberto();
         renderizar();

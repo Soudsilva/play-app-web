@@ -744,7 +744,41 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbEscutarManutencoes, dbSalvarManutencao, dbEscutarAtendimentos } from './database.js';
+    import { dbEscutarClientes, dbEscutarManutencoes, dbSalvarManutencao, dbEscutarAtendimentos, dbVerificarRestricaoBalanco } from './database.js';
+
+    function usuarioEhAtendimentoNivel2Manutencao() {
+        try {
+            const usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
+            const cache = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
+            const userObj = cache.find(c => String(c?.nome || '').trim() === usuarioLogado);
+            return String(userObj?.nivel_completo || '').includes('atendimento_2');
+        } catch (_) {
+            return false;
+        }
+    }
+
+    async function bloquearManutencaoSeNecessario() {
+        if (!usuarioEhAtendimentoNivel2Manutencao()) return false;
+        if (navigator.onLine === false) {
+            alert('Manutenção precisa de internet.');
+            window.location.replace('index.html');
+            return true;
+        }
+        const usuario = String(localStorage.getItem('usuarioLogado') || '').trim();
+        try {
+            const restricao = await dbVerificarRestricaoBalanco(usuario, 2);
+            if (restricao?.bloqueado) {
+                alert('Balanço pendente. Regularize o balanço para liberar a manutenção.');
+                window.location.replace('index.html');
+                return true;
+            }
+        } catch (erro) {
+            console.warn('Nao foi possivel verificar restricao de balanco:', erro);
+        }
+        return false;
+    }
+
+    if (await bloquearManutencaoSeNecessario()) throw new Error('Acesso bloqueado.');
 
     let clientes = [];
     let manutencoes = [];

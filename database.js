@@ -2692,6 +2692,24 @@ function _normalizarChavePosseItem(itemChave, itemNome) {
     return base.replace(/[.#$/[\]]/g, '_');
 }
 
+const RESUMO_BALANCO_ID = 'resumo_balanco';
+
+function _dataBrasiliaISOData(date = new Date()) {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(date);
+}
+
+function _somarDiasISOData(dataIso, dias) {
+    const partes = String(dataIso || '').split('-').map(Number);
+    if (partes.length !== 3 || partes.some(n => !Number.isFinite(n))) return '';
+    const data = new Date(Date.UTC(partes[0], partes[1] - 1, partes[2] + dias));
+    return data.toISOString().slice(0, 10);
+}
+
 async function _listarHistoricoBalancoDoUsuario(chaveUsuario) {
     if (!chaveUsuario) return [];
     const snap = await get(ref(db, `movimentacao_balanco_historico/${chaveUsuario}`));
@@ -2808,8 +2826,8 @@ async function _salvarEntradaHistoricoBalanco(chaveUsuario, entrada, totais = {}
         itemNomeNormalizado: _normalizarNomeHistoricoBalancoItem(entrada.itemNome),
         itemChave: String(totais?.itemChave || entrada?.itemChave || '').trim(),
         movimento,
-        totalAntes: totais?.totalAntes ?? null,
-        totalApos: totais?.totalApos ?? null,
+        totalAntes: entrada?.totalAntes ?? totais?.totalAntes ?? null,
+        totalApos: entrada?.totalApos ?? totais?.totalApos ?? null,
         responsavel: String(entrada.responsavel).trim(),
         registradoPor: String(entrada.registradoPor || entrada.responsavel).trim(),
         descricao: String(entrada.descricao || ''),
@@ -2819,6 +2837,7 @@ async function _salvarEntradaHistoricoBalanco(chaveUsuario, entrada, totais = {}
         ...(entrada?.ignorarValidacaoPosse === true ? { ignorarValidacaoPosse: true } : {}),
         isDefeitoEntry: Boolean(entrada.isDefeitoEntry),
         qtdDefeitoConsumida: Number(entrada.qtdDefeitoConsumida || 0),
+        ...(entrada?.valorConferido != null ? { valorConferido: Number(entrada.valorConferido) } : {}),
         ...(entrada?.estoqueAntes != null ? { estoqueAntes: Number(entrada.estoqueAntes) } : {}),
         ...(entrada?.estoqueDepois != null ? { estoqueDepois: Number(entrada.estoqueDepois) } : {})
     });
@@ -2830,13 +2849,17 @@ export async function dbSalvarHistoricoBalanco(entrada, opcoes = {}) {
         const recalcular = opcoes?.recalcular !== false;
         const chaveU = _normalizarChaveUsuario(entrada.responsavel);
         const movimento = _obterMovimentacaoHistoricoBalanco(entrada);
-        if (!chaveU || !entrada.itemNome || !movimento) return;
+        if (!chaveU || !entrada.itemNome) return;
+        if (!movimento && entrada?.controlarPosse !== false) return;
         const totais = await _atualizarPosseItensUsuario(entrada, movimento);
         const novoRef = await _salvarEntradaHistoricoBalanco(chaveU, {
             ...entrada,
             movimento,
             itemChave: totais?.itemChave || entrada?.itemChave || ''
         }, totais);
+        if (entrada?.controlarPosse !== false || String(entrada?.tipo || '').trim() === 'balanco_aprovado') {
+            await dbAtualizarResumoBalanco(entrada.responsavel);
+        }
         if (recalcular) await _tentarRecalcularRemuneracoes();
         return novoRef?.key || null;
     } catch (e) {
@@ -3174,11 +3197,175 @@ export async function dbSalvarContestacaoBalanco(dados) {
         };
 
         const novoRef = await push(ref(db, `contestacao_balanco/${chaveU}`), registro);
+        await dbAtualizarResumoBalanco(dados.responsavel);
         return { id: novoRef?.key || null, ...registro };
     } catch (e) {
         console.error('ERRO AO SALVAR CONTESTAÇÃO DO BALANÇO:', e);
         throw e;
     }
+}
+
+export async function dbAtualizarContestacaoBalanco(responsavel, contestacaoId, dados) {
+    try {
+        const chaveU = _normalizarChaveUsuario(responsavel);
+        const id = String(contestacaoId || '').trim();
+        if (!chaveU || !id) throw new Error('Contestacao invalida para atualizacao.');
+
+        const itemChave = String(dados?.itemChave || '').trim();
+        const itemNome = String(dados?.itemNome || '').trim();
+        const quantidadeAtual = Number(dados?.quantidadeAtual);
+        const quantidadeInformada = Number(dados?.quantidadeInformada);
+
+        if (!itemChave || !itemNome) throw new Error('Item invalido para atualizacao da contestacao.');
+        if (!Number.isFinite(quantidadeAtual) || !Number.isFinite(quantidadeInformada)) {
+            throw new Error('Quantidade invalida para atualizacao da contestacao.');
+        }
+
+        const timestamp = new Date().toISOString();
+        const patch = {
+            timestamp,
+            responsavel: String(responsavel).trim(),
+            registradoPor: String(dados?.registradoPor || responsavel).trim(),
+            categoria: String(dados?.categoria || 'produto').trim(),
+            itemNome,
+            itemNomeNormalizado: _normalizarNomeHistoricoBalancoItem(itemNome),
+            itemChave,
+            quantidadeAtual,
+            quantidadeInformada,
+            diferenca: quantidadeInformada - quantidadeAtual,
+            origemRegistro: 'balanco',
+            tipo: 'contestacao_balanco',
+            status: null,
+            aprovadoEm: null,
+            aprovadoPor: null
+        };
+
+        await update(ref(db, `contestacao_balanco/${chaveU}/${id}`), patch);
+        await dbAtualizarResumoBalanco(responsavel);
+        return { id, ...patch };
+    } catch (e) {
+        console.error('ERRO AO ATUALIZAR CONTESTACAO DO BALANCO:', e);
+        throw e;
+    }
+}
+
+function _contestacaoBalancoEstaEmAnalise(contestacao) {
+    if (!contestacao) return false;
+    const status = String(contestacao?.status || '').trim();
+    if (status === 'aprovado') return false;
+    return !contestacao?.aprovadoEm && !contestacao?.aprovadoPor;
+}
+
+function _buscarContestacaoBalancoDoItem(contestacoes, item) {
+    const chave = String(item?.itemChave || item?.chave || '').trim();
+    const nome = _normalizarNomeHistoricoBalancoItem(item?.itemNome || item?.nome);
+    const cat = _normalizarNomeHistoricoBalancoItem(item?.categoria);
+
+    return (contestacoes || []).find(c => {
+        const chaveContestacao = String(c?.itemChave || '').trim();
+        if (chave && chaveContestacao === chave) return true;
+        return nome
+            && _normalizarNomeHistoricoBalancoItem(c?.itemNome) === nome
+            && (!cat || _normalizarNomeHistoricoBalancoItem(c?.categoria) === cat);
+    }) || null;
+}
+
+export async function dbAtualizarResumoBalanco(responsavel) {
+    try {
+        const chaveU = _normalizarChaveUsuario(responsavel);
+        if (!chaveU) return null;
+
+        const [posseSnap, contestacoesSnap, resumoSnap] = await Promise.all([
+            get(ref(db, `posse_itens_usuario/${chaveU}`)),
+            get(ref(db, `contestacao_balanco/${chaveU}`)),
+            get(ref(db, `contestacao_balanco/${chaveU}/${RESUMO_BALANCO_ID}`))
+        ]);
+
+        const itensPosse = Object.entries(posseSnap.val() || {})
+            .map(([chave, v]) => ({
+                chave,
+                itemChave: chave,
+                itemNome: String(v?.itemNome || '').trim(),
+                categoria: String(v?.categoria || 'produto').trim(),
+                quantidade: Number(v?.quantidade || 0)
+            }))
+            .filter(item => item.itemNome && item.quantidade !== 0);
+
+        const contestacoes = Object.entries(contestacoesSnap.val() || {})
+            .filter(([id]) => id !== RESUMO_BALANCO_ID)
+            .map(([id, valor]) => ({ id, firebaseUrl: id, ...valor }));
+
+        const itensPendentes = itensPosse.reduce((total, item) => {
+            const contestacao = _buscarContestacaoBalancoDoItem(contestacoes, item);
+            const status = String(contestacao?.status || '').trim();
+            const quantidadeAprovada = Number(contestacao?.quantidadeInformada ?? contestacao?.quantidadeAtual);
+            const conferido = status === 'aprovado' && Number.isFinite(quantidadeAprovada) && quantidadeAprovada === item.quantidade;
+            const emAnalise = _contestacaoBalancoEstaEmAnalise(contestacao);
+            return total + (!conferido && !emAnalise ? 1 : 0);
+        }, 0);
+
+        const anterior = resumoSnap.val() || {};
+        const agora = new Date();
+        const agoraIso = agora.toISOString();
+        const hojeBrasilia = _dataBrasiliaISOData(agora);
+        const jaEstavaPendente = Number(anterior?.itensPendentes || 0) > 0 && anterior?.pendenteDesde;
+        const patch = {
+            itensPendentes,
+            ultimaAtualizacao: agoraIso
+        };
+
+        if (itensPendentes === 0) {
+            patch.pendenteDesde = null;
+            patch.pendenteDesdeData = null;
+            patch.ultimoZeradoEm = agoraIso;
+            patch.ultimaDataZerado = hojeBrasilia;
+        } else {
+            patch.pendenteDesde = jaEstavaPendente ? anterior.pendenteDesde : agoraIso;
+            patch.pendenteDesdeData = jaEstavaPendente
+                ? (anterior.pendenteDesdeData || _dataBrasiliaISOData(new Date(anterior.pendenteDesde)))
+                : hojeBrasilia;
+            patch.ultimoZeradoEm = anterior?.ultimoZeradoEm || null;
+            patch.ultimaDataZerado = anterior?.ultimaDataZerado || null;
+        }
+
+        await update(ref(db, `contestacao_balanco/${chaveU}/${RESUMO_BALANCO_ID}`), patch);
+        return patch;
+    } catch (e) {
+        console.error('ERRO AO ATUALIZAR RESUMO DO BALANCO:', e);
+        throw e;
+    }
+}
+
+export async function dbLerResumoBalanco(responsavel) {
+    try {
+        const chaveU = _normalizarChaveUsuario(responsavel);
+        if (!chaveU) return null;
+        const snap = await get(ref(db, `contestacao_balanco/${chaveU}/${RESUMO_BALANCO_ID}`));
+        return snap.val() || null;
+    } catch (e) {
+        console.warn('ERRO AO LER RESUMO DO BALANCO:', e);
+        return null;
+    }
+}
+
+export async function dbVerificarRestricaoBalanco(responsavel, prazoDias = 2) {
+    const resumo = await dbAtualizarResumoBalanco(responsavel);
+    const itensPendentes = Number(resumo?.itensPendentes || 0);
+    const pendenteDesdeData = resumo?.pendenteDesdeData || (resumo?.pendenteDesde ? _dataBrasiliaISOData(new Date(resumo.pendenteDesde)) : '');
+    const dataVencimento = _somarDiasISOData(pendenteDesdeData, Math.max(0, Number(prazoDias) || 0));
+    const hojeBrasilia = _dataBrasiliaISOData(new Date());
+    const vencido = itensPendentes > 0
+        && Boolean(dataVencimento)
+        && hojeBrasilia >= dataVencimento;
+
+    return {
+        bloqueado: vencido,
+        itensPendentes,
+        pendenteDesde: resumo?.pendenteDesde || null,
+        pendenteDesdeData,
+        dataVencimento,
+        resumo
+    };
 }
 
 export function dbEscutarContestacoesBalanco(responsavel, callback) {
@@ -3189,6 +3376,7 @@ export function dbEscutarContestacoesBalanco(responsavel, callback) {
         if (!snap.exists()) { callback([]); return; }
 
         const lista = Object.entries(snap.val() || {})
+            .filter(([id]) => id !== RESUMO_BALANCO_ID)
             .map(([id, valor]) => ({ id, firebaseUrl: id, ...valor }))
             .sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
 
@@ -3196,19 +3384,44 @@ export function dbEscutarContestacoesBalanco(responsavel, callback) {
     });
 }
 
-export async function dbAprovarContestacaoBalanco(responsavel, contestacaoId, aprovadoPor) {
+export async function dbAprovarContestacaoBalanco(responsavel, contestacaoId, aprovadoPor, dados = {}) {
     try {
         const chaveU = _normalizarChaveUsuario(responsavel);
         const id = String(contestacaoId || '').trim();
         if (!chaveU || !id) throw new Error('Contestação inválida para aprovação.');
 
-        await update(ref(db, `contestacao_balanco/${chaveU}/${id}`), {
+        const quantidadeAprovada = Number(dados?.quantidadeInformada ?? dados?.quantidadeAtual);
+        const patch = {
             status: 'aprovado',
             aprovadoEm: new Date().toISOString(),
             aprovadoPor: String(aprovadoPor || responsavel).trim()
-        });
+        };
+        if (Number.isFinite(quantidadeAprovada)) {
+            patch.quantidadeAtual = quantidadeAprovada;
+            patch.quantidadeInformada = quantidadeAprovada;
+            patch.diferenca = 0;
+        }
+
+        await update(ref(db, `contestacao_balanco/${chaveU}/${id}`), patch);
+        await dbAtualizarResumoBalanco(responsavel);
     } catch (e) {
         console.error('ERRO AO APROVAR CONTESTAÇÃO DO BALANÇO:', e);
+        throw e;
+    }
+}
+
+export async function dbRemoverStatusAprovadoContestacaoBalanco(responsavel, contestacaoId) {
+    try {
+        const chaveU = _normalizarChaveUsuario(responsavel);
+        const id = String(contestacaoId || '').trim();
+        if (!chaveU || !id) throw new Error('Contestacao invalida para remover aprovacao.');
+
+        await update(ref(db, `contestacao_balanco/${chaveU}/${id}`), {
+            status: null
+        });
+        await dbAtualizarResumoBalanco(responsavel);
+    } catch (e) {
+        console.error('ERRO AO REMOVER APROVACAO DA CONTESTACAO DO BALANCO:', e);
         throw e;
     }
 }
@@ -3220,6 +3433,7 @@ export async function dbCancelarContestacaoBalanco(responsavel, contestacaoId) {
         if (!chaveU || !id) throw new Error('Contestação inválida para cancelamento.');
 
         await remove(ref(db, `contestacao_balanco/${chaveU}/${id}`));
+        await dbAtualizarResumoBalanco(responsavel);
     } catch (e) {
         console.error('ERRO AO CANCELAR CONTESTAÇÃO DO BALANÇO:', e);
         throw e;
