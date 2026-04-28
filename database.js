@@ -3637,10 +3637,17 @@ export async function dbSelecionarRota(nomeUsuario) {
         tentativa = null; // reseta a cada invocação do callback (Firebase pode chamar várias vezes)
         if (dadosAtuais && !dadosAtuais.selecionada_por) {
             tentativa = { ...dadosAtuais, numeroRota };
+            const selecionadaEm = new Date().toISOString();
+            const validadeMaximaEm = new Date(Date.parse(selecionadaEm) + (5 * 24 * 60 * 60 * 1000)).toISOString();
             return {
                 ...dadosAtuais,
                 selecionada_por: nomeUsuario,
-                timestamp_selecao: new Date().toISOString()
+                selecionada_em: selecionadaEm,
+                validade_maxima_em: validadeMaximaEm,
+                prazo_justificativa_em: null,
+                liberar_em: validadeMaximaEm,
+                motivo_liberacao: 'prazo_maximo',
+                timestamp_selecao: null
             };
         }
         return undefined; // aborta: rota já foi pega
@@ -3708,6 +3715,12 @@ function _obterTimestampRota(valor) {
     return Number.isNaN(convertido) ? null : convertido;
 }
 
+function _isoRotaOuNull(timestamp) {
+    return typeof timestamp === 'number' && Number.isFinite(timestamp)
+        ? new Date(timestamp).toISOString()
+        : null;
+}
+
 function _compararClienteRota(clienteRota, clienteAtendimento) {
     const idRota = String(clienteRota?.firebaseUrl || clienteRota?.id || '').trim();
     const idAtendimento = String(clienteAtendimento?.id || clienteAtendimento?.firebaseUrl || '').trim();
@@ -3754,7 +3767,7 @@ export function calcularStatusLiberacaoRota({
     const DOIS_DIAS = 2 * 24 * 60 * 60 * 1000;
     const SEIS_DIAS = 6 * 24 * 60 * 60 * 1000;
     const CINCO_DIAS = 5 * 24 * 60 * 60 * 1000;
-    const inicioRotaMs = _obterTimestampRota(rotaDados?.timestamp_selecao);
+    const inicioRotaMs = _obterTimestampRota(rotaDados?.selecionada_em);
     const prazoMaximoMs = inicioRotaMs == null ? null : (inicioRotaMs + CINCO_DIAS);
     const usuarioNorm = _normalizarTextoRotaUsuario(nomeUsuario || rotaDados?.selecionada_por);
 
@@ -3816,6 +3829,7 @@ export function calcularStatusLiberacaoRota({
     let motivo = 'aguardando_prazo_maximo';
     let liberarAgora = false;
     let liberarEmMs = prazoMaximoMs;
+    let prazoJustificativaMs = null;
     let referenciaLiberacaoMs = null;
     let referenciaLiberacaoTipo = null;
 
@@ -3835,12 +3849,17 @@ export function calcularStatusLiberacaoRota({
             referenciaLiberacaoTipo = referenciaLiberacaoMs === primeiroAtendimentoValidoMs && primeiroAtendimentoValidoMs > (ultimaJustificativaMs || 0)
                 ? 'primeiro_atendimento'
                 : 'ultima_justificativa';
-            liberarEmMs = referenciaLiberacaoMs + DOIS_DIAS;
+            prazoJustificativaMs = referenciaLiberacaoMs + DOIS_DIAS;
+            liberarEmMs = prazoMaximoMs == null ? prazoJustificativaMs : Math.min(prazoMaximoMs, prazoJustificativaMs);
             if (agora >= liberarEmMs) {
-                motivo = 'ultima_justificativa_expirada';
+                motivo = prazoMaximoMs != null && prazoMaximoMs <= prazoJustificativaMs
+                    ? 'prazo_maximo'
+                    : 'ultima_justificativa_expirada';
                 liberarAgora = true;
             } else {
-                motivo = 'aguardando_ultima_justificativa';
+                motivo = prazoMaximoMs != null && prazoMaximoMs <= prazoJustificativaMs
+                    ? 'aguardando_prazo_maximo'
+                    : 'aguardando_ultima_justificativa';
             }
         }
     }
@@ -3854,6 +3873,7 @@ export function calcularStatusLiberacaoRota({
         inicioRotaMs,
         primeiroAtendimentoValidoMs,
         prazoMaximoMs,
+        prazoJustificativaMs,
         ultimaJustificativaMs: ultimaJustificativaMs || null,
         liberarAgora,
         liberarEmMs,
@@ -3862,6 +3882,28 @@ export function calcularStatusLiberacaoRota({
         referenciaLiberacaoTipo,
         tempoRestanteMs: liberarEmMs == null ? null : Math.max(0, liberarEmMs - agora)
     };
+}
+
+export async function dbAtualizarControleLiberacaoRota(numeroRota, status) {
+    const rota = String(numeroRota || '').trim();
+    if (!rota || !status) return;
+
+    const rotaRef = ref(db, `selecao_rotas/ativa/rotas/${rota}`);
+    const patch = {
+        validade_maxima_em: _isoRotaOuNull(status.prazoMaximoMs),
+        prazo_justificativa_em: _isoRotaOuNull(status.prazoJustificativaMs),
+        liberar_em: _isoRotaOuNull(status.liberarEmMs),
+        motivo_liberacao: status.motivo || null,
+        primeiro_atendimento_em: _isoRotaOuNull(status.primeiroAtendimentoValidoMs),
+        ultima_justificativa_em: _isoRotaOuNull(status.ultimaJustificativaMs)
+    };
+
+    const atual = (await get(rotaRef)).val() || {};
+    const mudou = Object.entries(patch).some(([chave, valor]) => (atual[chave] || null) !== (valor || null));
+    if (!mudou) return;
+
+    patch.controle_liberacao_atualizado_em = new Date().toISOString();
+    await update(rotaRef, patch);
 }
 
 export async function dbVerificarELiberarRota(numeroRota, nomeUsuario, dados = {}) {
@@ -3890,6 +3932,7 @@ export async function dbVerificarELiberarRota(numeroRota, nomeUsuario, dados = {
         });
 
         if (!status?.liberarAgora) {
+            await dbAtualizarControleLiberacaoRota(numeroRota, status);
             return { liberada: false, status };
         }
 
@@ -3909,7 +3952,7 @@ export async function dbVerificarELiberarRota(numeroRota, nomeUsuario, dados = {
  *   1. Todos os clientes atendidos nos últimos 6 dias -> libera no mesmo instante.
  *   2. Havendo justificativa, libera 2 dias após a última justificativa,
  *      mas essa contagem só começa depois do primeiro atendimento válido da rota.
- *   3. Rota selecionada há mais de 5 dias (timestamp_selecao) -> libera pelo prazo máximo.
+ *   3. Rota selecionada há mais de 5 dias (selecionada_em) -> libera pelo prazo máximo.
  * Ao liberar, a rota volta a ficar disponível para outro usuário selecionar.
  *
  * QUEM CHAMA:
@@ -3923,6 +3966,14 @@ export async function dbLiberarRota(numeroRota) {
         const rotaRef = ref(db, `selecao_rotas/ativa/rotas/${numeroRota}`);
         await update(rotaRef, {
             selecionada_por: null,
+            selecionada_em: null,
+            validade_maxima_em: null,
+            prazo_justificativa_em: null,
+            liberar_em: null,
+            motivo_liberacao: null,
+            primeiro_atendimento_em: null,
+            ultima_justificativa_em: null,
+            controle_liberacao_atualizado_em: null,
             timestamp_selecao: null
         });
     } catch (error) {
@@ -3936,6 +3987,14 @@ export async function dbLimparSelecoes(numerosRota) {
     const updates = {};
     numerosRota.forEach(n => {
         updates[`selecao_rotas/ativa/rotas/${n}/selecionada_por`] = null;
+        updates[`selecao_rotas/ativa/rotas/${n}/selecionada_em`] = null;
+        updates[`selecao_rotas/ativa/rotas/${n}/validade_maxima_em`] = null;
+        updates[`selecao_rotas/ativa/rotas/${n}/prazo_justificativa_em`] = null;
+        updates[`selecao_rotas/ativa/rotas/${n}/liberar_em`] = null;
+        updates[`selecao_rotas/ativa/rotas/${n}/motivo_liberacao`] = null;
+        updates[`selecao_rotas/ativa/rotas/${n}/primeiro_atendimento_em`] = null;
+        updates[`selecao_rotas/ativa/rotas/${n}/ultima_justificativa_em`] = null;
+        updates[`selecao_rotas/ativa/rotas/${n}/controle_liberacao_atualizado_em`] = null;
         updates[`selecao_rotas/ativa/rotas/${n}/timestamp_selecao`] = null;
     });
     await update(ref(db, '/'), updates);

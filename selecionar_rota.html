@@ -323,6 +323,7 @@ import {
     dbListarJustificativasCheckin,
     dbRemoverJustificativaCheckin,
     dbLiberarRota,
+    dbAtualizarControleLiberacaoRota,
     calcularStatusLiberacaoRota
 } from './database.js';
 
@@ -606,6 +607,10 @@ function montarEnderecoCliente(c) {
     return [c?.endereco, c?.numero_endereco, c?.cidade].filter(Boolean).join(', ').trim();
 }
 
+function enderecoEhLink(valor) {
+    return /^https?:\/\//i.test(String(valor || '').trim());
+}
+
 function escaparHtml(valor) {
     return String(valor ?? '')
         .replace(/&/g, '&amp;')
@@ -646,17 +651,8 @@ function obterNumeroCliente(cliente) {
 function formatarTempoRestante(ms) {
     if (!(ms > 0)) return 'agora';
 
-    const totalMinutos = Math.max(1, Math.ceil(ms / 60000));
-    const dias = Math.floor(totalMinutos / 1440);
-    const horas = Math.floor((totalMinutos % 1440) / 60);
-    const minutos = totalMinutos % 60;
-    const partes = [];
-
-    if (dias > 0) partes.push(`${dias}d`);
-    if (horas > 0) partes.push(`${horas}h`);
-    if (dias === 0 && minutos > 0) partes.push(`${minutos}min`);
-
-    return partes.join(' ');
+    const dias = Math.max(1, Math.ceil(ms / 86400000));
+    return dias === 1 ? 'amanhã' : `${dias} dias`;
 }
 
 function formatarDataHoraLiberacao(timestamp) {
@@ -713,12 +709,21 @@ async function processarLiberacoesMinhasRotas(sessao) {
             nomeUsuario: usuarioAtual
         });
 
-        if (!status.liberarAgora) continue;
+        if (!status.liberarAgora) {
+            await dbAtualizarControleLiberacaoRota(rota.numero, status);
+            if (sessao?.rotas?.[rota.numero]) {
+                sessao.rotas[rota.numero].validade_maxima_em = status.prazoMaximoMs ? new Date(status.prazoMaximoMs).toISOString() : null;
+                sessao.rotas[rota.numero].prazo_justificativa_em = status.prazoJustificativaMs ? new Date(status.prazoJustificativaMs).toISOString() : null;
+                sessao.rotas[rota.numero].liberar_em = status.liberarEmMs ? new Date(status.liberarEmMs).toISOString() : null;
+                sessao.rotas[rota.numero].motivo_liberacao = status.motivo || null;
+            }
+            continue;
+        }
 
         await dbLiberarRota(rota.numero);
         if (sessao?.rotas?.[rota.numero]) {
             sessao.rotas[rota.numero].selecionada_por = null;
-            sessao.rotas[rota.numero].timestamp_selecao = null;
+            sessao.rotas[rota.numero].selecionada_em = null;
         }
         delete justificativasPorRota[rota.numero];
     }
@@ -806,6 +811,7 @@ window.abrirMapaRota = function(numeroRota) {
 
     const clientes = sessaoAtual.clientes_por_rota[numeroRota] || [];
     const enderecosAll = clientes
+        .filter(cliente => !enderecoEhLink(cliente?.endereco))
         .map(montarEnderecoCliente)
         .filter(Boolean)
         .filter((endereco, indice, lista) => lista.indexOf(endereco) === indice);
@@ -1375,7 +1381,11 @@ async function iniciarSessao() {
             valor_estimado: r.valor_estimado,
             num_clientes: r.num_clientes,
             selecionada_por: null,
-            timestamp_selecao: null
+            selecionada_em: null,
+            validade_maxima_em: null,
+            prazo_justificativa_em: null,
+            liberar_em: null,
+            motivo_liberacao: null
         };
     });
 
@@ -1389,7 +1399,11 @@ async function iniciarSessao() {
                 valor_estimado: rotaAntiga.valor_estimado || 0,
                 num_clientes: rotaAntiga.num_clientes ?? ((clientesPorRotaAntigos[numero] || []).length),
                 selecionada_por: rotaAntiga.selecionada_por,
-                timestamp_selecao: rotaAntiga.timestamp_selecao || null
+                selecionada_em: rotaAntiga.selecionada_em || null,
+                validade_maxima_em: rotaAntiga.validade_maxima_em || null,
+                prazo_justificativa_em: rotaAntiga.prazo_justificativa_em || null,
+                liberar_em: rotaAntiga.liberar_em || null,
+                motivo_liberacao: rotaAntiga.motivo_liberacao || null
             };
         } else {
             rotasObj[numero] = {
@@ -1397,7 +1411,11 @@ async function iniciarSessao() {
                 valor_estimado: rotaAntiga.valor_estimado || 0,
                 num_clientes: rotaAntiga.num_clientes ?? ((clientesPorRotaAntigos[numero] || []).length),
                 selecionada_por: rotaAntiga.selecionada_por,
-                timestamp_selecao: rotaAntiga.timestamp_selecao || null
+                selecionada_em: rotaAntiga.selecionada_em || null,
+                validade_maxima_em: rotaAntiga.validade_maxima_em || null,
+                prazo_justificativa_em: rotaAntiga.prazo_justificativa_em || null,
+                liberar_em: rotaAntiga.liberar_em || null,
+                motivo_liberacao: rotaAntiga.motivo_liberacao || null
             };
         }
 

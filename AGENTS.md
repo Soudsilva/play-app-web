@@ -26,3 +26,4 @@ Credenciais para acessar e testar as telas localmente:
 - Atendimento nível 2: usuário Felipe, senha 0000A.
 - Gestor: usuário Anderson, senha 0000A.
 Use essas credenciais apenas para validação/testes do sistema.
+statusBalancoPendenteIndex === true E essa  variável vira true quando o resumo do balanço no Firebase vem assim:js contestacao_balanco/{usuario}/resumo_balanco/statusBalanco = "pendente"

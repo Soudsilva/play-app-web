@@ -1073,6 +1073,10 @@
         }
     }
 
+    function enderecoEhLink(valor) {
+        return /^https?:\/\//i.test(String(valor || '').trim());
+    }
+
     document.getElementById('btnNavegarRota').addEventListener('click', async () => {
         const usuarioLogado = localStorage.getItem('usuarioLogado') || "";
         const selecionados = manutencoes.filter(m => {
@@ -1082,6 +1086,7 @@
 
         const enderecos = selecionados
             .map(m => m.clienteEndereco || m.clienteCidade || "")
+            .filter(endereco => !enderecoEhLink(endereco))
             .filter(Boolean);
 
         if (enderecos.length === 0) {
