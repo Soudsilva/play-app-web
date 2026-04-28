@@ -109,43 +109,12 @@
             border-color: #f59e0b;
             animation: piscar-borda 2s ease-in-out infinite;
         }
-        .pendencias-balanco {
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            gap:10px;
-            margin:0 0 18px;
-        }
-        .pendencias-label {
-            font-size:15px;
-            font-weight:bold;
-            color:#fff;
-            text-align:center;
-            user-select:none;
-            -webkit-user-select:none;
-        }
-        .pendencias-input {
-            width:58px;
-            height:36px;
-            box-sizing:border-box;
-            border:1px solid #fff;
-            border-radius:18px;
-            background:transparent;
-            color:#fff;
-            font-size:18px;
-            font-weight:bold;
-            text-align:center;
-            outline:none;
-            user-select:text;
-            -webkit-user-select:text;
-        }
-
-        /* Submenu GestÃ£o */
+        /* Submenu Gestão */
         .submenu {
             display: none;
             flex-direction: column;
             gap: 10px;
-            padding: 4px 0 0 0;
+            padding: 8px 0 0 0;
         }
         .submenu.aberto { display: flex; }
         .botao-sub {
@@ -166,6 +135,19 @@
         .botao-sub:active { transform: translateY(2px); background: rgba(255,255,255,0.14); }
         .botao-sub .icone { position: absolute; left: 20px; font-size: 20px; }
         .botao-sub span:last-child { color: white; font-size: 18px; font-weight: bold; text-align: center; width: 100%; }
+        .botao-sub.rotas-bloqueadas {
+            background:#5f6470;
+            border-color:#8b9099;
+            cursor:default;
+        }
+        .botao-sub.rotas-bloqueadas:active {
+            transform:none;
+            background:#5f6470;
+        }
+        .botao-sub.rotas-bloqueadas span:last-child,
+        .botao-sub.rotas-bloqueadas .icone {
+            color:#d8d8d8;
+        }
         .seta-gestao {
             position: absolute;
             right: 20px;
@@ -195,11 +177,6 @@
     <div class="ola" style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
         Ol&aacute;, <span id="nomeUsuario" style="color: #ffeb3b; font-size: 24px; font-weight: bold;"></span>
         <button onclick="sair()" style="background: transparent; border: 1px solid rgba(255,255,255,0.25); border-radius: 20px; color: rgba(255,255,255,0.5); font-size: 13px; cursor: pointer; padding: 3px 10px; font-family: Arial, Helvetica, sans-serif; transition: 0.15s;" title="Sair">Sair</button>
-    </div>
-
-    <div class="pendencias-balanco">
-        <label class="pendencias-label" for="itensPendentesBalancoIndex">Itens pendentes</label>
-        <input class="pendencias-input" id="itensPendentesBalancoIndex" type="text" value="0" readonly inputmode="numeric" aria-label="Itens pendentes">
     </div>
 
     <div class="menu">
@@ -239,10 +216,6 @@
                     <span class="icone">&#128185;</span>
                     <span>Sa&uacute;de de Vendas</span>
                 </div>
-                <div class="botao-sub" id="btnBalanco" onclick="window.location.href='balanco.html'">
-                    <span class="icone">&#128200;</span>
-                    <span>Balan&ccedil;o</span>
-                </div>
                 <div class="botao-sub" id="btnDepositos" onclick="abrirTela('depositos')">
                     <span class="icone">&#127974;</span>
                     <span>Dep&oacute;sitos</span>
@@ -251,65 +224,68 @@
                     <span class="icone">&#128229;</span>
                     <span>Importar Hist&oacute;rico</span>
                 </div>
+                <div class="botao-sub" id="btnRotas" onclick="abrirTela('rotas')">
+                    <span class="icone">&#128640;</span>
+                    <span>Sele&ccedil;&atilde;o de rotas</span>
+                </div>
             </div>
         </div>
 
-        <div class="botao" id="btnRotas" onclick="abrirTela('rotas')">
-            <span class="icone">&#128640;</span>
-            <span>Sele&ccedil;&atilde;o de rotas</span>
+        <div class="botao" id="btnBalanco" onclick="window.location.href='balanco.html'">
+            <span class="icone">&#128200;</span>
+            <span>Balan&ccedil;o</span>
         </div>
 
         <div class="botao" id="btnCadColaborador" onclick="window.location.href='cadastrar_colaborador.html'">
             <span class="icone">
-                <img src="assets/img/boneco-cadastrar.png" 
-                     alt="Cadastrar" 
+                <img src="assets/img/boneco-cadastrar.png"
+                     alt="Cadastrar"
                      style="width: 35px; height: 35px; vertical-align: middle;">
             </span>
             <span>Cad. Colaborador</span>
         </div>
 
+        <div class="botao" id="btnCadastroItens" onclick="window.location.href='cadastro_produto_maquina_material.html'" style="display:none;">
+            <span class="icone">&#128218;</span>
+            <span>Cadastro Itens</span>
+        </div>
 
+        <div class="botao" id="btnMovimentacao" onclick="window.location.href='movimentacao_estoq.html'">
+            <span class="icone">&#128260;</span>
+            <span>Entr. Sa&iacute;das</span>
+        </div>
 
+        <div class="botao" id="btnPedidos" onclick="window.location.href='pedidos.html'">
+            <span class="icone">&#128722;</span>
+            <span>Pedidos</span>
+        </div>
 
-       <div class="botao" id="btnCadastroItens" onclick="window.location.href='cadastro_produto_maquina_material.html'" style="display:none;">
-          <span class="icone">&#128218;</span>
-           <span>Cadastro Itens</span>
-       </div>
+        <div class="botao" id="btnFinanceiro" onclick="abrirTela('financeiro')" style="display: none;">
+            <span class="icone">&#128176;</span>
+            <span>Financeiro</span>
+        </div>
 
-       <div class="botao" id="btnMovimentacao" onclick="window.location.href='movimentacao_estoq.html'">
-          <span class="icone">&#128260;</span>
-           <span>Entr. Sa&iacute;das </span>
-       </div>
+        <div class="botao" id="btnPix" onclick="abrirTela('pix')" style="display: none;">
+            <span class="icone">&#128160;</span>
+            <span>&Aacute;rea Pix</span>
+        </div>
 
-       <div class="botao" id="btnPedidos" onclick="window.location.href='pedidos.html'">
-          <span class="icone">&#128722;</span>
-           <span>Pedidos</span>
-       </div>
+        <div class="botao" id="btnPagamentosGestor" onclick="abrirTela('pagamentos_gestor')" style="display: none;">
+            <span class="icone">&#128179;</span>
+            <span>Financeiro</span>
+        </div>
 
-       <div class="botao" id="btnFinanceiro" onclick="abrirTela('financeiro')" style="display: none;">
-          <span class="icone">&#128176;</span>
-           <span>Financeiro</span>
-       </div>
-
-       <div class="botao" id="btnPix" onclick="abrirTela('pix')" style="display: none;">
-          <span class="icone">&#128160;</span>
-           <span>&Aacute;rea Pix</span>
-       </div>
-
-       <div class="botao" id="btnPagamentosGestor" onclick="abrirTela('pagamentos_gestor')" style="display: none;">
-          <span class="icone">&#128179;</span>
-           <span>Financeiro</span>
-       </div>
-
-       <div class="botao" id="btnFluxoCaixa" onclick="abrirTela('fluxo_caixa')" style="display: none;">
-          <span class="icone">&#128184;</span>
-           <span>Fluxo de Caixa</span>
-       </div>
+        <div class="botao" id="btnFluxoCaixa" onclick="abrirTela('fluxo_caixa')" style="display: none;">
+            <span class="icone">&#128184;</span>
+            <span>Fluxo de Caixa</span>
+        </div>
 
 
     </div>
 
 </div>
+
+<script src="assets/js/play-dialogs.js"></script>
 
 <script>
     function toggleSubmenuGestao() {
@@ -357,31 +333,37 @@
 <script type="module">
     import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarAtendimentos, dbEscutarManutencoes, dbEscutarClientes, dbEscutarResumoBalanco } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
-    import { sincronizarPendentes, contarPendentes } from './offline-sync.js';
+    import { sincronizarPendentes } from './offline-sync.js';
 
     let _atendBadgeStarted = false;
     let _servicoBadgeStarted = false;
     let _servicoManutencoes = [];
     let _servicoClientes = [];
     let unsubscribeResumoBalanco = null;
+    let statusBalancoPendenteIndex = false;
 
-    function usuarioLogadoAtual() {
-        return String(localStorage.getItem('usuarioLogado') || '').trim();
+    function atualizarEstadoBotaoRotas() {
+        const btnRotas = document.getElementById('btnRotas');
+        if (!btnRotas) return;
+        const bloqueado = !navigator.onLine || statusBalancoPendenteIndex;
+        btnRotas.classList.toggle('rotas-bloqueadas', bloqueado);
+        btnRotas.setAttribute('aria-disabled', bloqueado ? 'true' : 'false');
     }
 
-    function atualizarItensPendentesBalancoIndex(resumo) {
-        const input = document.getElementById('itensPendentesBalancoIndex');
-        if (!input) return;
-        input.value = String(Number(resumo?.itensPendentes || 0));
+    function atualizarStatusBalancoIndex(resumo) {
+        const status = String(resumo?.statusBalanco || 'ok').trim().toLowerCase();
+        const pendente = status === 'pendente';
+        statusBalancoPendenteIndex = pendente;
+        atualizarEstadoBotaoRotas();
     }
 
-    function iniciarResumoBalancoIndex(nomeUsuario) {
+    function iniciarStatusBalancoIndex(nomeUsuario) {
         const nome = String(nomeUsuario || '').trim();
         if (typeof unsubscribeResumoBalanco === 'function') unsubscribeResumoBalanco();
         unsubscribeResumoBalanco = null;
-        atualizarItensPendentesBalancoIndex(null);
+        atualizarStatusBalancoIndex(null);
         if (!nome) return;
-        unsubscribeResumoBalanco = dbEscutarResumoBalanco(nome, atualizarItensPendentesBalancoIndex);
+        unsubscribeResumoBalanco = dbEscutarResumoBalanco(nome, atualizarStatusBalancoIndex);
     }
 
     function atualizarBadgeServico() {
@@ -419,6 +401,7 @@
     const pillOffline = document.getElementById('pill-offline');
     function atualizarConexao() {
         pillOffline.style.display = navigator.onLine ? 'none' : 'block';
+        atualizarEstadoBotaoRotas();
     }
     atualizarConexao();
     window.addEventListener('offline', atualizarConexao);
@@ -480,7 +463,7 @@
         window.location.href = 'media_de_vendas.html';
     };
 
-    window.abrirTela = function(tela){
+    window.abrirTela = async function(tela){
         if (tela === 'manutencao') {
             window.location.href = 'manutencoes_solicitadas.html';
             return;
@@ -490,6 +473,11 @@
             return;
         }
         if (tela === 'rotas') {
+            if (!navigator.onLine) return;
+            if (statusBalancoPendenteIndex) {
+                if (window.playAlert) await window.playAlert('Confira o material e envie o Balanço');
+                return;
+            }
             window.location.href = 'selecionar_rota.html';
             return;
         }
@@ -566,6 +554,7 @@
             btns.pix.style.display = 'none';
             btns.fluxoCaixa.style.display = 'none';
             btns.mediaVendas.style.display = 'none';
+            btns.balanco.style.display = 'none';
 
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'none';
@@ -620,6 +609,8 @@
             // Fluxo de Caixa: Apenas NÃ­vel 2
             btns.fluxoCaixa.style.display = perfil.includes('atendimento_2') ? 'flex' : 'none';
             
+            btns.balanco.style.display = 'flex';
+
             // Oculta o restante
             btns.cadColab.style.display = 'none';
             btns.movimentacao.style.display = 'none';
@@ -628,19 +619,19 @@
             btns.servico.style.display = 'none';
             btns.financeiro.style.display = 'none';
 
-        // 3. PERFIL GESTÃƒO
+        // 3. PERFIL GESTÃO
         } else {
             btns.atendimento.style.display = 'flex';
             btns.clientes.style.display = 'flex';
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'flex';
+            btns.balanco.style.display = 'flex';
             btns.mediaVendas.style.display = 'flex';
             btns.depositos.style.display = 'flex';
             btns.importarHistorico.style.display = 'flex';
-            
-            // [ALTERADO] Rotas Ã© exclusivo de Atendimento 1
-            btns.rotas.style.display = 'none'; 
-            
+
+            btns.rotas.style.display = 'none';
+
             btns.cadColab.style.display = 'flex';
             btns.cadastroItens.style.display = 'flex';
 
@@ -684,7 +675,7 @@
         if (usuario?.producaoProdutos) {
             btns.financeiro.style.display = 'flex';
         }
-        iniciarResumoBalancoIndex(nomeNormalizado);
+        iniciarStatusBalancoIndex(nomeNormalizado);
     }
 
     // Abre o menu imediatamente com dados do cache (se existir)

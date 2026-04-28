@@ -3315,6 +3315,7 @@ export async function dbAtualizarResumoBalanco(responsavel) {
         };
 
         if (itensPendentes === 0) {
+            patch.statusBalanco = 'ok';
             patch.pendenteDesde = null;
             patch.pendenteDesdeData = null;
             patch.ultimoZeradoEm = agoraIso;
@@ -3336,44 +3337,12 @@ export async function dbAtualizarResumoBalanco(responsavel) {
     }
 }
 
-export async function dbLerResumoBalanco(responsavel) {
-    try {
-        const chaveU = _normalizarChaveUsuario(responsavel);
-        if (!chaveU) return null;
-        const snap = await get(ref(db, `contestacao_balanco/${chaveU}/${RESUMO_BALANCO_ID}`));
-        return snap.val() || null;
-    } catch (e) {
-        console.warn('ERRO AO LER RESUMO DO BALANCO:', e);
-        return null;
-    }
-}
-
 export function dbEscutarResumoBalanco(responsavel, callback) {
     const chaveU = _normalizarChaveUsuario(responsavel);
     if (!chaveU) { callback(null); return () => {}; }
     return onValue(ref(db, `contestacao_balanco/${chaveU}/${RESUMO_BALANCO_ID}`), (snap) => {
         callback(snap.val() || null);
     });
-}
-
-export async function dbVerificarRestricaoBalanco(responsavel, prazoDias = 2) {
-    const resumo = await dbAtualizarResumoBalanco(responsavel);
-    const itensPendentes = Number(resumo?.itensPendentes || 0);
-    const pendenteDesdeData = resumo?.pendenteDesdeData || (resumo?.pendenteDesde ? _dataBrasiliaISOData(new Date(resumo.pendenteDesde)) : '');
-    const dataVencimento = _somarDiasISOData(pendenteDesdeData, Math.max(0, Number(prazoDias) || 0));
-    const hojeBrasilia = _dataBrasiliaISOData(new Date());
-    const vencido = itensPendentes > 0
-        && Boolean(dataVencimento)
-        && hojeBrasilia >= dataVencimento;
-
-    return {
-        bloqueado: vencido,
-        itensPendentes,
-        pendenteDesde: resumo?.pendenteDesde || null,
-        pendenteDesdeData,
-        dataVencimento,
-        resumo
-    };
 }
 
 export function dbEscutarContestacoesBalanco(responsavel, callback) {

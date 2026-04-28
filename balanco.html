@@ -270,36 +270,6 @@
             color:#fff;
             box-shadow:0 2px 8px rgba(0,0,0,0.2);
         }
-        .pendencias-balanco {
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            gap:10px;
-            margin:0 0 22px;
-        }
-        .pendencias-label {
-            font-size:15px;
-            font-weight:700;
-            color:#fff;
-            text-align:center;
-            user-select:none;
-            -webkit-user-select:none;
-        }
-        .pendencias-input {
-            width:58px;
-            height:36px;
-            box-sizing:border-box;
-            border:1px solid #fff;
-            border-radius:18px;
-            background:transparent;
-            color:#fff;
-            font-size:18px;
-            font-weight:700;
-            text-align:center;
-            outline:none;
-            user-select:text;
-            -webkit-user-select:text;
-        }
         .item-barra-wrap { flex:1; margin:0 12px; }
         .item-barra-bg {
             background:rgba(255,255,255,0.08);
@@ -1377,18 +1347,6 @@
         return `<div class="item-contestacao">Análise ${formatarDiferencaContestacao(contestacao)}</div>`;
     }
 
-    function contarItensSemConferenciaNemAnalise(itens) {
-        return (Array.isArray(itens) ? itens : []).reduce((total, item) => {
-            const contestacao = obterContestacaoAbertaItem(item.itemChave, item.nome, item.categoria);
-            const quantidadeAprovada = Number(contestacao?.quantidadeInformada ?? contestacao?.quantidadeAtual);
-            const conferido = String(contestacao?.status || '').trim() === 'aprovado'
-                && Number.isFinite(quantidadeAprovada)
-                && quantidadeAprovada === Number(item.total || 0);
-            const emAnalise = contestacaoEstaEmAnalise(contestacao);
-            return total + (!conferido && !emAnalise ? 1 : 0);
-        }, 0);
-    }
-
     function movimentoHistoricoEhAprovacaoBalanco(entrada) {
         return String(entrada?.tipo || '').trim() === 'balanco_aprovado'
             || entrada?.valorConferido != null;
@@ -1950,9 +1908,6 @@
             .filter(i => i.categoria === 'maquina' && i.total !== 0)
             .map(i => [i.nome, i.total, i.categoria, i.itemChave])
             .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0], 'pt-BR'));
-        const itensPosseBalanco = [...produtosPosse, ...maquinasPosse]
-            .map(([nome, total, categoria, itemChave]) => ({ nome, total, categoria, itemChave }));
-        const totalItensPendentesBalanco = contarItensSemConferenciaNemAnalise(itensPosseBalanco);
         const pixPosse      = somarPixEmPosse(pixEmPosse || [], todosAtendimentos);
         const maxProd       = Math.max(1, ...produtosPosse.map(([, qtd]) => Math.abs(qtd)));
         const maxMaqPosse   = Math.max(1, ...maquinasPosse.map(([, qtd]) => Math.abs(qtd)));
@@ -2037,12 +1992,6 @@
                         </div>`;
                         })()}`).join('')}
                 </div>
-            </div>` : ''}
-
-            ${itensPosseBalanco.length > 0 ? `
-            <div class="pendencias-balanco">
-                <label class="pendencias-label" for="itensPendentesBalanco">Itens pendentes</label>
-                <input class="pendencias-input" id="itensPendentesBalanco" type="text" value="${totalItensPendentesBalanco}" readonly inputmode="numeric" aria-label="Itens pendentes">
             </div>` : ''}
 
             ${pixPosse.length > 0 ? `
