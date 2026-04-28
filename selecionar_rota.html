@@ -323,31 +323,8 @@ import {
     dbListarJustificativasCheckin,
     dbRemoverJustificativaCheckin,
     dbLiberarRota,
-    calcularStatusLiberacaoRota,
-    dbVerificarRestricaoBalanco
+    calcularStatusLiberacaoRota
 } from './database.js';
-
-async function bloquearSelecaoRotasSeNecessario() {
-    if (navigator.onLine === false) {
-        alert('Seleção de rotas precisa de internet.');
-        window.location.replace('index.html');
-        return true;
-    }
-    const usuario = String(localStorage.getItem('usuarioLogado') || '').trim();
-    try {
-        const restricao = await dbVerificarRestricaoBalanco(usuario, 2);
-        if (restricao?.bloqueado) {
-            alert('Balanço pendente. Regularize o balanço para liberar a seleção de rotas.');
-            window.location.replace('index.html');
-            return true;
-        }
-    } catch (erro) {
-        console.warn('Nao foi possivel verificar restricao de balanco:', erro);
-    }
-    return false;
-}
-
-if (await bloquearSelecaoRotasSeNecessario()) throw new Error('Acesso bloqueado.');
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // Estado global

@@ -109,25 +109,35 @@
             border-color: #f59e0b;
             animation: piscar-borda 2s ease-in-out infinite;
         }
-        .alerta-balanco {
-            display:none;
-            background:#7f1d1d;
-            border:2px solid #fca5a5;
-            border-radius:14px;
-            color:#fff;
+        .pendencias-balanco {
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:10px;
+            margin:0 0 18px;
+        }
+        .pendencias-label {
             font-size:15px;
             font-weight:bold;
-            line-height:1.25;
-            padding:10px 12px;
-            margin:0 0 18px;
+            color:#fff;
             text-align:center;
             user-select:none;
             -webkit-user-select:none;
         }
-        .alerta-balanco.visivel { display:block; }
-        .botao.bloqueado {
-            border-color:#fca5a5;
-            background:#7f1d1d;
+        .pendencias-input {
+            width:58px;
+            height:36px;
+            box-sizing:border-box;
+            border:1px solid #fff;
+            border-radius:18px;
+            background:transparent;
+            color:#fff;
+            font-size:18px;
+            font-weight:bold;
+            text-align:center;
+            outline:none;
+            user-select:text;
+            -webkit-user-select:text;
         }
 
         /* Submenu GestÃ£o */
@@ -187,7 +197,10 @@
         <button onclick="sair()" style="background: transparent; border: 1px solid rgba(255,255,255,0.25); border-radius: 20px; color: rgba(255,255,255,0.5); font-size: 13px; cursor: pointer; padding: 3px 10px; font-family: Arial, Helvetica, sans-serif; transition: 0.15s;" title="Sair">Sair</button>
     </div>
 
-    <div class="alerta-balanco" id="alertaBalanco"></div>
+    <div class="pendencias-balanco">
+        <label class="pendencias-label" for="itensPendentesBalancoIndex">Itens pendentes</label>
+        <input class="pendencias-input" id="itensPendentesBalancoIndex" type="text" value="0" readonly inputmode="numeric" aria-label="Itens pendentes">
+    </div>
 
     <div class="menu">
 
@@ -342,7 +355,7 @@
 </script>
 
 <script type="module">
-    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarAtendimentos, dbEscutarManutencoes, dbEscutarClientes, dbVerificarRestricaoBalanco } from './database.js';
+    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarAtendimentos, dbEscutarManutencoes, dbEscutarClientes, dbEscutarResumoBalanco } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
     import { sincronizarPendentes, contarPendentes } from './offline-sync.js';
 
@@ -350,111 +363,25 @@
     let _servicoBadgeStarted = false;
     let _servicoManutencoes = [];
     let _servicoClientes = [];
-    let restricaoBalancoAtual = { bloqueado: false, itensPendentes: 0 };
-    const PRAZO_RESTRICAO_BALANCO_DIAS = 2;
+    let unsubscribeResumoBalanco = null;
 
     function usuarioLogadoAtual() {
         return String(localStorage.getItem('usuarioLogado') || '').trim();
     }
 
-    function obterUsuarioLogadoObj() {
-        const nome = usuarioLogadoAtual();
-        return listaColaboradores.find(c => String(c?.nome || '').trim() === nome) || null;
+    function atualizarItensPendentesBalancoIndex(resumo) {
+        const input = document.getElementById('itensPendentesBalancoIndex');
+        if (!input) return;
+        input.value = String(Number(resumo?.itensPendentes || 0));
     }
 
-    function obterPerfilLogado() {
-        return String(obterUsuarioLogadoObj()?.nivel_completo || '');
-    }
-
-    function estaOnline() {
-        return navigator.onLine !== false;
-    }
-
-    function usuarioEhAtendimentoNivel1() {
-        return obterPerfilLogado().includes('atendimento_1');
-    }
-
-    function usuarioEhAtendimentoNivel2() {
-        return obterPerfilLogado().includes('atendimento_2');
-    }
-
-    function mostrarAlertaBalanco(mensagem) {
-        const alerta = document.getElementById('alertaBalanco');
-        if (!alerta) return;
-        alerta.textContent = mensagem || '';
-        alerta.classList.toggle('visivel', Boolean(mensagem));
-    }
-
-    function marcarBotaoBloqueado(id, bloqueado) {
-        const btn = document.getElementById(id);
-        if (btn) btn.classList.toggle('bloqueado', Boolean(bloqueado));
-    }
-
-    function aplicarIndicadoresRestricaoBalanco() {
-        const bloqueado = restricaoBalancoAtual?.bloqueado === true;
-        const itens = Number(restricaoBalancoAtual?.itensPendentes || 0);
-        const nivel1 = usuarioEhAtendimentoNivel1();
-        const nivel2 = usuarioEhAtendimentoNivel2();
-        const offline = !estaOnline();
-
-        marcarBotaoBloqueado('btnAtendimento', nivel1 && bloqueado);
-        marcarBotaoBloqueado('btnRotas', (nivel1 && (bloqueado || offline)));
-        marcarBotaoBloqueado('btnManutencao', nivel2 && (bloqueado || offline));
-
-        if ((nivel1 || nivel2) && bloqueado) {
-            mostrarAlertaBalanco(`Balanço pendente: ${itens} ${itens === 1 ? 'item' : 'itens'} sem conferência.`);
-        } else if (nivel1 && offline) {
-            mostrarAlertaBalanco('Sem internet: seleção de rotas indisponível.');
-        } else if (nivel2 && offline) {
-            mostrarAlertaBalanco('Sem internet: manutenção indisponível.');
-        } else {
-            mostrarAlertaBalanco('');
-        }
-    }
-
-    async function atualizarRestricaoBalancoIndex() {
-        const perfil = obterPerfilLogado();
-        const deveVerificar = perfil.includes('atendimento_1') || perfil.includes('atendimento_2');
-        if (!deveVerificar || !estaOnline()) {
-            restricaoBalancoAtual = { bloqueado: false, itensPendentes: 0 };
-            aplicarIndicadoresRestricaoBalanco();
-            return restricaoBalancoAtual;
-        }
-
-        try {
-            restricaoBalancoAtual = await dbVerificarRestricaoBalanco(usuarioLogadoAtual(), PRAZO_RESTRICAO_BALANCO_DIAS);
-        } catch (erro) {
-            console.warn('Nao foi possivel verificar restricao de balanco:', erro);
-            restricaoBalancoAtual = { bloqueado: false, itensPendentes: 0 };
-        }
-        aplicarIndicadoresRestricaoBalanco();
-        return restricaoBalancoAtual;
-    }
-
-    async function bloqueioImpedeAcesso(tipoTela) {
-        await atualizarRestricaoBalancoIndex();
-        const bloqueado = restricaoBalancoAtual?.bloqueado === true;
-        if (tipoTela === 'rotas' && usuarioEhAtendimentoNivel1() && !estaOnline()) {
-            alert('Seleção de rotas precisa de internet.');
-            return true;
-        }
-        if (tipoTela === 'manutencao' && usuarioEhAtendimentoNivel2() && !estaOnline()) {
-            alert('Manutenção precisa de internet.');
-            return true;
-        }
-        if (tipoTela === 'atendimento' && usuarioEhAtendimentoNivel1() && bloqueado) {
-            alert('Balanço pendente. Regularize o balanço para liberar o atendimento.');
-            return true;
-        }
-        if (tipoTela === 'rotas' && usuarioEhAtendimentoNivel1() && bloqueado) {
-            alert('Balanço pendente. Regularize o balanço para liberar a seleção de rotas.');
-            return true;
-        }
-        if (tipoTela === 'manutencao' && usuarioEhAtendimentoNivel2() && bloqueado) {
-            alert('Balanço pendente. Regularize o balanço para liberar a manutenção.');
-            return true;
-        }
-        return false;
+    function iniciarResumoBalancoIndex(nomeUsuario) {
+        const nome = String(nomeUsuario || '').trim();
+        if (typeof unsubscribeResumoBalanco === 'function') unsubscribeResumoBalanco();
+        unsubscribeResumoBalanco = null;
+        atualizarItensPendentesBalancoIndex(null);
+        if (!nome) return;
+        unsubscribeResumoBalanco = dbEscutarResumoBalanco(nome, atualizarItensPendentesBalancoIndex);
     }
 
     function atualizarBadgeServico() {
@@ -517,7 +444,7 @@
 
 
     // Redirecionamento inteligente do Atendimento
-    window.abrirAtendimento = async function() {
+    window.abrirAtendimento = function() {
         localStorage.removeItem('rascunho_atendimento');
 
         const nome = String(localStorage.getItem('usuarioLogado') || '').trim();
@@ -525,7 +452,6 @@
         const perfil = usuario ? (usuario.nivel_completo || "") : "";
 
         if (perfil.includes('atendimento_1')) {
-            if (await bloqueioImpedeAcesso('atendimento')) return;
             sessionStorage.setItem('atendimento_tela_origem', 'index.html');
             window.location.href = 'atendimento_nivel_1.html';
         } else if (perfil.includes('gestao')) {
@@ -554,9 +480,8 @@
         window.location.href = 'media_de_vendas.html';
     };
 
-    window.abrirTela = async function(tela){
+    window.abrirTela = function(tela){
         if (tela === 'manutencao') {
-            if (await bloqueioImpedeAcesso('manutencao')) return;
             window.location.href = 'manutencoes_solicitadas.html';
             return;
         }
@@ -565,7 +490,6 @@
             return;
         }
         if (tela === 'rotas') {
-            if (await bloqueioImpedeAcesso('rotas')) return;
             window.location.href = 'selecionar_rota.html';
             return;
         }
@@ -760,11 +684,8 @@
         if (usuario?.producaoProdutos) {
             btns.financeiro.style.display = 'flex';
         }
-        atualizarRestricaoBalancoIndex();
+        iniciarResumoBalancoIndex(nomeNormalizado);
     }
-
-    window.addEventListener('online', atualizarRestricaoBalancoIndex);
-    window.addEventListener('offline', aplicarIndicadoresRestricaoBalanco);
 
     // Abre o menu imediatamente com dados do cache (se existir)
     const cacheColab = localStorage.getItem('cache_colaboradores');

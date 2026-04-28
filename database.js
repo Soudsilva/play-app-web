@@ -3348,6 +3348,14 @@ export async function dbLerResumoBalanco(responsavel) {
     }
 }
 
+export function dbEscutarResumoBalanco(responsavel, callback) {
+    const chaveU = _normalizarChaveUsuario(responsavel);
+    if (!chaveU) { callback(null); return () => {}; }
+    return onValue(ref(db, `contestacao_balanco/${chaveU}/${RESUMO_BALANCO_ID}`), (snap) => {
+        callback(snap.val() || null);
+    });
+}
+
 export async function dbVerificarRestricaoBalanco(responsavel, prazoDias = 2) {
     const resumo = await dbAtualizarResumoBalanco(responsavel);
     const itensPendentes = Number(resumo?.itensPendentes || 0);
