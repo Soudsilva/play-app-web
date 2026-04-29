@@ -355,6 +355,7 @@
     let _servicoClientes = [];
     let unsubscribeResumoBalanco = null;
     let statusBalancoPendenteIndex = false;
+    let statusBalancoCarregadoIndex = false;
     let usuarioAtendimentoNivel2Index = false;
 
     function atualizarEstadoBotaoRotas() {
@@ -368,7 +369,8 @@
     function atualizarEstadoBotaoManutencao() {
         const btnManutencao = document.getElementById('btnManutencao');
         if (!btnManutencao) return;
-        const bloqueado = usuarioAtendimentoNivel2Index && statusBalancoPendenteIndex;
+        const verificandoBalanco = usuarioAtendimentoNivel2Index && !statusBalancoCarregadoIndex;
+        const bloqueado = usuarioAtendimentoNivel2Index && (verificandoBalanco || statusBalancoPendenteIndex);
         btnManutencao.classList.toggle('manutencao-bloqueada', bloqueado);
         btnManutencao.setAttribute('aria-disabled', bloqueado ? 'true' : 'false');
     }
@@ -377,6 +379,7 @@
         const status = String(resumo?.statusBalanco || 'ok').trim().toLowerCase();
         const pendente = status === 'pendente';
         statusBalancoPendenteIndex = pendente;
+        statusBalancoCarregadoIndex = true;
         atualizarEstadoBotaoRotas();
         atualizarEstadoBotaoManutencao();
     }
@@ -385,8 +388,15 @@
         const nome = String(nomeUsuario || '').trim();
         if (typeof unsubscribeResumoBalanco === 'function') unsubscribeResumoBalanco();
         unsubscribeResumoBalanco = null;
-        atualizarStatusBalancoIndex(null);
-        if (!nome) return;
+        statusBalancoPendenteIndex = false;
+        statusBalancoCarregadoIndex = false;
+        atualizarEstadoBotaoRotas();
+        atualizarEstadoBotaoManutencao();
+        if (!nome) {
+            statusBalancoCarregadoIndex = true;
+            atualizarEstadoBotaoManutencao();
+            return;
+        }
         unsubscribeResumoBalanco = dbEscutarResumoBalanco(nome, atualizarStatusBalancoIndex);
     }
 
@@ -525,6 +535,9 @@
 
     window.abrirTela = async function(tela){
         if (tela === 'manutencao') {
+            if (usuarioAtendimentoNivel2Index && !statusBalancoCarregadoIndex) {
+                return;
+            }
             if (usuarioAtendimentoNivel2Index && statusBalancoPendenteIndex) {
                 if (window.playAlert) await window.playAlert('Confira o material e envie o Balanço');
                 return;
