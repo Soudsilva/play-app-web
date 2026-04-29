@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
@@ -176,7 +176,7 @@
 <body>
 <div class="app">
     <div class="topo">
-        <div class="titulo">🏦 Depósitos</div>
+        <div class="titulo">Depósitos</div>
     </div>
 
     <div id="secaoDias"></div>
@@ -187,7 +187,7 @@
 <!-- Modal editar depósito -->
 <div id="modalEditDep" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:4000;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;">
     <div style="background:#0e2d72;border:1px solid rgba(255,235,59,0.4);border-radius:18px;padding:22px;width:100%;max-width:340px;box-sizing:border-box;">
-        <div style="font-size:15px;font-weight:bold;color:#ffeb3b;text-align:center;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">✏️ Editar Depósito</div>
+        <div style="font-size:15px;font-weight:bold;color:#ffeb3b;text-align:center;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">Editar Depósito</div>
         <input type="hidden" id="editDepKey">
         <label style="font-size:11px;color:#fff;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Valor</label>
         <input class="form-input" type="text" inputmode="numeric" id="editDepValor" placeholder="Valor" oninput="formatarValorDep(this)" style="margin-bottom:12px;">
@@ -196,12 +196,12 @@
         <label style="font-size:11px;color:#fff;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Foto do envelope</label>
         <div style="display:flex;gap:8px;margin-bottom:10px;">
             <label id="editBtnCamera" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:12px 8px;cursor:pointer;position:relative;overflow:hidden;">
-                <span style="font-size:18px;">📷</span>
+                <span style="font-size:18px;">&#128247;</span>
                 <span style="font-size:13px;color:#fff;font-weight:bold;">Câmera</span>
                 <input type="file" accept="image/*" capture="environment" id="editInputFotoCamera" onchange="previewFotoEdicao(event)" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
             </label>
             <label id="editBtnGaleria" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);border-radius:12px;padding:12px 8px;cursor:pointer;position:relative;overflow:hidden;">
-                <span style="font-size:18px;">🖼️</span>
+                <span style="font-size:18px;">&#128444;</span>
                 <span style="font-size:13px;color:#fff;font-weight:bold;">Galeria</span>
                 <input type="file" accept="image/*" id="editInputFotoGaleria" onchange="previewFotoEdicao(event)" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
             </label>
@@ -216,7 +216,7 @@
 
 <!-- Lightbox -->
 <div class="lb-overlay" id="lbOverlay" onclick="fecharLightbox()">
-    <div class="lb-fechar" onclick="fecharLightbox()">✕</div>
+    <div class="lb-fechar" onclick="fecharLightbox()">×</div>
     <img class="lb-img" id="lbImg" src="" alt="Envelope">
 </div>
 
@@ -230,24 +230,24 @@
     </div>
     <div class="form-row">
         <button class="btn-obs" id="btnObs" onclick="toggleObs()">
-            📝<span class="obs-badge" id="obsBadge"></span>
+            &#128221;<span class="obs-badge" id="obsBadge"></span>
         </button>
         <div class="form-input-wrap" style="flex:1;">
             <input class="form-input" type="text" inputmode="numeric" placeholder="Valor" id="inputValorDep" oninput="formatarValorDep(this)">
         </div>
         <div style="position:relative; flex-shrink:0; display:flex; align-self:stretch;">
             <button class="btn-foto-env" id="btnFotoEnv" type="button" onclick="toggleMenuFoto()" style="flex:1;">
-                <span id="iconeFotoEnv">📷</span>
+                <span id="iconeFotoEnv">&#128247;</span>
             </button>
             <div id="menuFoto" style="display:none; position:absolute; bottom:calc(100% + 8px); right:0; z-index:300;">
                 <div style="background:#0d2560; border:1px solid rgba(255,255,255,0.15); border-radius:14px; overflow:hidden; box-shadow:0 -4px 24px rgba(0,0,0,0.5);">
                     <label style="display:flex;align-items:center;gap:10px;padding:13px 20px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.08);position:relative;overflow:hidden;white-space:nowrap;">
-                        <span style="font-size:18px;">📷</span>
+                        <span style="font-size:18px;">&#128247;</span>
                         <span style="font-size:14px;font-weight:bold;color:#fff;">Câmera</span>
                         <input type="file" accept="image/*" capture="environment" id="inputFotoCamera" onchange="previewFotoEnv(event);fecharMenuFoto();" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
                     </label>
                     <label style="display:flex;align-items:center;gap:10px;padding:13px 20px;cursor:pointer;position:relative;overflow:hidden;white-space:nowrap;">
-                        <span style="font-size:18px;">🖼️</span>
+                        <span style="font-size:18px;">&#128444;</span>
                         <span style="font-size:14px;font-weight:bold;color:#fff;">Galeria</span>
                         <input type="file" accept="image/*" id="inputFotoGaleria" onchange="previewFotoEnv(event);fecharMenuFoto();" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
                     </label>
@@ -303,9 +303,9 @@
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
-    verificarAutenticacao();
+    await verificarAutenticacao();
     import { dbListarAtendimentos, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
-    import { dbSalvarDeposito, dbListarDepositos, dbAtualizarDeposito, dbExcluirDeposito } from './database.js';
+    import { dbSalvarDeposito, dbEscutarDepositos, dbAtualizarDeposito, dbExcluirDeposito } from './database.js';
 
     const usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
     const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
@@ -363,6 +363,7 @@
 
     let todosAtendimentos = [];
     let todosDepositos = [];
+    let pararEscutaDepositos = null;
     let fotoEnvelopeBase64 = null;
 
     function preencherMeses(ano) {
@@ -394,7 +395,7 @@
             </div>
             ${vals.clientesPix.length > 0 ? `
             <div class="dia-pix-section">
-                <div class="dia-pix-titulo">💳 Pix</div>
+                <div class="dia-pix-titulo">Pix</div>
                 ${vals.clientesPix.map(c => `
                 <div class="dia-pix-item">
                     <span class="dia-pix-nome">${c.nome}</span>
@@ -468,17 +469,58 @@
 
         secaoDias.innerHTML = `
             <div class="secao">
-                <div class="secao-titulo">📅 Saldo por Dia</div>
+                <div class="secao-titulo">Saldo por Dia</div>
                 <div class="lista-card">${htmlDias}</div>
             </div>`;
     }
 
+    function depositoEstaConferido(deposito) {
+        const status = String(deposito?.status || '').trim().toLowerCase();
+        return status === 'conferido' || status === 'conferido_divergente';
+    }
+
+    function depositoTemDivergencia(deposito) {
+        return String(deposito?.status || '').trim().toLowerCase() === 'conferido_divergente';
+    }
+
+    function valorAbatimentoDeposito(deposito) {
+        const valorConferido = Number(deposito?.valorConferido || 0);
+        return valorConferido > 0 ? valorConferido : Number(deposito?.valor || 0);
+    }
+
+    function formatarDataHoraConferencia(timestamp) {
+        if (!timestamp) return '';
+        const data = new Date(timestamp);
+        if (Number.isNaN(data.getTime())) return '';
+        return new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).format(data);
+    }
+
+    function renderStatusDeposito(deposito) {
+        if (!depositoEstaConferido(deposito)) {
+            return `<div style="font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; color:#ffb74d;">Aguardando conferência</div>`;
+        }
+
+        const dataConf = formatarDataHoraConferencia(deposito.dataConferencia);
+        const gestor = deposito.conferidoPor ? ` por ${deposito.conferidoPor}` : '';
+        const corStatus = depositoTemDivergencia(deposito) ? '#64b5f6' : '#a5d6a7';
+        const linhaConf = dataConf ? `<div style="font-size:10px; color:${corStatus}; margin-top:2px;">${dataConf}${gestor}</div>` : '';
+        return `
+            <div style="font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; color:${corStatus};">${depositoTemDivergencia(deposito) ? 'Valor conferido com divergência' : 'Valor conferido'}</div>
+            ${linhaConf}`;
+    }
     function buildGreenCard(totalCobr, totalDep, dataLabel, depositos) {
         const falta = totalCobr - totalDep;
         const pct = totalCobr > 0 ? Math.min(100, Math.round(totalDep / totalCobr * 100)) : 0;
         const depHTML = depositos && depositos.length > 0 ? `
             <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:14px; width:100%; box-sizing:border-box;">
-                <div style="font-size:11px; font-weight:bold; color:#fff; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">🏦 ${depositos.length > 1 ? 'Depósitos Realizados' : 'Depósito Realizado'}</div>
+                <div style="font-size:11px; font-weight:bold; color:#fff; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">${depositos.length > 1 ? 'Depósitos Realizados' : 'Depósito Realizado'}</div>
                 ${depositos.map((deposito, idx) => `
                 <div style="display:flex; align-items:center; gap:12px;${idx < depositos.length - 1 ? ' margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.08);' : ''}">
                     <div style="flex-shrink:0; width:56px; height:70px; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.15); background:rgba(0,0,0,0.3); cursor:${deposito.foto ? 'pointer' : 'default'};"
@@ -489,13 +531,16 @@
                     </div>
                     <div style="flex:1;">
                         <div style="font-size:12px; color:#fff; margin-bottom:3px;">${formatarDataBR(dataLocalStr(deposito.data) || '')}${deposito.obs ? ` · <span style="color:#ffeb3b;font-weight:bold;">${deposito.obs}</span>` : ''}</div>
-                        <div style="font-size:22px; font-weight:bold; color:#a5d6a7;">${moeda(deposito.valor)}</div>
-                        <div style="font-size:10px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-top:3px; color:${deposito.conferido ? '#a5d6a7' : '#ffb74d'};">${deposito.conferido ? 'Envelope conferido' : 'Aguardando conferência'}</div>
+                        ${depositoTemDivergencia(deposito)
+                            ? `<div style="font-size:13px; color:#ffffff; text-decoration:line-through; text-decoration-style:dashed; margin-bottom:2px;">Informado: ${moeda(deposito.valor)}</div>
+                               <div style="font-size:22px; font-weight:bold; color:#64b5f6;">${moeda(deposito.valorConferido)}</div>`
+                            : `<div style="font-size:22px; font-weight:bold; color:#a5d6a7;">${moeda(valorAbatimentoDeposito(deposito))}</div>`}
+                        ${renderStatusDeposito(deposito)}
                     </div>
-                    ${ehHoje(deposito.data) ? `
+                    ${ehHoje(deposito.data) && !depositoEstaConferido(deposito) ? `
                     <div style="flex-shrink:0; display:flex; flex-direction:column; gap:6px;">
-                        <button onclick="abrirEdicaoDeposito('${deposito.firebaseUrl}')" style="background:rgba(255,235,59,0.1);border:1px solid rgba(255,235,59,0.4);border-radius:10px;color:#fff176;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">✏️</button>
-                        <button onclick="excluirDeposito('${deposito.firebaseUrl}')" style="background:rgba(244,67,54,0.12);border:1px solid rgba(244,67,54,0.35);border-radius:10px;color:#ef9a9a;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">🗑️</button>
+                        <button onclick="abrirEdicaoDeposito('${deposito.firebaseUrl}')" style="background:rgba(255,235,59,0.1);border:1px solid rgba(255,235,59,0.4);border-radius:10px;color:#fff176;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">✎</button>
+                        <button onclick="excluirDeposito('${deposito.firebaseUrl}')" style="background:rgba(244,67,54,0.12);border:1px solid rgba(244,67,54,0.35);border-radius:10px;color:#ef9a9a;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;">&#128465;</button>
                     </div>` : ''}
                 </div>`).join('')}
             </div>` : '';
@@ -503,7 +548,7 @@
             <div class="card-falta${falta <= 0 ? ' card-falta-blue' : ' card-falta-yellow'}" style="flex-direction:column; gap:14px; margin-bottom:18px;">
                 ${falta <= 0 ? `
                 <div style="display:flex; align-items:center; justify-content:center; gap:8px; background:rgba(33,150,243,0.15); border:1px solid rgba(100,181,246,0.4); border-radius:12px; padding:8px 14px;">
-                    <span style="font-size:18px;">✅</span>
+                    <span style="font-size:18px;">✓</span>
                     <span style="font-size:12px; font-weight:bold; color:#90caf9; text-transform:uppercase; letter-spacing:1px;">Em dia até ${dataLabel}</span>
                 </div>` : ''}
                 <div style="font-size:11px; font-weight:bold; color:#fff; text-transform:uppercase; letter-spacing:1px; text-align:center;">
@@ -528,10 +573,10 @@
                     </div>
                     ${falta <= 0
                         ? `<div class="card-ate-ok" style="text-align:center; background:rgba(76,175,80,0.18); border:2px solid rgba(76,175,80,0.7); border-radius:14px; padding:20px 8px;">
-                                <div class="card-ate-ok-texto" style="font-size:22px; font-weight:bold; color:#a5d6a7; letter-spacing:0.5px; line-height:1.4;">✅ Até essa data, ok!</div>
+                                <div class="card-ate-ok-texto" style="font-size:22px; font-weight:bold; color:#a5d6a7; letter-spacing:0.5px; line-height:1.4;">✓ Até essa data, ok!</div>
                            </div>`
                         : `<div style="text-align:center; background:rgba(255,111,0,0.18); border:2px solid rgba(255,111,0,0.7); border-radius:14px; padding:20px 8px; box-shadow:0 0 20px rgba(255,111,0,0.3);">
-                                <div style="font-size:11px; font-weight:bold; color:#ff9800; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">⚠ DEPOSITE</div>
+                                <div style="font-size:11px; font-weight:bold; color:#ff9800; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">DEPOSITE</div>
                                 <div style="font-size:42px; font-weight:bold; color:#ffb74d; line-height:1;">${moeda(falta)}</div>
                            </div>`
                     }
@@ -582,7 +627,7 @@
                 dataKey,
                 data: deps[0].data,
                 deps,
-                valor: deps.reduce((s, d) => s + Number(d.valor || 0), 0)
+                valor: deps.reduce((s, d) => s + valorAbatimentoDeposito(d), 0)
             }));
 
         // Divide em segmentos: cada depósito fecha um segmento
@@ -615,14 +660,14 @@
             antAtend.forEach(a => { saldoAnt += Number(a.financeiro?.dinheiro || 0) - Number(a.financeiro?.comissaoValor || 0); });
             const depAntTotal = todosDepositos
                 .filter(d => { const dt = bsbDate(d.data || 0); const ay = dt.getFullYear(), am = dt.getMonth()+1; return ay < ano || (ay === ano && am < mes); })
-                .reduce((s, d) => s + Number(d.valor || 0), 0);
+                .reduce((s, d) => s + valorAbatimentoDeposito(d), 0);
             carryOver = saldoAnt - depAntTotal;
         }
 
         let carryOverHTML = '';
         if (carryOver > 0) {
             carryOverHTML = `<div style="background:rgba(255,152,0,0.08);border:1px dashed rgba(255,152,0,0.35);border-radius:12px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
-                <span style="font-size:15px;">📋</span>
+                <span style="font-size:15px;">Saldo</span>
                 <div>
                     <div style="font-size:10px;font-weight:bold;color:#ffb74d;text-transform:uppercase;letter-spacing:0.5px;">Pendente de meses anteriores</div>
                     <div style="font-size:16px;font-weight:bold;color:#ffcc80;">${moeda(carryOver)}</div>
@@ -630,7 +675,7 @@
             </div>`;
         } else if (carryOver < 0) {
             carryOverHTML = `<div style="background:rgba(76,175,80,0.07);border:1px dashed rgba(76,175,80,0.3);border-radius:12px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;overflow:hidden;">
-                <span style="font-size:18px;flex-shrink:0;">✅</span>
+                <span style="font-size:18px;flex-shrink:0;">✓</span>
                 <span style="font-size:11px;font-weight:bold;color:#a5d6a7;text-transform:uppercase;letter-spacing:0.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Crédito de meses anteriores</span>
                 <span style="font-size:22px;font-weight:bold;color:#a5d6a7;white-space:nowrap;flex-shrink:0;">${moeda(-carryOver)}</span>
             </div>`;
@@ -669,7 +714,7 @@
                 // Segmento aberto: só mostra se ainda há saldo a depositar
                 htmlItems.push(`
                     <div class="card-falta card-falta-pendente">
-                        <div class="card-falta-pendente-titulo">⚠ &nbsp;Falta Depositar&nbsp; ⚠</div>
+                        <div class="card-falta-pendente-titulo">Falta Depositar</div>
                         <div class="card-falta-pendente-valor">${moeda(segTotal)}</div>
                         <div class="card-falta-pendente-linha"></div>
                         <div class="card-falta-pendente-sub">valor pendente do período</div>
@@ -734,7 +779,15 @@
             const dataFinal = (ano === anoAtual && mes === mesAtual)
                 ? agora.toISOString()
                 : new Date(ano, mes, 0, 23, 59, 59).toISOString(); // último dia do mês selecionado
-            await dbSalvarDeposito({ usuario: usuarioLogado, valor, obs, foto: fotoUrl, fotoThumb: fotoThumbUrl, data: dataFinal });
+            await dbSalvarDeposito({
+                usuario: usuarioLogado,
+                valor,
+                obs,
+                foto: fotoUrl,
+                fotoThumb: fotoThumbUrl,
+                data: dataFinal,
+                status: 'aguardando_conferencia'
+            });
             fotoEnvelopeBase64 = null;
             valorInput.value = '';
             const obsInput = document.getElementById('inputObsDep');
@@ -746,10 +799,9 @@
             btnFoto.classList.remove('tem-foto');
             document.getElementById('iconeFotoEnv').style.display = '';
             btnFoto.querySelectorAll('img').forEach(img => img.remove());
-            todosDepositos = await dbListarDepositos(usuarioLogado);
         } catch(e) {
             console.error(e);
-            window.playAlert('Erro ao salvar depósito.');
+            window.playAlert(`Erro ao salvar depósito: ${e?.message || 'verifique o console.'}`);
             return;
         } finally {
             btn.disabled = false;
@@ -800,8 +852,6 @@
         if (!confirmado) return;
         try {
             await dbExcluirDeposito(usuarioLogado, firebaseKey);
-            todosDepositos = await dbListarDepositos(usuarioLogado);
-            renderizarFaltaEDepositos();
         } catch(e) {
             console.error(e);
             window.playAlert('Erro ao excluir depósito.');
@@ -832,8 +882,6 @@
             delete atualizado.firebaseUrl;
             await dbAtualizarDeposito(usuarioLogado, firebaseKey, atualizado);
             editFotoBase64 = null;
-            todosDepositos = await dbListarDepositos(usuarioLogado);
-            renderizarFaltaEDepositos();
             fecharEdicaoDep();
         } catch(e) {
             console.error(e);
@@ -852,10 +900,7 @@
     });
 
     const agora = new Date();
-    [todosAtendimentos, todosDepositos] = await Promise.all([
-        dbListarAtendimentos(),
-        dbListarDepositos(usuarioLogado)
-    ]);
+    todosAtendimentos = await dbListarAtendimentos();
 
     const anosComAtendimento = [...new Set(
         todosAtendimentos
@@ -875,6 +920,16 @@
     preencherMeses(parseInt(selAno.value));
     renderizarFaltaEDepositos();
     atualizarFormVisivel();
+
+    pararEscutaDepositos = dbEscutarDepositos(usuarioLogado, (lista) => {
+        todosDepositos = Array.isArray(lista) ? lista : [];
+        renderizarFaltaEDepositos();
+        atualizarFormVisivel();
+    });
+
+    window.addEventListener('beforeunload', () => {
+        if (typeof pararEscutaDepositos === 'function') pararEscutaDepositos();
+    });
 </script>
 </body>
 </html>

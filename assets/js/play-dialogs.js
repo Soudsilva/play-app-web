@@ -17,7 +17,7 @@
                 display: none;
                 align-items: center;
                 justify-content: center;
-                z-index: 3000;
+                z-index: 9000;
                 padding: 20px;
                 box-sizing: border-box;
             }

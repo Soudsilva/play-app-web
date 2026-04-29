@@ -100,6 +100,20 @@
 
         .botao:hover { background: #3c5f9f; }
         .botao:active { transform: translateY(2px); background: #355792; transition: 0.05s; }
+        .botao.manutencao-bloqueada {
+            background:#5f6470;
+            border-color:#8b9099;
+            cursor:default;
+        }
+        .botao.manutencao-bloqueada:hover,
+        .botao.manutencao-bloqueada:active {
+            transform:none;
+            background:#5f6470;
+        }
+        .botao.manutencao-bloqueada span:last-child,
+        .botao.manutencao-bloqueada .icone {
+            color:#d8d8d8;
+        }
 
         @keyframes piscar-borda {
             0%, 100% { border-color: #f59e0b; box-shadow: 0 0 0px rgba(245,158,11,0); }
@@ -331,7 +345,7 @@
 </script>
 
 <script type="module">
-    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarAtendimentos, dbEscutarManutencoes, dbEscutarClientes, dbEscutarResumoBalanco } from './database.js';
+    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarAtendimentos, dbEscutarManutencoes, dbEscutarClientes, dbEscutarResumoBalanco, dbEscutarTodasContestacoesBalanco } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
     import { sincronizarPendentes } from './offline-sync.js';
 
@@ -341,6 +355,7 @@
     let _servicoClientes = [];
     let unsubscribeResumoBalanco = null;
     let statusBalancoPendenteIndex = false;
+    let usuarioAtendimentoNivel2Index = false;
 
     function atualizarEstadoBotaoRotas() {
         const btnRotas = document.getElementById('btnRotas');
@@ -350,11 +365,20 @@
         btnRotas.setAttribute('aria-disabled', bloqueado ? 'true' : 'false');
     }
 
+    function atualizarEstadoBotaoManutencao() {
+        const btnManutencao = document.getElementById('btnManutencao');
+        if (!btnManutencao) return;
+        const bloqueado = usuarioAtendimentoNivel2Index && statusBalancoPendenteIndex;
+        btnManutencao.classList.toggle('manutencao-bloqueada', bloqueado);
+        btnManutencao.setAttribute('aria-disabled', bloqueado ? 'true' : 'false');
+    }
+
     function atualizarStatusBalancoIndex(resumo) {
         const status = String(resumo?.statusBalanco || 'ok').trim().toLowerCase();
         const pendente = status === 'pendente';
         statusBalancoPendenteIndex = pendente;
         atualizarEstadoBotaoRotas();
+        atualizarEstadoBotaoManutencao();
     }
 
     function iniciarStatusBalancoIndex(nomeUsuario) {
@@ -392,6 +416,22 @@
         dbEscutarAtendimentos((lista) => {
             const pendentes = lista.filter(a => !a.confirmacao).length;
             const btn = document.getElementById('btnAtendimento');
+            if (!btn) return;
+            btn.classList.toggle('botao-pendente-alerta', pendentes > 0);
+        });
+    }
+
+    let _balancoBadgeStarted = false;
+    function iniciarBadgeBalanco() {
+        if (_balancoBadgeStarted) return;
+        _balancoBadgeStarted = true;
+        dbEscutarTodasContestacoesBalanco((lista) => {
+            const pendentes = lista.filter(c =>
+                String(c?.status || '').trim() !== 'aprovado' &&
+                !c?.aprovadoEm &&
+                !c?.aprovadoPor
+            ).length;
+            const btn = document.getElementById('btnBalanco');
             if (!btn) return;
             btn.classList.toggle('botao-pendente-alerta', pendentes > 0);
         });
@@ -463,13 +503,25 @@
         window.location.href = 'media_de_vendas.html';
     };
 
+    function perfilEhGestor(perfil) {
+        const valor = String(perfil || '').toLowerCase();
+        return valor.includes('gestao') || valor.includes('gestor');
+    }
+
     window.abrirTela = async function(tela){
         if (tela === 'manutencao') {
+            if (usuarioAtendimentoNivel2Index && statusBalancoPendenteIndex) {
+                if (window.playAlert) await window.playAlert('Confira o material e envie o Balanço');
+                return;
+            }
             window.location.href = 'manutencoes_solicitadas.html';
             return;
         }
         if (tela === 'depositos') {
-            window.location.href = 'depositos.html';
+            const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
+            const u = listaColaboradores.find(c => String(c?.nome || '').trim() === nomeLogado);
+            const perfil = u ? (u.nivel_completo || "") : "";
+            window.location.href = perfilEhGestor(perfil) ? 'Verificar_Depositos.html' : 'depositos.html';
             return;
         }
         if (tela === 'rotas') {
@@ -512,6 +564,8 @@
         const nomeNormalizado = String(nomeUsuario || '').trim();
         const usuario = listaColaboradores.find(c => String(c?.nome || '').trim() === nomeNormalizado);
         const perfil = usuario ? (usuario.nivel_completo || "") : "";
+        usuarioAtendimentoNivel2Index = perfil.includes('atendimento_2');
+        atualizarEstadoBotaoManutencao();
         // Mapeamento de todos os botÃµes para facilitar o controle
         const btns = {
             atendimento: document.getElementById('btnAtendimento'),
@@ -646,6 +700,7 @@
             btns.financeiro.style.display = 'none'; // Financeiro continua restrito ao Estoque
             iniciarBadgeAtendimentos();
             iniciarBadgeServico();
+            iniciarBadgeBalanco();
         }
 
         // GESTOR NÍVEL 2 e 3: acesso a Entr. Saídas
@@ -669,6 +724,7 @@
             btns.pix.style.display = 'none';
             btns.mediaVendas.style.display = 'none';
             btns.importarHistorico.style.display = 'none';
+            btns.balanco.onclick = () => window.location.href = 'balanco.html?contestacao=1';
         }
 
         // Remuneração "Produção de Produtos": exibe o botão Financeiro para qualquer perfil

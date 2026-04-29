@@ -3361,6 +3361,25 @@ export function dbEscutarContestacoesBalanco(responsavel, callback) {
     });
 }
 
+export function dbEscutarTodasContestacoesBalanco(callback) {
+    return onValue(ref(db, 'contestacao_balanco'), (snap) => {
+        if (!snap.exists()) { callback([]); return; }
+
+        const lista = Object.entries(snap.val() || {}).flatMap(([usuarioKey, registros]) =>
+            Object.entries(registros || {})
+                .filter(([id]) => id !== RESUMO_BALANCO_ID)
+                .map(([id, valor]) => ({
+                    id,
+                    firebaseUrl: id,
+                    usuarioKey,
+                    ...valor
+                }))
+        ).sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+
+        callback(lista);
+    });
+}
+
 export async function dbAprovarContestacaoBalanco(responsavel, contestacaoId, aprovadoPor, dados = {}) {
     try {
         const chaveU = _normalizarChaveUsuario(responsavel);
@@ -3383,6 +3402,60 @@ export async function dbAprovarContestacaoBalanco(responsavel, contestacaoId, ap
         await dbAtualizarResumoBalanco(responsavel);
     } catch (e) {
         console.error('ERRO AO APROVAR CONTESTAÇÃO DO BALANÇO:', e);
+        throw e;
+    }
+}
+
+export async function dbAprovarContestacaoBalancoComAjuste(responsavel, contestacaoId, aprovadoPor) {
+    try {
+        const chaveU = _normalizarChaveUsuario(responsavel);
+        const id = String(contestacaoId || '').trim();
+        if (!chaveU || !id) throw new Error('Contestacao invalida para ajuste do balanco.');
+
+        const contestacaoRef = ref(db, `contestacao_balanco/${chaveU}/${id}`);
+        const snap = await get(contestacaoRef);
+        const contestacao = snap.val();
+        if (!contestacao) throw new Error('Contestacao nao encontrada para ajuste do balanco.');
+
+        const quantidadeAtual = Number(contestacao?.quantidadeAtual);
+        const quantidadeInformada = Number(contestacao?.quantidadeInformada);
+        const diferenca = Number.isFinite(Number(contestacao?.diferenca))
+            ? Number(contestacao.diferenca)
+            : quantidadeInformada - quantidadeAtual;
+
+        if (!Number.isFinite(quantidadeAtual) || !Number.isFinite(quantidadeInformada) || !Number.isFinite(diferenca)) {
+            throw new Error('Quantidades invalidas para ajuste do balanco.');
+        }
+
+        if (diferenca !== 0) {
+            await dbSalvarHistoricoBalanco({
+                responsavel,
+                registradoPor: aprovadoPor || responsavel,
+                itemNome: contestacao.itemNome,
+                categoria: contestacao.categoria || 'produto',
+                tipo: 'ajuste_balanco_gestor',
+                origemRegistro: 'balanco',
+                itemChave: contestacao.itemChave,
+                movimento: diferenca,
+                descricao: diferenca > 0 ? 'Ajuste de balanço: adicionado pelo gestor' : 'Ajuste de balanço: retirado pelo gestor',
+                refId: id,
+                controlarPosse: true,
+                ignorarValidacaoPosse: true,
+                isDefeitoEntry: false,
+                qtdDefeitoConsumida: 0
+            }, { recalcular: false });
+        }
+
+        const patch = {
+            status: 'aprovado',
+            aprovadoEm: new Date().toISOString(),
+            aprovadoPor: String(aprovadoPor || responsavel).trim()
+        };
+        await update(contestacaoRef, patch);
+        await dbAtualizarResumoBalanco(responsavel);
+        return { id, ...contestacao, ...patch, movimentoAjuste: diferenca };
+    } catch (e) {
+        console.error('ERRO AO APROVAR CONTESTACAO COM AJUSTE DO BALANCO:', e);
         throw e;
     }
 }
@@ -3489,10 +3562,16 @@ export async function dbBuscarProdutosDoAtendimento(atendente, atendimentoRefId)
 
 /* --- FUNÇÕES PARA DEPÓSITOS --- */
 
+const DEPOSITOS_ROOT = 'depositos';
+
 export async function dbSalvarDeposito(deposito) {
     try {
         const chave = _normalizarChaveUsuario(deposito.usuario);
-        await push(ref(db, `depositos/${chave}`), deposito);
+        if (!chave) throw new Error('Usuario invalido para salvar deposito.');
+        await push(ref(db, `${DEPOSITOS_ROOT}/${chave}`), {
+            ...deposito,
+            status: deposito.status || 'aguardando_conferencia'
+        });
     } catch (error) {
         console.error("ERRO AO SALVAR DEPOSITO:", error);
         throw error;
@@ -3502,7 +3581,7 @@ export async function dbSalvarDeposito(deposito) {
 export async function dbExcluirDeposito(nomeUsuario, firebaseKey) {
     try {
         const chave = _normalizarChaveUsuario(nomeUsuario);
-        await remove(ref(db, `depositos/${chave}/${firebaseKey}`));
+        await remove(ref(db, `${DEPOSITOS_ROOT}/${chave}/${firebaseKey}`));
     } catch (error) {
         console.error("ERRO AO EXCLUIR DEPOSITO:", error);
         throw error;
@@ -3512,9 +3591,30 @@ export async function dbExcluirDeposito(nomeUsuario, firebaseKey) {
 export async function dbAtualizarDeposito(nomeUsuario, firebaseKey, dados) {
     try {
         const chave = _normalizarChaveUsuario(nomeUsuario);
-        await set(ref(db, `depositos/${chave}/${firebaseKey}`), dados);
+        await set(ref(db, `${DEPOSITOS_ROOT}/${chave}/${firebaseKey}`), dados);
     } catch (error) {
         console.error("ERRO AO ATUALIZAR DEPOSITO:", error);
+        throw error;
+    }
+}
+
+export async function dbConfirmarDeposito(nomeUsuario, firebaseKey, conferidoPor, dadosConferencia = {}) {
+    try {
+        const chave = _normalizarChaveUsuario(nomeUsuario);
+        const id = String(firebaseKey || '').trim();
+        if (!chave || !id) throw new Error('Deposito invalido para conferencia.');
+
+        const valorConferido = Number(dadosConferencia.valorConferido || 0);
+        if (valorConferido <= 0) throw new Error('Valor conferido invalido.');
+
+        await update(ref(db, `${DEPOSITOS_ROOT}/${chave}/${id}`), {
+            status: dadosConferencia.status || 'conferido',
+            valorConferido,
+            dataConferencia: new Date().toISOString(),
+            conferidoPor: String(conferidoPor || '').trim()
+        });
+    } catch (error) {
+        console.error("ERRO AO CONFIRMAR DEPOSITO:", error);
         throw error;
     }
 }
@@ -3522,7 +3622,7 @@ export async function dbAtualizarDeposito(nomeUsuario, firebaseKey, dados) {
 export async function dbListarDepositos(nomeUsuario) {
     try {
         const chave = _normalizarChaveUsuario(nomeUsuario);
-        const snapshot = await get(ref(db, `depositos/${chave}`));
+        const snapshot = await get(ref(db, `${DEPOSITOS_ROOT}/${chave}`));
         if (snapshot.exists()) {
             const data = snapshot.val();
             return Object.keys(data).map(key => ({ ...data[key], firebaseUrl: key }));
@@ -3540,12 +3640,30 @@ export function dbEscutarDepositos(nomeUsuario, callback) {
         return () => {};
     }
 
-    return onValue(ref(db, `depositos/${chave}`), (snapshot) => {
+    return onValue(ref(db, `${DEPOSITOS_ROOT}/${chave}`), (snapshot) => {
         const data = snapshot.val();
         const lista = data
             ? Object.keys(data).map(key => ({ ...data[key], firebaseUrl: key }))
             : [];
         callback(lista);
+    });
+}
+
+export function dbEscutarTodosDepositos(callback) {
+    return onValue(ref(db, DEPOSITOS_ROOT), (snapshot) => {
+        const data = snapshot.val() || {};
+        const lista = Object.entries(data).flatMap(([usuarioChave, depositosUsuario]) =>
+            Object.entries(depositosUsuario || {}).map(([firebaseUrl, deposito]) => ({
+                ...(deposito || {}),
+                firebaseUrl,
+                usuarioChave,
+                usuario: deposito?.usuario || usuarioChave
+            }))
+        );
+        callback(lista);
+    }, (error) => {
+        console.error("ERRO AO ESCUTAR TODOS OS DEPOSITOS:", error);
+        callback({ erro: true, mensagem: error?.message || 'Permissao negada ao ler depositos.' });
     });
 }
 

@@ -1092,7 +1092,7 @@
 
     function cardNovoPonto(ev) {
         const fotoHtml = ev.foto
-            ? `<img src="${ev.foto}" style="width:100%;border-radius:10px;margin:10px 0;object-fit:cover;max-height:180px;" />`
+            ? `<img src="${ev.foto}" onclick="window.verFoto(this.currentSrc || this.src)" style="width:100%;border-radius:10px;margin:10px 0;object-fit:cover;max-height:180px;cursor:zoom-in;" />`
             : '';
 
         const enderecoSolicitacaoHtml = ev.enderecoSolicitacao
@@ -1120,7 +1120,7 @@
 
         return `
         <div class="card novo-ponto" id="card-${ev.id}">
-            <div class="card-tipo tipo-novo-ponto">&#127968; Novo Ponto</div>
+            <div class="card-tipo tipo-novo-ponto">&#127968; Cliente Novo</div>
             <div class="card-cliente">N. ${ev.clienteNumero} ${ev.clienteNome}</div>
             <div class="card-detalhe">
                 <strong>Rota:</strong> ${ev.clienteRota} &nbsp;&middot;&nbsp; <strong>Cidade:</strong> ${ev.clienteCidade}<br>

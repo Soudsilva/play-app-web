@@ -405,6 +405,184 @@
         }
         .fin-corpo.aberto { display: block; }
 
+        /* ── Revisão de Contestações (Gestor) ─────────────────────── */
+        .contest-header {
+            background: #1a3d8f;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-radius: 40px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.15s, border-radius 0.2s;
+            min-height: 38px;
+            margin: 16px 0 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .contest-header:active { background: #152f70; }
+        .contest-header.aberta { border-radius: 22px 22px 0 0; border-bottom-color: rgba(255,255,255,0.2); }
+        .contest-titulo { color: #fff; font-size: 20px; font-weight: bold; }
+        .contest-badge {
+            position: absolute;
+            right: 50px;
+            background: #ffeb3b;
+            color: #0b2256;
+            font-size: 12px;
+            font-weight: 800;
+            border-radius: 999px;
+            padding: 2px 9px;
+            min-width: 20px;
+            text-align: center;
+        }
+        .contest-seta {
+            position: absolute;
+            right: 18px;
+            font-size: 14px;
+            transition: transform 0.25s;
+            color: rgba(255,255,255,0.85);
+        }
+        .contest-seta.girada { transform: rotate(180deg); }
+        .contest-corpo {
+            display: none;
+            background: rgba(8,22,65,0.75);
+            border: 3px solid #d7dce3;
+            border-top: none;
+            border-radius: 0 0 22px 22px;
+            padding: 14px 12px 16px;
+            margin-bottom: 20px;
+        }
+        .contest-corpo.aberto { display: block; }
+        /* Card individual de cada contestação */
+        .contest-card {
+            background: #1a3d8f;
+            border: 2px solid #d7dce3;
+            border-left: 4px solid #ffeb3b;
+            border-radius: 14px;
+            padding: 14px 12px 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .contest-card:active { background: #1f4aaa; }
+        .contest-card-topo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: nowrap;
+            background:#0f2a66;
+            border:1px solid #d7dce3;
+            border-radius:10px;
+            padding:8px 10px;
+        }
+        .contest-card-produto {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            flex:1;
+            min-width:0;
+            text-align:left;
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+        }
+        .contest-card-valores {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: nowrap;
+        }
+        .contest-val-sistema {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffeb3b;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+            white-space: nowrap;
+        }
+        .contest-val-seta { color: #d7dce3; font-size: 15px; }
+        .contest-card .contest-val-seta {
+            display:none;
+        }
+        .contest-val-novo {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            background: #0f2a66;
+            border: 2px solid #d7dce3;
+            border-radius: 8px;
+            padding: 4px 10px;
+            white-space: nowrap;
+        }
+        .contest-card .contest-val-novo {
+            display:none;
+        }
+        .contest-card-acoes { display:none; gap: 8px; margin-top: 10px; }
+        .contest-card-rodape {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 8px;
+            padding: 5px 10px;
+        }
+        .contest-card-usuario { font-size: 13px; font-weight: bold; color: #ffeb3b; }
+        .contest-card-data { font-size: 12px; color: #d7dce3; }
+        .contest-card-diferenca {
+            margin-left:auto;
+            font-size:12px;
+            font-weight:700;
+            color:#d7e3ff;
+            background:#173d8f;
+            border:1px solid #3d63b8;
+            border-radius:999px;
+            padding:3px 8px;
+            white-space:nowrap;
+        }
+        .contest-card .contest-card-diferenca {
+            display:none;
+        }
+        /* TODO: onclick Aprovar → abrirHistoricoUsuario(itemChave, nomeUsuario, contestacaoId) para ver linha do tempo e confirmar */
+        .contest-btn-aprovar {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid #86efac;
+            background: #166534;
+            color: #fff;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+        }
+        /* TODO: onclick Negar → negarContestacao(contestacaoId, nomeUsuario) — cancela e notifica colaborador */
+        .contest-btn-negar {
+            flex: 0 0 auto;
+            padding: 10px 18px;
+            border-radius: 10px;
+            border: 2px solid #ef4444;
+            background: #7f1d1d;
+            color: #fff;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+        }
+        .contest-vazio {
+            text-align: center;
+            padding: 30px 16px;
+            color: rgba(255,255,255,0.7);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
         /* Modal de histórico de movimentações */
         .hist-overlay {
             display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8);
@@ -422,7 +600,7 @@
             display:flex; flex-direction:column;
         }
         .hist-header {
-            padding:16px 15px 12px;
+            padding:16px 15px 10px;
             border-bottom:1px solid rgba(255,255,255,0.1);
             flex-shrink:0;
         }
@@ -443,6 +621,22 @@
             background:rgba(239,83,80,0.18);
             border-color:rgba(239,83,80,0.5);
             box-shadow:0 0 10px rgba(239,83,80,0.2);
+        }
+        .hist-header.gestor-contestacao-header .hist-header-principal {
+            display:none;
+        }
+        .hist-header-resumo-gestor {
+            display:none;
+        }
+        .hist-header.gestor-contestacao-header .hist-header-resumo-gestor {
+            display:block;
+            border-top:1px solid rgba(255,255,255,0.32);
+            margin-top:2px;
+            padding-top:6px;
+            padding-bottom:0;
+        }
+        .hist-header.gestor-contestacao-header {
+            padding-bottom:0;
         }
         .hist-lista { overflow-y:auto; flex:1; padding:8px 0; }
         .hist-vazio { text-align:center; padding:40px 20px; color:rgba(255,255,255,0.4); font-size:14px; }
@@ -549,6 +743,67 @@
             backdrop-filter:blur(4px);
         }
         .hist-modal:has(.hist-contestacao-box.aberto) .hist-acoes { display:none; }
+        .hist-resumo-gestor { display:block; }
+        .hist-resumo-gestor-topo {
+            display:flex;
+            align-items:center;
+            gap:7px;
+            flex-wrap:wrap;
+            justify-content:flex-start;
+            border-bottom:none;
+            padding-bottom:2px;
+        }
+        .hist-resumo-gestor-nome {
+            display:none;
+            margin-right:auto;
+            font-size:17px;
+            font-weight:700;
+            color:#ffffff;
+        }
+        .hist-resumo-gestor-sistema {
+            display:none;
+            font-size:12px;
+            font-weight:700;
+            color:#ffeb3b;
+            border:1px solid #ffeb3b;
+            border-radius:8px;
+            padding:3px 7px;
+        }
+        .hist-resumo-gestor-info {
+            font-size:16px;
+            font-weight:700;
+            color:#ffffff;
+            border:1.5px solid #d7dce3;
+            border-radius:8px;
+            padding:3px 10px;
+            background:#173d8f;
+        }
+        .hist-resumo-gestor-baixo {
+            display:none;
+            align-items:center;
+            justify-content:flex-start;
+            gap:6px;
+            margin-top:7px;
+            font-size:12px;
+            color:#d7e3ff;
+        }
+        .hist-header-resumo-gestor .contest-card-diferenca {
+            margin-left:auto;
+            background:#173d8f;
+            font-size:16px;
+            border:1.5px solid #ff9800;
+            border-radius:22px;
+            padding:5px 16px;
+        }
+        .hist-header-resumo-gestor .contest-val-seta {
+            display:none;
+        }
+        .hist-header-resumo-gestor .hist-resumo-gestor-topo {
+            margin-bottom:0;
+        }
+        .hist-header-resumo-gestor .hist-resumo-gestor-baixo {
+            justify-content:flex-start;
+        }
         .hist-acoes {
             display:flex;
             gap:10px;
@@ -557,6 +812,7 @@
         }
         .hist-contestar-btn,
         .hist-aprovar-btn,
+        .hist-negar-btn,
         .hist-contestar-cancelar,
         .hist-contestar-salvar {
             padding:12px;
@@ -596,44 +852,75 @@
             flex:1;
             margin:0;
         }
+        .hist-acoes.gestor-contestacao .hist-fechar-btn,
+        .hist-acoes.gestor-contestacao .hist-contestar-btn {
+            display:none;
+        }
+        .hist-acoes.gestor-contestacao .hist-aprovar-btn {
+            flex:1;
+        }
+        .hist-negar-btn {
+            display:none;
+            flex:0 0 auto;
+            background:#7f1d1d;
+            border:1px solid #fecaca;
+            color:#ffffff;
+        }
+        .hist-acoes.gestor-contestacao .hist-negar-btn {
+            display:block;
+        }
         .hist-contestacao-box {
             display:none;
-            margin:12px 18px 0;
-            padding:12px;
-            border:1px solid #ffffff;
-            border-radius:14px;
-            background:#17377f;
+            margin:10px 14px 0;
+            padding:16px 14px 14px;
+            border:2px solid rgba(255,235,59,0.55);
+            border-radius:20px;
+            background:linear-gradient(170deg,#0c2260 0%,#152f75 100%);
             flex-shrink:0;
+            box-shadow:0 4px 20px rgba(0,0,0,0.4);
         }
         .hist-contestacao-box.aberto { display:block; }
         .hist-contestacao-label {
-            font-size:15px;
+            font-size:13px;
             font-weight:700;
-            color:#ffffff;
+            color:rgba(255,255,255,0.55);
             text-align:center;
-            margin-bottom:8px;
+            letter-spacing:0.06em;
+            text-transform:uppercase;
+            margin-bottom:12px;
             user-select:none;
             -webkit-user-select:none;
         }
         .hist-contestacao-input {
+            display:block;
             width:100%;
             box-sizing:border-box;
-            padding:12px;
-            border-radius:10px;
-            border:1px solid #ffffff;
-            background:#0b2256;
-            color:#ffffff;
-            font-size:17px;
-            font-weight:700;
+            padding:8px 12px;
+            border-radius:12px;
+            border:2px solid rgba(255,235,59,0.35);
+            background:rgba(0,0,0,0.25);
+            color:#ffeb3b;
+            font-size:36px;
+            font-weight:800;
             text-align:center;
+            letter-spacing:4px;
             outline:none;
+            transition:border-color 0.2s, box-shadow 0.2s;
             user-select:text;
             -webkit-user-select:text;
+            -moz-appearance:textfield;
         }
-        .hist-contestacao-input::placeholder { color:#d7e3ff; }
+        .hist-contestacao-input:focus {
+            border-color:rgba(255,235,59,0.85);
+            box-shadow:0 0 14px rgba(255,235,59,0.25);
+        }
+        .hist-contestacao-input::placeholder {
+            color:rgba(255,235,59,0.2);
+            letter-spacing:2px;
+        }
         .hist-contestacao-resumo {
-            margin-top:8px;
-            font-size:15px;
+            margin-top:10px;
+            font-size:14px;
             font-weight:700;
             color:#ffeb3b;
             text-align:center;
@@ -644,22 +931,29 @@
         .hist-contestacao-acoes {
             display:flex;
             gap:8px;
-            margin-top:10px;
+            margin-top:12px;
+            align-items:center;
         }
         .hist-contestar-cancelar {
-            flex:1;
-            background:#264a97;
-            border:1px solid #d7dce3;
+            flex:0 0 auto;
+            padding:11px 18px !important;
+            background:transparent;
+            border:1px solid rgba(255,255,255,0.25) !important;
+            color:rgba(255,255,255,0.6) !important;
+            font-size:14px !important;
+            border-radius:12px;
         }
         .hist-contestar-salvar {
-            flex:1.5;
+            flex:1;
             background:#166534;
             border:1px solid #86efac;
+            border-radius:12px;
+            font-size:16px !important;
         }
         .hist-contestar-salvar:disabled {
-            background:#334155;
-            border-color:#94a3b8;
-            color:#d7e3ff;
+            background:#1e293b;
+            border-color:#334155;
+            color:rgba(255,255,255,0.3);
             cursor:not-allowed;
         }
         .hist-loading { text-align:center; padding:30px; color:#d7e3ff; font-size:15px; }
@@ -704,19 +998,20 @@
 <!-- Modal histórico de movimentações de produto -->
 <div class="hist-overlay" id="histOverlay" onclick="fecharHistoricoOverlay(event)">
     <div class="hist-modal">
-        <div class="hist-header">
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+        <div class="hist-header" id="histHeader">
+            <div class="hist-header-principal" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
                 <div class="hist-titulo" id="histTitulo">Histórico</div>
                 <div class="hist-total-atual" id="histTotalAtual"></div>
             </div>
+            <div class="hist-header-resumo-gestor" id="histHeaderResumoGestor"></div>
 
         </div>
         <div class="hist-lista" id="histLista">
             <div class="hist-loading">Carregando...</div>
         </div>
         <div class="hist-contestacao-box" id="histContestacaoBox">
-            <div class="hist-contestacao-label">Valor que você acredita ser o correto</div>
-            <input class="hist-contestacao-input" id="histContestacaoInput" type="number" inputmode="decimal" placeholder="Digite a quantidade" oninput="atualizarResumoContestacao()">
+            <div class="hist-contestacao-label">Qual é a quantidade correta?</div>
+            <input class="hist-contestacao-input" id="histContestacaoInput" type="number" inputmode="numeric" placeholder="—" maxlength="5" oninput="atualizarResumoContestacao()">
             <div class="hist-contestacao-resumo" id="histContestacaoResumo"></div>
             <div class="hist-contestacao-acoes">
                 <button class="hist-contestar-cancelar" type="button" onclick="fecharContestacaoBalanco()">Cancelar</button>
@@ -725,6 +1020,7 @@
         </div>
         <div class="hist-acoes">
             <button class="hist-contestar-btn" id="histContestarBtn" type="button" onclick="acaoContestacaoBalanco()">Contestar</button>
+            <button class="hist-negar-btn" id="histNegarBtn" type="button" onclick="negarContestacaoGestor()">&#10005;&nbsp; Negar</button>
             <button class="hist-aprovar-btn" id="histAprovarBtn" type="button" onclick="aprovarContestacaoBalanco()" disabled>Aprovar</button>
             <div class="hist-fechar-btn compacto" onclick="fecharHistorico()">Fechar</div>
         </div>
@@ -784,7 +1080,9 @@
         dbSalvarContestacaoBalanco,
         dbAtualizarContestacaoBalanco,
         dbEscutarContestacoesBalanco,
+        dbEscutarTodasContestacoesBalanco,
         dbAprovarContestacaoBalanco,
+        dbAprovarContestacaoBalancoComAjuste,
         dbRemoverStatusAprovadoContestacaoBalanco,
         dbCancelarContestacaoBalanco,
         dbSalvarHistoricoBalanco,
@@ -799,11 +1097,15 @@
     let posseAtualCarregada = false;
     let pixEmPosse = [];
     let contestacoesBalanco = [];
+    let contestacoesGestor = [];
     const contestacoesAprovadasEmAtualizacao = new Set();
     let datasComAtendimento = new Set();
     let comissaoUsuario = 0; // % de comissÃ£o do colaborador logado (calculado por mÃªs)
     let colaboradorObj  = null;
     let isTecnico = false;
+    let isGestor  = false;
+    let isGestao1 = false;
+    let contestacoesAberto = false;
     let usaComissaoGlobal = false;
     let mapaRotas = {};
     let contestacaoContexto = null;
@@ -847,6 +1149,23 @@
         return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
     const hoje = dataLocalStr(new Date());
+
+    function escaparHtml(valor) {
+        return String(valor ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function formatarDataHoraCurta(valor) {
+        const data = new Date(valor || 0);
+        if (isNaN(data)) return '';
+        const dataStr = data.toLocaleDateString('pt-BR');
+        const horaStr = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        return `${dataStr} &middot; ${horaStr}`;
+    }
 
     // Estado do calendÃ¡rio
     // etapa: 0 = nenhum selecionado, 1 = aguardando AtÃ©
@@ -1273,6 +1592,33 @@
         }) || null;
     }
 
+    function obterContestacoesParaResponsavel(responsavel) {
+        const nome = String(responsavel || '').trim();
+        if (!nome || nomesIguais(nome, usuarioLogado)) return contestacoesBalanco || [];
+        const chaveNome = normalizarTextoBusca(nome);
+        return (contestacoesGestor || []).filter(c =>
+            normalizarTextoBusca(c?.responsavel) === chaveNome
+            || normalizarTextoBusca(c?.registradoPor) === chaveNome
+            || normalizarTextoBusca(c?.usuarioKey) === chaveNome
+        );
+    }
+
+    function obterContestacaoAbertaContexto(itemChave, itemNome = '', categoria = '') {
+        const responsavel = historicoAbertoContexto?.responsavel || contestacaoContexto?.responsavel || usuarioLogado;
+        const lista = obterContestacoesParaResponsavel(responsavel);
+        const chave = String(itemChave || '').trim();
+        const nome = normalizarTextoBusca(itemNome);
+        const cat = normalizarTextoBusca(categoria);
+
+        return (lista || []).find(c => {
+            const chaveContestacao = String(c?.itemChave || '').trim();
+            if (chave && chaveContestacao === chave) return true;
+            return nome
+                && normalizarTextoBusca(c?.itemNome) === nome
+                && (!cat || normalizarTextoBusca(c?.categoria) === cat);
+        }) || null;
+    }
+
     function obterItemPosseAtual(itemChave, itemNome = '', categoria = '') {
         const chave = String(itemChave || '').trim();
         const nome = normalizarTextoBusca(itemNome);
@@ -1347,6 +1693,53 @@
         return `<div class="item-contestacao">Análise ${formatarDiferencaContestacao(contestacao)}</div>`;
     }
 
+    function obterContestacoesGestorEmAnalise() {
+        return (contestacoesGestor || []).filter(contestacaoEstaEmAnalise);
+    }
+
+    function montarCardsContestacoesGestor() {
+        const lista = obterContestacoesGestorEmAnalise();
+        if (lista.length === 0) {
+            return '<div class="contest-vazio">✅ Tudo ok por aqui!</div>';
+        }
+
+        return lista.map(c => {
+            const itemNome = escaparHtml(c?.itemNome || 'Item');
+            const contestacaoId = escaparHtml(c?.id || c?.firebaseUrl || '');
+            const usuarioKey = escaparHtml(c?.usuarioKey || c?.responsavel || c?.registradoPor || '');
+            const valorSistema = Number(c?.quantidadeAtual);
+            const valorContestado = Number(c?.quantidadeInformada);
+            const diferenca = Number(c?.diferenca);
+            const responsavel = escaparHtml(c?.registradoPor || c?.responsavel || c?.usuarioKey || '');
+            const dataHora = formatarDataHoraCurta(c?.timestamp);
+            const sistemaStr = Number.isFinite(valorSistema) ? valorSistema : 0;
+            const contestaStr = Number.isFinite(valorContestado) ? valorContestado : 0;
+            const diferencaStr = Number.isFinite(diferenca) ? `${diferenca > 0 ? '+' : ''}${diferenca}` : '0';
+
+            return `
+                    <div class="contest-card" data-contestacao-id="${contestacaoId}" data-usuario-key="${usuarioKey}" onclick="abrirHistoricoContestacaoGestor(this.dataset.contestacaoId, this.dataset.usuarioKey)">
+                        <div class="contest-card-topo">
+                            <span class="contest-card-produto">${itemNome}</span>
+                            <div class="contest-card-valores">
+                                <span class="contest-val-sistema">${sistemaStr}</span>
+                                <span class="contest-val-seta">&#8594;</span>
+                                <span class="contest-val-novo">Informou ter: ${contestaStr}</span>
+                            </div>
+                        </div>
+                        <div class="contest-card-rodape">
+                            <span class="contest-card-data">Solicitado por</span>
+                            <span class="contest-card-usuario">${responsavel}</span>
+                            <span class="contest-card-data">${dataHora}</span>
+                            <span class="contest-card-diferenca">Diferença: ${diferencaStr}</span>
+                        </div>
+                        <div class="contest-card-acoes">
+                            <div class="contest-btn-negar" onclick="event.stopPropagation(); abrirHistoricoContestacaoGestor(this.closest('.contest-card').dataset.contestacaoId, this.closest('.contest-card').dataset.usuarioKey)">&#10005;&nbsp; Negar</div>
+                            <div class="contest-btn-aprovar" onclick="event.stopPropagation(); abrirHistoricoContestacaoGestor(this.closest('.contest-card').dataset.contestacaoId, this.closest('.contest-card').dataset.usuarioKey)">&#10003;&nbsp; Aprovar</div>
+                        </div>
+                    </div>`;
+        }).join('');
+    }
+
     function movimentoHistoricoEhAprovacaoBalanco(entrada) {
         return String(entrada?.tipo || '').trim() === 'balanco_aprovado'
             || entrada?.valorConferido != null;
@@ -1356,7 +1749,8 @@
         const chave = String(itemChave || '').trim();
         const nome = normalizarTextoBusca(itemNome);
         const cat = normalizarTextoBusca(categoria);
-        return (contestacoesBalanco || [])
+        const responsavel = historicoAbertoContexto?.responsavel || usuarioLogado;
+        return obterContestacoesParaResponsavel(responsavel)
             .filter(c => {
                 const chaveContestacao = String(c?.itemChave || '').trim();
                 if (chave && chaveContestacao === chave) return true;
@@ -1377,6 +1771,10 @@
     }
 
     function obterTotalAtualItemAberto(itemChave, itemNome, categoria) {
+        if (historicoAbertoContexto?.quantidadeAtual != null) {
+            const totalContexto = Number(historicoAbertoContexto.quantidadeAtual);
+            if (Number.isFinite(totalContexto)) return totalContexto;
+        }
         const chave = String(itemChave || '').trim();
         const nome = normalizarTextoBusca(itemNome);
         const cat = normalizarTextoBusca(categoria);
@@ -1435,7 +1833,8 @@
             const dataStr = isNaN(d) ? '' : d.toLocaleDateString('pt-BR');
             const horaStr = isNaN(d) ? '' : d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
             const nomeRegistro = String(e.registradoPor || e.responsavel || '').trim();
-            const registradoPorStr = nomeRegistro && !nomesIguais(nomeRegistro, usuarioLogado)
+            const responsavelHistorico = historicoAbertoContexto?.responsavel || usuarioLogado;
+            const registradoPorStr = nomeRegistro && !nomesIguais(nomeRegistro, responsavelHistorico)
                 ? `Registrado por: ${nomeRegistro}`
                 : '';
             const dataHoraRodape = [dataStr, horaStr].filter(Boolean).join(' ');
@@ -1556,6 +1955,7 @@
         manutencao_retirada: 'Retirada p/ manutenção',
         manutencao_adicao:   'Devolução de manutenção',
         balanco_aprovado:    'Valor conferido',
+        ajuste_balanco_gestor: 'Ajuste de balanço',
         cancelamento:   'Cancelamento'
     };
 
@@ -1579,8 +1979,9 @@
 
     async function registrarAprovacaoBalancoNoHistorico(quantidadeAprovada) {
         if (!contestacaoContexto?.itemChave) return;
+        const responsavel = contestacaoContexto.responsavel || usuarioLogado;
         await dbSalvarHistoricoBalanco({
-            responsavel: usuarioLogado,
+            responsavel,
             registradoPor: usuarioLogado,
             itemNome: contestacaoContexto.itemNome,
             categoria: contestacaoContexto.categoria || 'produto',
@@ -1615,7 +2016,7 @@
     function atualizarBotaoAprovarContestacao() {
         const btn = document.getElementById('histAprovarBtn');
         if (!btn) return;
-        const contestacao = obterContestacaoAbertaItem(
+        const contestacao = obterContestacaoAbertaContexto(
             contestacaoContexto?.itemChave,
             contestacaoContexto?.itemNome,
             contestacaoContexto?.categoria
@@ -1628,7 +2029,7 @@
     function atualizarBotaoContestarContestacao() {
         const btn = document.getElementById('histContestarBtn');
         if (!btn) return;
-        const contestacao = obterContestacaoAbertaItem(
+        const contestacao = obterContestacaoAbertaContexto(
             contestacaoContexto?.itemChave,
             contestacaoContexto?.itemNome,
             contestacaoContexto?.categoria
@@ -1640,8 +2041,45 @@
     }
 
     function atualizarBotoesContestacaoHistorico() {
+        const acoes = document.querySelector('#histOverlay .hist-acoes');
+        if (acoes) acoes.classList.toggle('gestor-contestacao', Boolean(historicoAbertoContexto?.modoGestorContestacao));
         atualizarBotaoAprovarContestacao();
         atualizarBotaoContestarContestacao();
+    }
+
+    function atualizarResumoGestorHistorico(contestacao = null) {
+        const resumo = document.getElementById('histHeaderResumoGestor');
+        const header = document.getElementById('histHeader');
+        if (!resumo) return;
+        const deveMostrar = Boolean(historicoAbertoContexto?.modoGestorContestacao);
+        if (header) header.classList.toggle('gestor-contestacao-header', deveMostrar);
+        if (!deveMostrar) {
+            resumo.innerHTML = '';
+            return;
+        }
+
+        const c = contestacao || obterContestacaoAbertaContexto(
+            contestacaoContexto?.itemChave,
+            contestacaoContexto?.itemNome,
+            contestacaoContexto?.categoria
+        ) || {};
+        const nome = escaparHtml(c?.itemNome || contestacaoContexto?.itemNome || '');
+        const responsavel = escaparHtml(c?.registradoPor || c?.responsavel || contestacaoContexto?.responsavel || '');
+        const sistema = Number(c?.quantidadeAtual ?? contestacaoContexto?.quantidadeAtual ?? 0);
+        const informado = Number(c?.quantidadeInformada ?? 0);
+        const diferenca = Number(c?.diferenca ?? (informado - sistema));
+        const sistemaStr = Number.isFinite(sistema) ? sistema : 0;
+        const informadoStr = Number.isFinite(informado) ? informado : 0;
+        const diferencaStr = Number.isFinite(diferenca) ? `${diferenca > 0 ? '+' : ''}${diferenca}` : '0';
+        resumo.innerHTML = `
+            <div class="hist-resumo-gestor-topo">
+                <span class="hist-resumo-gestor-nome">${nome}</span>
+                <span class="hist-resumo-gestor-sistema">Sistema: ${sistemaStr}</span>
+                <span class="contest-val-seta">&#8594;</span>
+                <span class="hist-resumo-gestor-info">Informou ter: ${informadoStr}</span>
+                <span class="contest-card-diferenca">Diferença: ${diferencaStr}</span>
+            </div>
+            <div class="hist-resumo-gestor-baixo"></div>`;
     }
 
     window.abrirHistoricoProduto = async function(nomeProduto, totalAtual, categoria = 'produto', itemChave = '') {
@@ -1669,9 +2107,57 @@
         history.pushState({ histAberto: true }, '');
 
         if (typeof unsubscribeHistoricoItem === 'function') unsubscribeHistoricoItem();
-        historicoAbertoContexto = { nomeProduto, categoria, itemChave };
+        historicoAbertoContexto = { nomeProduto, categoria, itemChave, responsavel: usuarioLogado };
         ultimasEntradasHistorico = [];
         unsubscribeHistoricoItem = dbEscutarUltimosPorItem(usuarioLogado, nomeProduto, 20, (entradas) => {
+            ultimasEntradasHistorico = Array.isArray(entradas) ? entradas : [];
+            renderizarHistoricoAberto();
+        });
+    };
+
+    window.abrirHistoricoContestacaoGestor = function(contestacaoId, usuarioKey = '') {
+        const id = String(contestacaoId || '').trim();
+        const usuario = String(usuarioKey || '').trim();
+        const contestacao = (contestacoesGestor || []).find(c => {
+            const idAtual = String(c?.id || c?.firebaseUrl || '').trim();
+            const usuarioAtual = String(c?.usuarioKey || c?.responsavel || c?.registradoPor || '').trim();
+            return idAtual === id && (!usuario || usuarioAtual === usuario);
+        });
+        if (!contestacao) return;
+
+        const overlay = document.getElementById('histOverlay');
+        const lista   = document.getElementById('histLista');
+        const titulo  = document.getElementById('histTitulo');
+        const totalEl = document.getElementById('histTotalAtual');
+        const nomeProduto = String(contestacao.itemNome || '').trim();
+        const categoria = String(contestacao.categoria || 'produto').trim();
+        const itemChave = String(contestacao.itemChave || '').trim();
+        const responsavel = String(contestacao.responsavel || contestacao.registradoPor || contestacao.usuarioKey || '').trim();
+        const totalNumero = Number(contestacao.quantidadeAtual || 0);
+
+        titulo.textContent = nomeProduto || 'Histórico';
+        totalEl.textContent = `Total atual: ${totalNumero}`;
+        totalEl.classList.toggle('negativo', totalNumero < 0);
+        lista.innerHTML = '<div class="hist-loading">Carregando...</div>';
+        contestacaoContexto = {
+            responsavel,
+            registradoPor: usuarioLogado,
+            categoria,
+            itemNome: nomeProduto,
+            itemChave,
+            quantidadeAtual: totalNumero
+        };
+        fecharBoxContestacao();
+        atualizarBotoesContestacaoHistorico();
+        overlay.classList.add('aberto');
+        history.pushState({ histAberto: true }, '');
+
+        if (typeof unsubscribeHistoricoItem === 'function') unsubscribeHistoricoItem();
+        historicoAbertoContexto = { nomeProduto, categoria, itemChave, responsavel, quantidadeAtual: totalNumero, modoGestorContestacao: true };
+        atualizarBotoesContestacaoHistorico();
+        atualizarResumoGestorHistorico(contestacao);
+        ultimasEntradasHistorico = [];
+        unsubscribeHistoricoItem = dbEscutarUltimosPorItem(responsavel, nomeProduto, 20, (entradas) => {
             ultimasEntradasHistorico = Array.isArray(entradas) ? entradas : [];
             renderizarHistoricoAberto();
         });
@@ -1684,12 +2170,14 @@
         ultimasEntradasHistorico = [];
         fecharBoxContestacao();
         contestacaoContexto = null;
+        atualizarBotoesContestacaoHistorico();
+        atualizarResumoGestorHistorico();
         document.getElementById('histOverlay').classList.remove('aberto');
         if (history.state?.histAberto) history.back();
     };
 
     window.acaoContestacaoBalanco = async function() {
-        const contestacao = obterContestacaoAbertaItem(
+        const contestacao = obterContestacaoAbertaContexto(
             contestacaoContexto?.itemChave,
             contestacaoContexto?.itemNome,
             contestacaoContexto?.categoria
@@ -1700,6 +2188,17 @@
             return;
         }
         abrirContestacaoBalanco();
+    };
+
+    window.negarContestacaoGestor = async function() {
+        if (!await playConfirm('Esta ação não pode ser revertida.', { primaryLabel: 'Negar mesmo assim', secondaryLabel: 'Cancelar' })) return;
+        const contestacao = obterContestacaoAbertaContexto(
+            contestacaoContexto?.itemChave,
+            contestacaoContexto?.itemNome,
+            contestacaoContexto?.categoria
+        );
+        if (!contestacao) return;
+        await cancelarContestacaoBalanco(contestacao);
     };
 
     function abrirContestacaoBalanco() {
@@ -1730,11 +2229,13 @@
         }
 
         try {
-            await dbCancelarContestacaoBalanco(usuarioLogado, contestacao.id);
+            const responsavel = contestacao?.responsavel || contestacaoContexto?.responsavel || usuarioLogado;
+            await dbCancelarContestacaoBalanco(responsavel, contestacao.id);
             contestacoesBalanco = contestacoesBalanco.filter(c => c.id !== contestacao.id);
             fecharBoxContestacao();
             atualizarBotoesContestacaoHistorico();
             renderizar();
+            window.fecharHistorico();
             alert('Contestação cancelada.');
         } catch (erro) {
             console.error(erro);
@@ -1776,7 +2277,7 @@
         }
 
         try {
-            const contestacaoExistente = obterContestacaoAbertaItem(
+            const contestacaoExistente = obterContestacaoAbertaContexto(
                 contestacaoContexto?.itemChave,
                 contestacaoContexto?.itemNome,
                 contestacaoContexto?.categoria
@@ -1785,8 +2286,9 @@
                 ...contestacaoContexto,
                 quantidadeInformada: informado
             };
+            const responsavel = contestacaoContexto.responsavel || usuarioLogado;
             const contestacaoSalva = contestacaoExistente?.id
-                ? await dbAtualizarContestacaoBalanco(usuarioLogado, contestacaoExistente.id, dadosContestacao)
+                ? await dbAtualizarContestacaoBalanco(responsavel, contestacaoExistente.id, dadosContestacao)
                 : await dbSalvarContestacaoBalanco(dadosContestacao);
 
             if (contestacaoSalva?.id) {
@@ -1798,6 +2300,7 @@
             fecharBoxContestacao();
             atualizarBotoesContestacaoHistorico();
             renderizar();
+            window.fecharHistorico();
             alert('Contestação registrada.');
         } catch (erro) {
             console.error(erro);
@@ -1810,7 +2313,8 @@
     };
 
     window.aprovarContestacaoBalanco = async function() {
-        const contestacao = obterContestacaoAbertaItem(
+        if (!await playConfirm('Esta ação não pode ser revertida.', { primaryLabel: 'Aprovar mesmo assim', secondaryLabel: 'Cancelar' })) return;
+        const contestacao = obterContestacaoAbertaContexto(
             contestacaoContexto?.itemChave,
             contestacaoContexto?.itemNome,
             contestacaoContexto?.categoria
@@ -1826,8 +2330,29 @@
         try {
             const aprovadoEm = new Date().toISOString();
             const quantidadeAprovada = Number(contestacaoContexto?.quantidadeAtual || 0);
+            const responsavel = contestacaoContexto.responsavel || usuarioLogado;
+            const aprovacaoGestorComAjuste = Boolean(historicoAbertoContexto?.modoGestorContestacao);
+            if (aprovacaoGestorComAjuste) {
+                if (!contestacao?.id) throw new Error('Contestação não encontrada para ajuste.');
+                const contestacaoAjustada = await dbAprovarContestacaoBalancoComAjuste(responsavel, contestacao.id, usuarioLogado);
+                contestacoesGestor = contestacoesGestor.map(c =>
+                    c.id === contestacao.id && String(c?.usuarioKey || c?.responsavel || c?.registradoPor || '').trim() === String(responsavel).trim()
+                        ? { ...c, ...contestacaoAjustada, status: 'aprovado', aprovadoEm, aprovadoPor: usuarioLogado }
+                        : c
+                );
+                contestacoesBalanco = contestacoesBalanco.map(c =>
+                    c.id === contestacao.id
+                        ? { ...c, ...contestacaoAjustada, status: 'aprovado', aprovadoEm, aprovadoPor: usuarioLogado }
+                        : c
+                );
+                renderizar();
+                if (btn) btn.textContent = 'Aprovado';
+                window.fecharHistorico();
+                alert('Ajuste aprovado e aplicado.');
+                return;
+            }
             if (contestacao?.id) {
-                await dbAprovarContestacaoBalanco(usuarioLogado, contestacao.id, usuarioLogado, {
+                await dbAprovarContestacaoBalanco(responsavel, contestacao.id, usuarioLogado, {
                     quantidadeAtual: quantidadeAprovada,
                     quantidadeInformada: quantidadeAprovada
                 });
@@ -1862,6 +2387,7 @@
             await registrarAprovacaoBalancoNoHistorico(quantidadeAprovada);
             renderizar();
             if (btn) btn.textContent = 'Aprovado';
+            window.fecharHistorico();
             alert('Valor aprovado.');
         } catch (erro) {
             console.error(erro);
@@ -2003,7 +2529,7 @@
             </div>` : ''}
 
             <!-- Botão expansível Balanço Financeiro -->
-            <div id="tituloFinanceiro" class="fin-header" onclick="window.toggleBalanco()">
+            ${isGestao1 ? '' : `<div id="tituloFinanceiro" class="fin-header" onclick="window.toggleBalanco()">
                 <span style="position:absolute;left:20px;font-size:20px;">&#128176;</span>
                 <span class="fin-titulo">Balan&ccedil;o Financeiro</span>
                 <span class="fin-seta" id="setaBalanco">&#9660;</span>
@@ -2171,8 +2697,25 @@
                         </div>`).join('')}
                 </div>
             </div>` : ''}
+            </div>`}
+
+            ${isGestor ? `
+            <div id="tituloContestacoes" class="contest-header" onclick="window.toggleContestacoes()">
+                <span style="position:absolute;left:20px;font-size:20px;">&#128373;</span>
+                <span class="contest-titulo">Contesta&ccedil;&atilde;o</span>
+                <span class="contest-badge" id="contestBadge">${obterContestacoesGestorEmAnalise().length}</span>
+                <span class="contest-seta" id="setaContestacoes">&#9660;</span>
             </div>
+            <div class="contest-corpo${contestacoesAberto ? ' aberto' : ''}" id="corpoContestacoes">
+                <div id="listaContestacoes">
+                    ${montarCardsContestacoesGestor()}
+                </div>
+            </div>` : ''}
         `;
+        if (contestacoesAberto) {
+            document.getElementById('tituloContestacoes')?.classList.add('aberta');
+            document.getElementById('setaContestacoes')?.classList.add('girada');
+        }
         setupTopoObserver();
     }
 
@@ -2222,6 +2765,19 @@
         seta.classList.toggle('girada', abrindo);
     };
 
+    window.toggleContestacoes = function() {
+        const header = document.getElementById('tituloContestacoes');
+        const corpo  = document.getElementById('corpoContestacoes');
+        const seta   = document.getElementById('setaContestacoes');
+        if (!header || !corpo || !seta) return;
+        contestacoesAberto = !corpo.classList.contains('aberto');
+        corpo.classList.toggle('aberto', contestacoesAberto);
+        header.classList.toggle('aberta', contestacoesAberto);
+        seta.classList.toggle('girada', contestacoesAberto);
+        // TODO: ao abrir pela primeira vez, chamar carregarContestacoes()
+        // que faz dbEscutarTodasContestacoes() e popula #listaContestacoes
+    };
+
     window.abrirFoto = function(url) {
         document.getElementById('lbImg').src = url;
         document.getElementById('lbOverlay').classList.add('aberto');
@@ -2254,6 +2810,8 @@
     colaboradorObj  = colaboradores.find(c => String(c?.nome || '').trim() === usuarioLogado) || null;
     isTecnico = (colaboradorObj?.nivel_completo || '').startsWith('atendimento') &&
                 String(colaboradorObj?.cargo || '').trim().toLowerCase() === 'técnico';
+    isGestor  = (colaboradorObj?.nivel_completo || '').includes('gestao');
+    isGestao1 = (colaboradorObj?.nivel_completo || '').includes('gestao_1');
     usaComissaoGlobal = parsePercentualColaborador(colaboradorObj?.comissaoGlobal) > 0;
 
     // Mapa para cruzar cliente do atendimento â†’ rota atual
@@ -2284,6 +2842,14 @@
     // Estrutura: { produtos: { "NomeProduto": qtd }, maquinas: { "NomeMaquina": contagem } }
 
     renderizar();
+
+    if (new URLSearchParams(window.location.search).get('contestacao') === '1') {
+        contestacoesAberto = true;
+        renderizar();
+        setTimeout(() => {
+            document.getElementById('tituloContestacoes')?.scrollIntoView({ behavior: 'smooth' });
+        }, 50);
+    }
 
     // Atualiza em tempo real apenas os dados do usuÃƒÂ¡rio logado.
     if (isTecnico) {
@@ -2339,6 +2905,13 @@
         renderizarHistoricoAberto();
         renderizar();
     });
+
+    if (isGestor) {
+        dbEscutarTodasContestacoesBalanco((lista) => {
+            contestacoesGestor = Array.isArray(lista) ? lista : [];
+            renderizar();
+        });
+    }
 
     dbEscutarPixEmPosse(usuarioLogado, (lista) => {
         pixEmPosse = lista;

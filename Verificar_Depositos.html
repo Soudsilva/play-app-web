@@ -1,0 +1,1212 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Depósitos</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #042d86;
+            color: white;
+            min-height: 100vh;
+            overscroll-behavior-y: contain;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding-bottom: 80px;
+        }
+
+        /* â”€â”€ HEADER â”€â”€ */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #042d86;
+            padding: 16px 16px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-bottom: 14px;
+            position: relative;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            right: 0;
+            text-align: center;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .btn-home {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            padding: 0;
+        }
+        .btn-home svg { width: 20px; height: 20px; fill: white; }
+
+        /* â”€â”€ TABS â”€â”€ */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            padding-bottom: 14px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 11px 8px;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.55);
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            transition: all 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .tab.active {
+            background: rgba(255,255,255,0.13);
+            border-color: #ffeb3b;
+            color: white;
+        }
+
+        .badge {
+            background: #f44336;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 7px;
+            font-size: 13px;
+            font-weight: bold;
+            min-width: 22px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .badge.verde { background: #4caf50; }
+        .badge.zero  { background: rgba(255,255,255,0.2); }
+
+        /* â”€â”€ BARRA MÃŠS + BUSCA â”€â”€ */
+        .barra-filtros {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px 12px;
+        }
+
+        .mes-btn-atual {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 9px 12px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mes-btn-atual .seta {
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .filter-input {
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            color: white;
+            padding: 10px 13px;
+            font-size: 15px;
+            outline: none;
+            min-width: 0;
+        }
+
+        .filter-input::placeholder { color: rgba(255,255,255,0.4); }
+
+        /* â”€â”€ RÃ“TULO DE DIA â”€â”€ */
+        .rotulo-dia {
+            font-size: 13px;
+            font-weight: bold;
+            color: #ffeb3b;
+            padding: 18px 4px 6px;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .rotulo-dia:first-child { padding-top: 4px; }
+
+        /* â”€â”€ LISTA â”€â”€ */
+        .content {
+            padding: 4px 16px 0;
+        }
+
+        /* â”€â”€ CARD â”€â”€ */
+        .card {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .card.pendente  { border-left: 4px solid #ffeb3b; }
+        .card.conferido { border-left: 4px solid #4caf50; opacity: 0.85; }
+        .card.rejeitado { border-left: 4px solid #f44336; opacity: 0.85; }
+
+        .card-header {
+            padding: 14px 14px 14px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.15s;
+        }
+
+        .card-header:active { background: rgba(255,255,255,0.05); }
+
+        /* Miniatura do comprovante no card fechado */
+        .card-thumb {
+            width: 52px;
+            height: 52px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+            border: 2px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .card-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Ãcone de placeholder quando nÃ£o hÃ¡ foto */
+        .card-thumb .sem-foto {
+            font-size: 22px;
+            color: rgba(255,255,255,0.3);
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            align-self: flex-start;
+            margin-top: 4px;
+        }
+
+        .status-dot.pendente  { background: #ffeb3b; box-shadow: 0 0 6px rgba(255,235,59,0.6); }
+        .status-dot.conferido { background: #4caf50; box-shadow: 0 0 6px rgba(76,175,80,0.6); }
+        .status-dot.rejeitado { background: #f44336; box-shadow: 0 0 6px rgba(244,67,54,0.6); }
+
+        .card-info { flex: 1; min-width: 0; }
+
+        /* Nome de quem depositou */
+        .card-depositante {
+            font-size: 17px;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-data {
+            font-size: 13px;
+            color: #b0c4e8;
+            margin-top: 3px;
+        }
+
+        .card-status-label {
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+        .card-status-label.pendente  { color: #ffeb3b; }
+        .card-status-label.conferido { color: #81c784; }
+        .card-status-label.rejeitado { color: #ef9a9a; }
+
+        /* Valor em destaque Ã  direita do card */
+        .card-right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .card-valor-label {
+            font-size: 12px;
+            color: #cfd6e3;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .card-valor {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffeb3b;
+        }
+
+        .expand-icon {
+            font-size: 14px;
+            color: rgba(255,255,255,0.35);
+            transition: transform 0.25s;
+            flex-shrink: 0;
+        }
+
+        .card.expanded .expand-icon { transform: rotate(180deg); }
+
+        /* â”€â”€ CARD BODY â”€â”€ */
+        .card-body {
+            display: none;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .card.expanded .card-body { display: block; }
+
+        .section {
+            padding: 14px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .section:last-child { border-bottom: none; }
+
+        .card-body > .section:nth-of-type(n+2),
+        .card-body > .acoes,
+        .card-body > .conferido-info {
+            display: none;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: rgba(255,235,59,0.85);
+            margin-bottom: 12px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* â”€â”€ LINHA THUMB + BOTÃ•ES â”€â”€ */
+        .conf-row {
+            display: flex;
+            align-items: stretch;
+            gap: 12px;
+            padding: 14px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .conf-thumb {
+            width: 80px;
+            flex-shrink: 0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .conf-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .conf-thumb .sem-foto {
+            font-size: 28px;
+            color: rgba(255,255,255,0.3);
+        }
+
+        .conf-acoes {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        /* Placeholder quando sem foto */
+        .foto-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255,255,255,0.3);
+        }
+
+        .foto-placeholder .icone { font-size: 28px; }
+        .foto-placeholder .texto { font-size: 12px; }
+
+        /* â”€â”€ LINHAS DE DADOS â”€â”€ */
+        .dado-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .dado-row:last-child { border-bottom: none; }
+
+        .dado-label {
+            font-size: 14px;
+            color: #cfd6e3;
+        }
+
+        .dado-val {
+            font-size: 15px;
+            font-weight: bold;
+            color: white;
+        }
+
+        /* Valor do envelope â€” destaque especial */
+        .dado-val.envelope {
+            font-size: 17px;
+            color: #80cbc4;
+        }
+
+        /* Valor registrado no sistema */
+        .dado-val.sistema {
+            font-size: 17px;
+            color: #ffeb3b;
+        }
+
+        /* DiferenÃ§a entre envelope e sistema */
+        .dado-val.diferenca-ok   { color: #81c784; }
+        .dado-val.diferenca-erro { color: #ef9a9a; }
+
+        /* Chip automÃ¡tico (valor calculado) */
+        .chip-auto {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid white;
+            border-radius: 20px;
+            padding: 3px 10px;
+            font-size: 13px;
+            color: white;
+            background: transparent;
+        }
+
+        /* â”€â”€ BOTÃ•ES DE AÃ‡ÃƒO (gestor) â”€â”€ */
+        .acoes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 14px 15px;
+        }
+
+
+        .valor-encontrado {
+            border: 1px solid #ffffff;
+            border-radius: 12px;
+            padding: 11px 12px;
+            margin-bottom: 10px;
+            background: transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .valor-encontrado-label {
+            font-size: 13px;
+            color: #ffffff;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .valor-encontrado-num {
+            font-size: 19px;
+            font-weight: bold;
+            color: #ffeb3b;
+            white-space: nowrap;
+        }
+
+        .btn-divergente,
+        .btn-confirmar {
+            padding: 13px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.15s;
+        }
+
+        .btn-divergente {
+            border: 2px solid #ff9800;
+            background: #243f78;
+            color: #ffb74d;
+        }
+
+        .btn-confirmar {
+            border: none;
+            background: #4caf50;
+            color: white;
+            transition: opacity 0.15s;
+        }
+
+        .btn-divergente:active { background: #3f4e72; }
+        .btn-confirmar:active { opacity: 0.8; }
+
+        .card.conferido .conf-acoes {
+            display: none;
+        }
+
+        .valor-encontrado-input {
+            width: 130px;
+            background: #0f2f73;
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            padding: 7px 9px;
+            color: #ffeb3b;
+            font-size: 21px;
+            font-weight: bold;
+            outline: none;
+            user-select: text;
+            -webkit-user-select: text;
+            text-align: right;
+        }
+
+        .valor-encontrado-input::placeholder { color: #cfd6e3; }
+
+        /* Quando jÃ¡ conferido â€” mostra sÃ³ info */
+        .conferido-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 15px;
+            background: rgba(76,175,80,0.08);
+        }
+
+        .conferido-icone {
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .conferido-texto {
+            font-size: 14px;
+            color: #81c784;
+            line-height: 1.4;
+        }
+
+        /* â”€â”€ EMPTY STATE â”€â”€ */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255,255,255,0.45);
+        }
+
+        .empty-icon { font-size: 52px; margin-bottom: 16px; }
+        .empty-state p { font-size: 16px; line-height: 1.5; }
+
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• HEADER â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="header">
+        <div class="header-top">
+            <span class="header-title">Verificar Depósitos</span>
+            <button class="btn-home" title="Início">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            </button>
+        </div>
+
+        <!-- Abas: Pendentes / Conferidos -->
+        <div class="tabs">
+            <div class="tab active">
+                Pendentes
+                <span class="badge">3</span>
+                <!-- [PROGRAMAÃ‡ÃƒO] Badge: total de depÃ³sitos com status = "aguardando_conferencia" -->
+            </div>
+            <div class="tab">
+                Conferidos
+                <span class="badge verde">5</span>
+                <!-- [PROGRAMAÃ‡ÃƒO] Badge: total de depÃ³sitos com status = "conferido" -->
+            </div>
+        </div>
+
+        <!-- Filtro de mÃªs + busca por nome -->
+        <div class="barra-filtros">
+            <button class="mes-btn-atual">
+                Abril de 2026 <span class="seta">▼</span>
+                <!-- [PROGRAMAÃ‡ÃƒO] Seletor de mÃªs para filtrar depÃ³sitos -->
+            </button>
+            <input
+                class="filter-input"
+                type="search"
+                placeholder="Buscar depositante..."
+                autocomplete="off"
+            />
+            <!-- [PROGRAMAÃ‡ÃƒO] Filtra cards pelo nome de quem depositou -->
+        </div>
+    </div>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• LISTA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div class="content">
+
+        <!-- â”€â”€â”€ RÃ“TULO DE DIA â”€â”€â”€ -->
+        <div class="rotulo-dia">Hoje · 28/04/2026</div>
+
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+             CARD PENDENTE â€” aberto para demonstraÃ§Ã£o
+             â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+        <div class="card pendente expanded">
+
+            <!-- CabeÃ§alho clicÃ¡vel para expandir/recolher -->
+            <div class="card-header">
+
+                <div class="status-dot pendente"></div>
+
+                <div class="card-info">
+                    <div class="card-depositante">Leonardo</div>
+                    <div class="card-data">28/04/2026 · 15:32</div>
+                    <div class="card-status-label pendente">Aguardando conferência</div>
+                </div>
+
+                <div class="card-right">
+                    <div class="card-valor-label">Valor encontrado</div>
+                    <div class="card-valor">R$ 400</div>
+                </div>
+
+                <div class="expand-icon">▼</div>
+            </div>
+
+            <!-- â”€â”€â”€ CORPO EXPANDIDO â”€â”€â”€ -->
+            <div class="card-body">
+
+                <div class="conf-row">
+                    <div class="conf-thumb">
+                        <div class="foto-placeholder">
+                            <span class="icone">&#129534;</span>
+                            <span class="texto">Foto</span>
+                        </div>
+                    </div>
+                    <div class="conf-acoes">
+                        <input class="valor-encontrado-input" type="text" inputmode="numeric" placeholder="" style="display:none; width:100%;">
+                        <button class="btn-divergente" type="button">Valor divergente</button>
+                        <button class="btn-confirmar" type="button">Confirmar valor</button>
+                    </div>
+                </div>
+
+                <!-- SEÃ‡ÃƒO 2: Valores â€” comparaÃ§Ã£o envelope Ã— sistema -->
+                <div class="section">
+                    <div class="section-title">Valores</div>
+
+                    <!-- Valor escrito no envelope pelo depositante -->
+                    <div class="dado-row">
+                        <div class="dado-label">Valor no envelope</div>
+                        <div class="dado-val envelope">R$ 400</div>
+                        <!-- [PROGRAMAÃ‡ÃƒO] Campo "valorEnvelope" â€” digitado pelo atendente no momento do envio -->
+                    </div>
+
+                    <!-- Valor que o sistema registrou (calculado automaticamente) -->
+                    <div class="dado-row">
+                        <div class="dado-label">Valor no sistema</div>
+                        <div class="dado-val sistema">
+                            <span class="chip-auto">R$ 360</span>
+                        </div>
+                        <!-- [PROGRAMAÃ‡ÃƒO] Campo "valorSistema" â€” calculado pelo saldo registrado no sistema -->
+                    </div>
+
+                    <!-- DiferenÃ§a entre os dois valores -->
+                    <div class="dado-row">
+                        <div class="dado-label">Diferença</div>
+                        <div class="dado-val diferenca-erro">+ R$ 40</div>
+                        <!-- [PROGRAMAÃ‡ÃƒO] valorEnvelope âˆ’ valorSistema
+                             Â· Se zero â†’ "âœ“ Sem diferenÃ§a" em verde
+                             Â· Se positivo â†’ valor em vermelho (excedente)
+                             Â· Se negativo â†’ valor em vermelho (faltando) -->
+                    </div>
+                </div>
+
+                <!-- SEÃ‡ÃƒO 3: InformaÃ§Ãµes do depÃ³sito -->
+                <div class="section">
+                    <div class="section-title">Informações</div>
+
+                    <div class="dado-row">
+                        <div class="dado-label">Depositante</div>
+                        <div class="dado-val">Leonardo</div>
+                        <!-- [PROGRAMAÃ‡ÃƒO] Campo "depositante" ou "registradoPor" -->
+                    </div>
+
+                    <div class="dado-row">
+                        <div class="dado-label">Rota</div>
+                        <div class="dado-val">Rota 38</div>
+                        <!-- [PROGRAMAÃ‡ÃƒO] Campo "rota" vinculado ao atendente -->
+                    </div>
+
+                    <div class="dado-row">
+                        <div class="dado-label">Data do envio</div>
+                        <div class="dado-val">28/04/2026</div>
+                    </div>
+
+                    <div class="dado-row">
+                        <div class="dado-label">Horário</div>
+                        <div class="dado-val">15:32</div>
+                        <!-- [PROGRAMAÃ‡ÃƒO] ExtraÃ­do do "timestamp" formatado para BrasÃ­lia -->
+                    </div>
+                </div>
+
+                <!-- SEÃ‡ÃƒO 4: AÃ§Ãµes do gestor -->
+                <div class="acoes">
+                    <button class="btn-rejeitar">
+                        Rejeitar
+                        <!-- [PROGRAMAÃ‡ÃƒO] Marca status = "rejeitado", registra quem rejeitou e quando -->
+                    </button>
+                    <button class="btn-confirmar">
+                        Confirmar Depósito
+                        <!-- [PROGRAMAÃ‡ÃƒO] Marca status = "conferido", registra quem conferiu e quando -->
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+             CARD PENDENTE â€” fechado (exemplo)
+             â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+        <div class="card pendente">
+            <div class="card-header">
+                <div class="status-dot pendente"></div>
+                <div class="card-info">
+                    <div class="card-depositante">Felipe</div>
+                    <div class="card-data">28/04/2026 · 14:10</div>
+                    <div class="card-status-label pendente">Aguardando conferência</div>
+                </div>
+                <div class="card-right">
+                    <div class="card-valor-label">Valor encontrado</div>
+                    <div class="card-valor">R$ 200</div>
+                </div>
+                <div class="expand-icon">▼</div>
+            </div>
+        </div>
+
+        <!-- â”€â”€â”€ DIA ANTERIOR â”€â”€â”€ -->
+        <div class="rotulo-dia">27/04/2026</div>
+
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+             CARD PENDENTE â€” fechado (exemplo dia anterior)
+             â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+        <div class="card pendente">
+            <div class="card-header">
+                <div class="status-dot pendente"></div>
+                <div class="card-info">
+                    <div class="card-depositante">Joab</div>
+                    <div class="card-data">27/04/2026 · 18:45</div>
+                    <div class="card-status-label pendente">Aguardando conferência</div>
+                </div>
+                <div class="card-right">
+                    <div class="card-valor-label">Valor encontrado</div>
+                    <div class="card-valor">R$ 120</div>
+                </div>
+                <div class="expand-icon">▼</div>
+            </div>
+        </div>
+
+        <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+             CARD CONFERIDO â€” como fica apÃ³s aprovaÃ§Ã£o
+             â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+        <div class="card conferido expanded">
+            <div class="card-header">
+                <div class="status-dot conferido"></div>
+                <div class="card-info">
+                    <div class="card-depositante">Leonardo</div>
+                    <div class="card-data">27/04/2026 · 16:00</div>
+                    <div class="card-status-label conferido">Conferido</div>
+                </div>
+                <div class="card-right">
+                    <div class="card-valor-label">Valor encontrado</div>
+                    <div class="card-valor" style="color:#81c784;">R$ 100</div>
+                </div>
+                <div class="expand-icon">▼</div>
+            </div>
+
+            <div class="card-body">
+                <div class="conf-row">
+                    <div class="conf-thumb">
+                        <div class="foto-placeholder">
+                            <span class="icone">&#129534;</span>
+                            <span class="texto">Foto</span>
+                        </div>
+                    </div>
+                    <div class="conf-acoes">
+                        <input class="valor-encontrado-input" type="text" inputmode="numeric" placeholder="" style="display:none; width:100%;">
+                        <button class="btn-divergente" type="button">Valor divergente</button>
+                        <button class="btn-confirmar" type="button">Confirmar valor</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Valores</div>
+                    <div class="dado-row">
+                        <div class="dado-label">Valor no envelope</div>
+                        <div class="dado-val envelope">R$ 100</div>
+                    </div>
+                    <div class="dado-row">
+                        <div class="dado-label">Valor no sistema</div>
+                        <div class="dado-val sistema">
+                            <span class="chip-auto">R$ 100</span>
+                        </div>
+                    </div>
+                    <div class="dado-row">
+                        <div class="dado-label">Diferença</div>
+                        <div class="dado-val diferenca-ok">Sem diferença</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Informações</div>
+                    <div class="dado-row">
+                        <div class="dado-label">Depositante</div>
+                        <div class="dado-val">Leonardo</div>
+                    </div>
+                    <div class="dado-row">
+                        <div class="dado-label">Rota</div>
+                        <div class="dado-val">Rota 38</div>
+                    </div>
+                    <div class="dado-row">
+                        <div class="dado-label">Data do envio</div>
+                        <div class="dado-val">27/04/2026</div>
+                    </div>
+                    <div class="dado-row">
+                        <div class="dado-label">Horário</div>
+                        <div class="dado-val">16:00</div>
+                    </div>
+                </div>
+
+                <!-- Quando jÃ¡ conferido: substitui os botÃµes por info de quem aprovou -->
+                <div class="conferido-info">
+                    <span class="conferido-icone">✓</span>
+                    <div class="conferido-texto">
+                        Conferido por <strong>Anderson</strong><br>
+                        27/04/2026 às 17:10
+                        <!-- [PROGRAMAÃ‡ÃƒO] Campos "conferidoPor" e "timestampConferencia" -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div><!-- /content -->
+
+</div><!-- /app -->
+
+<script src="assets/js/play-dialogs.js"></script>
+<script type="module">
+    import { dbConfirmarDeposito, dbEscutarTodosDepositos } from './database.js';
+    import { verificarAutenticacao } from './auth.js';
+
+    const content = document.querySelector('.content');
+    const badges = document.querySelectorAll('.badge');
+    const campoBusca = document.querySelector('.filter-input');
+    const tabs = document.querySelectorAll('.tab');
+    let depositos = [];
+    let busca = '';
+    let abaAtiva = 'pendentes';
+
+    function escaparHtml(valor) {
+        return String(valor ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function dataDeposito(deposito) {
+        const data = new Date(deposito?.data || deposito?.timestamp || deposito?.criadoEm || 0);
+        return Number.isNaN(data.getTime()) ? null : data;
+    }
+
+    function formatarDataHora(data) {
+        if (!data) return { data: '', hora: '' };
+        const partes = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).formatToParts(data);
+        const mapa = Object.fromEntries(partes.map(p => [p.type, p.value]));
+        return {
+            data: `${mapa.day}/${mapa.month}/${mapa.year}`,
+            hora: `${mapa.hour}:${mapa.minute}`
+        };
+    }
+
+    function chaveDia(data) {
+        const f = formatarDataHora(data);
+        return f.data || 'Sem data';
+    }
+
+    function rotuloDia(data) {
+        const f = formatarDataHora(data);
+        if (!f.data) return 'Sem data';
+        const hoje = formatarDataHora(new Date()).data;
+        return f.data === hoje ? `Hoje · ${f.data}` : f.data;
+    }
+
+    function valorInteiro(valor) {
+        const numero = Number(valor || 0);
+        return `R$ ${Math.round(numero).toLocaleString('pt-BR')}`;
+    }
+
+    function numeroValor(valor) {
+        return Number(valor || 0);
+    }
+
+    function parseValorDigitado(valor) {
+        return Number(String(valor || '').replace(/\D/g, '') || 0);
+    }
+
+    async function confirmarAcao(mensagem) {
+        return await window.playConfirm(mensagem, {
+            primaryLabel: 'Confirmar',
+            secondaryLabel: 'Cancelar'
+        });
+    }
+
+    function statusDeposito(deposito) {
+        return String(deposito?.status || '').trim().toLowerCase();
+    }
+
+    function ehConferido(deposito) {
+        const status = statusDeposito(deposito);
+        return status === 'conferido' || status === 'conferido_divergente';
+    }
+
+    function depositoTemStatusValido(deposito) {
+        const status = statusDeposito(deposito);
+        return status === 'aguardando_conferencia' || status === 'conferido' || status === 'conferido_divergente';
+    }
+
+    function depositoEstaNaAbaAtiva(deposito) {
+        const status = statusDeposito(deposito);
+        return abaAtiva === 'conferidos'
+            ? status === 'conferido' || status === 'conferido_divergente'
+            : status === 'aguardando_conferencia';
+    }
+
+    function fotoHtml(deposito) {
+        const foto = String(deposito?.foto || '').trim();
+        const thumb = String(deposito?.fotoThumb || foto).trim();
+        if (!thumb) {
+            return `
+                <div class="foto-placeholder">
+                    <span class="icone">&#129534;</span>
+                    <span class="texto">Foto do comprovante</span>
+                </div>`;
+        }
+        return `<img src="${escaparHtml(thumb)}" data-full="${escaparHtml(foto || thumb)}" alt="Foto do comprovante">`;
+    }
+
+    function cardDeposito(deposito, expandido) {
+        const data = dataDeposito(deposito);
+        const dataHora = formatarDataHora(data);
+        const conferido = ehConferido(deposito);
+        const divergente = statusDeposito(deposito) === 'conferido_divergente';
+        const classe = conferido ? 'conferido' : 'pendente';
+        const depositante = deposito.usuario || deposito.depositante || deposito.registradoPor || deposito.usuarioChave || 'Sem nome';
+        const valorOriginal = numeroValor(deposito.valor ?? deposito.valorEnvelope ?? deposito.valorInformado);
+        const valorConferido = numeroValor(deposito.valorConferido);
+        const valorExibido = valorConferido > 0 ? valorConferido : valorOriginal;
+        const foto = String(deposito?.fotoThumb || deposito?.foto || '').trim();
+
+        return `
+            <div class="card ${classe}${expandido ? ' expanded' : ''}" data-id="${escaparHtml(deposito.firebaseUrl)}" data-usuario="${escaparHtml(deposito.usuarioChave || deposito.usuario || '')}" data-valor="${valorOriginal}">
+                <div class="card-header">
+                    <div class="status-dot ${classe}"></div>
+                    <div class="card-info">
+                        <div class="card-depositante">${escaparHtml(depositante)}</div>
+                        <div class="card-data">${escaparHtml(dataHora.data)} · ${escaparHtml(dataHora.hora)}</div>
+                        <div class="card-status-label ${classe}">${divergente ? 'Conferido com divergência' : (conferido ? 'Conferido' : 'Aguardando conferência')}</div>
+                    </div>
+                    <div class="card-right">
+                        <div class="card-valor-label">${valorConferido > 0 ? 'Valor conferido' : 'Valor encontrado'}</div>
+                        <div class="card-valor"${conferido ? ' style="color:#81c784;"' : ''}>${valorInteiro(valorExibido)}</div>
+                    </div>
+                    <div class="expand-icon">▼</div>
+                </div>
+
+                <div class="card-body">
+                    <div class="conf-row">
+                        <div class="conf-thumb">
+                            ${fotoHtml(deposito)}
+                        </div>
+                        <div class="conf-acoes">
+                            <input class="valor-encontrado-input" type="text" inputmode="numeric" placeholder="Valor conferido" style="display:none; width:100%;">
+                            <button class="btn-divergente" type="button">Valor divergente</button>
+                            <button class="btn-confirmar" type="button">Confirmar valor</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    function renderizar() {
+        const filtrados = depositos
+            .filter(depositoTemStatusValido)
+            .filter(depositoEstaNaAbaAtiva)
+            .filter(d => {
+                const termo = `${d.usuario || ''} ${d.depositante || ''} ${d.registradoPor || ''}`.toLowerCase();
+                return !busca || termo.includes(busca);
+            })
+            .sort((a, b) => (dataDeposito(b)?.getTime() || 0) - (dataDeposito(a)?.getTime() || 0));
+
+        const validos = depositos.filter(depositoTemStatusValido);
+        const pendentes = validos.filter(d => statusDeposito(d) === 'aguardando_conferencia').length;
+        const conferidos = validos.filter(ehConferido).length;
+        if (badges[0]) badges[0].textContent = String(pendentes);
+        if (badges[1]) badges[1].textContent = String(conferidos);
+
+        if (!filtrados.length) {
+            const mensagem = abaAtiva === 'conferidos'
+                ? 'Nenhum depósito conferido encontrado.'
+                : 'Nenhum depósito pendente encontrado.';
+            content.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">&#129534;</div>
+                    <p>${mensagem}</p>
+                </div>`;
+            return;
+        }
+
+        const grupos = new Map();
+        filtrados.forEach(d => {
+            const data = dataDeposito(d);
+            const chave = chaveDia(data);
+            if (!grupos.has(chave)) grupos.set(chave, { data, itens: [] });
+            grupos.get(chave).itens.push(d);
+        });
+
+        let html = '';
+        let primeiro = true;
+        grupos.forEach(grupo => {
+            html += `<div class="rotulo-dia">${escaparHtml(rotuloDia(grupo.data))}</div>`;
+            grupo.itens.forEach(d => {
+                html += cardDeposito(d, primeiro);
+                primeiro = false;
+            });
+        });
+        content.innerHTML = html;
+    }
+
+    content.addEventListener('click', async (event) => {
+        const foto = event.target.closest('.conf-thumb img');
+        if (foto) {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:#000000;z-index:9999;display:flex;align-items:center;justify-content:center;padding:12px;';
+            overlay.innerHTML = `<img src="${escaparHtml(foto.dataset.full || foto.src)}" style="max-width:96vw;max-height:92vh;border-radius:10px;object-fit:contain;">`;
+            overlay.addEventListener('click', () => overlay.remove());
+            document.body.appendChild(overlay);
+            return;
+        }
+
+        const btnDiv = event.target.closest('.btn-divergente');
+        if (btnDiv) {
+            const card = btnDiv.closest('.card');
+            const input = btnDiv.closest('.conf-acoes')?.querySelector('.valor-encontrado-input');
+            if (!card || !input) return;
+
+            const visivel = input.style.display !== 'none';
+            if (!visivel) {
+                input.style.display = 'block';
+                input.value = card.dataset.valor ? Number(card.dataset.valor).toLocaleString('pt-BR') : '';
+                btnDiv.textContent = 'Salvar divergência';
+                input.focus();
+                input.select();
+                return;
+            }
+
+            const valorConferido = parseValorDigitado(input.value);
+            const depositoId = card.dataset.id || '';
+            const usuario = card.dataset.usuario || '';
+            const gestor = localStorage.getItem('usuarioLogado') || localStorage.getItem('usuario_selecionado') || '';
+            if (!depositoId || !usuario) return;
+            if (valorConferido <= 0) {
+                if (window.playAlert) window.playAlert('Informe o valor conferido.');
+                input.focus();
+                return;
+            }
+
+            btnDiv.disabled = true;
+            btnDiv.textContent = 'Salvando...';
+            try {
+                const valorOriginal = Number(card.dataset.valor || 0);
+                const temDivergencia = valorConferido !== valorOriginal;
+                const confirmou = await confirmarAcao(
+                    temDivergencia
+                        ? `Confirmar valor divergente de ${valorInteiro(valorConferido)}?`
+                        : `Confirmar o valor de ${valorInteiro(valorConferido)}?`
+                );
+                if (!confirmou) {
+                    btnDiv.disabled = false;
+                    btnDiv.textContent = 'Salvar divergência';
+                    return;
+                }
+                await dbConfirmarDeposito(usuario, depositoId, gestor, {
+                    status: temDivergencia ? 'conferido_divergente' : 'conferido',
+                    valorConferido
+                });
+            } catch (erro) {
+                console.error(erro);
+                btnDiv.disabled = false;
+                btnDiv.textContent = 'Salvar divergência';
+                if (window.playAlert) window.playAlert(`Erro ao salvar divergência: ${erro?.message || 'verifique o console.'}`);
+            }
+            return;
+        }
+
+        const btnConfirmar = event.target.closest('.btn-confirmar');
+        if (btnConfirmar) {
+            const card = btnConfirmar.closest('.card');
+            const depositoId = card?.dataset.id || '';
+            const usuario = card?.dataset.usuario || '';
+            const valorConferido = Number(card?.dataset.valor || 0);
+            const gestor = localStorage.getItem('usuarioLogado') || localStorage.getItem('usuario_selecionado') || '';
+            if (!depositoId || !usuario) return;
+            if (valorConferido <= 0) {
+                if (window.playAlert) window.playAlert('Valor do depósito inválido.');
+                return;
+            }
+
+            btnConfirmar.disabled = true;
+            btnConfirmar.textContent = 'Confirmando...';
+            try {
+                const confirmou = await confirmarAcao(`Confirmar o valor de ${valorInteiro(valorConferido)}?`);
+                if (!confirmou) {
+                    btnConfirmar.disabled = false;
+                    btnConfirmar.textContent = 'Confirmar valor';
+                    return;
+                }
+                await dbConfirmarDeposito(usuario, depositoId, gestor, {
+                    status: 'conferido',
+                    valorConferido
+                });
+            } catch (erro) {
+                console.error(erro);
+                btnConfirmar.disabled = false;
+                btnConfirmar.textContent = 'Confirmar valor';
+                if (window.playAlert) window.playAlert(`Erro ao confirmar depósito: ${erro?.message || 'verifique o console.'}`);
+            }
+            return;
+        }
+
+        const header = event.target.closest('.card-header');
+        if (header) header.closest('.card')?.classList.toggle('expanded');
+    });
+
+    content.addEventListener('input', (event) => {
+        const input = event.target.closest('.valor-encontrado-input');
+        if (!input) return;
+        const apenasDigitos = input.value.replace(/\D/g, '');
+        input.value = apenasDigitos
+            ? Number(apenasDigitos).toLocaleString('pt-BR', { maximumFractionDigits: 0 })
+            : '';
+    });
+
+    campoBusca?.addEventListener('input', () => {
+        busca = campoBusca.value.trim().toLowerCase();
+        renderizar();
+    });
+
+    tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => {
+            abaAtiva = index === 1 ? 'conferidos' : 'pendentes';
+            tabs.forEach(item => item.classList.remove('active'));
+            tab.classList.add('active');
+            renderizar();
+        });
+    });
+
+    content.innerHTML = `
+        <div class="empty-state">
+            <div class="empty-icon">&#129534;</div>
+            <p>Carregando depósitos...</p>
+        </div>`;
+
+    await verificarAutenticacao();
+
+    dbEscutarTodosDepositos((lista) => {
+        if (lista?.erro) {
+            depositos = [];
+            if (badges[0]) badges[0].textContent = '0';
+            if (badges[1]) badges[1].textContent = '0';
+            content.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">&#129534;</div>
+                    <p>Não foi possível ler os depósitos.</p>
+                    <p>${escaparHtml(lista.mensagem)}</p>
+                </div>`;
+            return;
+        }
+        depositos = Array.isArray(lista) ? lista : [];
+        renderizar();
+    });
+</script>
+
+</body>
+</html>
