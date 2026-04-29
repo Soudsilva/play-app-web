@@ -866,11 +866,32 @@
         font-weight: bold;
     }
     .edicao-dia-label input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
         width: 24px;
         height: 24px;
         margin: 0;
-        accent-color: #ffeb3b;
         cursor: pointer;
+        border: 2px solid #4caf50;
+        border-radius: 4px;
+        background: transparent;
+        position: relative;
+        flex-shrink: 0;
+    }
+    .edicao-dia-label input[type="checkbox"]:checked {
+        background: #4caf50;
+    }
+    .edicao-dia-label input[type="checkbox"]:checked::after {
+        content: '';
+        position: absolute;
+        left: 6px;
+        top: 2px;
+        width: 6px;
+        height: 11px;
+        border: 2px solid white;
+        border-top: none;
+        border-left: none;
+        transform: rotate(45deg);
     }
     .edicao-obs-textarea {
         width: 100%;
