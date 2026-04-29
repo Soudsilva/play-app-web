@@ -2777,7 +2777,9 @@ async function _atualizarPosseItensUsuario(entrada, movimento) {
         const permitirSaldoNegativo = origemMovimento === 'atendimento'
             || origemMovimento === 'manutencao'
             || origemMovimento === 'manutencao_adicao'
-            || origemMovimento === 'entrada_estoque';
+            || origemMovimento === 'entrada_estoque'
+            || origemMovimento === 'cadastro_cliente'
+            || origemMovimento === 'reposicao_cliente';
         const quantidadeAtualBase = estadoAtual?.quantidade;
         const quantidadeAtual = Number(
             quantidadeAtualBase != null
@@ -2833,6 +2835,7 @@ async function _salvarEntradaHistoricoBalanco(chaveUsuario, entrada, totais = {}
         descricao: String(entrada.descricao || ''),
         refId: String(entrada.refId || ''),
         ...(entrada?.atendimentoRefId ? { atendimentoRefId: String(entrada.atendimentoRefId).trim() } : {}),
+        ...(entrada?.tecnicoResponsavel ? { tecnicoResponsavel: String(entrada.tecnicoResponsavel).trim() } : {}),
         controlarPosse: entrada?.controlarPosse !== false,
         ...(entrada?.ignorarValidacaoPosse === true ? { ignorarValidacaoPosse: true } : {}),
         isDefeitoEntry: Boolean(entrada.isDefeitoEntry),
@@ -3069,6 +3072,92 @@ export async function dbSincronizarItensManutencaoNoHistorico(atendimentoId, ate
     }
 }
 
+export async function dbSincronizarItensCadastroClienteNoHistorico(clienteId, cliente) {
+    try {
+        const idRef = String(clienteId || '').trim();
+        const responsavel = String(cliente?.cadastradoPor || cliente?.registradoPor || '').trim();
+        const nomeCliente = String(cliente?.nome || '').trim();
+        const descricaoCadastro = nomeCliente ? `Cadastro de cliente - ${nomeCliente}` : 'Cadastro de cliente';
+        if (!idRef || !responsavel) return;
+
+        await _cancelarMovimentacoesHistoricoBalancoPorRefId(idRef, responsavel);
+
+        const produtos = Array.isArray(cliente?.produtos) ? cliente.produtos : [];
+        const equipamentos = Array.isArray(cliente?.equipDetalhes) ? cliente.equipDetalhes : [];
+
+        const produtosValidos = produtos
+            .map(item => ({
+                itemId: String(item?.itemId || item?.itemChave || item?.refId || '').trim(),
+                categoria: String(item?.categoria || 'produtos').trim() || 'produtos',
+                nome: String(item?.nome || '').trim(),
+                quantidade: Number(item?.quantidade || item?.qtd || 0)
+            }))
+            .filter(item => item.nome && item.quantidade > 0);
+
+        const produtoSemId = produtosValidos.find(item => !item.itemId);
+        if (produtoSemId) {
+            throw new Error(`Produto sem ID tecnico no cadastro de cliente: ${produtoSemId.nome}. Use apenas itens do estoque atual.`);
+        }
+
+        for (const produto of produtosValidos) {
+            await dbSalvarHistoricoBalanco({
+                responsavel,
+                registradoPor: responsavel,
+                itemNome: produto.nome,
+                categoria: produto.categoria,
+                tipo: 'cadastro_cliente',
+                origemRegistro: 'cadastro_cliente',
+                itemChave: produto.itemId,
+                movimento: -Number(produto.quantidade || 0),
+                descricao: descricaoCadastro,
+                refId: produto.itemId,
+                atendimentoRefId: idRef,
+                controlarPosse: true,
+                isDefeitoEntry: false,
+                qtdDefeitoConsumida: 0
+            });
+        }
+
+        const equipamentosValidos = equipamentos
+            .map(item => ({
+                itemId: String(item?.itemId || item?.itemChave || item?.refId || '').trim(),
+                categoria: String(item?.categoria || 'maquina').trim() || 'maquina',
+                nome: String(item?.nome || '').trim(),
+                quantidade: Number(item?.qtd || item?.quantidade || 0),
+                tecnicoResponsavel: String(item?.tecnico || item?.tecnicoResponsavel || '').trim()
+            }))
+            .filter(item => item.nome && item.quantidade > 0);
+
+        const maquinaSemId = equipamentosValidos.find(item => !item.itemId);
+        if (maquinaSemId) {
+            throw new Error(`Maquina sem ID tecnico no cadastro de cliente: ${maquinaSemId.nome}. Use apenas itens do estoque atual.`);
+        }
+
+        for (const maquina of equipamentosValidos) {
+            await dbSalvarHistoricoBalanco({
+                responsavel,
+                registradoPor: responsavel,
+                itemNome: maquina.nome,
+                categoria: maquina.categoria,
+                tipo: 'cadastro_cliente_adicao',
+                origemRegistro: 'cadastro_cliente',
+                itemChave: maquina.itemId,
+                movimento: -Number(maquina.quantidade || 0),
+                descricao: descricaoCadastro,
+                refId: maquina.itemId,
+                atendimentoRefId: idRef,
+                tecnicoResponsavel: maquina.tecnicoResponsavel,
+                controlarPosse: true,
+                isDefeitoEntry: false,
+                qtdDefeitoConsumida: 0
+            });
+        }
+    } catch (e) {
+        console.error('ERRO AO SINCRONIZAR ITENS DO CADASTRO DE CLIENTE NO HISTORICO:', e);
+        throw e;
+    }
+}
+
 export async function dbExcluirHistoricoBalanco(id, responsavel, opcoes = {}) {
     try {
         const recalcular = opcoes?.recalcular !== false;
@@ -3157,6 +3246,46 @@ export function dbEscutarHistoricoBalanco(callback) {
                 .slice(0, 60)
         );
     });
+}
+
+export function dbEscutarHistoricoBalancoCompleto(callback) {
+    return onValue(ref(db, 'movimentacao_balanco_historico'), (snap) => {
+        if (!snap.exists()) { callback([]); return; }
+
+        const lista = [];
+        const data = snap.val() || {};
+
+        Object.entries(data).forEach(([chaveUsuario, registros]) => {
+            Object.entries(registros || {}).forEach(([id, valor]) => {
+                lista.push({ firebaseUrl: id, chaveUsuario, ...valor });
+            });
+        });
+
+        callback(
+            lista.sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')))
+        );
+    });
+}
+
+export async function dbAtualizarResponsaveisHistoricoBalanco(responsavel, historicoId, responsaveis, atualizadoPor = '') {
+    try {
+        const chaveU = _normalizarChaveUsuario(responsavel);
+        const id = String(historicoId || '').trim();
+        if (!chaveU || !id) throw new Error('Registro do histórico não identificado.');
+
+        const lista = Array.isArray(responsaveis)
+            ? responsaveis.map(nome => String(nome || '').trim()).filter(Boolean)
+            : [];
+
+        await update(ref(db, `movimentacao_balanco_historico/${chaveU}/${id}`), {
+            responsaveis: Array.from(new Set(lista)),
+            atualizadoEm: new Date().toISOString(),
+            atualizadoPor: String(atualizadoPor || '').trim()
+        });
+    } catch (e) {
+        console.error('ERRO AO ATUALIZAR RESPONSAVEIS DO HISTORICO BALANCO:', e);
+        throw e;
+    }
 }
 
 export async function dbSalvarContestacaoBalanco(dados) {

@@ -143,7 +143,7 @@
         /* SeÃ§Ã£o */
         .secao { margin-bottom:24px; }
         .secao-titulo {
-            font-size:11px; font-weight:bold; color:#ffeb3b; text-transform:uppercase;
+            font-size:16px; font-weight:bold; color:#ffeb3b; text-transform:uppercase;
             letter-spacing:1.5px; margin-bottom:12px;
             display:flex; align-items:center; justify-content:center; gap:10px;
             position:relative;
@@ -155,24 +155,61 @@
         .secao-titulo::after {
             background:linear-gradient(270deg, transparent, rgba(255,235,59,0.35));
         }
+        @property --led-angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+        }
+        @keyframes led-race {
+            from { --led-angle: 0deg; }
+            to   { --led-angle: 360deg; }
+        }
         .pix-resumo-card {
-            background:rgba(255,255,255,0.06);
-            border:1px solid rgba(255,255,255,0.12);
+            background: transparent;
             border-radius:12px;
             padding:10px 14px;
             display:flex;
             align-items:center;
             gap:10px;
+            position:relative;
+        }
+        .pix-resumo-card::before {
+            content:'';
+            position:absolute;
+            inset:0;
+            border-radius:12px;
+            background: conic-gradient(
+                from var(--led-angle),
+                rgba(0,200,255,0.55),
+                rgba(160,0,255,0.55),
+                rgba(0,255,120,0.55),
+                rgba(255,200,0,0.55),
+                rgba(0,200,255,0.55)
+            );
+            animation: led-race 5s linear infinite;
+            z-index: 0;
+        }
+        .pix-resumo-card::after {
+            content:'';
+            position:absolute;
+            inset:1px;
+            border-radius:11px;
+            background: linear-gradient(135deg, rgb(26,57,112) 0%, rgb(14,37,89) 100%);
+            z-index: 1;
+        }
+        .pix-resumo-card > * {
+            position: relative;
+            z-index: 2;
         }
         .pix-resumo-texto {
-            font-size:14px;
+            font-size:17px;
             font-weight:bold;
             color:rgba(255,255,255,0.88);
             line-height:1.2;
             white-space:nowrap;
         }
         .pix-resumo-numeros {
-            font-size:14px;
+            font-size:17px;
             font-weight:bold;
             color:#ffeb3b;
             line-height:1.2;

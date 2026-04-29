@@ -615,7 +615,7 @@
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
     // Importamos as ferramentas de banco de dados do seu arquivo externo
-    import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, dbEscutarSessaoRotas, dbSincronizarItensManutencaoNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
+    import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, dbEscutarSessaoRotas, dbSincronizarItensCadastroClienteNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
 
     let maquinasDisponiveis = [];
     let produtosDisponiveis = [];
@@ -1148,35 +1148,10 @@
         return produtos;
     }
 
-    async function sincronizarProdutosCadastroClienteNoHistorico(clienteId, dadosCliente, produtosInstalacao) {
+    async function sincronizarCadastroClienteNoHistorico(clienteId, dadosCliente) {
         const idRef = String(clienteId || "").trim();
         if (!idRef) return;
-
-        const payloadHistorico = {
-            atendente: nomeUsuarioLogado || "N/A",
-            data: new Date().toISOString(),
-            cliente: {
-                id: idRef,
-                nome: dadosCliente?.nome || "",
-                numero: dadosCliente?.numero || "",
-                rota: dadosCliente?.rota || "",
-                cidade: dadosCliente?.cidade || "",
-                endereco: dadosCliente?.endereco || ""
-            },
-            produtos: Array.isArray(produtosInstalacao) ? produtosInstalacao : [],
-            origemRegistro: "manutencao",
-            manutencao: {
-                id: idRef,
-                tipoServico: "Cadastro de cliente",
-                servicoRealizado: true,
-                observacoes: dadosCliente?.obs || "",
-                equipamentosAdicionados: [],
-                equipamentosRetirados: [],
-                equipamentosRetiradosDetalhes: []
-            }
-        };
-
-        await dbSincronizarItensManutencaoNoHistorico(idRef, payloadHistorico);
+        await dbSincronizarItensCadastroClienteNoHistorico(idRef, dadosCliente);
     }
 
     function obterEquipamentosDetalhadosDoCliente(cliente) {
@@ -2436,14 +2411,19 @@
 
             const equipamentosDetalhados = obterEquipamentosDetalhadosDoFormulario()
                 .filter(item => item.nome)
-                .map(item => ({
-                    rowId: item.rowId,
-                    nome: item.nome,
-                    qtd: item.qtd || "1",
-                    pix: item.pix,
-                    contador: item.contador,
-                    tecnico: item.tecnico || ""
-                }));
+                .map(item => {
+                    const maquinaInfo = maquinasDisponiveis.find(maquina => maquina.nome === item.nome);
+                    return {
+                        rowId: item.rowId,
+                        itemId: maquinaInfo?.firebaseUrl || "",
+                        categoria: maquinaInfo?.categoria || "maquina",
+                        nome: item.nome,
+                        qtd: item.qtd || "1",
+                        pix: item.pix,
+                        contador: item.contador,
+                        tecnico: item.tecnico || ""
+                    };
+                });
 
             // Junta Nome + [Pix: x] + (Qtd) de todos os equipamentos preenchidos
             let listaEquipFinal = [];
@@ -2566,7 +2546,7 @@
                     ...(fromPontoNovo ? { pontoNovoOrigemId: fromPontoNovo } : {})
                 };
                 const clienteIdSalvo = await dbSalvarCliente(dadosFinal, idParaSalvar);
-                await sincronizarProdutosCadastroClienteNoHistorico(clienteIdSalvo || idParaSalvar, dadosFinal, produtosInstalacao);
+                await sincronizarCadastroClienteNoHistorico(clienteIdSalvo || idParaSalvar, dadosFinal);
 
                 if (fromPontoNovo && pontoNovoCarregado) {
                     await dbSalvarManutencao({ ...pontoNovoCarregado, status: "concluido" }, fromPontoNovo);

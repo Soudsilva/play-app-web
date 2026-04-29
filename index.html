@@ -345,7 +345,7 @@
 </script>
 
 <script type="module">
-    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarAtendimentos, dbEscutarManutencoes, dbEscutarClientes, dbEscutarResumoBalanco, dbEscutarTodasContestacoesBalanco } from './database.js';
+    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarAtendimentos, dbEscutarManutencoes, dbEscutarClientes, dbEscutarResumoBalanco, dbEscutarTodasContestacoesBalanco, dbEscutarTodosDepositos } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
     import { sincronizarPendentes } from './offline-sync.js';
 
@@ -418,6 +418,21 @@
             const btn = document.getElementById('btnAtendimento');
             if (!btn) return;
             btn.classList.toggle('botao-pendente-alerta', pendentes > 0);
+        });
+    }
+
+    let _depositosBadgeStarted = false;
+    function iniciarBadgeDepositos() {
+        if (_depositosBadgeStarted) return;
+        _depositosBadgeStarted = true;
+        dbEscutarTodosDepositos((lista) => {
+            if (lista?.erro) return;
+            const pendentes = lista.filter(d =>
+                String(d?.status || '').trim().toLowerCase() === 'aguardando_conferencia'
+            ).length;
+            const temPendente = pendentes > 0;
+            document.getElementById('btnDepositos')?.classList.toggle('botao-pendente-alerta', temPendente);
+            document.getElementById('btnGestao')?.classList.toggle('botao-pendente-alerta', temPendente);
         });
     }
 
@@ -701,6 +716,7 @@
             iniciarBadgeAtendimentos();
             iniciarBadgeServico();
             iniciarBadgeBalanco();
+            iniciarBadgeDepositos();
         }
 
         // GESTOR NÍVEL 2 e 3: acesso a Entr. Saídas

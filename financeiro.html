@@ -255,8 +255,8 @@
         .fin-colab-select {
             flex: 1;
             min-width: 0;
-            background: rgba(255,255,255,0.08);
-            border: 1.5px solid rgba(255,255,255,0.18);
+            background: #1f3d80;
+            border: 1.5px solid #5f7ec4;
             border-radius: 10px;
             padding: 9px 30px 9px 12px;
             color: #fff;
@@ -266,15 +266,15 @@
             outline: none;
             appearance: none;
             -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.45)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='white' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 10px center;
             cursor: pointer;
         }
 
         .fin-colab-select option { background: #0f2a66; }
-        .fin-colab-select:focus { border-color: rgba(255,235,59,0.5); }
-        .fin-colab-select:disabled { opacity: 0.4; cursor: default; }
+        .fin-colab-select:focus { border-color: #ffeb3b; }
+        .fin-colab-select:disabled { color: #b8c7ec; cursor: default; }
 
         .btn-enviar {
             background: #ffeb3b;
@@ -290,7 +290,7 @@
         }
 
         .btn-enviar:active { background: #edd900; transform: scale(0.95); }
-        .btn-enviar:disabled { background: rgba(255,235,59,0.3); color: rgba(11,34,86,0.5); cursor: default; transform: none; }
+        .btn-enviar:disabled { background: #6b7aa6; color: #d4ddf5; cursor: default; transform: none; }
 
         .fin-saldo-row {
             display: flex;
@@ -459,29 +459,30 @@
     <script src="assets/js/play-dialogs.js"></script>
     <script type="module">
         import { verificarAutenticacao } from './auth.js';
-        import { dbEscutarAtendimentos, dbEscutarColaboradores, dbAtualizarAtendimento, dbEscutarEstoque } from './database.js';
+        import { dbEscutarColaboradores, dbEscutarEstoque, dbEscutarHistoricoBalancoCompleto, dbAtualizarResponsaveisHistoricoBalanco } from './database.js';
 
         document.body.style.visibility = 'visible';
         await verificarAutenticacao();
 
         const MESES = [
-            'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
+            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
             'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
         ];
         const TIMEZONE = 'America/Sao_Paulo';
 
         const estado = {
-            atendimentos: [],
+            historico: [],
             nomesElegiveis: [],
             registros: [],
             mapaValores: {},
+            mapaValoresPorId: {},
             anoSelecionado: '',
             mesSelecionado: '',
             prontoEstoque: false,
             prontoColaboradores: false,
-            prontoAtendimentos: false,
+            prontoHistorico: false,
             get carregando() {
-                return !this.prontoEstoque || !this.prontoColaboradores || !this.prontoAtendimentos;
+                return !this.prontoEstoque || !this.prontoColaboradores || !this.prontoHistorico;
             }
         };
 
@@ -597,37 +598,53 @@
             return Array.from(mapa.values());
         }
 
-        function obterResponsaveis(itemEquipamento) {
+        function obterResponsaveis(registroHistorico) {
             return deduplicarNomes([
-                ...(Array.isArray(itemEquipamento?.responsaveis) ? itemEquipamento.responsaveis : []),
-                itemEquipamento?.tecnico
+                ...(Array.isArray(registroHistorico?.responsaveis) ? registroHistorico.responsaveis : []),
+                registroHistorico?.tecnicoResponsavel
             ]);
         }
 
-        function reconstruirRegistros() {
-            estado.registros = estado.atendimentos.flatMap((atendimento) => {
-                const equipamentos = Array.isArray(atendimento?.manutencao?.equipamentosAdicionados)
-                    ? atendimento.manutencao.equipamentosAdicionados
-                    : [];
+        function obterClienteNomeHistorico(registro) {
+            const descricao = String(registro?.descricao || '').trim();
+            const partes = descricao.split(' - ');
+            if (partes.length > 1) return partes.slice(1).join(' - ').trim();
+            return descricao || 'Sem cliente';
+        }
 
-                return equipamentos.map((item, indice) => ({
-                    atendimentoId: atendimento.firebaseUrl,
+        function registroFinanceiroValido(registro) {
+            if (registro?.cancelado) return false;
+            if (String(registro?.origemRegistro || '').trim() !== 'cadastro_cliente') return false;
+            if (String(registro?.tipo || '').trim() !== 'cadastro_cliente_adicao') return false;
+            if (String(registro?.categoria || '').trim() !== 'maquina') return false;
+            if (Number(registro?.movimento || 0) >= 0) return false;
+            return true;
+        }
+
+        function reconstruirRegistros() {
+            estado.registros = estado.historico
+                .filter(registroFinanceiroValido)
+                .map((registro, indice) => ({
+                    atendimentoId: registro.atendimentoRefId || registro.firebaseUrl || '',
+                    historicoId: registro.firebaseUrl || '',
+                    historicoUsuario: registro.chaveUsuario || registro.responsavel || '',
                     equipamentoIndice: indice,
-                    data: atendimento?.data || atendimento?.ultimaEdicao || '',
-                    registradoPor: String(atendimento?.atendente || atendimento?.registradoPor || '').trim(),
-                    clienteNome: String(atendimento?.cliente?.nome || '').trim(),
-                    equipamentoNome: String(item?.nome || '').trim(),
-                    qtd: Number.parseInt(item?.qtd, 10) || 0,
-                    responsaveis: obterResponsaveis(item),
-                    itemOriginal: item,
+                    data: registro.timestamp || '',
+                    registradoPor: String(registro.registradoPor || registro.responsavel || '').trim(),
+                    clienteNome: obterClienteNomeHistorico(registro),
+                    equipamentoNome: String(registro.itemNome || '').trim(),
+                    itemChave: String(registro.itemChave || registro.refId || '').trim(),
+                    qtd: Math.abs(Number(registro.movimento || 0)),
+                    responsaveis: obterResponsaveis(registro),
+                    itemOriginal: registro,
                     get saldo() {
-                        const chave = normalizarTexto(this.equipamentoNome);
-                        const valor = Number(estado.mapaValores[chave] || 0);
+                        const chaveNome = normalizarTexto(this.equipamentoNome);
+                        const valor = Number(estado.mapaValoresPorId[this.itemChave] || estado.mapaValores[chaveNome] || 0);
                         const divisor = this.responsaveis.length || 1;
                         return (this.qtd * valor) / divisor;
                     }
-                }));
-            }).filter((registro) => registro.equipamentoNome && registro.qtd > 0);
+                }))
+                .filter((registro) => registro.equipamentoNome && registro.qtd > 0);
 
             estado.registros.sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
             sincronizarFiltros();
@@ -695,11 +712,6 @@
             });
         }
 
-        function opcoesDropdown(responsaveisAtuais) {
-            const mapaAtuais = new Set(responsaveisAtuais.map((nome) => normalizarTexto(nome)));
-            return estado.nomesElegiveis.filter((nome) => !mapaAtuais.has(normalizarTexto(nome)));
-        }
-
         function htmlResponsaveis(responsaveis) {
             if (responsaveis.length === 0) {
                 return '<span class="fin-resp-chip">Sem responsável</span>';
@@ -708,6 +720,11 @@
             return responsaveis
                 .map((nome) => `<span class="fin-resp-chip">${escaparHtml(nome)}</span>`)
                 .join('');
+        }
+
+        function opcoesDropdown(responsaveisAtuais) {
+            const mapaAtuais = new Set(responsaveisAtuais.map((nome) => normalizarTexto(nome)));
+            return estado.nomesElegiveis.filter((nome) => !mapaAtuais.has(normalizarTexto(nome)));
         }
 
         function renderizar() {
@@ -728,8 +745,8 @@
                 return;
             }
 
-            listaFinanceiro.innerHTML = lista.map((registro) => {
-                const selectId = `select_${registro.atendimentoId}_${registro.equipamentoIndice}`;
+            listaFinanceiro.innerHTML = lista.map((registro, indiceLista) => {
+                const selectId = `select_${registro.historicoUsuario}_${registro.historicoId}`;
                 const opcoes = opcoesDropdown(registro.responsaveis);
                 const opcoesHtml = opcoes.length > 0
                     ? opcoes.map((nome) => `<option value="${escaparHtml(nome)}">${escaparHtml(nome)}</option>`).join('')
@@ -758,7 +775,7 @@
                             </div>
 
                             <div class="fin-resp-wrap">
-                                <div class="fin-resp-label">Responsáveis:</div>
+                                <div class="fin-resp-label">Técnico:</div>
                                 <div class="fin-resp-chips">${htmlResponsaveis(registro.responsaveis)}</div>
                             </div>
 
@@ -770,8 +787,9 @@
                                 <button
                                     type="button"
                                     class="btn-enviar"
-                                    data-atendimento-id="${escaparHtml(registro.atendimentoId)}"
-                                    data-equipamento-indice="${registro.equipamentoIndice}"
+                                    data-historico-id="${escaparHtml(registro.historicoId)}"
+                                    data-historico-usuario="${escaparHtml(registro.historicoUsuario)}"
+                                    data-registro-indice="${indiceLista}"
                                     data-select-id="${selectId}"
                                     ${opcoes.length === 0 ? 'disabled' : ''}
                                 >
@@ -797,7 +815,7 @@
             window.alert(texto);
         }
 
-        async function adicionarResponsavel(atendimentoId, equipamentoIndice, selectId, botao) {
+        async function adicionarResponsavelHistorico(registroIndice, selectId, botao) {
             const select = document.getElementById(selectId);
             const nomeSelecionado = String(select?.value || '').trim();
 
@@ -806,44 +824,27 @@
                 return;
             }
 
-            const atendimento = estado.atendimentos.find((item) => item.firebaseUrl === atendimentoId);
-            if (!atendimento) {
+            const registro = registrosFiltrados()[registroIndice];
+            if (!registro?.historicoId || !registro?.historicoUsuario) {
                 await mostrarAviso('Não foi possível localizar o registro.');
                 return;
             }
 
-            const manutencaoAtual = atendimento?.manutencao || {};
-            const equipamentosAtualizados = Array.isArray(manutencaoAtual.equipamentosAdicionados)
-                ? manutencaoAtual.equipamentosAdicionados.map((item) => ({ ...item }))
-                : [];
-
-            const equipamento = equipamentosAtualizados[equipamentoIndice];
-            if (!equipamento) {
-                await mostrarAviso('Não foi possível localizar a máquina deste card.');
-                return;
-            }
-
             const responsaveisAtualizados = deduplicarNomes([
-                ...(Array.isArray(equipamento.responsaveis) ? equipamento.responsaveis : []),
-                equipamento.tecnico,
+                ...registro.responsaveis,
                 nomeSelecionado
             ]);
-
-            equipamento.responsaveis = responsaveisAtualizados;
-
-            const manutencaoPatch = {
-                ...manutencaoAtual,
-                equipamentosAdicionados: equipamentosAtualizados
-            };
 
             botao.disabled = true;
             botao.textContent = 'Enviando...';
 
             try {
-                await dbAtualizarAtendimento(atendimentoId, {
-                    manutencao: manutencaoPatch,
-                    ultimaEdicao: new Date().toISOString()
-                });
+                await dbAtualizarResponsaveisHistoricoBalanco(
+                    registro.historicoUsuario,
+                    registro.historicoId,
+                    responsaveisAtualizados,
+                    localStorage.getItem('usuarioLogado') || ''
+                );
             } catch (erro) {
                 console.error(erro);
                 await mostrarAviso('Erro ao adicionar o responsável.');
@@ -868,9 +869,8 @@
             const botao = event.target.closest('.btn-enviar');
             if (!botao || botao.disabled) return;
 
-            await adicionarResponsavel(
-                botao.dataset.atendimentoId || '',
-                Number.parseInt(botao.dataset.equipamentoIndice || '0', 10) || 0,
+            await adicionarResponsavelHistorico(
+                Number.parseInt(botao.dataset.registroIndice || '0', 10) || 0,
                 botao.dataset.selectId || '',
                 botao
             );
@@ -878,9 +878,11 @@
 
         dbEscutarEstoque((lista) => {
             estado.mapaValores = {};
+            estado.mapaValoresPorId = {};
             (Array.isArray(lista) ? lista : []).forEach((item) => {
                 const chave = normalizarTexto(item?.nome || '');
                 if (chave) estado.mapaValores[chave] = Number(item?.valorEquipamento || 0);
+                if (item?.firebaseUrl) estado.mapaValoresPorId[String(item.firebaseUrl).trim()] = Number(item?.valorEquipamento || 0);
             });
             estado.prontoEstoque = true;
             renderizar();
@@ -900,13 +902,9 @@
             renderizar();
         });
 
-        dbEscutarAtendimentos((lista) => {
-            estado.atendimentos = (Array.isArray(lista) ? lista : []).filter((atendimento) => {
-                return Array.isArray(atendimento?.manutencao?.equipamentosAdicionados)
-                    && atendimento.manutencao.equipamentosAdicionados.length > 0;
-            });
-
-            estado.prontoAtendimentos = true;
+        dbEscutarHistoricoBalancoCompleto((lista) => {
+            estado.historico = Array.isArray(lista) ? lista : [];
+            estado.prontoHistorico = true;
             reconstruirRegistros();
         });
     </script>

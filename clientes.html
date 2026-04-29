@@ -2202,6 +2202,8 @@
         });
 
         if (produtos.length === 0) { await window.playAlert('Informe ao menos um produto para repor.'); return; }
+        const produtoInvalido = produtos.find(produto => !produto.itemId || !produto.nome);
+        if (produtoInvalido) { await window.playAlert('Produto inválido. Selecione novamente o produto no estoque.'); return; }
 
         const btn = document.getElementById('reposicaoBtnSalvar');
         btn.disabled = true;
@@ -2218,8 +2220,8 @@
                     registradoPor: atendente,
                     itemNome: produto.nome,
                     categoria: produto.categoria || 'produtos',
-                    tipo: 'manutencao',
-                    origemRegistro: 'manutencao',
+                    tipo: 'reposicao_cliente',
+                    origemRegistro: 'reposicao_cliente',
                     itemChave: produto.itemId,
                     movimento: -Number(produto.quantidade || 0),
                     descricao,
