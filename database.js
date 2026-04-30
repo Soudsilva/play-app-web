@@ -2895,6 +2895,48 @@ async function _cancelarMovimentacoesHistoricoBalancoPorRefId(refId, responsavel
     }
 }
 
+async function _substituirMovimentacoesHistoricoBalancoPorRefId(refId, responsavel) {
+    const chaveU = _normalizarChaveUsuario(responsavel);
+    const refIdLimpo = String(refId || '').trim();
+    if (!chaveU || !refIdLimpo) return;
+
+    const snap = await get(ref(db, `movimentacao_balanco_historico/${chaveU}`));
+    if (!snap.exists()) return;
+
+    const todos = Object.entries(snap.val() || {})
+        .map(([id, valor]) => ({ id, ...valor }));
+    const diretos = todos.filter(item => {
+        const refHistorico = String(item?.refId || '').trim();
+        const refAtendimento = String(item?.atendimentoRefId || '').trim();
+        return refHistorico === refIdLimpo || refAtendimento === refIdLimpo;
+    });
+    const idsDiretos = new Set(diretos.map(item => item.id));
+    const cancelamentosDosDiretos = todos.filter(item =>
+        String(item?.tipo || '').trim() === 'cancelamento' &&
+        idsDiretos.has(String(item?.refId || '').trim())
+    );
+
+    for (const entrada of diretos) {
+        const jaCancelado = entrada?.cancelado === true;
+        const ehCancelamento = String(entrada?.tipo || '').trim() === 'cancelamento';
+        const movimento = _obterMovimentacaoHistoricoBalanco(entrada);
+        if (!jaCancelado && !ehCancelamento && movimento && entrada?.controlarPosse !== false) {
+            await _atualizarPosseItensUsuario({
+                ...entrada,
+                ignorarValidacaoPosse: true
+            }, -movimento);
+        }
+    }
+
+    const updates = {};
+    [...diretos, ...cancelamentosDosDiretos].forEach(item => {
+        if (item?.id) updates[`movimentacao_balanco_historico/${chaveU}/${item.id}`] = null;
+    });
+    if (Object.keys(updates).length > 0) {
+        await update(ref(db), updates);
+    }
+}
+
 export async function dbSincronizarProdutosAtendimentoNoHistorico(atendimentoId, atendimento) {
     try {
         const idRef = String(atendimentoId || '').trim();
@@ -2903,7 +2945,7 @@ export async function dbSincronizarProdutosAtendimentoNoHistorico(atendimentoId,
         const descricaoAtendimento = nomeCliente ? `Atendimento - ${nomeCliente}` : 'Atendimento';
         if (!idRef || !responsavel) return;
 
-        await _cancelarMovimentacoesHistoricoBalancoPorRefId(idRef, responsavel);
+        await _substituirMovimentacoesHistoricoBalancoPorRefId(idRef, responsavel);
 
         if (atendimento?.origemRegistro && atendimento.origemRegistro !== 'atendimento') return;
 
@@ -2922,7 +2964,11 @@ export async function dbSincronizarProdutosAtendimentoNoHistorico(atendimentoId,
             throw new Error(`Item sem ID técnico no atendimento: ${itemSemId.nome}. Limpe a base antiga e use apenas itens do estoque atual.`);
         }
 
-        if (itensValidos.length === 0) return;
+        if (itensValidos.length === 0) {
+            await dbAtualizarResumoBalanco(responsavel);
+            await _tentarRecalcularRemuneracoes();
+            return;
+        }
 
         for (const produto of itensValidos) {
             await dbSalvarHistoricoBalanco({

@@ -719,11 +719,21 @@
             })) : [],
             valorDinheiro: financeiro.dinheiro ?? "",
             porcComissao: financeiro.comissaoPorcentagem ?? "",
-            produtos: Array.isArray(envio.produtos) ? envio.produtos.map(produto => ({
-                prod: "",
-                prodNome: produto.nome || "",
-                qtd: produto.quantidade ?? ""
-            })) : [],
+            produtos: (() => {
+                const produtosHistorico = mapaMovimentacoesPorAtendimento[envio.firebaseUrl] || [];
+                if (produtosHistorico.length > 0) {
+                    return produtosHistorico.map(produto => ({
+                        prod: produto.itemChave || "",
+                        prodNome: produto.nome || "",
+                        qtd: produto.movimento ?? ""
+                    }));
+                }
+                return Array.isArray(envio.produtos) ? envio.produtos.map(produto => ({
+                    prod: produto.itemId || produto.itemChave || "",
+                    prodNome: produto.nome || "",
+                    qtd: produto.quantidade ?? ""
+                })) : [];
+            })(),
             fotoFichaBase64: fotos.ficha || "",
             fotosPix: Array.isArray(fotos.pix) ? fotos.pix.map((foto, index) => ({
                 index,
@@ -1095,10 +1105,12 @@
         mapaMovimentacoesPorAtendimento = {};
         historico.forEach(entry => {
             const refId = String(entry.atendimentoRefId || entry.refId || '').trim();
-            if (!refId || String(entry.origemRegistro || '').trim() !== 'atendimento' || entry.cancelado) return;
+            if (!refId || String(entry.origemRegistro || '').trim() !== 'atendimento' || entry.cancelado || String(entry.tipo || '').trim() === 'cancelamento') return;
             if (!mapaMovimentacoesPorAtendimento[refId]) mapaMovimentacoesPorAtendimento[refId] = [];
             mapaMovimentacoesPorAtendimento[refId].push({
                 nome: entry.itemNome || '—',
+                itemChave: String(entry.itemChave || entry.refId || '').trim(),
+                categoria: String(entry.categoria || 'produtos').trim(),
                 movimento: Math.abs(Number(entry.movimento || 0)),
                 totalApos: entry.totalApos != null ? Number(entry.totalApos) : null
             });
@@ -1189,5 +1201,4 @@
 </script>
 </body>
 </html>
-
 

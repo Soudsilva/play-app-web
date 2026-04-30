@@ -2722,18 +2722,6 @@
                 </div>
             </div>` : ''}
 
-            <!-- Máquinas atendidas no período (oculto para técnico) -->
-            ${maquinas.length > 0 && (dataDe || dataAte) && !isTecnico ? `
-            <div class="secao">
-                <div class="secao-titulo" style="text-align:center;">&#127920; M&aacute;quinas Atendidas no Per&iacute;odo Selecionado</div>
-                <div class="lista-card">
-                    ${maquinas.map(([nome,qtd]) => `
-                        <div class="lista-item">
-                            <div class="item-nome">${nome}</div>
-                            <div class="dia-count">${qtd}</div>
-                        </div>`).join('')}
-                </div>
-            </div>` : ''}
             </div>`}
 
             ${isGestor ? `
