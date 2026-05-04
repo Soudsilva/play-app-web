@@ -466,9 +466,11 @@
                     tecnico: String(item?.tecnico || '').trim(),
                     pixRetiradoPendente: String(item?.pixRetiradoPendente || '').trim(),
                     contadorRetiradoPendente: String(item?.contadorRetiradoPendente || '').trim(),
+                    retiradaPendenteEm: String(item?.retiradaPendenteEm || '').trim(),
                     retiradaPendentePor: String(item?.retiradaPendentePor || '').trim(),
                     manutencaoPendente: String(item?.manutencaoPendente || '').trim(),
                     aguardandoConfirmacao: item?.aguardandoConfirmacao === true,
+                    manutencaoPendenteEm: String(item?.manutencaoPendenteEm || '').trim(),
                     manutencaoPendentePor: String(item?.manutencaoPendentePor || '').trim()
                 }))
                 .filter(item => item.nome);
@@ -515,13 +517,36 @@
                     tecnico: '',
                     pixRetiradoPendente: '',
                     contadorRetiradoPendente: '',
+                    retiradaPendenteEm: '',
                     retiradaPendentePor: '',
                     manutencaoPendente: '',
                     aguardandoConfirmacao: false,
+                    manutencaoPendenteEm: '',
                     manutencaoPendentePor: ''
                 };
             })
             .filter(Boolean);
+    }
+
+    function obterDataEventoPixCadastro(tipo, registro, item) {
+        if (tipo === 'retirada') {
+            return registro?.data_retirada
+                || item?.retiradaPendenteEm
+                || item?.manutencaoPendenteEm
+                || registro?.criado_em
+                || '';
+        }
+        return registro?.data
+            || item?.manutencaoPendenteEm
+            || registro?.criado_em
+            || '';
+    }
+
+    function obterDataMaisRecentePix(itens) {
+        return (Array.isArray(itens) ? itens : [])
+            .map(item => String(item?.dataEvento || '').trim())
+            .filter(Boolean)
+            .sort((a, b) => new Date(b || 0) - new Date(a || 0))[0] || '';
     }
 
     function obterItensPixCadastroCliente(cliente) {
@@ -550,6 +575,7 @@
                         nome: item.nome,
                         pix: pixRetirado,
                         por: item.retiradaPendentePor || item.manutencaoPendentePor || cliente?.cadastradoPor || '-',
+                        dataEvento: obterDataEventoPixCadastro('retirada', registro, item),
                         contador: item.contadorRetiradoPendente || '',
                         contadorAnterior: String(registro?.contador_anterior_retirada || '').trim(),
                         contadorAtual: String(registro?.contador_atual_retirada || '').trim(),
@@ -574,6 +600,7 @@
                         nome: item.nome,
                         pix: pixAtual,
                         por: item.manutencaoPendentePor || cliente?.cadastradoPor || '-',
+                        dataEvento: obterDataEventoPixCadastro('retirada', registro, item),
                         contador: item.contador || '',
                         contadorAnterior: String(registro?.contador_anterior_retirada || '').trim(),
                         contadorAtual: String(registro?.contador_atual_retirada || '').trim(),
@@ -599,6 +626,7 @@
                         nome: item.nome,
                         pix: pixAtual,
                         por: item.tecnico || item.manutencaoPendentePor || cliente?.cadastradoPor || '-',
+                        dataEvento: obterDataEventoPixCadastro('adicao', registro, item),
                         contador: String(registro?.contador || item.contador || '').trim(),
                         fotoThumbUrl: String(registro?.foto_contador_instalacao_thumb || registro?.foto_contador_instalacao || fotoThumbBase).trim(),
                         fotoFullUrl: String(registro?.foto_contador_instalacao || registro?.foto_contador_instalacao_thumb || fotoFullBase).trim()
@@ -792,6 +820,21 @@
             </div>`;
     }
 
+    function montarBuscaExtraPix(itens) {
+        return (Array.isArray(itens) ? itens : [])
+            .map(item => [
+                'pix',
+                item.tipo === 'retirada' ? 'retirado retirada vermelho' : 'colocado adicao inclusao verde',
+                item.nome,
+                item.pix ? `pix ${item.pix}` : '',
+                item.contador,
+                item.contadorAnterior,
+                item.contadorAtual,
+                item.por
+            ].filter(Boolean).join(' '))
+            .join(' ');
+    }
+
     function formatarData(iso) {
         if (!iso) return '—';
         const d = new Date(iso);
@@ -867,14 +910,14 @@
                 enderecoMaquina: m.enderecoAlteracaoMaquina || '',
                 pontoEncerrado: m.pontoEncerrado === true,
                 pixItens: itensPix,
-                buscaExtra: itensPix.map(item => `${item.nome} ${item.pix}`).join(' ')
+                buscaExtra: montarBuscaExtraPix(itensPix)
             };
             });
 
         // Novos pontos — pendentes (em_analise) ou confirmados (aprovado)
         const statusAlvo = pendente ? 'em_analise' : 'aprovado';
         const eventosNovos = _clientes
-            .filter(c => c.statusCadastro === statusAlvo && dentroDomes(c.dataCadastro))
+            .filter(c => c.statusCadastro === statusAlvo)
             .map(c => {
                 const solicitacao = c.pontoNovoOrigemId
                     ? _manutencoes.find(m => m.firebaseUrl === c.pontoNovoOrigemId)
@@ -883,10 +926,13 @@
                     || (Array.isArray(c.fotosMaquinasInstalacao) && c.fotosMaquinasInstalacao[0]?.url)
                     || '';
                 const itensPix = obterItensPixCadastroCliente(c);
+                const dataPix = obterDataMaisRecentePix(itensPix);
+                const dataEvento = itensPix.length > 0 ? (dataPix || c.dataCadastro) : c.dataCadastro;
                 return {
                     tipo: itensPix.length > 0 ? 'pix-cadastro' : 'novo-ponto',
                     confirmado: !pendente,
-                    data: c.dataCadastro,
+                    data: dataEvento,
+                    dataCadastro: c.dataCadastro,
                     dataConfirmacao: c.dataAprovacao || '',
                     id: c.firebaseUrl,
                     clienteNome: c.nome || '—',
@@ -899,9 +945,10 @@
                     enderecoSolicitacao: solicitacao?.clienteEndereco || '',
                     foto,
                     pixItens: itensPix,
-                    buscaExtra: itensPix.map(item => `${item.nome} ${item.pix}`).join(' ')
+                    buscaExtra: montarBuscaExtraPix(itensPix)
                 };
-            });
+            })
+            .filter(ev => ev.pixItens.length > 0 ? dentroDomes(ev.data) : dentroDomes(ev.dataCadastro));
 
         let todos = [...eventosManutencao, ...eventosNovos]
             .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
@@ -1261,9 +1308,13 @@
 
     function abrirMenuMes() {
         const mesAtualStr = `${_calAno}-${String(_calMes + 1).padStart(2, '0')}`;
+        const datasPixClientes = _clientes.flatMap(c =>
+            obterItensPixCadastroCliente(c).map(item => item.dataEvento).filter(Boolean)
+        );
         const todasDatas = [
             ..._manutencoes.map(m => m.dataConclusao || m.dataRegistro),
-            ..._clientes.map(c => c.dataCadastro)
+            ..._clientes.map(c => c.dataCadastro),
+            ...datasPixClientes
         ];
         const mesesDisp = [...new Set(
             todasDatas.map(iso => {
