@@ -1724,6 +1724,8 @@ export async function dbAplicarPendenciasManutencaoCliente(firebaseUrlCliente, p
             if (!nome) return;
 
             const alvo = equipamentosAtualizados.find(equip => {
+                const rowIdAlvo = String(item?.rowId || "").trim();
+                if (rowIdAlvo && String(equip?.rowId || "").trim() === rowIdAlvo) return true;
                 if (String(equip?.nome || "").trim() !== nome) return false;
                 const pixAlvo = String(item?.pix || "").trim();
                 if (pixAlvo && String(equip?.pix || "").trim() !== pixAlvo) return false;
@@ -1897,12 +1899,30 @@ export async function dbConfirmarGestorManutencao(id, nomeGestor) {
 
                 // Máquinas RETIRADAS confirmadas: remove da lista do cliente
                 if (retirados.length > 0) {
-                    const rowIdsRet = new Set(retirados.map(i => String(i?.rowId || '')).filter(Boolean));
-                    const nomesRet  = new Set(retirados.map(i => String(i?.nome  || '').trim()).filter(Boolean));
+                    const retiradosNormalizados = retirados
+                        .map(i => ({
+                            rowId: String(i?.rowId || '').trim(),
+                            itemId: String(i?.itemId || '').trim(),
+                            nome: String(i?.nome || '').trim(),
+                            pix: String(i?.pix || '').trim()
+                        }))
+                        .filter(i => i.rowId || i.itemId || i.nome || i.pix);
                     equipamentos = equipamentos.filter(equip => {
-                        const porRowId = equip.rowId && rowIdsRet.has(equip.rowId);
-                        const porNome  = !porRowId && nomesRet.has(equip.nome) && equip.manutencaoPendente === 'retirada';
-                        return !(porRowId || porNome);
+                        const equipRowId = String(equip?.rowId || '').trim();
+                        const equipItemId = String(equip?.itemId || '').trim();
+                        const equipNome = String(equip?.nome || '').trim();
+                        const equipPix = String(equip?.pix || '').trim();
+                        const equipPixPendente = String(equip?.pixRetiradoPendente || '').trim();
+                        const retiradaPendente = equip?.manutencaoPendente === 'retirada' || equip?.aguardandoConfirmacao === true;
+
+                        const deveRemover = retiradosNormalizados.some(item => {
+                            if (item.rowId && equipRowId === item.rowId) return true;
+                            if (item.itemId && equipItemId === item.itemId && retiradaPendente) return true;
+                            if (item.pix && item.nome && equipNome === item.nome && (equipPix === item.pix || equipPixPendente === item.pix)) return true;
+                            return item.nome && equipNome === item.nome && retiradaPendente;
+                        });
+
+                        return !deveRemover;
                     });
                 }
 
@@ -3311,6 +3331,27 @@ export function dbEscutarHistoricoBalancoCompleto(callback) {
             lista.sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')))
         );
     });
+}
+
+export async function dbListarHistoricoBalancoCompleto() {
+    try {
+        const snap = await get(ref(db, 'movimentacao_balanco_historico'));
+        if (!snap.exists()) return [];
+
+        const lista = [];
+        const data = snap.val() || {};
+
+        Object.entries(data).forEach(([chaveUsuario, registros]) => {
+            Object.entries(registros || {}).forEach(([id, valor]) => {
+                lista.push({ firebaseUrl: id, chaveUsuario, ...valor });
+            });
+        });
+
+        return lista.sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+    } catch (error) {
+        console.error("Erro ao listar historico completo do balanco:", error);
+        return [];
+    }
 }
 
 export async function dbAtualizarResponsaveisHistoricoBalanco(responsavel, historicoId, responsaveis, atualizadoPor = '') {

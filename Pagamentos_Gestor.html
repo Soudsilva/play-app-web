@@ -695,9 +695,9 @@
         dbListarColaboradores,
         dbListarAtendimentos,
         dbListarEstoque,
-        dbListarHistorico,
-        dbExcluirHistorico,
-        dbEscutarHistoricoCompleto,
+        dbListarHistoricoBalancoCompleto,
+        dbExcluirHistoricoBalanco,
+        dbEscutarHistoricoBalancoCompleto,
         dbEscutarFluxoCaixa,
         dbRecalcularRemuneracoes,
         dbEscutarMesesRemuneracao,
@@ -793,14 +793,10 @@
     const _prodUsers = colaboradores.filter(c => c?.producaoProdutos === true);
     estado.fluxoProducaoProdutos = new Map();
 
-    dbEscutarHistoricoCompleto((lista) => {
+    dbEscutarHistoricoBalancoCompleto((lista) => {
         estado.historicoTodos = lista;
         if (estaEmModoProducao()) {
-            estado.entradasProducao = (lista || []).filter(e =>
-                e.tipo === 'entrada' &&
-                e.itemCategoria === 'produtos' &&
-                normalizarPag(e.responsavel || '') === normalizarPag(estado.nomeUsuario)
-            ).sort((a, b) => new Date(b.data) - new Date(a.data));
+            estado.entradasProducao = filtrarEntradasProducao(lista || [], estado.nomeUsuario);
             atualizarProdTotal();
             renderProducaoLista();
         }
@@ -1223,8 +1219,8 @@
     function atualizarProdTotal() {
         let total = 0;
         estado.entradasProducao.forEach(e => {
-            const valorUnit = Number(e.valorUnitario) || estado.mapaValoresProd[String(e.itemNome || '').trim()] || 0;
-            total += valorUnit * (Number(e.qtd) || 0);
+            const valorUnit = obterValorUnitarioProducao(e, estado.mapaValoresProd);
+            total += valorUnit * obterQtdProducao(e);
         });
         estado.movimentacoes.forEach(m => {
             total += m.tipo === 'entrada' ? Number(m.valor || 0) : -Number(m.valor || 0);
@@ -1261,7 +1257,7 @@
         if (estado.historicoTodos === null || estado.estoqueTodos === null) {
             document.getElementById('listaProducao').innerHTML = '<div class="vazio">Carregando...</div>';
             [estado.historicoTodos, estado.estoqueTodos] = await Promise.all([
-                estado.historicoTodos ?? dbListarHistorico(),
+                estado.historicoTodos ?? dbListarHistoricoBalancoCompleto(),
                 estado.estoqueTodos ?? dbListarEstoque()
             ]);
         }
@@ -1270,14 +1266,11 @@
         (estado.estoqueTodos || []).forEach(item => {
             if (item.categoria === 'produtos' && item.nome) {
                 estado.mapaValoresProd[String(item.nome).trim()] = Number(item.valorEquipamento || 0);
+                estado.mapaValoresProd[String(item.firebaseUrl || '').trim()] = Number(item.valorEquipamento || 0);
             }
         });
 
-        estado.entradasProducao = (estado.historicoTodos || []).filter(e =>
-            e.tipo === 'entrada' &&
-            e.itemCategoria === 'produtos' &&
-            normalizarPag(e.responsavel || '') === normalizarPag(nome)
-        ).sort((a, b) => new Date(b.data) - new Date(a.data));
+        estado.entradasProducao = filtrarEntradasProducao(estado.historicoTodos || [], nome);
 
         let _primeiraVez = true;
         estado._unsubProducaoFluxo = dbEscutarFluxoCaixa(nome, (movs) => {
@@ -1314,7 +1307,7 @@
 
         function obterAnoMesProd(item, tipo) {
             const d = tipo === 'producao'
-                ? new Date(item.data)
+                ? obterDataProducao(item)
                 : (item.criado_em ? new Date(item.criado_em) : new Date(`${item.data}T12:00:00`));
             return { ano: String(d.getFullYear()), mes: String(d.getMonth() + 1).padStart(2, '0'), ts: d.getTime() };
         }
@@ -1347,7 +1340,7 @@
 
         // Item mais recente de todos (para exibir botão de exclusão)
         const todosParaOrdenar = [
-            ...entradas.map(e => ({ tipo: 'producao', key: e.firebaseUrl, ts: new Date(e.data).getTime() })),
+            ...entradas.map(e => ({ tipo: 'producao', key: e.firebaseUrl, ts: obterTimestampProducao(e) })),
             ...movimentos.map(m => ({ tipo: 'fluxo', key: m.firebaseKey, ts: m.criado_em || new Date(`${m.data}T12:00:00`).getTime() }))
         ];
         const maisRecente = todosParaOrdenar.reduce((max, r) => r.ts > (max?.ts || 0) ? r : max, null);
@@ -1362,11 +1355,11 @@
 
         function criarCardProd(e, antigo) {
             const nomeProd = String(e.itemNome || '').trim();
-            const valorUnit = Number(e.valorUnitario) || mapa[nomeProd] || 0;
-            const qtd = Number(e.qtd) || 0;
+            const valorUnit = obterValorUnitarioProducao(e, mapa);
+            const qtd = obterQtdProducao(e);
             const valorTotal = valorUnit * qtd;
             const temValor = valorUnit > 0;
-            const d = new Date(e.data);
+            const d = obterDataProducao(e);
             const ts = d.getTime();
             const dataFmt = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) +
                             ' · ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -1441,7 +1434,7 @@
 
         try {
             if (tipo === 'producao') {
-                await dbExcluirHistorico(key);
+                await dbExcluirHistoricoBalanco(key, estado.nomeUsuario);
                 estado.entradasProducao = estado.entradasProducao.filter(e => e.firebaseUrl !== key);
             } else {
                 await dbExcluirMovimentoFluxoCaixa(estado.nomeUsuario, key);
@@ -1532,6 +1525,53 @@
 
     function normalizarPag(v) { return String(v || '').trim().toLowerCase(); }
 
+    function ehEntradaProducaoProduto(item) {
+        const tipo = String(item?.tipo || '').trim();
+        const origem = String(item?.origemRegistro || '').trim();
+        const categoria = String(item?.categoria || item?.itemCategoria || '').trim();
+        return (
+            (tipo === 'entrada_estoque' && origem === 'entrada_estoque' && categoria === 'produtos') ||
+            (tipo === 'entrada' && categoria === 'produtos')
+        );
+    }
+
+    function filtrarEntradasProducao(lista, nome) {
+        const nomeNorm = normalizarPag(nome);
+        return (Array.isArray(lista) ? lista : [])
+            .filter(item => ehEntradaProducaoProduto(item))
+            .filter(item => normalizarPag(item?.responsavel || '') === nomeNorm)
+            .sort((a, b) => obterTimestampProducao(b) - obterTimestampProducao(a));
+    }
+
+    function obterTimestampProducao(item) {
+        if (item?.timestamp) {
+            const data = new Date(item.timestamp);
+            if (!Number.isNaN(data.getTime())) return data.getTime();
+        }
+        if (Number.isFinite(Number(item?.criado_em))) return Number(item.criado_em);
+        if (item?.data) {
+            const data = new Date(item.data);
+            if (!Number.isNaN(data.getTime())) return data.getTime();
+        }
+        return 0;
+    }
+
+    function obterDataProducao(item) {
+        const timestamp = obterTimestampProducao(item);
+        return timestamp ? new Date(timestamp) : new Date(0);
+    }
+
+    function obterQtdProducao(item) {
+        if (item?.qtd != null) return Number(item.qtd) || 0;
+        return Math.abs(Number(item?.movimento || 0));
+    }
+
+    function obterValorUnitarioProducao(item, mapaValoresProdutos) {
+        const nomeProd = String(item?.itemNome || '').trim();
+        const itemChave = String(item?.itemChave || item?.refId || item?.itemId || '').trim();
+        return Number(item?.valorUnitario) || mapaValoresProdutos[itemChave] || mapaValoresProdutos[nomeProd] || 0;
+    }
+
     function obterResponsaveisPag(item) {
         const lista = [
             ...(Array.isArray(item?.responsaveis) ? item.responsaveis : []),
@@ -1551,12 +1591,10 @@
         const nomeNorm = normalizarPag(nome);
         let total = 0;
         for (const e of historico) {
-            if (e.tipo !== 'entrada') continue;
-            if (e.itemCategoria !== 'produtos') continue;
+            if (!ehEntradaProducaoProduto(e)) continue;
             if (normalizarPag(e.responsavel || '') !== nomeNorm) continue;
-            const nomeProd = String(e.itemNome || '').trim();
-            const valorUnit = Number(e.valorUnitario) || mapaValoresProdutos[nomeProd] || 0;
-            total += valorUnit * (Number(e.qtd) || 0);
+            const valorUnit = obterValorUnitarioProducao(e, mapaValoresProdutos);
+            total += valorUnit * obterQtdProducao(e);
         }
         return total;
     }
@@ -1686,6 +1724,7 @@
         (estado.estoqueTodos || []).forEach(item => {
             if (item.categoria === 'produtos' && item.nome) {
                 mapaValoresProdutos[String(item.nome).trim()] = Number(item.valorEquipamento || 0);
+                mapaValoresProdutos[String(item.firebaseUrl || '').trim()] = Number(item.valorEquipamento || 0);
             }
         });
 

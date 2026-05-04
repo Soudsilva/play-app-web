@@ -1592,12 +1592,6 @@
             aplicarDeltaMapa(mapa, String(item?.numero_pix || '').trim(), 1);
         });
 
-        atendimentos.forEach(a => {
-            (a?.manutencao?.equipamentosAdicionados || []).forEach(item => {
-                aplicarDeltaMapa(mapa, String(item?.pix || '').trim(), -1);
-            });
-        });
-
         return ordenarPixEmPosse(Object.entries(mapa));
     }
 

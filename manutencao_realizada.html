@@ -978,7 +978,7 @@
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
 verificarAutenticacao();
-import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbEscutarColaboradores, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, storageSalvarFotoComThumb, dbSalvarMovimentoFluxoCaixa, dbSincronizarItensManutencaoNoHistorico } from './database.js';
+import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbEscutarColaboradores, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, storageSalvarFotoComThumb, dbSalvarMovimentoFluxoCaixa, dbSincronizarItensManutencaoNoHistorico } from './database.js';
 
 // ════════════════════════════════════════════════
 // DADOS DA MANUTENÇÃO
@@ -3239,6 +3239,12 @@ window.finalizarRegistro = async function() {
                 pontoEncerrado: camposExtras.pontoEncerrado === true,
                 valorEncerramento: camposExtras.valorEncerramento || ''
             });
+        }
+
+        const pixAdicionadosEmManutencao = (camposExtras.equipamentosAdicionados || [])
+            .filter(item => String(item?.pix || '').trim());
+        for (const item of pixAdicionadosEmManutencao) {
+            await dbRemoverPixEmPosse(usuarioLogado, String(item.pix || '').trim());
         }
 
         const pixRetiradosEmManutencao = (camposExtras.equipamentosRetiradosDetalhes || [])

@@ -650,8 +650,8 @@
                     pix: String(item?.pix || '').trim(),
                     por: String(item?.tecnico || tecnico).trim() || '-',
                     contador: String(item?.contador || '').trim(),
-                    fotoThumbUrl: '',
-                    fotoFullUrl: ''
+                    fotoThumbUrl: String(item?.fotoThumbUrl || item?.fotoUrl || '').trim(),
+                    fotoFullUrl: String(item?.fotoUrl || item?.fotoThumbUrl || '').trim()
                 });
             });
 
@@ -741,13 +741,14 @@
     }
 
     function montarResumoPixItem(item) {
+        const fotoLabel = item.tipo === 'adicao' ? 'Foto da maquina' : 'Foto do contador';
         const fotoHtml = item.fotoThumbUrl
             ? `<div class="pix-servico-foto-wrap">
-                   <div class="pix-servico-foto-label">Foto do contador</div>
+                   <div class="pix-servico-foto-label">${fotoLabel}</div>
                    <img class="pix-servico-foto"
                         src="${escHtml(item.fotoThumbUrl)}"
                         data-full="${escHtml(item.fotoFullUrl || item.fotoThumbUrl)}"
-                        alt="Foto do contador"
+                        alt="${fotoLabel}"
                         onclick="window.verFoto(this.dataset.full)">
                </div>`
             : '';

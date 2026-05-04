@@ -424,7 +424,9 @@
         if (_atendBadgeStarted) return;
         _atendBadgeStarted = true;
         dbEscutarAtendimentos((lista) => {
-            const pendentes = lista.filter(a => !a.confirmacao).length;
+            const pendentes = lista.filter(a =>
+                !a.confirmacao && (Number(a?.financeiro?.totalGeral) || 0) >= 1
+            ).length;
             const btn = document.getElementById('btnAtendimento');
             if (!btn) return;
             btn.classList.toggle('botao-pendente-alerta', pendentes > 0);
