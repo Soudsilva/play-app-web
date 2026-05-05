@@ -138,6 +138,37 @@
         .dot.add { background: #4ade80; }
         .dot.rem { background: #f87171; }
 
+        .fotos-instalacao-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin: 10px 0;
+        }
+        .foto-instalacao-item {
+            min-width: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #163f94;
+            border: 1px solid #3f6fc5;
+            cursor: zoom-in;
+        }
+        .foto-instalacao-item img {
+            width: 100%;
+            height: 118px;
+            object-fit: cover;
+            display: block;
+        }
+        .foto-instalacao-label {
+            padding: 6px 7px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #ffffff;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         .card-rodape {
             display: flex; align-items: center;
             justify-content: space-between; margin-top: 10px; flex-wrap: wrap; gap: 8px;
@@ -796,6 +827,49 @@
         return '';
     }
 
+    function obterFotosInstalacaoCliente(cliente) {
+        const fotos = [];
+        const fichaFull = String(cliente?.fotoFichaInstalacao || cliente?.fotosInstalacao?.ficha || '').trim();
+        const fichaThumb = String(cliente?.fotoFichaInstalacaoThumb || fichaFull).trim();
+
+        if (fichaFull || fichaThumb) {
+            fotos.push({
+                label: 'Ficha',
+                thumb: fichaThumb || fichaFull,
+                full: fichaFull || fichaThumb
+            });
+        }
+
+        (Array.isArray(cliente?.fotosMaquinasInstalacao) ? cliente.fotosMaquinasInstalacao : [])
+            .forEach((foto, index) => {
+                const full = String(foto?.url || '').trim();
+                const thumb = String(foto?.thumbUrl || full).trim();
+                if (!full && !thumb) return;
+
+                fotos.push({
+                    label: String(foto?.nome || `Maquina ${index + 1}`).trim(),
+                    thumb: thumb || full,
+                    full: full || thumb
+                });
+            });
+
+        return fotos;
+    }
+
+    function montarFotosInstalacaoHtml(fotos) {
+        if (!Array.isArray(fotos) || fotos.length === 0) return '';
+
+        return `
+            <div class="fotos-instalacao-grid">
+                ${fotos.map(foto => `
+                    <div class="foto-instalacao-item" onclick="window.verFoto(this.dataset.full)" data-full="${escHtml(foto.full)}">
+                        <img src="${escHtml(foto.thumb)}" alt="${escHtml(foto.label)}" loading="lazy">
+                        <div class="foto-instalacao-label">${escHtml(foto.label)}</div>
+                    </div>
+                `).join('')}
+            </div>`;
+    }
+
     function montarListaPixServico(itens) {
         return `
             <div class="pix-servico-lista">
@@ -923,9 +997,8 @@
                 const solicitacao = c.pontoNovoOrigemId
                     ? _manutencoes.find(m => m.firebaseUrl === c.pontoNovoOrigemId)
                     : null;
-                const foto = c.fotoFichaInstalacao
-                    || (Array.isArray(c.fotosMaquinasInstalacao) && c.fotosMaquinasInstalacao[0]?.url)
-                    || '';
+                const fotosInstalacao = obterFotosInstalacaoCliente(c);
+                const foto = fotosInstalacao[0]?.full || '';
                 const itensPix = obterItensPixCadastroCliente(c);
                 const dataPix = obterDataMaisRecentePix(itensPix);
                 const dataEvento = itensPix.length > 0 ? (dataPix || c.dataCadastro) : c.dataCadastro;
@@ -945,6 +1018,7 @@
                     enderecoEntrega: c.endereco || '',
                     enderecoSolicitacao: solicitacao?.clienteEndereco || '',
                     foto,
+                    fotosInstalacao,
                     pixItens: itensPix,
                     buscaExtra: montarBuscaExtraPix(itensPix)
                 };
@@ -993,6 +1067,7 @@
                 <div class="pix-servico-origem">Cadastro Pix</div>
                 <div class="pix-servico-cliente">&#128205; ${montarIdentificacaoPix(ev.clienteNumero, ev.clienteNome)}</div>
                 ${montarListaPixServico(ev.pixItens)}
+                ${montarFotosInstalacaoHtml(ev.fotosInstalacao)}
                 <div class="card-rodape" style="margin-top:12px;">
                     <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
                     ${rodape}
@@ -1139,9 +1214,7 @@
     }
 
     function cardNovoPonto(ev) {
-        const fotoHtml = ev.foto
-            ? `<img src="${ev.foto}" onclick="window.verFoto(this.currentSrc || this.src)" style="width:100%;border-radius:10px;margin:10px 0;object-fit:cover;max-height:180px;cursor:zoom-in;" />`
-            : '';
+        const fotoHtml = montarFotosInstalacaoHtml(ev.fotosInstalacao);
 
         const enderecoSolicitacaoHtml = ev.enderecoSolicitacao
             ? `<div style="margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.06);border-left:3px solid rgba(255,255,255,0.6);">
