@@ -620,6 +620,187 @@
             font-weight: 600;
         }
 
+        /* Movimentações de estoque para gestor */
+        .gestor-mov-header {
+            background:#1a3d8f;
+            border:3px solid rgba(255,255,255,0.2);
+            border-radius:40px;
+            padding:12px 20px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            cursor:pointer;
+            position:relative;
+            transition:background 0.15s, border-radius 0.2s;
+            min-height:38px;
+            margin:16px 0 0;
+            -webkit-tap-highlight-color:transparent;
+        }
+        .gestor-mov-header:active { background:#152f70; }
+        .gestor-mov-header.aberto {
+            border-radius:22px 22px 0 0;
+            border-bottom-color:rgba(255,255,255,0.2);
+        }
+        .gestor-mov-icone {
+            position:absolute;
+            left:20px;
+            font-size:20px;
+            color:#ffffff;
+        }
+        .gestor-mov-info { display:flex; align-items:center; justify-content:center; min-width:0; }
+        .gestor-mov-label {
+            color:#ffffff;
+            font-size:20px;
+            font-weight:bold;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:10px;
+        }
+        .gestor-mov-badge {
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            background:#ffeb3b;
+            color:#0b2256;
+            font-size:11px;
+            font-weight:900;
+            min-width:20px;
+            height:18px;
+            padding:0 6px;
+            border-radius:999px;
+        }
+        .gestor-mov-header.aberto .gestor-mov-badge { background:#ffeb3b; color:#0b2256; }
+        .gestor-mov-subtexto { display:none; }
+        .gestor-mov-seta {
+            position:absolute;
+            right:18px;
+            font-size:14px;
+            transition:transform 0.25s;
+            color:rgba(255,255,255,0.85);
+        }
+        .gestor-mov-seta.girada { transform:rotate(180deg); }
+        .gestor-mov-corpo {
+            display:none;
+            background:rgba(8,22,65,0.75);
+            border:3px solid #d7dce3;
+            border-top:none;
+            border-radius:0 0 22px 22px;
+            padding:14px 12px 16px;
+            margin-bottom:20px;
+        }
+        .gestor-mov-corpo.aberto { display:block; }
+        .gestor-mov-busca {
+            width:100%;
+            height:44px;
+            box-sizing:border-box;
+            margin-bottom:12px;
+            text-align:center;
+            background:#173d8f;
+            color:#ffffff;
+            border:1px solid #d7dce3;
+            border-radius:10px;
+            font-size:15px;
+            outline:none;
+            user-select:text;
+            -webkit-user-select:text;
+        }
+        .gestor-mov-busca::placeholder { color:#d7e3ff; }
+        .gestor-mov-filtros {
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:8px;
+            margin-bottom:12px;
+        }
+        .gestor-mov-filtro {
+            display:flex;
+            flex-direction:column;
+            gap:4px;
+        }
+        .gestor-mov-filtro label {
+            color:#d7e3ff;
+            font-size:13px;
+            font-weight:700;
+            text-align:center;
+        }
+        .gestor-mov-filtro select {
+            width:100%;
+            height:42px;
+            box-sizing:border-box;
+            background:#ffffff;
+            color:#0b2256;
+            border:1px solid #d7dce3;
+            border-radius:10px;
+            font-size:15px;
+            font-weight:700;
+            padding:0 8px;
+        }
+        .gestor-mov-item {
+            background:#173d8f;
+            padding:10px;
+            border-radius:8px;
+            margin-bottom:8px;
+            font-size:13px;
+            display:flex;
+            flex-direction:column;
+            gap:6px;
+            border:1px solid #d7dce3;
+        }
+        .gestor-mov-item.entrada { border-color:#4caf50; }
+        .gestor-mov-item.saida { border-color:#f44336; }
+        .gestor-mov-topo,
+        .gestor-mov-linha {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:8px;
+            border-bottom:1px solid #3d63b8;
+            min-height:32px;
+            padding:4px 0 5px;
+            line-height:1.2;
+        }
+        .gestor-mov-topo > :first-child,
+        .gestor-mov-linha > :first-child { min-width:0; }
+        .gestor-mov-topo > :last-child,
+        .gestor-mov-linha > :last-child {
+            flex-shrink:0;
+            text-align:right;
+        }
+        .gestor-mov-tipo { font-size:18px; font-weight:700; }
+        .gestor-mov-tipo.entrada { color:#81c784; }
+        .gestor-mov-tipo.saida { color:#ef9a9a; }
+        .gestor-mov-data { font-size:13px; color:#d7e3ff; text-align:right; }
+        .gestor-mov-topo-resp {
+            font-size:19px;
+            font-weight:700;
+            color:#ffffff;
+            text-align:right;
+        }
+        .gestor-mov-registro {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:8px;
+            color:#d7e3ff;
+            font-size:15px;
+            font-style:italic;
+            min-height:28px;
+            padding-top:4px;
+            line-height:1.2;
+        }
+        .gestor-mov-registro > :first-child { min-width:0; }
+        .gestor-mov-registro > :last-child { flex-shrink:0; text-align:right; }
+        .gestor-mov-nome { font-size:17px; color:#ffffff; font-weight:700; }
+        .gestor-mov-resp { font-size:16px; color:#d7e3ff; text-align:right; }
+        .gestor-mov-obs { font-size:15px; color:#d7e3ff; font-style:italic; }
+        .gestor-mov-qtd { font-size:24px; font-weight:700; }
+        .gestor-mov-vazio {
+            text-align:center;
+            font-size:15px;
+            color:#d7e3ff;
+            padding:18px 10px;
+        }
+
         /* Modal de histórico de movimentações */
         .hist-overlay {
             display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8);
@@ -1123,7 +1304,8 @@
         dbRemoverStatusAprovadoContestacaoBalanco,
         dbCancelarContestacaoBalanco,
         dbSalvarHistoricoBalanco,
-        dbEscutarUltimosPorItem
+        dbEscutarUltimosPorItem,
+        dbEscutarHistoricoBalanco
     } from './database.js';
 
     const usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
@@ -1143,6 +1325,11 @@
     let isGestor  = false;
     let isGestao1 = false;
     let contestacoesAberto = false;
+    let movimentacoesGestorAberto = false;
+    let filtroMovimentacoesGestor = '';
+    let filtroMovimentacoesGestorUsuario = '';
+    let filtroMovimentacoesGestorTipo = 'maquina';
+    let historicoMovimentacoesGestor = [];
     let usaComissaoGlobal = false;
     let mapaRotas = {};
     let contestacaoContexto = null;
@@ -1202,6 +1389,133 @@
         const dataStr = data.toLocaleDateString('pt-BR');
         const horaStr = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         return `${dataStr} &middot; ${horaStr}`;
+    }
+
+    function ehMovimentoEstoqueHistoricoGestor(mov) {
+        if (mov?.cancelado) return false;
+        const tipo = String(mov?.tipo || '').trim();
+        if (tipo === 'cancelamento') return false;
+        const origemRegistro = String(mov?.origemRegistro || '').trim();
+        return tipo === 'entrada_estoque'
+            || tipo === 'saida_estoque'
+            || origemRegistro === 'entrada_estoque'
+            || origemRegistro === 'retirada_estoque';
+    }
+
+    function obterMetaMovimentacaoGestor(mov) {
+        const tipo = String(mov?.tipo || '').trim();
+        if (tipo === 'entrada_estoque') return { classe: 'entrada', texto: 'ENTRADA', cor: '#81c784', ehEntrada: true };
+        if (tipo === 'saida_estoque') return { classe: 'saida', texto: 'SAÍDA', cor: '#ef9a9a', ehEntrada: false };
+        const origem = String(mov?.origemRegistro || '').trim();
+        if (origem === 'entrada_estoque') return { classe: 'entrada', texto: 'ENTRADA', cor: '#81c784', ehEntrada: true };
+        return { classe: 'saida', texto: 'SAÍDA', cor: '#ef9a9a', ehEntrada: false };
+    }
+
+    function obterOrigemMovimentacaoGestor(mov) {
+        const origem = String(mov?.origemRegistro || '').trim();
+        if (origem === 'entrada_estoque') return { icone: '&#128229;', texto: 'Tela Movimentação', cor: '#a5d6a7' };
+        if (origem === 'retirada_estoque') return { icone: '&#128228;', texto: 'Tela Movimentação', cor: '#ffcc80' };
+        return { icone: '&#128230;', texto: origem || 'Manual', cor: '#d7e3ff' };
+    }
+
+    function formatarDescricaoMovimentacaoGestor(descricao) {
+        const texto = String(descricao || '').trim();
+        const chave = normalizarTexto(texto);
+        const mapa = {
+            'retirada de estoque': 'Retirada de estoque',
+            'devolucao ao estoque': 'Devolução ao estoque',
+            'reposicao': 'Reposição',
+            'reposicao de estoque': 'Reposição de estoque',
+            'saida de estoque': 'Saída de estoque',
+            'entrada de estoque': 'Entrada de estoque'
+        };
+        return mapa[chave] || texto;
+    }
+
+    function montarCardsMovimentacoesGestor() {
+        if (!isGestor) return '';
+
+        const input = document.getElementById('filtroMovimentacoesGestor');
+        const termo = normalizarTexto(input?.value || filtroMovimentacoesGestor || '');
+        const filtroUsuario = normalizarTexto(filtroMovimentacoesGestorUsuario);
+        const filtroTipo = normalizarTexto(filtroMovimentacoesGestorTipo || 'todos');
+        const lista = historicoMovimentacoesGestor.filter(mov => {
+            if (filtroUsuario && normalizarTexto(mov?.responsavel) !== filtroUsuario) return false;
+            if (filtroTipo && filtroTipo !== 'todos') {
+                const categoria = normalizarTexto(mov?.categoria || mov?.itemCategoria || '');
+                if (categoria !== filtroTipo) return false;
+            }
+            if (!termo) return true;
+            const texto = [
+                mov?.itemNome,
+                mov?.responsavel,
+                mov?.registradoPor,
+                mov?.tipo,
+                mov?.descricao,
+                mov?.origemRegistro
+            ].join(' ');
+            return normalizarTexto(texto).includes(termo);
+        });
+
+        if (lista.length === 0) {
+            return '<div class="gestor-mov-vazio">Nenhuma movimentação encontrada.</div>';
+        }
+
+        return lista.map(mov => {
+            const meta = obterMetaMovimentacaoGestor(mov);
+            const movimentacao = Number(mov.movimento ?? 0);
+            const quantidade = Math.abs(movimentacao);
+            const dataFormatada = formatarDataHoraCurta(mov.timestamp || mov.data || '');
+            const registradoPor = String(mov.registradoPor || '').trim();
+            const responsavel = String(mov.responsavel || '').trim();
+
+            return `
+                <div class="gestor-mov-item ${meta.classe}">
+                    <div class="gestor-mov-topo">
+                        <span class="gestor-mov-tipo ${meta.classe}">${meta.texto}</span>
+                        <span class="gestor-mov-topo-resp">${escaparHtml(responsavel || '-')}</span>
+                    </div>
+                    <div class="gestor-mov-linha">
+                        <span class="gestor-mov-nome">${escaparHtml(mov.itemNome || 'Item')}</span>
+                        <span class="gestor-mov-qtd ${meta.classe}" style="color:${meta.cor};">${quantidade}</span>
+                    </div>
+                    ${(mov.estoqueAntes != null && mov.estoqueDepois != null) ? `
+                    <div class="gestor-mov-linha">
+                        <span class="gestor-mov-obs">Saldo do estoque</span>
+                        <span class="gestor-mov-resp">${escaparHtml(mov.estoqueAntes)} &rarr; ${escaparHtml(mov.estoqueDepois)}</span>
+                    </div>` : ''}
+                    <div class="gestor-mov-registro">
+                        <span>${registradoPor && registradoPor !== responsavel ? `Registrado por: ${escaparHtml(registradoPor)}` : ''}</span>
+                        <span class="gestor-mov-data">${dataFormatada}</span>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    function obterUsuariosMovimentacoesGestor() {
+        return [...new Set(
+            historicoMovimentacoesGestor
+                .map(mov => String(mov?.responsavel || '').trim())
+                .filter(Boolean)
+        )].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    }
+
+    function obterTiposMovimentacoesGestor() {
+        const tipos = new Set(['maquina']);
+        historicoMovimentacoesGestor.forEach(mov => {
+            const categoria = normalizarTexto(mov?.categoria || mov?.itemCategoria || '');
+            if (categoria) tipos.add(categoria);
+        });
+        return [...tipos];
+    }
+
+    function rotuloTipoMovimentacaoGestor(tipo) {
+        const valor = normalizarTexto(tipo);
+        if (valor === 'maquina') return 'Máquinas';
+        if (valor === 'produtos' || valor === 'produto') return 'Produtos';
+        if (valor === 'peca') return 'Peças';
+        if (valor === 'materiais' || valor === 'material') return 'Materiais';
+        return tipo || 'Tipo';
     }
 
     // Estado do calendÃ¡rio
@@ -2719,6 +3033,41 @@
             </div>`}
 
             ${isGestor ? `
+            <div id="tituloMovimentacoesGestor" class="gestor-mov-header${movimentacoesGestorAberto ? ' aberto' : ''}" onclick="window.toggleMovimentacoesGestor()">
+                <span class="gestor-mov-icone">&#128230;</span>
+                <span class="gestor-mov-info">
+                    <span class="gestor-mov-label">
+                        Movimenta&ccedil;&otilde;es
+                        ${historicoMovimentacoesGestor.length > 0 ? `<span class="gestor-mov-badge">${historicoMovimentacoesGestor.length}</span>` : ''}
+                    </span>
+                    <span class="gestor-mov-subtexto">${movimentacoesGestorAberto ? 'Toque para ocultar' : 'Toque para ver todas as movimenta&ccedil;&otilde;es'}</span>
+                </span>
+                <span class="gestor-mov-seta${movimentacoesGestorAberto ? ' girada' : ''}" id="setaMovimentacoesGestor">&#9660;</span>
+            </div>
+            <div class="gestor-mov-corpo${movimentacoesGestorAberto ? ' aberto' : ''}" id="corpoMovimentacoesGestor">
+                <div class="gestor-mov-filtros">
+                    <div class="gestor-mov-filtro">
+                        <label for="filtroMovimentacoesGestorUsuario">Usuário</label>
+                        <select id="filtroMovimentacoesGestorUsuario" onchange="window.filtrarMovimentacoesGestor()">
+                            <option value="">Todos</option>
+                            ${obterUsuariosMovimentacoesGestor().map(nome => `<option value="${escaparHtml(nome)}"${nome === filtroMovimentacoesGestorUsuario ? ' selected' : ''}>${escaparHtml(nome)}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="gestor-mov-filtro">
+                        <label for="filtroMovimentacoesGestorTipo">Tipo</label>
+                        <select id="filtroMovimentacoesGestorTipo" onchange="window.filtrarMovimentacoesGestor()">
+                            <option value="todos"${filtroMovimentacoesGestorTipo === 'todos' ? ' selected' : ''}>Todos</option>
+                            ${obterTiposMovimentacoesGestor().map(tipo => `<option value="${escaparHtml(tipo)}"${tipo === filtroMovimentacoesGestorTipo ? ' selected' : ''}>${escaparHtml(rotuloTipoMovimentacaoGestor(tipo))}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                <input type="text" id="filtroMovimentacoesGestor" class="gestor-mov-busca" placeholder="Pesquisar movimenta&ccedil;&otilde;es..." value="${escaparHtml(filtroMovimentacoesGestor)}" oninput="window.filtrarMovimentacoesGestor()">
+                <div id="listaMovimentacoesGestor">
+                    ${montarCardsMovimentacoesGestor()}
+                </div>
+            </div>` : ''}
+
+            ${isGestor ? `
             <div id="tituloContestacoes" class="contest-header" onclick="window.toggleContestacoes()">
                 <span style="position:absolute;left:20px;font-size:20px;">&#128373;</span>
                 <span class="contest-titulo">Contesta&ccedil;&atilde;o</span>
@@ -2795,6 +3144,29 @@
         seta.classList.toggle('girada', contestacoesAberto);
         // TODO: ao abrir pela primeira vez, chamar carregarContestacoes()
         // que faz dbEscutarTodasContestacoes() e popula #listaContestacoes
+    };
+
+    window.toggleMovimentacoesGestor = function() {
+        const header = document.getElementById('tituloMovimentacoesGestor');
+        const corpo  = document.getElementById('corpoMovimentacoesGestor');
+        const seta   = document.getElementById('setaMovimentacoesGestor');
+        if (!header || !corpo || !seta) return;
+        movimentacoesGestorAberto = !corpo.classList.contains('aberto');
+        corpo.classList.toggle('aberto', movimentacoesGestorAberto);
+        header.classList.toggle('aberto', movimentacoesGestorAberto);
+        seta.classList.toggle('girada', movimentacoesGestorAberto);
+        if (movimentacoesGestorAberto) window.filtrarMovimentacoesGestor();
+    };
+
+    window.filtrarMovimentacoesGestor = function() {
+        const input = document.getElementById('filtroMovimentacoesGestor');
+        const selectUsuario = document.getElementById('filtroMovimentacoesGestorUsuario');
+        const selectTipo = document.getElementById('filtroMovimentacoesGestorTipo');
+        filtroMovimentacoesGestor = String(input?.value || '');
+        filtroMovimentacoesGestorUsuario = String(selectUsuario?.value || '');
+        filtroMovimentacoesGestorTipo = String(selectTipo?.value || 'maquina');
+        const lista = document.getElementById('listaMovimentacoesGestor');
+        if (lista) lista.innerHTML = montarCardsMovimentacoesGestor();
     };
 
     window.abrirFoto = function(url) {
@@ -2928,6 +3300,11 @@
     if (isGestor) {
         dbEscutarTodasContestacoesBalanco((lista) => {
             contestacoesGestor = Array.isArray(lista) ? lista : [];
+            renderizar();
+        });
+
+        dbEscutarHistoricoBalanco((lista) => {
+            historicoMovimentacoesGestor = (Array.isArray(lista) ? lista : []).filter(ehMovimentoEstoqueHistoricoGestor);
             renderizar();
         });
     }

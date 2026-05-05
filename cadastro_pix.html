@@ -271,6 +271,46 @@
         }
         .pix-rodape-item { color: #ccd9ec; }
         .pix-rodape-item .lbl { color: #dbeafe; }
+        .pix-contador-gestor {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .pix-contador-input {
+            width: 82px;
+            min-height: 28px;
+            box-sizing: border-box;
+            background: #ffffff;
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            color: #0b2256;
+            font-size: 15px;
+            font-weight: bold;
+            padding: 4px 8px;
+            text-align: center;
+        }
+        .pix-contador-input:disabled {
+            background: #17377d;
+            border-color: #ffffff;
+            color: #ffffff;
+        }
+        .pix-contador-btn {
+            min-height: 28px;
+            border-radius: 8px;
+            border: 1px solid #fb923c;
+            background: #2b3768;
+            color: #fb923c;
+            font-size: 13px;
+            font-weight: bold;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+        .pix-contador-btn.salvar {
+            border-color: #4ade80;
+            color: #dcfce7;
+            background: #166534;
+        }
 
         .situacao-txt-instalado { color: #4ade80; font-weight: bold; }
         .situacao-txt-retirado  { color: #f87171; font-weight: bold; }
@@ -1719,6 +1759,101 @@ function _pixEmUso() {
     return emUso;
 }
 
+function montarHtmlContadorGestor(p, pixKey, contador, instalado) {
+    if (!_isGestor || !instalado || !p?.clienteId || !p?.rowId) {
+        return contador ? `<span class="pix-rodape-item"><span class="lbl">Contador:</span> ${esc(contador)}</span>` : '';
+    }
+
+    return `
+        <span class="pix-rodape-item pix-contador-gestor">
+            <span class="lbl">Contador:</span>
+            <input type="text" class="pix-contador-input" id="contador-gestor-${pixKey}" value="${esc(contador)}" disabled inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+            <button type="button" class="pix-contador-btn" id="btn-contador-gestor-${pixKey}" onclick="editarContadorPixGestor('${p.clienteId}','${p.rowId}','${p.numero_pix}','${pixKey}')">Editar</button>
+        </span>`;
+}
+
+window.editarContadorPixGestor = function(clienteId, rowId, pixNum, pixKey) {
+    if (!_isGestor) return;
+    const input = document.getElementById('contador-gestor-' + pixKey);
+    const btn = document.getElementById('btn-contador-gestor-' + pixKey);
+    if (!input || !btn) return;
+
+    if (input.disabled) {
+        input.dataset.valorOriginal = input.value;
+        input.disabled = false;
+        btn.textContent = 'Salvar';
+        btn.classList.add('salvar');
+        setTimeout(() => {
+            input.focus();
+            input.select();
+        }, 30);
+        return;
+    }
+
+    salvarContadorPixGestor(clienteId, rowId, pixNum, pixKey);
+};
+
+async function salvarContadorPixGestor(clienteId, rowId, pixNum, pixKey) {
+    const input = document.getElementById('contador-gestor-' + pixKey);
+    const btn = document.getElementById('btn-contador-gestor-' + pixKey);
+    if (!input || !btn) return;
+
+    const contador = String(input.value || '').replace(/\D/g, '').trim();
+    if (!contador) {
+        exibirAvisoPadrao('Informe o número do contador.');
+        input.focus();
+        return;
+    }
+
+    const cliente = (window._clientesData || []).find(c => c.firebaseUrl === clienteId);
+    if (!cliente) {
+        exibirAvisoPadrao('Cliente não encontrado. Recarregue a página.');
+        return;
+    }
+
+    if (!Array.isArray(cliente?.equipDetalhes) || cliente.equipDetalhes.length === 0) {
+        exibirAvisoPadrao('Esse cliente ainda não está no formato novo de equipamentos detalhados.');
+        return;
+    }
+
+    const equips = JSON.parse(JSON.stringify(cliente.equipDetalhes));
+    let idx = equips.findIndex(e => String(e?.rowId || '') === rowId && String(e?.pix || '').trim() === String(pixNum || '').trim());
+    if (idx === -1) {
+        idx = equips.findIndex(e => String(e?.rowId || '') === rowId);
+    }
+    if (idx === -1) {
+        idx = equips.findIndex(e => String(e?.pix || '').trim() === String(pixNum || '').trim());
+    }
+    if (idx === -1) {
+        exibirAvisoPadrao('Pix não encontrado no cadastro desse cliente.');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Salvando...';
+
+    try {
+        equips[idx].contador = contador;
+        await update(ref(db, `clientes/${clienteId}`), { equipDetalhes: equips });
+        await set(ref(db, 'metadata/clientes_versao'), Date.now());
+        cliente.equipDetalhes = equips;
+        input.value = contador;
+        input.disabled = true;
+        btn.textContent = 'Editar';
+        btn.classList.remove('salvar');
+        if (window.playAlert) await window.playAlert('Contador atualizado.');
+        else alert('Contador atualizado.');
+        window.renderizarLocaisPix?.();
+    } catch (erro) {
+        const detalhe = descreverErroFirebase(erro, 'Erro ao salvar contador.');
+        exibirAvisoPadrao(detalhe);
+        btn.textContent = 'Salvar';
+        btn.classList.add('salvar');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
 window.validarPixAdicionarAoSair = function(chave) {
     const pixEl = document.getElementById('pixnr-' + chave);
     const pixNum = String(pixEl?.value || '').trim();
@@ -1837,6 +1972,7 @@ window.renderizarLocaisPix = function() {
         const rotuloResp = exibirComoInstalado ? 'Técnico:' : 'Informado por:';
         const pixKey = String(p.numero_pix || 'x').replace(/\W/g,'_');
         const contador = p.contador || '';
+        const contadorHtml = montarHtmlContadorGestor(p, pixKey, contador, instalado);
 
         const btnRetirar = situacao === 'instalado' && p.clienteId && p.rowId ? `
             <button class="btn-retirar-card" id="btnret-${pixKey}" onclick="toggleRetiradaCard('${pixKey}')">&#8593; Retirar Pix</button>
@@ -1871,7 +2007,7 @@ window.renderizarLocaisPix = function() {
                 </div>
                 <div class="pix-rodape-linha">
                     <span class="pix-rodape-item"><span class="lbl">Data:</span> ${dataExib}</span>
-                    ${contador ? `<span class="pix-rodape-item"><span class="lbl">Contador:</span> ${esc(contador)}</span>` : ''}
+                    ${contadorHtml}
                 </div>
             </div>
             ${btnRetirar}

@@ -382,6 +382,51 @@
         .hist-resp-label { font-size: 18px; }
         .hist-data { font-size: 15px; color: #999; } /* <--- TAMANHO DA DATA E HORA */
         .hist-obs-label { font-size: 18px; font-style: italic; color: #aaa; }
+        .hist-mov-topo,
+        .hist-mov-linha {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid #3d63b8;
+            min-height: 32px;
+            padding: 4px 0 5px;
+            line-height: 1.2;
+        }
+        .hist-mov-topo { margin-bottom: 6px; }
+        .hist-mov-topo > :first-child,
+        .hist-mov-linha > :first-child { min-width: 0; }
+        .hist-mov-topo > :last-child,
+        .hist-mov-linha > :last-child {
+            flex-shrink: 0;
+            text-align: right;
+        }
+        .hist-registro-rodape {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            color: #d7e3ff;
+            font-size: 15px;
+            font-style: italic;
+            min-height: 28px;
+            padding-top: 4px;
+            line-height: 1.2;
+        }
+        .hist-registro-rodape > :first-child { min-width: 0; }
+        .hist-registro-rodape > :last-child { flex-shrink: 0; text-align: right; }
+        .hist-saldo-linha {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            min-height: 32px;
+            padding: 4px 0 5px;
+            line-height: 1.2;
+            border-bottom: 1px solid #3d63b8;
+        }
+        .hist-saldo-linha > :first-child { min-width: 0; }
+        .hist-saldo-linha > :last-child { flex-shrink: 0; text-align: right; }
         .hist-dir { font-size: 25px; } /* <--- TAMANHO DA QUANTIDADE (Número) */
 
         /* Botões de Ação no Histórico */
@@ -864,6 +909,20 @@
         renderizarHistorico(listaFiltrada);
     };
 
+    function formatarDescricaoMovimentacao(descricao) {
+        const texto = String(descricao || '').trim();
+        const chave = texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const mapa = {
+            'retirada de estoque': 'Retirada de estoque',
+            'devolucao ao estoque': 'Devolução ao estoque',
+            'reposicao': 'Reposição',
+            'reposicao de estoque': 'Reposição de estoque',
+            'saida de estoque': 'Saída de estoque',
+            'entrada de estoque': 'Entrada de estoque'
+        };
+        return mapa[chave] || texto;
+    }
+
     function renderizarHistorico(lista) {
         const container = document.getElementById('listaHistorico');
         container.innerHTML = "";
@@ -891,36 +950,24 @@
                 ? 'rgba(76,175,80,0.6)'
                 : (metaTipo.ehSaida ? 'rgba(244,67,54,0.6)' : 'rgba(255,235,59,0.6)');
 
-            const origemInfo = obterOrigemLabel(mov);
             div.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; margin-bottom: 6px;">
+                <div class="hist-mov-topo">
                     <span class="hist-tipo-label" style="color:${metaTipo.cor}">${textoTipo}</span>
-                    <span style="font-size: 12px; color: #ccc;">${dataFormatada}</span>
+                    <span class="hist-resp-label" style="color:white;font-weight:bold;">${mov.responsavel || '-'}</span>
                 </div>
-                <div style="display:flex; align-items:center; gap:6px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                    <span style="font-size:11px; color:rgba(255,255,255,0.4); white-space:nowrap;">Origem:</span>
-                    <span style="font-size:12px; font-weight:bold; color:${origemInfo.cor};">${origemInfo.icone} ${origemInfo.texto}</span>
-                    ${mov.refId ? `<span style="font-size:11px; color:rgba(255,255,255,0.3); font-family:monospace; margin-left:auto; white-space:nowrap;">ID: ${mov.refId.slice(-8).toUpperCase()}</span>` : ''}
-                </div>
-                <div style="display:flex; justify-content:space-between; align-items:center; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                <div class="hist-mov-linha">
                     <span class="hist-nome-item">${mov.itemNome}</span>
-                    <span class="hist-resp-label" style="color:rgba(255,255,255,0.65);">${mov.responsavel}</span>
-                </div>
-                ${mov.registradoPor && mov.registradoPor !== mov.responsavel ? `
-                <div style="padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-                    <span class="hist-resp-label" style="color:rgba(255,255,255,0.5);">Reg. por: ${mov.registradoPor}</span>
-                </div>` : ''}
-                <div style="display:flex; justify-content:space-between; align-items:center; padding: 4px 0;">
-                    <span class="hist-obs-label" style="margin:0;">${mov.descricao || ''}</span>
                     <span class="hist-dir ${classeCor}" style="margin:0;">${quantidade}</span>
                 </div>
                 ${(mov.estoqueAntes != null && mov.estoqueDepois != null) ? `
-                <div style="padding: 3px 0; display:flex; align-items:center; gap:6px; margin-top:2px;">
-                    <span style="font-size:11px; color:rgba(255,255,255,0.4);">Saldo estoque:</span>
-                    <span style="font-size:13px; font-weight:bold; color:rgba(255,255,255,0.7);">${mov.estoqueAntes}</span>
-                    <span style="font-size:12px; color:rgba(255,255,255,0.35);">→</span>
-                    <span style="font-size:13px; font-weight:bold; color:${metaTipo.ehEntrada ? '#a5d6a7' : '#ef9a9a'};">${mov.estoqueDepois}</span>
+                <div class="hist-saldo-linha">
+                    <span class="hist-obs-label" style="margin:0;">Saldo do estoque</span>
+                    <span class="hist-resp-label" style="color:#d7e3ff;">${mov.estoqueAntes} &rarr; ${mov.estoqueDepois}</span>
                 </div>` : ''}
+                <div class="hist-registro-rodape">
+                    <span>${mov.registradoPor && mov.registradoPor !== mov.responsavel ? `Registrado por: ${mov.registradoPor}` : ''}</span>
+                    <span>${dataFormatada}</span>
+                </div>
             `;
 
             // Botão excluir: só para quem registrou e dentro de 3 horas

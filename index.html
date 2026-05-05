@@ -513,17 +513,9 @@
         }
     };
 
-    // Verificar Envios: Gestor vÃª todos, demais veem apenas os prÃ³prios
+    // Verificar Envios: colaboradores veem apenas os prÃ³prios envios
     window.abrirEnvios = function() {
-        const nome = String(localStorage.getItem('usuarioLogado') || '').trim();
-        const usuario = listaColaboradores.find(c => String(c?.nome || '').trim() === nome);
-        const perfil = usuario ? (usuario.nivel_completo || "") : "";
-
-        if (perfil.includes('gestao')) {
-            window.location.href = 'lista_de_envios_para_gestor.html';
-        } else {
-            window.location.href = 'verificar_envios.html';
-        }
+        window.location.href = 'verificar_envios.html';
     };
 
     window.abrirMediaVendas = function() {
@@ -672,6 +664,7 @@
             btns.clientes.style.display = 'flex';
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'flex';
+            btns.verificarEnvios.style.display = 'flex';
             btns.mediaVendas.style.display = ehAtendimentoNivel2 ? 'flex' : 'none';
             btns.depositos.style.display = ehAtendimentoNivel2 ? 'none' : 'flex';
             btns.importarHistorico.style.display = 'none';
@@ -711,6 +704,7 @@
             btns.gestao.style.display = 'flex';
             btns.balanco.style.display = 'flex';
             btns.mediaVendas.style.display = 'flex';
+            btns.verificarEnvios.style.display = 'none';
             btns.depositos.style.display = 'flex';
             btns.importarHistorico.style.display = 'flex';
 

@@ -8,7 +8,6 @@ const SHELL = [
     '/clientes.html',
     '/pedidos.html',
     '/verificar_envios.html',
-    '/lista_de_envios_para_gestor.html',
     '/media_de_vendas.html',
     '/auth.js',
     '/database.js',
