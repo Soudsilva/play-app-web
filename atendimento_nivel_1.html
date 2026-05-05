@@ -190,6 +190,7 @@
             width: 100%; margin-top: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
         .btn-finalizar:active { transform: scale(0.98); }
+        .btn-finalizar:disabled { cursor: not-allowed; filter: brightness(0.9); }
 
         /* --- ESTILOS DO BLOCO PRODUTOS --- */
         .card-produtos {
@@ -212,6 +213,10 @@
             margin-top: 20px;
             cursor: pointer;
             background: rgba(255,255,255,0.05);
+        }
+        .area-foto.bloqueada-envio {
+            pointer-events: none;
+            cursor: not-allowed;
         }
 
         /* --- ESTILOS DO BLOCO FINANCEIRO --- */
@@ -1725,8 +1730,45 @@ function obterIdAtendimentoEmEdicao() {
         };
     }
 
+    let envioAtendimentoEmAndamento = false;
+
+    function aplicarBloqueioControlesEnvio(bloquear) {
+        document.querySelectorAll('button, input, select, textarea').forEach((el) => {
+            if (bloquear) {
+                el.dataset.disabledAntesEnvio = el.disabled ? '1' : '0';
+                el.disabled = true;
+            } else {
+                if (el.dataset.disabledAntesEnvio === '0') {
+                    el.disabled = false;
+                }
+                delete el.dataset.disabledAntesEnvio;
+            }
+        });
+
+        document.querySelectorAll('.area-foto').forEach((area) => {
+            area.classList.toggle('bloqueada-envio', bloquear);
+        });
+    }
+
+    function ativarBloqueioEnvioAtendimento(btn) {
+        envioAtendimentoEmAndamento = true;
+        aplicarBloqueioControlesEnvio(true);
+        if (btn) {
+            btn.innerText = "ENVIANDO DADOS...";
+        }
+    }
+
+    function desativarBloqueioEnvioAtendimento(btn) {
+        envioAtendimentoEmAndamento = false;
+        aplicarBloqueioControlesEnvio(false);
+        if (btn) {
+            atualizarModoEdicao();
+        }
+    }
+
     window.salvarAtendimento = async function() { // [ALTERADO] para async
         const btn = document.querySelector('.btn-finalizar');
+        if (envioAtendimentoEmAndamento || btn?.disabled) return;
         const idCliente = document.getElementById('idClienteSelecionado').value;
         const atendimentoEmEdicaoId = obterIdAtendimentoEmEdicao();
         const dataOriginalEdicao = obterDataAtendimentoEmEdicao();
@@ -1749,8 +1791,7 @@ function obterIdAtendimentoEmEdicao() {
         if (erroFotos) return alert(erroFotos);
 
         // [NOVO] Inicia o processo de salvamento
-        btn.disabled = true;
-        btn.innerText = "SALVANDO DADOS E FOTOS...";
+        ativarBloqueioEnvioAtendimento(btn);
 
         try {
             // --- 1. Coleta de Dados ---
@@ -1792,6 +1833,7 @@ function obterIdAtendimentoEmEdicao() {
             const pixTotalBruto = pixLinhas.reduce((soma, item) => soma + Number(item.valor || 0), 0);
             const pixDevolvido = window.parseFormatted(document.getElementById('valorPixDevolvido')?.value || '');
             if (pixDevolvido > pixTotalBruto) {
+                desativarBloqueioEnvioAtendimento(btn);
                 return alert('O valor devolvido não pode ser maior que o total bruto de Pix.');
             }
             const comissaoValor = window.parseFormatted(document.getElementById('valorComissao').value);
@@ -1930,9 +1972,8 @@ function obterIdAtendimentoEmEdicao() {
             const semInternet = !navigator.onLine;
             if (semInternet) {
                 if (atendimentoEmEdicaoId) {
+                    desativarBloqueioEnvioAtendimento(btn);
                     await window.playAlert("📵 Sem internet — não é possível editar um atendimento já enviado.\nConecte-se e tente novamente.");
-                    btn.disabled = false;
-                    atualizarModoEdicao();
                     return;
                 }
                 await enfileirarAtendimento(dadosAtendimento);
@@ -1964,9 +2005,8 @@ function obterIdAtendimentoEmEdicao() {
 
         } catch (error) {
             console.error("Falha ao salvar atendimento:", error);
+            desativarBloqueioEnvioAtendimento(btn);
             alert("Ocorreu um erro ao salvar o atendimento. Detalhe: " + error.message);
-            btn.disabled = false;
-            atualizarModoEdicao();
         }
     }
 

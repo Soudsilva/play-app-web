@@ -12,6 +12,7 @@ Quando um valor na interface for automático (não digitado pelo usuário), pref
 Prefira texto centralizado para rótulos, títulos e textos explicativos curtos, a menos que o layout claramente peça alinhamento à esquerda.
 Para telas padrão de aplicativos mobile, prefira usar a mesma largura de container utilizada em manutencoes_solicitadas.html: width: 100% com max-width: 440px, centralizado na página, a menos que a tela atual já tenha um padrão de layout diferente estabelecido.
 Os botões são rótulos no formato de botão; tome cuidado para não usar um rótulo simples (apenas informativo) com aparência de botão.
+Desempenho em uso na rua é fundamental: considere celulares mais fracos, internet instável/fraca e telas com muitas fotos. Evite overlays pesados, filtros, opacidade em tela inteira, animações custosas e qualquer efeito visual que possa atrasar uploads, processamento de imagens ou salvamento de atendimentos. Priorize feedbacks leves, como desabilitar botão e trocar texto, sem recomposição pesada da tela.
 Evite alterar funcionalidades já existentes que estão funcionando corretamente, para não gerar retrabalho e necessidade de revalidação de todo o sistema.
 Priorize adicionar novas funcionalidades sem modificar a lógica atual, a menos que seja absolutamente necessário.
 Antes de alterar qualquer lógica existente, verifique se ela impacta outras partes do sistema.
