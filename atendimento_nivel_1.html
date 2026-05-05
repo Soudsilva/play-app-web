@@ -1048,6 +1048,19 @@ function obterIdAtendimentoEmEdicao() {
         return ultimoContadorPorPix;
     }
 
+    function obterTituloFotoMaquinaAtendimento(item) {
+        const nome = String(item?.nome || "").trim();
+        if (!nome) return "";
+
+        const qtd = Number.parseInt(String(item?.qtd || "1").trim(), 10) || 1;
+        const nomeNormalizado = nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+        if (nomeNormalizado === "maquina g") return "";
+        if (nomeNormalizado === "maquina p" && qtd > 2 && qtd <= 4) return "RACK";
+
+        return qtd > 1 ? `${nome} (${qtd})` : nome;
+    }
+
     function preencherContadoresAnterioresNasLinhas(cliente, apenasVazios = true) {
         if (!cliente) return;
 
@@ -1294,15 +1307,15 @@ function obterIdAtendimentoEmEdicao() {
                 if (!item) return;
 
                 // --- 1. Lógica para Fotos de TODAS as máquinas ---
-                const nomeLimpo = String(item?.nome || "").trim();
+                const tituloFotoMaquina = obterTituloFotoMaquinaAtendimento(item);
                 const pix = String(item?.pix || "").trim();
 
-                if (nomeLimpo) {
+                if (tituloFotoMaquina) {
                     const divFoto = document.createElement('div');
                     divFoto.className = 'sub-card';
                     divFoto.innerHTML = `
                             <div class="titulo-sub" style="justify-content: center; font-size: 16px; color: #ffeb3b;">
-                                FOTO: ${nomeLimpo.toUpperCase()}
+                                FOTO: ${tituloFotoMaquina.toUpperCase()}
                             </div>
                             <div class="area-foto" onclick="abrirModalFoto('inputFotoMaquina_${index}')">
                                 <span id="textoFotoMaquina_${index}" style="font-size: 14px; opacity: 0.8;">Toque para adicionar</span>

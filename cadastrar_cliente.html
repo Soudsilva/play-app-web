@@ -1232,13 +1232,16 @@
             if (!wrapTecnico || !selectTecnico) return;
 
             const valorAtual = selectTecnico.value || selectTecnico.getAttribute('data-value') || "";
-            const exibir = linhaEquipamentoTemBaseParaTecnico(grupo);
+            const editandoCliente = Boolean(editId);
+            const exibir = !editandoCliente && linhaEquipamentoTemBaseParaTecnico(grupo);
 
             selectTecnico.innerHTML = criarOpcoesTecnicoEquip(valorAtual);
             selectTecnico.value = valorAtual;
             if (!exibir) {
-                selectTecnico.value = "";
-                selectTecnico.setAttribute('data-value', "");
+                if (!editandoCliente) {
+                    selectTecnico.value = "";
+                    selectTecnico.setAttribute('data-value', "");
+                }
             }
             selectTecnico.disabled = !exibir || tecnicosProducaoEquip.length === 0;
             wrapTecnico.classList.toggle('visivel', exibir);
@@ -1799,7 +1802,7 @@
             return false;
         }
 
-        if (!modoSolicitar) {
+        if (!modoSolicitar && !editId) {
             if (tecnicosProducaoEquip.length === 0) {
                 mostrarAlertaPlay("Nenhum técnico com Prod. Equip. está disponível para selecionar.");
                 return false;
@@ -2434,7 +2437,9 @@
                 listaEquipFinal.push(str);
             });
 
-            const produtosInstalacao = modoSolicitar ? [] : validarProdutosObrigatoriosPorMaquina();
+            const produtosInstalacao = modoSolicitar
+                ? []
+                : (editId ? coletarProdutosInstalacaoParaSalvar() : validarProdutosObrigatoriosPorMaquina());
 
             const fotosMaquinasInstalacao = [];
             for (const equipamento of equipamentosDetalhados) {
