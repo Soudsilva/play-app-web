@@ -620,7 +620,7 @@
         <div id="painelFluxo">
             <div class="card-saldo">
                 <div class="saldo-label">Saldo Atual</div>
-                <div class="saldo-valor" id="saldoAtual">R$ 0,00</div>
+                <div class="saldo-valor" id="saldoAtual">R$ 0</div>
             </div>
             <div class="lista" id="listaMov">
                 <div class="vazio" id="msgVazio">Nenhuma movimentacao ainda.</div>
@@ -679,7 +679,7 @@
         <input class="campo-obs" id="inputObs" type="text" placeholder="Observacao...">
         <div class="form-valor-wrap">
             <span class="valor-prefix">R$</span>
-            <input class="campo-valor" id="inputValor" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off">
+            <input class="campo-valor" id="inputValor" type="text" inputmode="decimal" placeholder="0" autocomplete="off">
         </div>
         <button class="btn-registrar" id="btnRegistrar" type="button">Registrar</button>
     </div>
@@ -925,6 +925,7 @@
             atualizarFormulario();
         });
         els.btnRegistrar.addEventListener('click', registrar);
+        els.inputValor.addEventListener('input', formatarCampoValor);
         els.listaMov.addEventListener('click', async (event) => {
             const btn = event.target.closest('[data-acao="excluir"]');
             if (!btn) return;
@@ -950,11 +951,25 @@
     function normalizarValorMoeda(valor) {
         const texto = String(valor ?? '').trim().replace(/\s+/g, '').replace(/[^\d,.-]/g, '');
         if (!texto) return NaN;
-        const ultimoSeparador = Math.max(texto.lastIndexOf(','), texto.lastIndexOf('.'));
-        if (ultimoSeparador === -1) return Number(texto.replace(/[^\d-]/g, ''));
-        const parteInteira = texto.slice(0, ultimoSeparador).replace(/[^\d-]/g, '');
-        const parteDecimal = texto.slice(ultimoSeparador + 1).replace(/\D/g, '');
-        return Number(`${parteInteira || '0'}.${parteDecimal}`);
+
+        const sinal = texto.includes('-') ? -1 : 1;
+        const valorSemSinal = texto.replace(/-/g, '');
+
+        if (valorSemSinal.includes(',')) {
+            const separadorDecimal = valorSemSinal.lastIndexOf(',');
+            const parteInteira = valorSemSinal.slice(0, separadorDecimal).replace(/\D/g, '');
+            const parteDecimal = valorSemSinal.slice(separadorDecimal + 1).replace(/\D/g, '');
+            return sinal * Number(`${parteInteira || '0'}.${parteDecimal}`);
+        }
+
+        return sinal * Number(valorSemSinal.replace(/\D/g, ''));
+    }
+
+    function formatarCampoValor() {
+        const apenasDigitos = els.inputValor.value.replace(/\D/g, '');
+        els.inputValor.value = apenasDigitos
+            ? Number(apenasDigitos).toLocaleString('pt-BR', { maximumFractionDigits: 0 })
+            : '';
     }
 
     function obterDataLocalISO(dataBase = new Date()) {
