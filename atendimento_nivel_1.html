@@ -1049,10 +1049,16 @@ function obterIdAtendimentoEmEdicao() {
     }
 
     function obterTituloFotoMaquinaAtendimento(item) {
-        const nome = String(item?.nome || "").trim();
+        let nome = String(item?.nome || "").trim();
         if (!nome) return "";
 
-        const qtd = Number.parseInt(String(item?.qtd || "1").trim(), 10) || 1;
+        let qtd = Number.parseInt(String(item?.qtd || "1").trim(), 10) || 1;
+        const matchQtdNoNome = nome.match(/\s*\((\d+)\)\s*$/);
+        if (matchQtdNoNome) {
+            qtd = Number.parseInt(matchQtdNoNome[1], 10) || qtd;
+            nome = nome.replace(/\s*\(\d+\)\s*$/, "").trim();
+        }
+
         const nomeNormalizado = nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
         if (nomeNormalizado === "maquina g") return "";
