@@ -3883,6 +3883,21 @@ export function dbEscutarTodosDepositos(callback) {
     });
 }
 
+export function dbEscutarResumoDepositos(nomeUsuario, callback) {
+    const chave = _normalizarChaveUsuario(nomeUsuario);
+    if (!chave) {
+        callback(null);
+        return () => {};
+    }
+
+    return onValue(ref(db, `firebase_functions_depositos/${chave}/resumo`), (snapshot) => {
+        callback(snapshot.val() || null);
+    }, (error) => {
+        console.error("ERRO AO ESCUTAR RESUMO DEPOSITOS:", error);
+        callback({ erro: true, mensagem: error?.message || 'Permissao negada ao ler resumo de depositos.' });
+    });
+}
+
 export async function dbListarManutencoes() {
     try {
         const snapshot = await get(ref(db, 'manutencoes'));

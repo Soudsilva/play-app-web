@@ -275,6 +275,15 @@
         .card-status-label.conferido { color: #81c784; }
         .card-status-label.rejeitado { color: #ef9a9a; }
 
+        .card-obs {
+            font-size: 13px;
+            font-weight: bold;
+            color: #ffeb3b;
+            margin-top: 4px;
+            line-height: 1.25;
+            word-break: break-word;
+        }
+
         /* Valor em destaque Ã  direita do card */
         .card-right {
             text-align: right;
@@ -974,6 +983,7 @@
         const valorConferido = numeroValor(deposito.valorConferido);
         const valorExibido = valorConferido > 0 ? valorConferido : valorOriginal;
         const foto = String(deposito?.fotoThumb || deposito?.foto || '').trim();
+        const observacao = String(deposito?.obs || '').trim();
 
         return `
             <div class="card ${classe}${expandido ? ' expanded' : ''}" data-id="${escaparHtml(deposito.firebaseUrl)}" data-usuario="${escaparHtml(deposito.usuarioChave || deposito.usuario || '')}" data-valor="${valorOriginal}">
@@ -983,6 +993,7 @@
                         <div class="card-depositante">${escaparHtml(depositante)}</div>
                         <div class="card-data">${escaparHtml(dataHora.data)} · ${escaparHtml(dataHora.hora)}</div>
                         <div class="card-status-label ${classe}">${divergente ? 'Conferido com divergência' : (conferido ? 'Conferido' : 'Aguardando conferência')}</div>
+                        ${observacao ? `<div class="card-obs">${escaparHtml(observacao)}</div>` : ''}
                     </div>
                     <div class="card-right">
                         <div class="card-valor-label">${valorConferido > 0 ? 'Valor conferido' : 'Valor encontrado'}</div>
@@ -1011,7 +1022,7 @@
             .filter(depositoTemStatusValido)
             .filter(depositoEstaNaAbaAtiva)
             .filter(d => {
-                const termo = `${d.usuario || ''} ${d.depositante || ''} ${d.registradoPor || ''}`.toLowerCase();
+                const termo = `${d.usuario || ''} ${d.depositante || ''} ${d.registradoPor || ''} ${d.obs || ''}`.toLowerCase();
                 return !busca || termo.includes(busca);
             })
             .sort((a, b) => (dataDeposito(b)?.getTime() || 0) - (dataDeposito(a)?.getTime() || 0));

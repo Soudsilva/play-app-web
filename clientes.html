@@ -1509,6 +1509,11 @@
             if (c.aberto) campos.push(`<div class="campo-item"><b>Aberto:</b> ${c.aberto}</div>`);
 
             if (c.endereco) campos.push(`<div class="campo-item"><b>End.:</b> <span>${c.endereco}</span></div>`);
+            const representanteCliente = String(c.representante || '').trim();
+            const podeVerRepresentante = perfilUsuarioLogado.includes('gestao');
+            if (podeVerRepresentante && representanteCliente) {
+                campos.push(`<div class="campo-item"><b>Representante:</b> <span>${escaparHtmlLocal(representanteCliente)}</span></div>`);
+            }
             if (c.obs) campos.push(`<div class="campo-item obs-item"><b>Obs:</b> ${c.obs}</div>`);
             const camposLargura = [];
 

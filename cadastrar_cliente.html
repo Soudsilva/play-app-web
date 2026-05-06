@@ -1263,6 +1263,25 @@
         return fotosPorRowId;
     }
 
+    function obterTituloFotoMaquinaInstalacao(equipamento) {
+        let nome = String(equipamento?.nome || "").trim();
+        if (!nome) return "";
+
+        let qtd = Number.parseInt(String(equipamento?.qtd || "1").trim(), 10) || 1;
+        const matchQtdNoNome = nome.match(/\s*\((\d+)\)\s*$/);
+        if (matchQtdNoNome) {
+            qtd = Number.parseInt(matchQtdNoNome[1], 10) || qtd;
+            nome = nome.replace(/\s*\(\d+\)\s*$/, "").trim();
+        }
+
+        const nomeNormalizado = nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+        if (nomeNormalizado === "maquina g") return "";
+        if (nomeNormalizado === "maquina p" && qtd > 2 && qtd <= 4) return "RACK";
+
+        return nome;
+    }
+
     function renderizarFotosMaquinasInstalacao(fotosSalvas = null) {
         const container = document.getElementById('containerFotosMaquinasInstalacao');
         if (!container) return;
@@ -1285,13 +1304,16 @@
         }
 
         equipamentos.forEach((equipamento) => {
+            const tituloFoto = obterTituloFotoMaquinaInstalacao(equipamento);
+            if (!tituloFoto) return;
+
             const rowIdSeguro = escaparHtml(equipamento.rowId);
-            const titulo = equipamento.nome.toUpperCase();
+            const titulo = tituloFoto.toUpperCase();
 
             const bloco = document.createElement('div');
             bloco.className = 'sub-card-foto';
             bloco.dataset.rowId = equipamento.rowId;
-            bloco.dataset.nomeMaquina = equipamento.nome;
+            bloco.dataset.nomeMaquina = tituloFoto;
             bloco.innerHTML = `
                 <div class="titulo-sub-foto">${escaparHtml(titulo)}</div>
                 <div class="area-foto" onclick="abrirModalFoto('inputFotoMaquinaInstalacao_${rowIdSeguro}')">
@@ -1329,11 +1351,16 @@
 
         const faltando = obterEquipamentosDetalhadosDoFormulario()
             .filter(item => item.nome)
+            .map(item => ({
+                ...item,
+                tituloFoto: obterTituloFotoMaquinaInstalacao(item)
+            }))
+            .filter(item => item.tituloFoto)
             .filter(item => {
                 const img = document.getElementById(`imgPreviewMaquinaInstalacao_${item.rowId}`);
                 return !(img && img.style.display === 'block' && !!img.src);
             })
-            .map(item => item.nome);
+            .map(item => item.tituloFoto);
 
         if (faltando.length === 0) return true;
 
@@ -2443,6 +2470,9 @@
 
             const fotosMaquinasInstalacao = [];
             for (const equipamento of equipamentosDetalhados) {
+                const tituloFotoMaquina = obterTituloFotoMaquinaInstalacao(equipamento);
+                if (!tituloFotoMaquina) continue;
+
                 const img = document.getElementById(`imgPreviewMaquinaInstalacao_${equipamento.rowId}`);
                 if (!(img && img.style.display === 'block' && img.src)) continue;
 
@@ -2461,7 +2491,7 @@
                 if (url) {
                     fotosMaquinasInstalacao.push({
                         rowId: equipamento.rowId,
-                        nome: equipamento.nome,
+                        nome: tituloFotoMaquina,
                         url,
                         thumbUrl
                     });
@@ -2492,6 +2522,12 @@
             const estaEditando = Boolean(idParaSalvar);
             const perfilCadastro = clienteEmEdicao?.cadastradoPorPerfil || (estaEditando ? "" : (perfilUsuarioLogado || ""));
             const statusCadastro = clienteEmEdicao?.statusCadastro || (estaEditando ? "aprovado" : (perfilUsuarioLogado.includes('gestao') ? "aprovado" : "em_analise"));
+            const pontoAbertoFinal = String(document.getElementById("ponto_aberto").value || "").trim();
+            const representanteFinal = representantePontoNovo || (
+                estaEditando && perfilUsuarioLogado.includes('gestao')
+                    ? pontoAbertoFinal
+                    : ""
+            );
             preencherCidadePeloEndereco(false);
             const comissaoFinal = formatarComissaoParaSalvar(document.getElementById("comissao").value);
             const enderecoBaseFinal = String(document.getElementById("endereco").value || "").trim();
@@ -2522,7 +2558,7 @@
             } else {
                 const dadosFinal = {
                     numero: numeroFinal,
-                    ponto_aberto: document.getElementById("ponto_aberto").value,
+                    ponto_aberto: pontoAbertoFinal,
                     nome: (bloqueioCamposCriticosAtivo && clienteEmEdicao)
                         ? (clienteEmEdicao.nome || "")
                         : document.getElementById("nome").value,
@@ -2547,7 +2583,7 @@
                     dataCadastro,
                     dataCadastroDia,
                     statusCadastro,
-                    ...(representantePontoNovo ? { representante: representantePontoNovo } : {}),
+                    ...(representanteFinal ? { representante: representanteFinal } : {}),
                     ...(fromPontoNovo ? { pontoNovoOrigemId: fromPontoNovo } : {})
                 };
                 const clienteIdSalvo = await dbSalvarCliente(dadosFinal, idParaSalvar);

@@ -71,6 +71,7 @@
         .btn-sortear { background:#ffeb3b; border:none; color:#0b2256; font-weight:bold; font-size:18px; padding:15px; border-radius:12px; cursor:pointer; width:100%; text-align:center; transition:0.15s; }
         .btn-sortear:active { transform:scale(0.98); background:#ffe100; }
         .btn-sortear[disabled] { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); color:#9ca3af; cursor:not-allowed; }
+        .aviso-deposito-rota { display:none; margin-top:9px; color:#ffb74d; font-size:15px; font-weight:700; text-align:center; line-height:1.35; }
 
         /* CARD DE ROTA SELECIONADA */
         .card-rota { position:relative; overflow:hidden; padding:16px; border:2px solid #ffffff; border-radius:14px; margin-bottom:10px; background:linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)); width:100%; box-shadow:0 16px 30px rgba(0,0,0,0.25); }
@@ -247,6 +248,7 @@
             <div class="btn-sortear" id="btnSortear" onclick="selecionarRota()">
                 SELECIONAR ROTA
             </div>
+            <div class="aviso-deposito-rota" id="avisoDepositoRota"></div>
         </div>
 
         <!-- Rotas jÃƒÂ¡ selecionadas pelo usuÃƒÂ¡rio -->
@@ -306,6 +308,7 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<script src="assets/js/play-dialogs.js"></script>
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
 verificarAutenticacao();
@@ -324,6 +327,7 @@ import {
     dbRemoverJustificativaCheckin,
     dbLiberarRota,
     dbAtualizarControleLiberacaoRota,
+    dbEscutarResumoDepositos,
     calcularStatusLiberacaoRota
 } from './database.js';
 
@@ -348,6 +352,11 @@ let modalCliente = null;
 let motivoSelecionado = null;
 let verRota = null;
 let verClienteKey = null;
+let resumoDepositosCarregado = false;
+let rotaBloqueadaPorDeposito = true;
+let mensagemBloqueioDeposito = 'Aguardando verificação dos depósitos.';
+let pararEscutaResumoDepositos = null;
+const MENSAGEM_LIMITE_DEPOSITO = 'Valor limite atingido. Faça o depósito integral para selecionar rota.';
 const _loadingMsgsRotas = [
     'Carregando rotas...',
     'Conferindo clientes...',
@@ -395,6 +404,7 @@ function obterHojeLocal() {
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 async function init() {
     usuarioAtual = localStorage.getItem('usuario_selecionado') || '';
+    iniciarBloqueioDepositoRotas();
     await carregarClientesPorId();
     await carregarClientesAtendidosRecentes();
 
@@ -423,6 +433,65 @@ async function init() {
 
     // Escuta a sessÃƒÂ£o em tempo real
     dbEscutarSessaoRotas(onSessaoAtualizada);
+}
+
+function iniciarBloqueioDepositoRotas() {
+    resumoDepositosCarregado = false;
+    rotaBloqueadaPorDeposito = true;
+    mensagemBloqueioDeposito = 'Aguardando verificação dos depósitos.';
+    aplicarBloqueioDepositoRota();
+
+    if (typeof pararEscutaResumoDepositos === 'function') pararEscutaResumoDepositos();
+    pararEscutaResumoDepositos = dbEscutarResumoDepositos(usuarioAtual, (resumo) => {
+        if (!resumo || resumo.erro) {
+            resumoDepositosCarregado = false;
+            rotaBloqueadaPorDeposito = true;
+            mensagemBloqueioDeposito = 'Aguardando verificação dos depósitos.';
+            aplicarBloqueioDepositoRota();
+            return;
+        }
+
+        const falta = Number(resumo.faltaDepositarTotal || 0);
+        const limite = Number(resumo.limiteBloqueio || 5000);
+        const status = String(resumo.statusDeposito || '').trim().toLowerCase();
+        resumoDepositosCarregado = true;
+        rotaBloqueadaPorDeposito = status === 'bloqueado' || falta >= limite;
+        mensagemBloqueioDeposito = rotaBloqueadaPorDeposito
+            ? MENSAGEM_LIMITE_DEPOSITO
+            : '';
+
+        if (sessaoAtual && !estaAnimando) {
+            mostrarTelaSessaoAtiva(sessaoAtual);
+        } else {
+            aplicarBloqueioDepositoRota();
+        }
+    });
+}
+
+function aplicarBloqueioDepositoRota() {
+    const btn = document.getElementById('btnSortear');
+    const aviso = document.getElementById('avisoDepositoRota');
+    const wrap = document.getElementById('btnSortearWrap');
+    if (!btn || !wrap || wrap.style.display === 'none') return;
+
+    if (!resumoDepositosCarregado) {
+        btn.setAttribute('disabled', true);
+        btn.innerHTML = 'Verificando depósitos...';
+        if (aviso) aviso.style.display = 'none';
+        return;
+    }
+
+    if (rotaBloqueadaPorDeposito) {
+        btn.setAttribute('disabled', true);
+        btn.innerHTML = 'Depósito integral necessário';
+        if (aviso) {
+            aviso.textContent = mensagemBloqueioDeposito;
+            aviso.style.display = 'block';
+        }
+        return;
+    }
+
+    if (aviso) aviso.style.display = 'none';
 }
 
 // Flag para evitar criaÃƒÂ§ÃƒÂ£o dupla de sessÃƒÂ£o (vÃƒÂ¡rios usuÃƒÂ¡rios abrindo ao mesmo tempo)
@@ -584,6 +653,7 @@ function mostrarTelaSessaoAtiva(sessao) {
             btn.setAttribute('disabled', true);
             btn.innerHTML = '🔒 &nbsp;Todas as rotas já foram selecionadas';
         }
+        aplicarBloqueioDepositoRota();
     }
 }
 
@@ -1150,6 +1220,16 @@ window.removerJustificativa = async function() {
 // Selecionar rota (usuÃƒÂ¡rio pressiona o botÃƒÂ£o)
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 window.selecionarRota = async function() {
+    if (!resumoDepositosCarregado) {
+        if (window.playAlert) await window.playAlert('Aguarde a verificação dos depósitos.');
+        else mostrarToast('Aguarde a verificação dos depósitos.');
+        return;
+    }
+    if (rotaBloqueadaPorDeposito) {
+        if (window.playAlert) await window.playAlert(mensagemBloqueioDeposito || MENSAGEM_LIMITE_DEPOSITO);
+        else mostrarToast(mensagemBloqueioDeposito || MENSAGEM_LIMITE_DEPOSITO);
+        return;
+    }
     if (!usuarioAtual) {
         mostrarToast('⚠️ Nenhum usuário selecionado no app');
         return;
@@ -1215,6 +1295,7 @@ window.selecionarRota = async function() {
                 btn.removeAttribute('disabled');
                 btn.innerHTML = 'SELECIONAR ROTA';
             }
+            aplicarBloqueioDepositoRota();
         }
     }
 };

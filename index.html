@@ -100,18 +100,23 @@
 
         .botao:hover { background: #3c5f9f; }
         .botao:active { transform: translateY(2px); background: #355792; transition: 0.05s; }
-        .botao.manutencao-bloqueada {
+        .botao.manutencao-bloqueada,
+        .botao.balanco-bloqueado {
             background:#5f6470;
             border-color:#8b9099;
             cursor:default;
         }
         .botao.manutencao-bloqueada:hover,
-        .botao.manutencao-bloqueada:active {
+        .botao.manutencao-bloqueada:active,
+        .botao.balanco-bloqueado:hover,
+        .botao.balanco-bloqueado:active {
             transform:none;
             background:#5f6470;
         }
         .botao.manutencao-bloqueada span:last-child,
-        .botao.manutencao-bloqueada .icone {
+        .botao.manutencao-bloqueada .icone,
+        .botao.balanco-bloqueado span:last-child,
+        .botao.balanco-bloqueado .icone {
             color:#d8d8d8;
         }
 
@@ -205,7 +210,7 @@
             <span>Servi&ccedil;o</span>
         </div>
 
-        <div class="botao" id="btnClientes" onclick="window.location.href='clientes.html'">
+        <div class="botao" id="btnClientes" onclick="abrirTela('clientes')">
             <span class="icone">&#128269;</span>
             <span>Lista de Clientes</span>
         </div>
@@ -357,6 +362,45 @@
     let statusBalancoPendenteIndex = false;
     let statusBalancoCarregadoIndex = false;
     let usuarioAtendimentoNivel2Index = false;
+    const CACHE_STATUS_BALANCO_PREFIX = 'cache_status_balanco_index_';
+    const CACHE_STATUS_BALANCO_VALIDADE_MS = 20 * 60 * 60 * 1000;
+
+    function chaveCacheStatusBalancoIndex(nomeUsuario) {
+        const nome = String(nomeUsuario || '').trim();
+        if (!nome) return '';
+        return CACHE_STATUS_BALANCO_PREFIX + nome.toLowerCase();
+    }
+
+    function lerCacheStatusBalancoIndex(nomeUsuario) {
+        try {
+            const chave = chaveCacheStatusBalancoIndex(nomeUsuario);
+            if (!chave) return null;
+            const bruto = localStorage.getItem(chave);
+            if (!bruto) return null;
+            const cache = JSON.parse(bruto);
+            const atualizadoEm = Number(cache?.atualizadoEm || 0);
+            if (!atualizadoEm || Date.now() - atualizadoEm > CACHE_STATUS_BALANCO_VALIDADE_MS) {
+                localStorage.removeItem(chave);
+                return null;
+            }
+            const status = String(cache?.statusBalanco || '').trim().toLowerCase();
+            return status ? { statusBalanco: status } : null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function salvarCacheStatusBalancoIndex(nomeUsuario, statusBalanco) {
+        try {
+            const chave = chaveCacheStatusBalancoIndex(nomeUsuario);
+            if (!chave) return;
+            const status = String(statusBalanco || 'ok').trim().toLowerCase();
+            localStorage.setItem(chave, JSON.stringify({
+                statusBalanco: status,
+                atualizadoEm: Date.now()
+            }));
+        } catch (_) {}
+    }
 
     function atualizarEstadoBotaoRotas() {
         const btnRotas = document.getElementById('btnRotas');
@@ -367,19 +411,34 @@
     }
 
     function atualizarEstadoBotaoManutencao() {
-        const btnManutencao = document.getElementById('btnManutencao');
-        if (!btnManutencao) return;
         const verificandoBalanco = usuarioAtendimentoNivel2Index && !statusBalancoCarregadoIndex;
         const bloqueado = usuarioAtendimentoNivel2Index && (verificandoBalanco || statusBalancoPendenteIndex);
-        btnManutencao.classList.toggle('manutencao-bloqueada', bloqueado);
-        btnManutencao.setAttribute('aria-disabled', bloqueado ? 'true' : 'false');
+        [
+            ['btnManutencao', 'manutencao-bloqueada'],
+            ['btnClientes', 'balanco-bloqueado'],
+            ['btnFluxoCaixa', 'balanco-bloqueado']
+        ].forEach(([id, classe]) => {
+            const botao = document.getElementById(id);
+            if (!botao) return;
+            botao.classList.toggle(classe, bloqueado);
+            botao.setAttribute('aria-disabled', bloqueado ? 'true' : 'false');
+        });
     }
 
-    function atualizarStatusBalancoIndex(resumo) {
+    async function balancoBloqueiaAcessoIndex() {
+        if (!usuarioAtendimentoNivel2Index) return false;
+        if (!statusBalancoCarregadoIndex) return true;
+        if (!statusBalancoPendenteIndex) return false;
+        if (window.playAlert) await window.playAlert('Confira o material e envie o Balanço');
+        return true;
+    }
+
+    function atualizarStatusBalancoIndex(resumo, nomeUsuario = '') {
         const status = String(resumo?.statusBalanco || 'ok').trim().toLowerCase();
         const pendente = status === 'pendente';
         statusBalancoPendenteIndex = pendente;
         statusBalancoCarregadoIndex = true;
+        salvarCacheStatusBalancoIndex(nomeUsuario || localStorage.getItem('usuarioLogado'), status);
         atualizarEstadoBotaoRotas();
         atualizarEstadoBotaoManutencao();
     }
@@ -388,8 +447,11 @@
         const nome = String(nomeUsuario || '').trim();
         if (typeof unsubscribeResumoBalanco === 'function') unsubscribeResumoBalanco();
         unsubscribeResumoBalanco = null;
-        statusBalancoPendenteIndex = false;
-        statusBalancoCarregadoIndex = false;
+        const cache = lerCacheStatusBalancoIndex(nome);
+        statusBalancoPendenteIndex = cache
+            ? String(cache.statusBalanco || '').trim().toLowerCase() === 'pendente'
+            : true;
+        statusBalancoCarregadoIndex = !!cache;
         atualizarEstadoBotaoRotas();
         atualizarEstadoBotaoManutencao();
         if (!nome) {
@@ -397,7 +459,7 @@
             atualizarEstadoBotaoManutencao();
             return;
         }
-        unsubscribeResumoBalanco = dbEscutarResumoBalanco(nome, atualizarStatusBalancoIndex);
+        unsubscribeResumoBalanco = dbEscutarResumoBalanco(nome, (resumo) => atualizarStatusBalancoIndex(resumo, nome));
     }
 
     function atualizarBadgeServico() {
@@ -529,14 +591,13 @@
 
     window.abrirTela = async function(tela){
         if (tela === 'manutencao') {
-            if (usuarioAtendimentoNivel2Index && !statusBalancoCarregadoIndex) {
-                return;
-            }
-            if (usuarioAtendimentoNivel2Index && statusBalancoPendenteIndex) {
-                if (window.playAlert) await window.playAlert('Confira o material e envie o Balanço');
-                return;
-            }
+            if (await balancoBloqueiaAcessoIndex()) return;
             window.location.href = 'manutencoes_solicitadas.html';
+            return;
+        }
+        if (tela === 'clientes') {
+            if (await balancoBloqueiaAcessoIndex()) return;
+            window.location.href = 'clientes.html';
             return;
         }
         if (tela === 'depositos') {
@@ -556,6 +617,7 @@
             return;
         }
         if (tela === 'fluxo_caixa') {
+            if (await balancoBloqueiaAcessoIndex()) return;
             window.location.href = 'fluxo_caixa.html';
             return;
         }

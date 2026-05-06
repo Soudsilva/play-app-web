@@ -1,5 +1,6 @@
 const {setGlobalOptions} = require("firebase-functions");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
+const {onValueWritten} = require("firebase-functions/v2/database");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 
@@ -11,6 +12,8 @@ admin.initializeApp({
 
 const RESUMO_BALANCO_ID = "resumo_balanco";
 const CINCO_DIAS_MS = 5 * 24 * 60 * 60 * 1000;
+const DEPOSITOS_RESUMO_ROOT = "firebase_functions_depositos";
+const LIMITE_BLOQUEIO_DEPOSITO = 5000;
 
 function dataBrasiliaISOData(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -35,6 +38,157 @@ function isoOuNull(timestamp) {
     new Date(timestamp).toISOString() :
     null;
 }
+
+function normalizarChaveUsuario(nomeUsuario) {
+  return String(nomeUsuario || "").trim().replace(/[.#$/[\]]/g, "_");
+}
+
+function numero(valor) {
+  const n = Number(valor || 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function bsbDate(valor) {
+  const data = new Date(valor || 0);
+  if (Number.isNaN(data.getTime())) return null;
+  return new Date(data.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"}));
+}
+
+function obterAnoMes(valor) {
+  const data = bsbDate(valor);
+  if (!data || Number.isNaN(data.getTime())) return "";
+  return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function obterSaldoDepositarAtendimento(atendimento) {
+  const fin = atendimento && atendimento.financeiro;
+  if (!fin || typeof fin !== "object") return 0;
+  return numero(fin.dinheiro) - numero(fin.comissaoValor);
+}
+
+function valorAbatimentoDeposito(deposito) {
+  const valorConferido = numero(deposito && deposito.valorConferido);
+  return valorConferido > 0 ? valorConferido : numero(deposito && deposito.valor);
+}
+
+function obterAlvosAtendimento(before, after) {
+  const alvos = new Map();
+  [before, after].forEach((item) => {
+    if (!item || typeof item !== "object") return;
+    const usuario = normalizarChaveUsuario(item.atendente);
+    const anoMes = obterAnoMes(item.data || item.dataHora);
+    if (usuario && anoMes) alvos.set(`${usuario}/${anoMes}`, {usuario, anoMes});
+  });
+  return [...alvos.values()];
+}
+
+function obterAlvosDeposito(usuarioParam, before, after) {
+  const usuario = normalizarChaveUsuario(usuarioParam);
+  if (!usuario) return [];
+
+  const alvos = new Map();
+  [before, after].forEach((item) => {
+    if (!item || typeof item !== "object") return;
+    const anoMes = obterAnoMes(item.data || item.timestamp || item.criadoEm);
+    if (anoMes) alvos.set(`${usuario}/${anoMes}`, {usuario, anoMes});
+  });
+  return [...alvos.values()];
+}
+
+async function recalcularResumoDepositosMes(usuario, anoMes) {
+  const db = admin.database();
+  const agoraIso = new Date().toISOString();
+  const usuarioKey = normalizarChaveUsuario(usuario);
+  if (!usuarioKey || !anoMes) return;
+
+  const [atendimentosSnap, depositosSnap] = await Promise.all([
+    db.ref("atendimentos").get(),
+    db.ref(`depositos/${usuarioKey}`).get(),
+  ]);
+
+  let saldoAtendimentos = 0;
+  Object.values(atendimentosSnap.val() || {}).forEach((atendimento) => {
+    if (!atendimento || typeof atendimento !== "object") return;
+    if (normalizarChaveUsuario(atendimento.atendente) !== usuarioKey) return;
+    if (obterAnoMes(atendimento.data || atendimento.dataHora) !== anoMes) return;
+    saldoAtendimentos += obterSaldoDepositarAtendimento(atendimento);
+  });
+
+  let totalDepositos = 0;
+  Object.values(depositosSnap.val() || {}).forEach((deposito) => {
+    if (!deposito || typeof deposito !== "object") return;
+    const depositoAnoMes = obterAnoMes(
+      deposito.data || deposito.timestamp || deposito.criadoEm,
+    );
+    if (depositoAnoMes !== anoMes) return;
+    totalDepositos += valorAbatimentoDeposito(deposito);
+  });
+
+  const saldoMes = saldoAtendimentos - totalDepositos;
+  await db.ref(`${DEPOSITOS_RESUMO_ROOT}/${usuarioKey}/meses/${anoMes}`).set({
+    saldoAtendimentos,
+    totalDepositos,
+    saldoMes,
+    faltaDepositar: Math.max(0, saldoMes),
+    atualizadoEm: agoraIso,
+  });
+
+  await recalcularResumoDepositosTotal(usuarioKey);
+}
+
+async function recalcularResumoDepositosTotal(usuario) {
+  const db = admin.database();
+  const usuarioKey = normalizarChaveUsuario(usuario);
+  if (!usuarioKey) return;
+
+  const mesesSnap = await db.ref(`${DEPOSITOS_RESUMO_ROOT}/${usuarioKey}/meses`).get();
+  let saldoTotal = 0;
+  Object.values(mesesSnap.val() || {}).forEach((mes) => {
+    if (!mes || typeof mes !== "object") return;
+    const saldoMes = Number.isFinite(Number(mes.saldoMes)) ?
+      Number(mes.saldoMes) :
+      numero(mes.saldoAtendimentos) - numero(mes.totalDepositos);
+    saldoTotal += saldoMes;
+  });
+
+  const faltaDepositarTotal = Math.max(0, saldoTotal);
+  await db.ref(`${DEPOSITOS_RESUMO_ROOT}/${usuarioKey}/resumo`).set({
+    faltaDepositarTotal,
+    statusDeposito: faltaDepositarTotal >= LIMITE_BLOQUEIO_DEPOSITO ?
+      "bloqueado" :
+      "ok",
+    limiteBloqueio: LIMITE_BLOQUEIO_DEPOSITO,
+    atualizadoEm: new Date().toISOString(),
+  });
+}
+
+async function recalcularAlvosDepositos(alvos, origem) {
+  if (!alvos.length) return;
+  await Promise.all(alvos.map((alvo) =>
+    recalcularResumoDepositosMes(alvo.usuario, alvo.anoMes),
+  ));
+  logger.info("Resumo de depositos atualizado.", {origem, alvos});
+}
+
+exports.atualizarResumoDepositosPorAtendimento = onValueWritten(
+  "/atendimentos/{atendimentoId}",
+  async (event) => {
+    const before = event.data.before.exists() ? event.data.before.val() : null;
+    const after = event.data.after.exists() ? event.data.after.val() : null;
+    const alvos = obterAlvosAtendimento(before, after);
+    await recalcularAlvosDepositos(alvos, "atendimento");
+  },
+);
+
+exports.atualizarResumoDepositosPorDeposito = onValueWritten(
+  "/depositos/{usuario}/{depositoId}",
+  async (event) => {
+    const before = event.data.before.exists() ? event.data.before.val() : null;
+    const after = event.data.after.exists() ? event.data.after.val() : null;
+    const alvos = obterAlvosDeposito(event.params.usuario, before, after);
+    await recalcularAlvosDepositos(alvos, "deposito");
+  },
+);
 
 exports.verificarBalancoDiario = onSchedule(
   {

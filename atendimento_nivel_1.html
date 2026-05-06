@@ -1562,7 +1562,7 @@ function obterIdAtendimentoEmEdicao() {
             return "Em PRODUTOS, preencha pelo menos 1 item (Produto e Qtd).";
         }
 
-        const incompletas = preenchidas.filter(l => l.prodId === "" || l.qtd <= 0);
+        const incompletas = preenchidas.filter(l => l.prodId === "" || l.qtdRaw === "");
         if (incompletas.length > 0) {
             const linhasTxt = incompletas.map(l => `linha ${l.index + 1}`).join(', ');
             return `Em PRODUTOS, não deixe campos em branco. Complete Produto e Qtd em: ${linhasTxt}.`;
