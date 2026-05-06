@@ -214,19 +214,27 @@
             border-left-color: #a78bfa;
             padding: 12px;
         }
+        .pix-servico-origem-wrap {
+            display: flex;
+            justify-content: center;
+            margin: -4px 0 12px;
+        }
         .pix-servico-origem {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 28px;
-            padding: 4px 12px;
+            min-height: 32px;
+            min-width: 78px;
+            padding: 6px 18px;
             border-radius: 999px;
-            background: #4c1d95;
+            background: #6d28d9;
+            border: 1px solid #c4b5fd;
             color: #ffffff;
-            font-size: 13px;
+            font-size: 15px;
             font-weight: 700;
             text-align: center;
-            margin: 0 auto 10px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 8px 18px #1e1b4b;
         }
         .pix-servico-origem.adicao { background: #166534; }
         .pix-servico-origem.retirada { background: #991b1b; }
@@ -274,6 +282,7 @@
         .pix-servico-badge.adicao { background: #16a34a; }
         .pix-servico-badge.retirada { background: #dc2626; }
         .pix-servico-equip {
+            display: none;
             font-size: 15px;
             font-weight: 700;
             color: #e5e7eb;
@@ -656,7 +665,7 @@
                         tipo: 'adicao',
                         nome: item.nome,
                         pix: pixAtual,
-                        por: item.tecnico || item.manutencaoPendentePor || cliente?.cadastradoPor || '-',
+                        por: item.manutencaoPendentePor || item.tecnico || cliente?.cadastradoPor || '-',
                         dataEvento: obterDataEventoPixCadastro('adicao', registro, item),
                         contador: String(registro?.contador || item.contador || '').trim(),
                         fotoThumbUrl: String(registro?.foto_contador_instalacao_thumb || registro?.foto_contador_instalacao || fotoThumbBase).trim(),
@@ -877,7 +886,6 @@
                     <div class="pix-servico-item">
                         <div class="pix-servico-item-top">
                             <span class="pix-servico-badge ${item.tipo}">${item.tipo === 'retirada' ? '&minus; Retirado' : '+ Colocado'}</span>
-                            <span class="pix-servico-equip">${escHtml(item.nome || 'Equipamento')}</span>
                         </div>
                         <div class="pix-servico-meta">
                             <div class="pix-servico-pill pix">
@@ -1064,7 +1072,7 @@
 
         return `
             <div class="card pix-servico" id="card-${ev.id}">
-                <div class="pix-servico-origem">Cadastro Pix</div>
+                <div class="pix-servico-origem-wrap"><div class="pix-servico-origem">Pix</div></div>
                 <div class="pix-servico-cliente">&#128205; ${montarIdentificacaoPix(ev.clienteNumero, ev.clienteNome)}</div>
                 ${montarListaPixServico(ev.pixItens)}
                 ${montarFotosInstalacaoHtml(ev.fotosInstalacao)}
