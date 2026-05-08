@@ -317,19 +317,26 @@ export function dbEscutarHistorico(callback) {
 // O que faz: Remove permanentemente o cliente do banco de dados baseado no ID.
 export async function dbExcluirCliente(id) {
     try {
+        const clienteRef = ref(db, `clientes/${id}`);
+        const snapCliente = await get(clienteRef);
+        const clienteAtual = snapCliente.exists() ? (snapCliente.val() || null) : null;
+        const responsavelHistorico = String(clienteAtual?.cadastradoPor || clienteAtual?.ponto_aberto || '').trim();
+        if (responsavelHistorico) {
+            await _cancelarMovimentacoesHistoricoBalancoPorRefId(id, responsavelHistorico);
+        }
+
         // Remove também da base Media_de_Vendas (id = número do cliente)
         try {
-            const snap = await get(ref(db, `clientes/${id}`));
-            const numero = snap.exists() ? (snap.val()?.numero ?? null) : null;
+            const numero = clienteAtual?.numero ?? null;
             const key = _normalizarNumeroCliente(numero);
             if (key) await remove(ref(db, `Media_de_Vendas/${key}`));
         } catch (e) {
             console.warn("Não foi possível remover cliente de Media_de_Vendas:", e);
         }
-        const clienteRef = ref(db, `clientes/${id}`);
         await remove(clienteRef);
         // Avisa todos os dispositivos que a lista mudou
         await _atualizarVersaoClientes();
+        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("ERRO AO EXCLUIR CLIENTE:", error);
         throw error;
@@ -3084,9 +3091,10 @@ export async function dbSincronizarItensManutencaoNoHistorico(atendimentoId, ate
                 itemId: String(item?.itemId || item?.itemChave || item?.refId || '').trim(),
                 categoria: String(item?.categoria || 'maquina').trim() || 'maquina',
                 nome: String(item?.nome || '').trim(),
-                quantidade: Number(item?.qtd || item?.quantidade || 0)
+                quantidade: Number(item?.qtd || item?.quantidade || 0),
+                contabilizarFinanceiro: item?.contabilizarFinanceiro !== false
             }))
-            .filter(item => item.nome && item.quantidade > 0);
+            .filter(item => item.nome && item.quantidade > 0 && item.contabilizarFinanceiro !== false);
 
         const maquinaAdicionadaSemId = adicionadosValidos.find(item => !item.itemId);
         if (maquinaAdicionadaSemId) {

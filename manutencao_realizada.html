@@ -188,6 +188,32 @@
         .equip-qtd { flex: 0.8 1 0; text-align: center; }
         .equip-pix { flex: 0.8 1 0; text-align: center; }
         .equip-cont { flex: 1 1 0; text-align: center; }
+        .equip-retirada-loja {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 0;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.28);
+            background: transparent;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            text-align: center;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .equip-retirada-loja input {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            padding: 0;
+            flex: 0 0 auto;
+        }
 
         .aviso-obrigatorio {
             display: none;
@@ -1934,6 +1960,10 @@ function adicionarLinhaEquipamentoAdicionado(nome = '', qtd = '', pix = '', cont
             <input id="equipAdicionadoPix_${indice}" type="text" class="campo-texto equip-pix" placeholder="Pix" inputmode="numeric" maxlength="3" value="${String(pix).replace(/"/g, '&quot;')}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3)">
             <input id="equipAdicionadoCont_${indice}" type="text" class="campo-texto equip-cont" placeholder="Cont." inputmode="numeric" maxlength="6" value="${String(contador).replace(/"/g, '&quot;')}" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)">
         </div>
+        <label class="equip-retirada-loja">
+            <input type="checkbox" class="equip-financeiro-check" checked>
+            <span>Retirou da loja para esta instalação</span>
+        </label>
     `;
     container.appendChild(linha);
 }
@@ -1946,6 +1976,7 @@ function coletarLinhasEquipamentoAdicionadoComMeta() {
             qtd: linha.querySelector('.equip-qtd')?.value.trim() || '',
             pix: linha.querySelector('.equip-pix')?.value.trim() || '',
             contador: linha.querySelector('.equip-cont')?.value.trim() || '',
+            contabilizarFinanceiro: linha.querySelector('.equip-financeiro-check')?.checked !== false,
         }));
 
     const linhasSemMaquina = linhasBrutas.filter(item => !item.nome);

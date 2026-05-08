@@ -589,8 +589,11 @@
 
         function registroFinanceiroValido(registro) {
             if (registro?.cancelado) return false;
-            if (String(registro?.origemRegistro || '').trim() !== 'cadastro_cliente') return false;
-            if (String(registro?.tipo || '').trim() !== 'cadastro_cliente_adicao') return false;
+            const origem = String(registro?.origemRegistro || '').trim();
+            const tipo = String(registro?.tipo || '').trim();
+            const ehCadastroCliente = origem === 'cadastro_cliente' && tipo === 'cadastro_cliente_adicao';
+            const ehManutencaoAdicao = origem === 'manutencao' && tipo === 'manutencao_adicao';
+            if (!ehCadastroCliente && !ehManutencaoAdicao) return false;
             if (String(registro?.categoria || '').trim() !== 'maquina') return false;
             if (Number(registro?.movimento || 0) >= 0) return false;
             return true;
