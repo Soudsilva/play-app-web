@@ -1066,7 +1066,11 @@
             .filter(ev => ev.pixItens.length > 0 ? dentroDomes(ev.data) : dentroDomes(ev.dataCadastro));
 
         let todos = [...eventosManutencao, ...eventosNovos]
-            .sort((a, b) => new Date(a.data || 0) - new Date(b.data || 0));
+            .sort((a, b) => {
+                const dataA = new Date(a.data || 0);
+                const dataB = new Date(b.data || 0);
+                return pendente ? dataA - dataB : dataB - dataA;
+            });
 
         if (termos.length) {
             todos = todos.filter(ev => {

@@ -254,6 +254,7 @@
         }
 
         .card.pendente { border-left: 4px solid #ffeb3b; }
+        .card.pendente.contestado { border-left-color: #ff9800; }
         .card.confirmado { border-left: 4px solid #4caf50; opacity: 0.85; }
         .card.confirmado:hover { opacity: 1; }
 
@@ -1546,7 +1547,8 @@
     function criarCardHTML(a, cardIdx) {
         const id         = a.firebaseUrl || '';
         const confirmado = !!a.confirmacao;
-        const cls        = confirmado ? 'confirmado' : 'pendente';
+        const jaContestado = !confirmado && !!a.contestado;
+        const cls        = confirmado ? 'confirmado' : (jaContestado ? 'pendente contestado' : 'pendente');
 
         const total         = Number(a?.financeiro?.totalGeral)   || 0;
         const dinheiro      = Number(a?.financeiro?.dinheiro)      || 0;
@@ -1667,7 +1669,6 @@
         }
 
         if (!confirmado) {
-            const jaContestado = !!a.contestado;
             const btnContestarLabel = jaContestado ? '⚠ Contestado' : '⚠ Contestar';
             rodapeHTML = `<div class="section">
                 <div class="validacao-chip" data-validacao-status="${escAttr(id)}">${resumoValidacao.total === 0 ? 'Nenhuma foto para revisar' : `Fotos revisadas ${resumoValidacao.concluidas}/${resumoValidacao.total}`}</div>
