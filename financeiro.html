@@ -48,11 +48,13 @@
             position: sticky;
             top: 0;
             z-index: 30;
-            min-height: 58px;
+            min-height: 74px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 12px 14px 10px;
+            gap: 6px;
+            padding: 9px 58px 9px;
             background: linear-gradient(180deg, #091845 0%, #0b2256 100%);
             border-bottom: 1px solid rgba(255,235,59,0.2);
         }
@@ -63,7 +65,45 @@
             color: #ffeb3b;
             letter-spacing: 0.5px;
             text-align: center;
-            flex: 1;
+            flex: 0 1 auto;
+        }
+
+        .total-mes-linha {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .total-mes-label {
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .total-mes-topo {
+            min-width: 82px;
+            max-width: 116px;
+            height: 28px;
+            padding: 4px 8px;
+            border: 1.5px solid #ffeb3b;
+            border-radius: 8px;
+            background: #142d68;
+            color: #ffeb3b;
+            font-size: 19px;
+            font-weight: 700;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            overflow: hidden;
+            white-space: nowrap;
         }
 
         .btn-home {
@@ -173,8 +213,7 @@
         }
 
         .fin-chave,
-        .fin-quant-label,
-        .fin-resp-label {
+        .fin-quant-label {
             font-size: 12px;
             font-weight: bold;
             color: rgba(255,235,59,0.72);
@@ -216,81 +255,6 @@
             min-width: 38px;
             text-align: center;
         }
-
-        .fin-resp-wrap {
-            display: flex;
-            flex-direction: row;
-            align-items: baseline;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
-        .fin-resp-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0;
-        }
-
-        .fin-resp-chip + .fin-resp-chip::before {
-            content: ", ";
-            color: rgba(255,255,255,0.5);
-            font-weight: normal;
-        }
-
-        .fin-resp-chip {
-            background: none;
-            border: none;
-            padding: 0;
-            font-size: 18px;
-            font-weight: bold;
-            color: #fff;
-        }
-
-        .fin-colab-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .fin-colab-select {
-            flex: 1;
-            min-width: 0;
-            background: #1f3d80;
-            border: 1.5px solid #5f7ec4;
-            border-radius: 10px;
-            padding: 9px 30px 9px 12px;
-            color: #fff;
-            font-size: 15px;
-            font-weight: bold;
-            font-family: Arial, sans-serif;
-            outline: none;
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='white' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            cursor: pointer;
-        }
-
-        .fin-colab-select option { background: #0f2a66; }
-        .fin-colab-select:focus { border-color: #ffeb3b; }
-        .fin-colab-select:disabled { color: #b8c7ec; cursor: default; }
-
-        .btn-enviar {
-            background: #ffeb3b;
-            color: #0b2256;
-            border: none;
-            border-radius: 10px;
-            padding: 9px 18px;
-            font-size: 15px;
-            font-weight: bold;
-            font-family: Arial, sans-serif;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .btn-enviar:active { background: #edd900; transform: scale(0.95); }
-        .btn-enviar:disabled { background: #6b7aa6; color: #d4ddf5; cursor: default; transform: none; }
 
         .fin-saldo-row {
             display: flex;
@@ -433,6 +397,10 @@
     <div class="app">
         <header class="topo">
             <div class="titulo-topo">Financeiro</div>
+            <div class="total-mes-linha">
+                <span class="total-mes-label">Produ&ccedil;&atilde;o Geral do M&ecirc;s</span>
+                <div id="totalMesTopo" class="total-mes-topo" aria-label="Total produzido no mes">0</div>
+            </div>
             <button class="btn-home" type="button" aria-label="Ir para a tela inicial" onclick="window.location.href='index.html'">
                 <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
             </button>
@@ -459,7 +427,7 @@
     <script src="assets/js/play-dialogs.js"></script>
     <script type="module">
         import { verificarAutenticacao } from './auth.js';
-        import { dbEscutarColaboradores, dbEscutarEstoque, dbEscutarHistoricoBalancoCompleto, dbAtualizarResponsaveisHistoricoBalanco } from './database.js';
+        import { dbEscutarColaboradores, dbEscutarEstoque, dbEscutarHistoricoBalancoCompleto } from './database.js';
 
         document.body.style.visibility = 'visible';
         await verificarAutenticacao();
@@ -472,7 +440,7 @@
 
         const estado = {
             historico: [],
-            nomesElegiveis: [],
+            colaboradorLogado: null,
             registros: [],
             mapaValores: {},
             mapaValoresPorId: {},
@@ -489,6 +457,7 @@
         const listaFinanceiro = document.getElementById('listaFinanceiro');
         const filtroAno = document.getElementById('filtroAno');
         const filtroMes = document.getElementById('filtroMes');
+        const totalMesTopo = document.getElementById('totalMesTopo');
 
         const rodapeResumo = document.getElementById('rodapeResumo');
 
@@ -536,6 +505,24 @@
 
         function normalizarTexto(valor) {
             return String(valor || '').trim().toLowerCase();
+        }
+
+        function normalizarNomeComparacao(valor) {
+            return normalizarTexto(valor)
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function parseNumero(valor) {
+            if (typeof valor === 'number') return Number.isFinite(valor) ? valor : 0;
+            const texto = String(valor || '').trim();
+            if (!texto) return 0;
+            const normalizado = texto
+                .replace(/[^\d,.-]/g, '')
+                .replace(/\./g, '')
+                .replace(',', '.');
+            const numero = Number(normalizado);
+            return Number.isFinite(numero) ? numero : 0;
         }
 
         function escaparHtml(valor) {
@@ -587,22 +574,10 @@
             return `${partes.ano}-${partes.mes}`;
         }
 
-        function deduplicarNomes(lista) {
-            const mapa = new Map();
-            (Array.isArray(lista) ? lista : []).forEach((nome) => {
-                const limpo = String(nome || '').trim();
-                const chave = normalizarTexto(limpo);
-                if (!limpo || mapa.has(chave)) return;
-                mapa.set(chave, limpo);
-            });
-            return Array.from(mapa.values());
-        }
-
-        function obterResponsaveis(registroHistorico) {
-            return deduplicarNomes([
-                ...(Array.isArray(registroHistorico?.responsaveis) ? registroHistorico.responsaveis : []),
-                registroHistorico?.tecnicoResponsavel
-            ]);
+        function obterValorEquipamento(registro) {
+            const chaveNome = normalizarTexto(registro?.equipamentoNome || registro?.itemNome || '');
+            const itemChave = String(registro?.itemChave || registro?.refId || '').trim();
+            return Number(estado.mapaValoresPorId[itemChave] || estado.mapaValores[chaveNome] || 0);
         }
 
         function obterClienteNomeHistorico(registro) {
@@ -635,13 +610,10 @@
                     equipamentoNome: String(registro.itemNome || '').trim(),
                     itemChave: String(registro.itemChave || registro.refId || '').trim(),
                     qtd: Math.abs(Number(registro.movimento || 0)),
-                    responsaveis: obterResponsaveis(registro),
                     itemOriginal: registro,
                     get saldo() {
-                        const chaveNome = normalizarTexto(this.equipamentoNome);
-                        const valor = Number(estado.mapaValoresPorId[this.itemChave] || estado.mapaValores[chaveNome] || 0);
-                        const divisor = this.responsaveis.length || 1;
-                        return (this.qtd * valor) / divisor;
+                        const valor = obterValorEquipamento(this);
+                        return this.qtd * valor;
                     }
                 }))
                 .filter((registro) => registro.equipamentoNome && registro.qtd > 0);
@@ -705,26 +677,25 @@
 
         function registrosFiltrados() {
             const chaveSelecionada = `${estado.anoSelecionado}-${estado.mesSelecionado}`;
-            const usuarioAtual = normalizarTexto(localStorage.getItem('usuarioLogado') || '');
             return estado.registros.filter((registro) => {
-                if (obterChaveMesAno(registro.data) !== chaveSelecionada) return false;
-                return registro.responsaveis.some((nome) => normalizarTexto(nome) === usuarioAtual);
+                return obterChaveMesAno(registro.data) === chaveSelecionada;
             });
         }
 
-        function htmlResponsaveis(responsaveis) {
-            if (responsaveis.length === 0) {
-                return '<span class="fin-resp-chip">Sem responsável</span>';
-            }
-
-            return responsaveis
-                .map((nome) => `<span class="fin-resp-chip">${escaparHtml(nome)}</span>`)
-                .join('');
+        function totalProduzidoMesTodos() {
+            const chaveSelecionada = `${estado.anoSelecionado}-${estado.mesSelecionado}`;
+            return estado.registros.reduce((soma, registro) => {
+                if (obterChaveMesAno(registro.data) !== chaveSelecionada) return soma;
+                return soma + (Number(registro.qtd || 0) * obterValorEquipamento(registro));
+            }, 0);
         }
 
-        function opcoesDropdown(responsaveisAtuais) {
-            const mapaAtuais = new Set(responsaveisAtuais.map((nome) => normalizarTexto(nome)));
-            return estado.nomesElegiveis.filter((nome) => !mapaAtuais.has(normalizarTexto(nome)));
+        function calcularRemuneracaoEquipamentos(totalProduzido) {
+            const colaborador = estado.colaboradorLogado;
+            if (colaborador?.producaoEquipamentos !== true) return 0;
+            const percentual = parseNumero(colaborador?.bonusManutencao);
+            if (percentual <= 0) return 0;
+            return totalProduzido * (percentual / 100);
         }
 
         function renderizar() {
@@ -734,24 +705,21 @@
             }
             pararSpinner();
 
+            const totalProduzido = totalProduzidoMesTodos();
+            totalMesTopo.textContent = totalProduzido.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
             const lista = registrosFiltrados();
             const totalMaquinas = lista.reduce((soma, registro) => soma + Number(registro.qtd || 0), 0);
 
-            const totalSaldo = lista.reduce((soma, r) => soma + r.saldo, 0);
-            rodapeResumo.textContent = totalSaldo.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            const totalRemuneracao = calcularRemuneracaoEquipamentos(totalProduzido);
+            rodapeResumo.textContent = totalRemuneracao.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
             if (lista.length === 0) {
                 listaFinanceiro.innerHTML = '<div class="estado-vazio">Nenhum registro de máquina instalada neste período.</div>';
                 return;
             }
 
-            listaFinanceiro.innerHTML = lista.map((registro, indiceLista) => {
-                const selectId = `select_${registro.historicoUsuario}_${registro.historicoId}`;
-                const opcoes = opcoesDropdown(registro.responsaveis);
-                const opcoesHtml = opcoes.length > 0
-                    ? opcoes.map((nome) => `<option value="${escaparHtml(nome)}">${escaparHtml(nome)}</option>`).join('')
-                    : '<option value="">Sem outros usuários</option>';
-
+            listaFinanceiro.innerHTML = lista.map((registro) => {
                 return `
                     <article class="fin-card">
                         <div class="fin-card-head">
@@ -774,29 +742,6 @@
                                 <span class="fin-quant-val">${registro.qtd}</span>
                             </div>
 
-                            <div class="fin-resp-wrap">
-                                <div class="fin-resp-label">Técnico:</div>
-                                <div class="fin-resp-chips">${htmlResponsaveis(registro.responsaveis)}</div>
-                            </div>
-
-                            <div class="fin-colab-row">
-                                <select id="${selectId}" class="fin-colab-select" ${opcoes.length === 0 ? 'disabled' : ''}>
-                                    <option value="">Adicionar responsável</option>
-                                    ${opcoesHtml}
-                                </select>
-                                <button
-                                    type="button"
-                                    class="btn-enviar"
-                                    data-historico-id="${escaparHtml(registro.historicoId)}"
-                                    data-historico-usuario="${escaparHtml(registro.historicoUsuario)}"
-                                    data-registro-indice="${indiceLista}"
-                                    data-select-id="${selectId}"
-                                    ${opcoes.length === 0 ? 'disabled' : ''}
-                                >
-                                    Enviar
-                                </button>
-                            </div>
-
                             <div class="fin-saldo-row">
                                 <span class="fin-saldo-label">Saldo:</span>
                                 <span class="fin-saldo-valor">${registro.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
@@ -805,53 +750,6 @@
                     </article>
                 `;
             }).join('');
-        }
-
-        async function mostrarAviso(texto) {
-            if (window.playAlert) {
-                await window.playAlert(texto);
-                return;
-            }
-            window.alert(texto);
-        }
-
-        async function adicionarResponsavelHistorico(registroIndice, selectId, botao) {
-            const select = document.getElementById(selectId);
-            const nomeSelecionado = String(select?.value || '').trim();
-
-            if (!nomeSelecionado) {
-                await mostrarAviso('Selecione um usuário para adicionar.');
-                return;
-            }
-
-            const registro = registrosFiltrados()[registroIndice];
-            if (!registro?.historicoId || !registro?.historicoUsuario) {
-                await mostrarAviso('Não foi possível localizar o registro.');
-                return;
-            }
-
-            const responsaveisAtualizados = deduplicarNomes([
-                ...registro.responsaveis,
-                nomeSelecionado
-            ]);
-
-            botao.disabled = true;
-            botao.textContent = 'Enviando...';
-
-            try {
-                await dbAtualizarResponsaveisHistoricoBalanco(
-                    registro.historicoUsuario,
-                    registro.historicoId,
-                    responsaveisAtualizados,
-                    localStorage.getItem('usuarioLogado') || ''
-                );
-            } catch (erro) {
-                console.error(erro);
-                await mostrarAviso('Erro ao adicionar o responsável.');
-            } finally {
-                botao.disabled = false;
-                botao.textContent = 'Enviar';
-            }
         }
 
         filtroAno.addEventListener('change', () => {
@@ -863,17 +761,6 @@
         filtroMes.addEventListener('change', () => {
             estado.mesSelecionado = filtroMes.value;
             renderizar();
-        });
-
-        listaFinanceiro.addEventListener('click', async (event) => {
-            const botao = event.target.closest('.btn-enviar');
-            if (!botao || botao.disabled) return;
-
-            await adicionarResponsavelHistorico(
-                Number.parseInt(botao.dataset.registroIndice || '0', 10) || 0,
-                botao.dataset.selectId || '',
-                botao
-            );
         });
 
         dbEscutarEstoque((lista) => {
@@ -889,15 +776,10 @@
         });
 
         dbEscutarColaboradores((lista) => {
-            const nomes = [];
-            (Array.isArray(lista) ? lista : []).forEach((colaborador) => {
-                if (colaborador?.producaoEquipamentos !== true) return;
-                const nome = String(colaborador?.nome || '').trim();
-                if (!nome) return;
-                nomes.push(nome);
-            });
-
-            estado.nomesElegiveis = deduplicarNomes(nomes).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+            const usuarioAtual = normalizarNomeComparacao(localStorage.getItem('usuarioLogado') || '');
+            estado.colaboradorLogado = (Array.isArray(lista) ? lista : []).find((colaborador) => {
+                return normalizarNomeComparacao(colaborador?.nome || '') === usuarioAtual;
+            }) || null;
             estado.prontoColaboradores = true;
             renderizar();
         });

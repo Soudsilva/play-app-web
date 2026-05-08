@@ -2202,6 +2202,7 @@ export async function dbRecalcularRemuneracoes() {
 
         const mapaClientesRepresentante = _criarMapaClientesRepresentante(clientes);
         const mapaValoresEstoque = {};
+        const mapaValoresEstoquePorChave = {};
         const mapaValoresProdutos = {};
         const mapaValoresProdutosPorChave = {};
         const mapaValoresPecas = {};
@@ -2211,9 +2212,11 @@ export async function dbRecalcularRemuneracoes() {
             if (!nome) return;
             const valor = _parseNumeroRemuneracao(item?.valorEquipamento);
             mapaValoresEstoque[_normalizarNomeRemuneracao(nome)] = valor;
+            const chaveEstoque = String(item?.firebaseUrl || '').trim();
+            if (chaveEstoque) mapaValoresEstoquePorChave[chaveEstoque] = valor;
             if (item?.categoria === 'produtos') {
                 mapaValoresProdutos[nome] = valor;
-                const chaveProduto = String(item?.firebaseUrl || '').trim();
+                const chaveProduto = chaveEstoque;
                 if (chaveProduto) mapaValoresProdutosPorChave[chaveProduto] = valor;
             }
             if (item?.categoria === 'peca') mapaValoresPecas[nome] = valor;
@@ -2228,6 +2231,10 @@ export async function dbRecalcularRemuneracoes() {
             const mesAno = _obterMesAnoRemuneracao(item?.data || item?.criado_em);
             if (mesAno) meses.add(mesAno);
         });
+        historicoBalanco.forEach(item => {
+            const mesAno = _obterMesAnoRemuneracao(item?.timestamp || item?.data || item?.criado_em);
+            if (mesAno) meses.add(mesAno);
+        });
 
         const mesesOrdenados = [...meses].sort();
         const remuneracaoMensal = {};
@@ -2240,16 +2247,27 @@ export async function dbRecalcularRemuneracoes() {
                 item?.origemRegistro !== 'entrada_estoque' &&
                 _parseNumeroRemuneracao(item?.financeiro?.totalGeral) > 0
             );
-            const manutencoesMes = atendimentos.filter(item =>
-                _obterMesAnoRemuneracao(item?.data) === mesAno &&
-                Array.isArray(item?.manutencao?.equipamentosAdicionados) &&
-                item.manutencao.equipamentosAdicionados.length > 0
-            );
             const historicoMes = historico.filter(item =>
                 _obterMesAnoRemuneracao(item?.data || item?.criado_em) === mesAno
             );
+            const historicoBalancoMes = historicoBalanco.filter(item =>
+                _obterMesAnoRemuneracao(item?.timestamp || item?.data || item?.criado_em) === mesAno
+            );
 
             const baseGlobal = financeirosMes.reduce((soma, item) => soma + _obterSaldoParcialRemuneracao(item?.financeiro), 0);
+            const baseProducaoEquipamentosGeral = historicoBalancoMes.reduce((soma, item) => {
+                if (item?.cancelado) return soma;
+                if (String(item?.origemRegistro || '').trim() !== 'cadastro_cliente') return soma;
+                if (String(item?.tipo || '').trim() !== 'cadastro_cliente_adicao') return soma;
+                if (String(item?.categoria || '').trim() !== 'maquina') return soma;
+                const qtd = Math.abs(_parseNumeroRemuneracao(item?.movimento));
+                if (qtd <= 0 || _parseNumeroRemuneracao(item?.movimento) >= 0) return soma;
+                const itemChave = String(item?.itemChave || item?.refId || '').trim();
+                const nomeItem = String(item?.itemNome || '').trim();
+                const valorUnit = _parseNumeroRemuneracao(mapaValoresEstoquePorChave[itemChave])
+                    || _parseNumeroRemuneracao(mapaValoresEstoque[_normalizarNomeRemuneracao(nomeItem)]);
+                return soma + (qtd * valorUnit);
+            }, 0);
             const registrosMes = {};
 
             for (const colab of colaboradores) {
@@ -2331,24 +2349,13 @@ export async function dbRecalcularRemuneracoes() {
                 }
 
                 if (colab?.producaoEquipamentos === true) {
-                    let totalEquip = 0;
-                    manutencoesMes.forEach(item => {
-                        const equipamentos = Array.isArray(item?.manutencao?.equipamentosAdicionados)
-                            ? item.manutencao.equipamentosAdicionados
-                            : [];
-                        equipamentos.forEach(equip => {
-                            const responsaveis = _obterResponsaveisItemRemuneracao(equip);
-                            if (!responsaveis.some(resp => _normalizarNomeRemuneracao(resp) === nomeNorm)) return;
-                            const chave = _normalizarNomeRemuneracao(equip?.nome || '');
-                            const valorUnit = _parseNumeroRemuneracao(mapaValoresEstoque[chave]);
-                            const qtd = parseInt(equip?.qtd, 10) || 0;
-                            totalEquip += (qtd * valorUnit) / Math.max(1, responsaveis.length);
-                        });
-                    });
-                    totalEquip = Math.round(totalEquip);
+                    const percentualEquip = _parseNumeroRemuneracao(colab?.bonusManutencao);
+                    const totalEquip = Math.round(baseProducaoEquipamentosGeral * percentualEquip / 100);
                     if (totalEquip > 0) {
                         _registrarPerfilRemuneracao(perfis, 'producao_equipamentos', {
                             valor: totalEquip,
+                            percentual: percentualEquip,
+                            base: Math.round(baseProducaoEquipamentosGeral),
                             atualizadoEm
                         });
                     }

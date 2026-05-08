@@ -430,6 +430,29 @@
             white-space: pre-line;
         }
 
+        .ponto-novo-detalhes {
+            margin-top: 10px;
+            display: grid;
+            gap: 6px;
+        }
+
+        .ponto-novo-info-label {
+            display: block;
+            font-size: 15px;
+            font-weight: bold;
+            color: #ffeb3b;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+
+        .ponto-novo-info-texto {
+            font-size: 15px;
+            line-height: 1.35;
+            color: #ffffff;
+            text-align: center;
+            font-weight: 400;
+        }
+
         .acao-foto-row {
             display: flex;
             align-items: flex-start;
@@ -811,7 +834,9 @@
             item.clienteEndereco,
             item.solicitante,
             item.tipoAcao,
-            item.observacoes
+            item.observacoes,
+            item.aberto,
+            formatarEquipamentosPontoNovo(item)
         ].join(" "));
         return palavras.every(p => haystack.includes(p));
     }
@@ -823,6 +848,47 @@
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#39;");
+    }
+
+    function formatarEquipamentosPontoNovo(item) {
+        const detalhes = Array.isArray(item?.equipDetalhes) ? item.equipDetalhes : [];
+        const equipamentos = detalhes
+            .map(equip => {
+                const nome = String(equip?.nome || "").trim();
+                if (!nome) return "";
+                const qtd = String(equip?.qtd || equip?.quantidade || "1").trim() || "1";
+                return qtd === "1" ? nome : `${nome} (${qtd})`;
+            })
+            .filter(Boolean);
+
+        if (equipamentos.length > 0) return equipamentos.join(", ");
+        return String(item?.clienteEquip || "").trim();
+    }
+
+    function montarDetalhesPontoNovo(item) {
+        const tipo = normalizar(item?.tipoAcao);
+        if (!tipo.includes("ponto novo")) return "";
+
+        const equipamentos = formatarEquipamentosPontoNovo(item);
+        const diasAberto = String(item?.aberto || "").trim();
+        if (!equipamentos && !diasAberto) return "";
+
+        return `
+            <div class="ponto-novo-detalhes">
+                ${equipamentos ? `
+                    <div class="ponto-novo-info">
+                        <span class="ponto-novo-info-label">Maquinas solicitadas</span>
+                        <div class="ponto-novo-info-texto">${escaparHtml(equipamentos)}</div>
+                    </div>
+                ` : ''}
+                ${diasAberto ? `
+                    <div class="ponto-novo-info">
+                        <span class="ponto-novo-info-label">Dias aberto</span>
+                        <div class="ponto-novo-info-texto">${escaparHtml(diasAberto)}</div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
     }
 
     function parseData(valor) {
@@ -1368,6 +1434,7 @@
             const card = document.createElement('div');
             card.className = `card-manutencao urgencia-${item.classeUrgencia}`;
             card.dataset.manutencaoId = item.firebaseUrl || "";
+            const detalhesPontoNovo = montarDetalhesPontoNovo(item);
             const estaSelecionado = !!item.selecionadoPor;
             const selecaoLabel = estaSelecionado
                 ? `<span class="card-selecao-tecnico">${escaparHtml(item.selecionadoPor)}</span> vai realizar este serviço`
@@ -1418,6 +1485,7 @@
                         ` : ''}
                         <div class="bloco-acao-texto">${escaparHtml(item.observacoes || "Sem observacoes.")}</div>
                     </div>
+                    ${detalhesPontoNovo}
                 </div>
 
                 ${!isEstoque && item.ultimaVisita ? `
