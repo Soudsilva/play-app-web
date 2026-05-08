@@ -174,6 +174,12 @@
             justify-content: space-between; margin-top: 10px; flex-wrap: wrap; gap: 8px;
         }
         .card-data { font-size: 13px; color: rgba(255,255,255,0.35); }
+        .grupo-data-label {
+            font-size: 12px; font-weight: bold; text-transform: uppercase;
+            letter-spacing: 1.5px; color: #ffeb3b;
+            padding: 14px 2px 6px;
+            user-select: none; -webkit-user-select: none;
+        }
 
         .btn-ok {
             background: #14532d; border: 1px solid #4ade80; border-radius: 999px;
@@ -926,6 +932,32 @@
              + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     }
 
+    const MESES_ROTULO = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+    function dataLocalYMD(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (isNaN(d)) return '';
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function rotuloData(ymd) {
+        if (!ymd) return '';
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const data = new Date(ymd + 'T00:00:00');
+        if (isNaN(data)) return '';
+        const diff = Math.round((hoje - data) / 86400000);
+        if (diff === 0) return 'Hoje';
+        if (diff === 1) return 'Ontem';
+        if (diff > 1 && diff < 7) {
+            const nome = data.toLocaleDateString('pt-BR', { weekday: 'long' });
+            return nome.charAt(0).toUpperCase() + nome.slice(1);
+        }
+        const mes = MESES_ROTULO[data.getMonth()];
+        return data.getFullYear() === hoje.getFullYear() ? mes : `${mes} ${data.getFullYear()}`;
+    }
+
     function dentroDomes(iso) {
         if (!iso) return false;
         const d = new Date(iso);
@@ -1034,7 +1066,7 @@
             .filter(ev => ev.pixItens.length > 0 ? dentroDomes(ev.data) : dentroDomes(ev.dataCadastro));
 
         let todos = [...eventosManutencao, ...eventosNovos]
-            .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+            .sort((a, b) => new Date(a.data || 0) - new Date(b.data || 0));
 
         if (termos.length) {
             todos = todos.filter(ev => {
@@ -1053,13 +1085,21 @@
             return;
         }
 
+        let ultimoGrupo = null;
         el.innerHTML = todos.map(ev => {
-            if (ev.tipo === 'pix-manutencao') return cardPixManutencao(ev, pendente);
-            if (ev.tipo === 'pix-cadastro')   return cardPixCadastro(ev);
-            if (ev.tipo === 'colocada')   return cardColocada(ev, pendente);
-            if (ev.tipo === 'retirada')   return cardRetirada(ev, pendente);
-            if (ev.tipo === 'novo-ponto') return cardNovoPonto(ev);
-            return '';
+            const grupoKey = dataLocalYMD(ev.data);
+            const label = grupoKey && grupoKey !== ultimoGrupo
+                ? `<div class="grupo-data-label">${rotuloData(grupoKey)}</div>`
+                : '';
+            if (grupoKey) ultimoGrupo = grupoKey;
+
+            let card = '';
+            if (ev.tipo === 'pix-manutencao') card = cardPixManutencao(ev, pendente);
+            if (ev.tipo === 'pix-cadastro')   card = cardPixCadastro(ev);
+            if (ev.tipo === 'colocada')   card = cardColocada(ev, pendente);
+            if (ev.tipo === 'retirada')   card = cardRetirada(ev, pendente);
+            if (ev.tipo === 'novo-ponto') card = cardNovoPonto(ev);
+            return label + card;
         }).join('');
     }
 

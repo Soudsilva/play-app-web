@@ -1420,11 +1420,15 @@
               })
             : porMes;
 
-        // Ordem: mais recente primeiro (por data original; ultimaEdicao só como desempate)
+        // Ordem: pendentes mais antigos primeiro; confirmados mais recentes primeiro.
         filtrada.sort((a, b) => {
-            const diff = Date.parse(b.data || 0) - Date.parse(a.data || 0);
+            const dataA = Date.parse(a.data || 0);
+            const dataB = Date.parse(b.data || 0);
+            const diff = abaAtiva === 'pendente' ? dataA - dataB : dataB - dataA;
             if (diff !== 0) return diff;
-            return Date.parse(b.ultimaEdicao || b.data || 0) - Date.parse(a.ultimaEdicao || a.data || 0);
+            const edicaoA = Date.parse(a.ultimaEdicao || a.data || 0);
+            const edicaoB = Date.parse(b.ultimaEdicao || b.data || 0);
+            return abaAtiva === 'pendente' ? edicaoA - edicaoB : edicaoB - edicaoA;
         });
 
         const container = document.getElementById('listaContainer');
