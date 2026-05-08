@@ -2846,8 +2846,12 @@ async function _atualizarPosseItensUsuario(entrada, movimento) {
 
 async function _salvarEntradaHistoricoBalanco(chaveUsuario, entrada, totais = {}) {
     const movimento = _obterMovimentacaoHistoricoBalanco(entrada);
+    const timestampEntrada = String(entrada?.timestamp || entrada?.data || '').trim();
+    const timestamp = timestampEntrada && !Number.isNaN(Date.parse(timestampEntrada))
+        ? timestampEntrada
+        : new Date().toISOString();
     return push(ref(db, `movimentacao_balanco_historico/${chaveUsuario}`), {
-        timestamp: new Date().toISOString(),
+        timestamp,
         tipo: String(entrada.tipo || ''),
         origemRegistro: String(entrada.origemRegistro || entrada.tipo || '').trim(),
         categoria: String(entrada.categoria || 'produto'),
@@ -3010,6 +3014,7 @@ export async function dbSincronizarProdutosAtendimentoNoHistorico(atendimentoId,
                 descricao: descricaoAtendimento,
                 refId: produto.itemId,
                 atendimentoRefId: idRef,
+                timestamp: atendimento?.data || '',
                 controlarPosse: true,
                 isDefeitoEntry: false,
                 qtdDefeitoConsumida: 0
