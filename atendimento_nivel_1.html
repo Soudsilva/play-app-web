@@ -98,6 +98,13 @@
         .rota-cliente-destaque:active {
             box-shadow: 0 0 4px rgba(255,235,59,0.3);
         }
+        .rota-cliente-destaque.desativada {
+            cursor: default;
+            box-shadow: none;
+        }
+        .rota-cliente-destaque.desativada:active {
+            box-shadow: none;
+        }
         .rota-seta {
             font-size: 11px;
             opacity: 0.6;
@@ -631,7 +638,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbVerificarELiberarRota } from './database.js';
+    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbVerificarELiberarRota, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
     import { enfileirarAtendimento } from './offline-sync.js';
 
     let listaClientes = [];
@@ -640,15 +647,21 @@
     let listaAtendimentos = [];
     let clientesPermitidosSet = null; // null = carregando | Set = pronto (vazio = nenhum cliente permitido)
     let numeroClientePendente = '';
+    let clienteEdicaoRestauradoPorId = false;
     let rascunhoRestaurado = false;
     let currentFileInputId = null;
+    let historicoBalancoEdicao = null;
+    let unsubscribeHistoricoBalancoEdicao = null;
 
 function obterIdAtendimentoEmEdicao() {
-        return localStorage.getItem('atendimento_em_edicao_id') || "";
+        return new URLSearchParams(window.location.search).get('edit') || "";
     }
 
     function obterDataAtendimentoEmEdicao() {
-        return localStorage.getItem('atendimento_em_edicao_data') || "";
+        const id = obterIdAtendimentoEmEdicao();
+        if (!id) return "";
+        const atendimento = (listaAtendimentos || []).find(item => item.firebaseUrl === id);
+        return atendimento?.data || "";
     }
 
     function limparEstadoEdicao() {
@@ -866,6 +879,42 @@ function obterIdAtendimentoEmEdicao() {
 
         buscarCliente();
         numeroClientePendente = '';
+    }
+
+    function tentarRestaurarClienteEdicaoPorId(dadosRascunho = null) {
+        if (clienteEdicaoRestauradoPorId) return true;
+        if (!obterIdAtendimentoEmEdicao()) return false;
+
+        const clienteIdEdicao = dadosRascunho?.clienteId || '';
+        if (!clienteIdEdicao || listaClientesBruta.length === 0) return false;
+
+        const clienteOriginal = listaClientesBruta.find(c => c.firebaseUrl === clienteIdEdicao);
+        if (!clienteOriginal) return false;
+
+        if (!listaClientes.some(c => c.firebaseUrl === clienteIdEdicao)) {
+            listaClientes = [...listaClientes, clienteOriginal];
+        }
+
+        const numeroCliente = normalizarNumeroClienteBusca(clienteOriginal.numero || dadosRascunho?.clienteBusca || '');
+        const input = document.getElementById('inputBuscaCliente');
+        if (input) input.value = numeroCliente;
+
+        buscarCliente();
+        clienteEdicaoRestauradoPorId = true;
+        return true;
+    }
+
+    function iniciarHistoricoBalancoEdicao(atendimento) {
+        if (!obterIdAtendimentoEmEdicao() || !atendimento?.atendente || unsubscribeHistoricoBalancoEdicao) return;
+
+        historicoBalancoEdicao = null;
+        unsubscribeHistoricoBalancoEdicao = dbEscutarHistoricoBalancoDoUsuario(atendimento.atendente, (lista) => {
+            historicoBalancoEdicao = Array.isArray(lista) ? lista : [];
+            if (!rascunhoRestaurado && listaProdutos.length > 0) {
+                restaurarRascunho();
+                if (document.getElementById('idClienteSelecionado')?.value) rascunhoRestaurado = true;
+            }
+        });
     }
 
     function aplicarBannerRotaFiltro() {
@@ -1171,7 +1220,10 @@ function obterIdAtendimentoEmEdicao() {
         let filtrada = base.filter(c => clientesPermitidosSet.has(c.firebaseUrl));
 
         // Em modo de edição, garante que o cliente original apareça mesmo que a rota não esteja mais ativa
-        const clienteIdEdicao = obterIdAtendimentoEmEdicao() ? (localStorage.getItem('atendimento_edicao_cliente_id') || '') : '';
+        const atendimentoEdicao = obterIdAtendimentoEmEdicao()
+            ? (listaAtendimentos || []).find(item => item.firebaseUrl === obterIdAtendimentoEmEdicao())
+            : null;
+        const clienteIdEdicao = atendimentoEdicao?.cliente?.id || '';
         if (clienteIdEdicao && !filtrada.some(c => c.firebaseUrl === clienteIdEdicao)) {
             const clienteOriginal = base.find(c => c.firebaseUrl === clienteIdEdicao);
             if (clienteOriginal) filtrada = [...filtrada, clienteOriginal];
@@ -1184,11 +1236,22 @@ function obterIdAtendimentoEmEdicao() {
         }
         listaClientes = filtrada;
         tentarAplicarClientePendente();
+        if (obterIdAtendimentoEmEdicao() && !document.getElementById('idClienteSelecionado')?.value) {
+            tentarRestaurarClienteEdicaoPorId();
+        }
     }
 
     dbEscutarAtendimentos((lista) => {
         listaAtendimentos = lista;
         if (typeof window.atualizarOpcoes === 'function') window.atualizarOpcoes();
+        const atendimentoEdicao = obterIdAtendimentoEmEdicao()
+            ? (listaAtendimentos || []).find(item => item.firebaseUrl === obterIdAtendimentoEmEdicao())
+            : null;
+        if (atendimentoEdicao) iniciarHistoricoBalancoEdicao(atendimentoEdicao);
+        if (obterIdAtendimentoEmEdicao() && !rascunhoRestaurado && listaProdutos.length > 0) {
+            restaurarRascunho();
+            if (document.getElementById('idClienteSelecionado')?.value) rascunhoRestaurado = true;
+        }
         const clienteSelecionadoId = document.getElementById('idClienteSelecionado')?.value;
         if (!clienteSelecionadoId) return;
 
@@ -1214,7 +1277,9 @@ function obterIdAtendimentoEmEdicao() {
         // [ALTERADO] Tenta restaurar rascunho antes de criar linha vazia
         if (!rascunhoRestaurado) {
             restaurarRascunho();
-            rascunhoRestaurado = true;
+            if (!obterIdAtendimentoEmEdicao() || document.getElementById('idClienteSelecionado')?.value) {
+                rascunhoRestaurado = true;
+            }
         }
         
         if (document.querySelectorAll('.linha-produto').length === 0) {
@@ -1244,6 +1309,7 @@ function obterIdAtendimentoEmEdicao() {
                 rotaDestaque.style.display = 'none';
                 rotaDestaque.textContent = '';
                 rotaDestaque.onclick = null;
+                rotaDestaque.classList.remove('desativada');
             }
             fecharPainelClientesRota();
             document.getElementById('areaPix').style.display = 'block';
@@ -1283,9 +1349,13 @@ function obterIdAtendimentoEmEdicao() {
             divResultado.style.cssText = 'display:block'; // limpa estilos inline de cards de erro, mantém visível
             const rotaDestaque = document.getElementById('rotaClienteDestaque');
             if (rotaDestaque) {
-                rotaDestaque.innerHTML = `Rota: ${cliente.rota || "Não informada"}<span class="rota-seta">&#9660;</span>`;
+                const modoEdicao = Boolean(obterIdAtendimentoEmEdicao());
+                rotaDestaque.innerHTML = modoEdicao
+                    ? `Rota: ${cliente.rota || "Não informada"}`
+                    : `Rota: ${cliente.rota || "Não informada"}<span class="rota-seta">&#9660;</span>`;
                 rotaDestaque.style.display = 'inline-flex';
-                rotaDestaque.onclick = () => alternarPainelClientesRota(cliente.rota);
+                rotaDestaque.classList.toggle('desativada', modoEdicao);
+                rotaDestaque.onclick = modoEdicao ? null : () => alternarPainelClientesRota(cliente.rota);
             }
             fecharPainelClientesRota();
             divResultado.innerHTML = `
@@ -1388,6 +1458,7 @@ function obterIdAtendimentoEmEdicao() {
                 rotaDestaque.style.display = 'none';
                 rotaDestaque.textContent = '';
                 rotaDestaque.onclick = null;
+                rotaDestaque.classList.remove('desativada');
             }
             fecharPainelClientesRota();
             const existeNoCadastro = listaClientesBruta.some(c => normalizarNumeroClienteBusca(c.numero) === termoNormalizado);
@@ -1796,7 +1867,7 @@ function obterIdAtendimentoEmEdicao() {
         try {
             // --- 1. Coleta de Dados ---
             const atendenteLogado = String(localStorage.getItem('usuarioLogado') || '').trim() || "N/A";
-            const atendenteOriginalEdicao = localStorage.getItem('atendimento_em_edicao_atendente') || atendimentoOriginal?.atendente || "";
+            const atendenteOriginalEdicao = atendimentoOriginal?.atendente || "";
             const atendente = atendimentoEmEdicaoId && atendenteOriginalEdicao ? atendenteOriginalEdicao : atendenteLogado;
             const clienteEl = document.getElementById('resultadoCliente');
             const clienteNome = clienteEl.querySelector('div:first-child')?.innerText || "Cliente não encontrado";
@@ -1959,14 +2030,6 @@ function obterIdAtendimentoEmEdicao() {
                 dadosAtendimento._gestor_ultima_edicao = atendimentoOriginal._gestor_ultima_edicao;
             }
 
-            const gestorEditor = localStorage.getItem('atendimento_edicao_gestor') || "";
-            if (atendimentoEmEdicaoId && gestorEditor) {
-                dadosAtendimento._gestor_ultima_edicao = {
-                    nome: gestorEditor,
-                    em: new Date().toISOString()
-                };
-            }
-
             // --- 4. Salvar no Banco de Dados (ou na fila offline) ---
             btn.innerText = "FINALIZANDO...";
             const semInternet = !navigator.onLine;
@@ -2011,8 +2074,62 @@ function obterIdAtendimentoEmEdicao() {
     }
 
     // --- SISTEMA DE RASCUNHO (Auto-Save) ---
+
+    function montarDadosEdicaoOnline(atendimento) {
+        if (!atendimento) return null;
+        const financeiro = atendimento.financeiro || {};
+        const fotos = atendimento.fotos || {};
+        const produtosAtendimento = Array.isArray(atendimento.produtos) ? atendimento.produtos : [];
+        const produtosHistorico = (historicoBalancoEdicao || [])
+            .filter(item => {
+                if (item?.cancelado) return false;
+                if (String(item?.atendimentoRefId || '').trim() !== String(atendimento.firebaseUrl || '').trim()) return false;
+                if (String(item?.origemRegistro || '').trim() !== 'atendimento') return false;
+                if (String(item?.tipo || '').trim() === 'cancelamento') return false;
+                if (String(item?.categoria || 'produtos').trim() !== 'produtos') return false;
+                return Math.abs(Number(item?.movimento || 0)) > 0;
+            });
+
+        if (produtosAtendimento.length === 0 && historicoBalancoEdicao === null) return null;
+
+        return {
+            clienteId: atendimento.cliente?.id || "",
+            clienteBusca: atendimento.cliente?.numero || "",
+            pixLinhas: Array.isArray(financeiro.pix) ? financeiro.pix.map(pix => ({
+                numero: pix.numero || "",
+                contAnt: pix.contAnt ?? "",
+                contAtual: pix.contAtual ?? "",
+                valor: pix.valor ?? ""
+            })) : [],
+            valorPixDevolvido: financeiro.pixDevolvido ?? "",
+            valorDinheiro: financeiro.dinheiro ?? "",
+            porcComissao: financeiro.comissaoPorcentagem ?? "",
+            produtos: produtosHistorico.length > 0
+                ? produtosHistorico.map(produto => ({
+                    prod: produto.itemChave || produto.refId || "",
+                    prodNome: produto.itemNome || "",
+                    qtd: Math.abs(Number(produto.movimento || 0)) || ""
+                }))
+                : produtosAtendimento.map(produto => ({
+                    prod: produto.itemId || produto.itemChave || "",
+                    prodNome: produto.nome || "",
+                    qtd: produto.quantidade ?? ""
+                })),
+            saturnoContagem: atendimento.saturno_contagem_bolinhas ?? "",
+            fotoFichaBase64: fotos.ficha || "",
+            fotosPix: Array.isArray(fotos.pix) ? fotos.pix.map((foto, index) => ({
+                index,
+                src: foto.url || ""
+            })) : [],
+            fotosMaquinas: Array.isArray(fotos.maquinas) ? fotos.maquinas.map((foto, index) => ({
+                index,
+                src: foto.url || ""
+            })) : []
+        };
+    }
     
     window.salvarRascunho = function() {
+        if (obterIdAtendimentoEmEdicao()) return;
         const cardSatRascunho = document.getElementById('card-saturno');
         const dados = {
             clienteBusca: document.getElementById('inputBuscaCliente').value || "",
@@ -2087,13 +2204,18 @@ function obterIdAtendimentoEmEdicao() {
     }
 
     window.restaurarRascunho = function() {
-        const salvo = localStorage.getItem('rascunho_atendimento');
-        if (salvo) {
+        const atendimentoEmEdicaoId = obterIdAtendimentoEmEdicao();
+        const dadosOnline = atendimentoEmEdicaoId
+            ? montarDadosEdicaoOnline((listaAtendimentos || []).find(item => item.firebaseUrl === atendimentoEmEdicaoId))
+            : null;
+        const salvo = atendimentoEmEdicaoId ? null : localStorage.getItem('rascunho_atendimento');
+        if (dadosOnline || salvo) {
             try {
-                const dados = JSON.parse(salvo);
+                const dados = dadosOnline || JSON.parse(salvo);
                 
                 // 1. Restaura Cliente
-                if (dados.clienteBusca) {
+                const clienteRestauradoPorId = tentarRestaurarClienteEdicaoPorId(dados);
+                if (!clienteRestauradoPorId && !obterIdAtendimentoEmEdicao() && dados.clienteBusca) {
                     document.getElementById('inputBuscaCliente').value = dados.clienteBusca;
                     buscarCliente(); // Dispara a busca visual
                 }
@@ -2193,8 +2315,11 @@ function obterIdAtendimentoEmEdicao() {
     // [NOVO] Segurança Extra: Ao entrar na página (mesmo pelo cache do celular), se não houver rascunho, limpa tudo.
     window.addEventListener('pageshow', function() {
         atualizarModoEdicao();
+        if (obterIdAtendimentoEmEdicao()) {
+            if (!rascunhoRestaurado) restaurarRascunho();
+            return;
+        }
         if (!localStorage.getItem('rascunho_atendimento')) {
-            limparEstadoEdicao();
             document.getElementById('inputBuscaCliente').value = "";
             document.getElementById('resultadoCliente').style.display = 'none';
             document.getElementById('idClienteSelecionado').value = "";
@@ -2204,6 +2329,7 @@ function obterIdAtendimentoEmEdicao() {
                 rotaDestaque.style.display = 'none';
                 rotaDestaque.textContent = '';
                 rotaDestaque.onclick = null;
+                rotaDestaque.classList.remove('desativada');
             }
             fecharPainelClientesRota();
             document.getElementById('containerProdutos').innerHTML = "";
@@ -2274,11 +2400,6 @@ function obterIdAtendimentoEmEdicao() {
         window.removeEventListener('touchstart', garantirTrava);
         try {
             localStorage.removeItem('rascunho_atendimento');
-            localStorage.removeItem('atendimento_em_edicao_id');
-            localStorage.removeItem('atendimento_em_edicao_data');
-            localStorage.removeItem('atendimento_em_edicao_atendente');
-            localStorage.removeItem('atendimento_edicao_gestor');
-            localStorage.removeItem('atendimento_edicao_cliente_id');
             sessionStorage.removeItem(CHAVE_TELA_ORIGEM_ATENDIMENTO);
         } catch (error) {
             console.error('Falha ao limpar estado antes de sair do atendimento:', error);

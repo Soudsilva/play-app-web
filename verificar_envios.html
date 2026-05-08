@@ -956,47 +956,6 @@
         return ehMesmoDiaAtual(envio.data);
     }
 
-    function montarRascunhoEdicao(envio) {
-        const financeiro = envio.financeiro || {};
-        const fotos = envio.fotos || {};
-
-        return {
-            clienteBusca: envio.cliente?.numero || "",
-            pixLinhas: Array.isArray(financeiro.pix) ? financeiro.pix.map(pix => ({
-                numero: pix.numero || "",
-                contAnt: pix.contAnt ?? "",
-                contAtual: pix.contAtual ?? "",
-                valor: pix.valor ?? ""
-            })) : [],
-            valorDinheiro: financeiro.dinheiro ?? "",
-            porcComissao: financeiro.comissaoPorcentagem ?? "",
-            produtos: (() => {
-                const produtosHistorico = mapaMovimentacoesPorAtendimento[envio.firebaseUrl] || [];
-                if (produtosHistorico.length > 0) {
-                    return produtosHistorico.map(produto => ({
-                        prod: produto.itemChave || "",
-                        prodNome: produto.nome || "",
-                        qtd: produto.movimento ?? ""
-                    }));
-                }
-                return Array.isArray(envio.produtos) ? envio.produtos.map(produto => ({
-                    prod: produto.itemId || produto.itemChave || "",
-                    prodNome: produto.nome || "",
-                    qtd: produto.quantidade ?? ""
-                })) : [];
-            })(),
-            fotoFichaBase64: fotos.ficha || "",
-            fotosPix: Array.isArray(fotos.pix) ? fotos.pix.map((foto, index) => ({
-                index,
-                src: foto.url || ""
-            })) : [],
-            fotosMaquinas: Array.isArray(fotos.maquinas) ? fotos.maquinas.map((foto, index) => ({
-                index,
-                src: foto.url || ""
-            })) : []
-        };
-    }
-
     const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
     function dataLocalYMD(isoStr) {
@@ -1410,12 +1369,8 @@
             return;
         }
 
-        localStorage.setItem('rascunho_atendimento', JSON.stringify(montarRascunhoEdicao(envio)));
-        localStorage.setItem('atendimento_em_edicao_id', envio.firebaseUrl);
-        localStorage.setItem('atendimento_em_edicao_data', envio.data || "");
-        localStorage.setItem('atendimento_edicao_cliente_id', envio.cliente?.id || '');
         sessionStorage.setItem('atendimento_tela_origem', 'verificar_envios.html');
-        window.location.href = 'atendimento_nivel_1.html';
+        window.location.href = `atendimento_nivel_1.html?edit=${encodeURIComponent(envio.firebaseUrl)}`;
     };
 
     window.excluirEnvio = async function(id) {
