@@ -1443,6 +1443,56 @@ function obterTimestampRegistro(envio) {
     return Number.isNaN(t) ? 0 : t;
 }
 
+function montarChaveInstalacaoPixCadastro(numeroPix, clienteOuIdentificacao, equipamento) {
+    const pix = normalizarPix(numeroPix);
+    const cliente = normalizarTexto(clienteOuIdentificacao);
+    const equip = normalizarTexto(equipamento);
+    return pix && cliente && equip ? `${pix}|${cliente}|${equip}` : '';
+}
+
+function ehRegistroInstalacaoPixCadastro(registro) {
+    const situacao = normalizarTexto(registro?.situacao);
+    const origem = normalizarTexto(registro?.origem);
+    return situacao === 'instalado'
+        || origem === 'adicionei_pix'
+        || origem === 'instalacao_card';
+}
+
+function obterMapaInstalacoesPixCadastro() {
+    const mapa = new Map();
+    Object.values(window._pixData || {}).forEach(registro => {
+        if (!ehRegistroInstalacaoPixCadastro(registro)) return;
+
+        const chaves = [
+            montarChaveInstalacaoPixCadastro(registro?.numero_pix, registro?.cliente, registro?.equipamento),
+            montarChaveInstalacaoPixCadastro(registro?.numero_pix, registro?.identificacao, registro?.equipamento)
+        ].filter(Boolean);
+        if (!chaves.length) return;
+
+        const timestamp = obterTimestampRegistro(registro);
+        chaves.forEach(chave => {
+            const atual = mapa.get(chave);
+            if (!atual || timestamp >= atual.timestamp) {
+                mapa.set(chave, { registro, timestamp });
+            }
+        });
+    });
+    return mapa;
+}
+
+function obterInstalacaoPixCadastro(mapaInstalacoes, numeroPix, clienteNome, identificacao, equipamento) {
+    const chaves = [
+        montarChaveInstalacaoPixCadastro(numeroPix, clienteNome, equipamento),
+        montarChaveInstalacaoPixCadastro(numeroPix, identificacao, equipamento)
+    ].filter(Boolean);
+
+    for (const chave of chaves) {
+        const item = mapaInstalacoes.get(chave);
+        if (item?.registro) return item.registro;
+    }
+    return null;
+}
+
 function formatarNumeroResumo(valor) {
     const numero = normalizarNumeroCalculo(valor);
     return Number.isFinite(numero) ? numero.toLocaleString('pt-BR') : '0';
@@ -1538,6 +1588,7 @@ function serializarEquipamentosTextoCliente(equips = []) {
 
 function obterPixParaExibicao() {
     const lista = [];
+    const mapaInstalacoes = obterMapaInstalacoesPixCadastro();
 
     (window._clientesData || []).forEach(cliente => {
         const identificacao = montarIdentificacaoCliente(cliente);
@@ -1556,6 +1607,13 @@ function obterPixParaExibicao() {
             const pixRetirado = String(equip?.pixRetiradoPendente || '').trim();
 
             if (pixAtual) {
+                const registroInstalacao = obterInstalacaoPixCadastro(
+                    mapaInstalacoes,
+                    pixAtual,
+                    cliente?.nome,
+                    identificacao,
+                    equip?.nome
+                );
                 let situacao = 'instalado';
                 let pendenciaTipo = '';
                 if (equip.aguardandoConfirmacao && equip.manutencaoPendente === 'adicao') {
@@ -1572,8 +1630,8 @@ function obterPixParaExibicao() {
                     contador: String(equip?.contador || '').trim(),
                     situacao,
                     pendenciaTipo,
-                    tecnico: String(equip?.manutencaoPendentePor || '').trim(),
-                    data: String(equip?.manutencaoPendenteEm || '').trim(),
+                    tecnico: String(registroInstalacao?.tecnico || equip?.manutencaoPendentePor || '').trim(),
+                    data: String(registroInstalacao?.data || registroInstalacao?.criado_em || equip?.manutencaoPendenteEm || '').trim(),
                     tecnico_retirada: String(equip?.manutencaoPendentePor || '').trim(),
                     data_retirada: String(equip?.manutencaoPendenteEm || '').trim()
                 });
