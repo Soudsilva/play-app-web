@@ -14,18 +14,23 @@
         .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
 
         /* Card de cada Envio */
-        .card-envio { 
-            background: rgba(255,255,255,0.08); 
-            border-radius: 12px; 
-            padding: 15px; 
-            margin-bottom: 20px; 
-            border: 1px solid rgba(255,255,255,0.2); 
+        .card-envio {
+            background: rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-left: 4px solid #ffeb3b;
+            border-bottom: 2px solid #ffffff;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .card-envio.contestado {
+            border-left-color: #ff9800;
         }
         
         /* CabeÃ§alho do Card */
         .envio-header { border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 10px; }
-        .envio-data { font-size: 13px; color: #ffeb3b; font-weight: bold; }
+        .envio-data { font-size: 13px; color: #ffeb3b; font-weight: bold; user-select: none; -webkit-user-select: none; }
         .envio-cliente { font-size: 20px; font-weight: bold; margin-top: 5px; color: white; user-select: none; -webkit-user-select: none; }
 
         /* TÃ­tulos de SeÃ§Ã£o Interna */
@@ -60,6 +65,8 @@
             line-height: 1.35;
             white-space: normal;
             overflow-wrap: anywhere;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .info-linha-bloco {
             display: block;
@@ -86,12 +93,13 @@
         }
         .rotulo-cadastrou { color: #4caf50 !important; }
         .rotulo-retirado { color: #f44336 !important; }
-        .item-estoque-nome { color: white !important; font-size: 18px !important; font-weight: bold; }
+        .item-estoque-nome { color: white !important; font-size: 18px !important; font-weight: bold; user-select: none; -webkit-user-select: none; }
         .envio-rodape-estoque {
             display: flex; justify-content: space-between; align-items: center;
             margin-top: 12px; padding-top: 10px;
             border-top: 1px solid rgba(255,255,255,0.25);
             font-size: 13px; color: white; font-weight: bold;
+            user-select: none; -webkit-user-select: none;
         }
         .envio-rodape-estoque strong { color: #ffeb3b; }
 
@@ -223,6 +231,83 @@
 
         /* Barra de busca */
         .barra-busca { position: sticky; top: 0; z-index: 100; background: #042d86; padding: 10px 0 12px; margin-bottom: 14px; }
+        .contestacoes-resumo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            padding: 11px 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #c0390b 0%, #e85d04 60%, #f48c06 100%);
+            box-shadow: 0 3px 10px rgba(232, 93, 4, 0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: bold;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+            transition: filter 0.15s, box-shadow 0.15s;
+        }
+        .contestacoes-resumo:active { filter: brightness(0.9); }
+        .contestacoes-resumo[hidden] { display: none; }
+        .contestacoes-resumo.ativo {
+            background: linear-gradient(135deg, #1a3a1a 0%, #2d6a2d 100%);
+            box-shadow: 0 3px 10px rgba(45, 106, 45, 0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        .contestacoes-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 26px;
+            height: 26px;
+            padding: 0 7px;
+            border-radius: 13px;
+            background: #ffffff;
+            color: #c0390b;
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0;
+            align-self: center;
+            margin-left: 8px;
+        }
+        .contestacoes-resumo.ativo .contestacoes-badge {
+            color: #2d6a2d;
+        }
+        .contestacoes-texto {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 2px;
+            flex: 1;
+        }
+        .contestacoes-texto-titulo {
+            font-size: 15px;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+        @keyframes neon-pulse {
+            0%, 100% {
+                color: #ffffff;
+                text-shadow: 0 0 8px #fff, 0 0 14px #ffe066;
+            }
+            50% {
+                color: rgba(255,255,255,0.55);
+                text-shadow: none;
+            }
+        }
+        .contestacoes-texto-sub {
+            font-size: 13px;
+            font-weight: normal;
+            line-height: 1.2;
+            animation: neon-pulse 1.8s ease-in-out infinite;
+        }
         .busca-wrap { display: flex; align-items: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.22); border-radius: 14px; padding: 0 14px; gap: 10px; }
         .busca-wrap:focus-within { border-color: rgba(255,235,59,0.6); background: rgba(255,255,255,0.13); }
         .busca-icone { font-size: 17px; flex-shrink: 0; opacity: 0.7; }
@@ -262,6 +347,7 @@
     </div>
 
     <div class="barra-busca">
+        <button class="contestacoes-resumo" id="contestacoesResumo" type="button" hidden></button>
         <div class="busca-wrap">
             <span class="busca-icone">&#128269;</span>
             <input class="busca-input" id="inputBusca" type="search" placeholder="Buscar cliente, produto..." autocomplete="off">
@@ -309,6 +395,7 @@
     let colaboradoresSalvos = [];
     let colaboradoresCarregados = false;
     let termoBusca = '';
+    let filtroContestacoesAtivo = false;
     let mapaMovimentacoesPorAtendimento = {}; // { atendimentoRefId -> [{ nome, movimento, totalApos }] }
     const carregamentosEnvios = {
         historicoBalanco: false,
@@ -452,6 +539,11 @@
     document.getElementById('inputBusca').addEventListener('input', function() {
         termoBusca = normalizarTexto(this.value);
         document.getElementById('btnLimparBusca').classList.toggle('visivel', this.value.length > 0);
+        renderizarEnvios();
+    });
+
+    document.getElementById('contestacoesResumo').addEventListener('click', function() {
+        filtroContestacoesAtivo = !filtroContestacoesAtivo;
         renderizarEnvios();
     });
 
@@ -956,6 +1048,38 @@
         return ehMesmoDiaAtual(envio.data);
     }
 
+    function contestacaoRegistrada(envio) {
+        return !!envio?.contestado;
+    }
+
+    function atualizarResumoContestacoes() {
+        const resumo = document.getElementById('contestacoesResumo');
+        if (!resumo || !usuarioLogado || !todosEnviosCarregados()) {
+            if (resumo) resumo.hidden = true;
+            return;
+        }
+
+        const total = atendimentosSalvos.filter(a =>
+            pertenceAoUsuario(a)
+            && !ehMovimentoEstoque(a)
+            && contestacaoRegistrada(a)
+        ).length;
+
+        if (total <= 0) {
+            filtroContestacoesAtivo = false;
+            resumo.hidden = true;
+            resumo.innerHTML = '';
+            resumo.classList.remove('ativo');
+            return;
+        }
+
+        resumo.innerHTML = filtroContestacoesAtivo
+            ? `<span class="contestacoes-badge">✓</span><span class="contestacoes-texto"><span class="contestacoes-texto-titulo">${total === 1 ? 'Contestação' : 'Contestações'} do gestor</span><span class="contestacoes-texto-sub">Toque para limpar o filtro</span></span>`
+            : `<span class="contestacoes-badge">${total}</span><span class="contestacoes-texto"><span class="contestacoes-texto-titulo">${total === 1 ? 'Contestação' : 'Contestações'} do gestor</span><span class="contestacoes-texto-sub">Toque para ver</span></span>`;
+        resumo.classList.toggle('ativo', filtroContestacoesAtivo);
+        resumo.hidden = false;
+    }
+
     const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
     function dataLocalYMD(isoStr) {
@@ -979,6 +1103,7 @@
     function renderizarEnvios() {
         const container = document.getElementById('listaEnvios');
         container.innerHTML = '';
+        atualizarResumoContestacoes();
 
         if (!usuarioLogado) {
             container.innerHTML = '<p class="sem-envios">Nenhum usuário logado. Volte ao Menu Inicial e selecione seu nome.</p>';
@@ -994,6 +1119,7 @@
             .filter(a => {
                 if (!pertenceAoUsuario(a)) return false;
                 if (ehMovimentoEstoque(a)) return false;
+                if (filtroContestacoesAtivo && !contestacaoRegistrada(a)) return false;
                 if (!termoBusca) return true;
                 const fotos = a.fotos || {};
                 const manutencaoCompleta = ehRegistroManutencao(a) ? obterManutencaoCompleta(a) : {};
@@ -1029,6 +1155,7 @@
 
         const enviosCadastroPix = obterCadastrosPixAvulsosDoUsuario()
             .filter(item => {
+                if (filtroContestacoesAtivo) return false;
                 if (!termoBusca) return true;
                 const registro = item?.cadastroPix || {};
                 const cliente = item?.cliente || {};
@@ -1045,8 +1172,8 @@
                 return campos.some(c => normalizarTexto(c).includes(termoBusca));
             });
 
-        const enviosEstoque = obterMovimentosEstoqueDoUsuario();
-        const enviosCadastroCliente = obterCadastrosClienteDoUsuario();
+        const enviosEstoque = filtroContestacoesAtivo ? [] : obterMovimentosEstoqueDoUsuario();
+        const enviosCadastroCliente = filtroContestacoesAtivo ? [] : obterCadastrosClienteDoUsuario();
 
         // Filtra sÃ³ os que foram enviados por ele e ordena da data mais recente (maior) para a mais velha (menor)
         const meusEnvios = [
@@ -1058,7 +1185,9 @@
             .sort((a, b) => new Date(b.data) - new Date(a.data));
 
         if (meusEnvios.length === 0) {
-            container.innerHTML = termoBusca
+            container.innerHTML = filtroContestacoesAtivo
+                ? '<p class="sem-envios">Nenhuma contestação encontrada.</p>'
+                : termoBusca
                 ? `<p class="sem-envios">Nenhum envio encontrado para "<strong>${document.getElementById('inputBusca').value}</strong>".</p>`
                 : '<p class="sem-envios">Você ainda não tem nenhum envio salvo no sistema.</p>';
             return;
@@ -1133,8 +1262,8 @@
                 htmlHeader = `
                     <div class="envio-header">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1);">
-                            <span style="font-size:12px; font-weight:bold; color:${origemAtend.cor};">${origemAtend.icone} ${origemAtend.texto}</span>
-                            <span style="font-size:11px; color:rgba(255,255,255,0.35); font-family:monospace; letter-spacing:0.5px;">ID: ${idAtend}</span>
+                            <span style="font-size:15px; font-weight:bold; color:${origemAtend.cor};user-select:none;-webkit-user-select:none;">${origemAtend.icone} ${origemAtend.texto}</span>
+                            <span style="font-size:11px; color:rgba(255,255,255,0.35); font-family:monospace; letter-spacing:0.5px;user-select:none;-webkit-user-select:none;">ID: ${idAtend}</span>
                         </div>
                         <div class="envio-cliente">${obterCabecalhoMovimentoEstoque(envio)}</div>
                     </div>`;
@@ -1144,8 +1273,8 @@
                 htmlHeader = `
                     <div class="envio-header">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1);">
-                            <span style="font-size:12px; font-weight:bold; color:${origemAtend.cor};">${origemAtend.icone} ${origemAtend.texto}</span>
-                            <span style="font-size:11px; color:rgba(255,255,255,0.35); font-family:monospace; letter-spacing:0.5px;">ID: ${idAtend}</span>
+                            <span style="font-size:15px; font-weight:bold; color:${origemAtend.cor};user-select:none;-webkit-user-select:none;">${origemAtend.icone} ${origemAtend.texto}</span>
+                            <span style="font-size:11px; color:rgba(255,255,255,0.35); font-family:monospace; letter-spacing:0.5px;user-select:none;-webkit-user-select:none;">ID: ${idAtend}</span>
                         </div>
                         <div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div>
                     </div>`;
@@ -1165,10 +1294,10 @@
                     produtosAtend.forEach(p => {
                         htmlProdutos += `
                             <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-                                <span style="color:white;font-size:15px;">${p.nome}</span>
+                                <span style="color:white;font-size:15px;user-select:none;-webkit-user-select:none;">${p.nome}</span>
                                 <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
-                                    <span style="background:rgba(255,235,59,0.15);border:1px solid rgba(255,235,59,0.4);color:#ffeb3b;border-radius:6px;padding:2px 10px;font-size:14px;font-weight:bold;">${p.movimento} usados</span>
-                                    ${p.totalApos != null ? `<span style="font-size:13px;font-weight:bold;color:${p.totalApos < 0 ? '#f44336' : '#81c784'};">total ${p.totalApos}</span>` : ''}
+                                    <span style="background:rgba(255,235,59,0.15);border:1px solid rgba(255,235,59,0.4);color:#ffeb3b;border-radius:6px;padding:2px 10px;font-size:14px;font-weight:bold;user-select:none;-webkit-user-select:none;">${p.movimento} usados</span>
+                                    ${p.totalApos != null ? `<span style="font-size:13px;font-weight:bold;color:${p.totalApos < 0 ? '#f44336' : '#81c784'};user-select:none;-webkit-user-select:none;">total ${p.totalApos}</span>` : ''}
                                 </div>
                             </div>`;
                     });
@@ -1271,10 +1400,11 @@
             }
 
             const estaContestado = !!(envio.contestado && envio.contestadoAte && new Date() < new Date(envio.contestadoAte));
+            if (estaContestado) card.classList.add('contestado');
             const horasRestantes = estaContestado ? Math.ceil((new Date(envio.contestadoAte) - new Date()) / 3600000) : 0;
             const liberado = !ehMovimentoEstoque(envio) && podeAlterarEnvio(envio);
             const htmlAvisoContestacao = estaContestado ? `
-                <div style="padding:10px 12px;background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.5);border-radius:10px;color:#f59e0b;font-size:14px;font-weight:bold;margin-bottom:8px;">
+                <div style="padding:10px 12px;background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.5);border-radius:10px;color:#f59e0b;font-size:14px;font-weight:bold;margin-bottom:8px;user-select:none;-webkit-user-select:none;">
                     ⚠ O gestor contestou este atendimento. Você tem ${horasRestantes}h para editar ou excluir.
                 </div>` : '';
             const htmlAcoes = liberado ? `

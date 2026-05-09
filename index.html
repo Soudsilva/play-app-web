@@ -128,6 +128,10 @@
             border-color: #f59e0b;
             animation: piscar-borda 2s ease-in-out infinite;
         }
+        .botao-contestacao-alerta {
+            border-color: #f59e0b;
+            animation: piscar-borda 2s ease-in-out infinite;
+        }
         /* Submenu Gestão */
         .submenu {
             display: none;
@@ -363,11 +367,12 @@
 </script>
 
 <script type="module">
-    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarAtendimentos, dbEscutarManutencoes, dbEscutarClientes, dbEscutarResumoBalanco, dbEscutarTodasContestacoesBalanco, dbEscutarTodosDepositos } from './database.js';
+    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarAtendimentos, dbEscutarAtendimentosDoUsuario, dbEscutarManutencoes, dbEscutarClientes, dbEscutarResumoBalanco, dbEscutarTodasContestacoesBalanco, dbEscutarTodosDepositos } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
     import { sincronizarPendentes } from './offline-sync.js';
 
     let _atendBadgeStarted = false;
+    let _contestacoesUsuarioBadgeStarted = false;
     let _servicoBadgeStarted = false;
     let _servicoManutencoes = [];
     let _servicoClientes = [];
@@ -505,6 +510,19 @@
             const btn = document.getElementById('btnAtendimento');
             if (!btn) return;
             btn.classList.toggle('botao-pendente-alerta', pendentes > 0);
+        });
+    }
+
+    function iniciarBadgeContestacoesUsuario(nomeUsuario) {
+        if (_contestacoesUsuarioBadgeStarted) return;
+        _contestacoesUsuarioBadgeStarted = true;
+        dbEscutarAtendimentosDoUsuario(nomeUsuario, (lista) => {
+            const total = (lista || []).filter(a =>
+                !!a?.contestado
+            ).length;
+            const btn = document.getElementById('btnGestao');
+            if (!btn) return;
+            btn.classList.toggle('botao-contestacao-alerta', total > 0);
         });
     }
 
@@ -770,6 +788,7 @@
             btns.pedidos.style.display = ehAtendimentoNivel2 ? 'flex' : 'none';
             btns.servico.style.display = 'none';
             btns.financeiro.style.display = 'none';
+            iniciarBadgeContestacoesUsuario(nomeNormalizado);
 
         // 3. PERFIL GESTÃO
         } else {
