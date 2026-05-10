@@ -575,6 +575,8 @@
         }
 
         function obterValorEquipamento(registro) {
+            const valorHistorico = Number(registro?.valorUnitario || registro?.itemOriginal?.valorUnitario || 0);
+            if (valorHistorico > 0) return valorHistorico;
             const chaveNome = normalizarTexto(registro?.equipamentoNome || registro?.itemNome || '');
             const itemChave = String(registro?.itemChave || registro?.refId || '').trim();
             return Number(estado.mapaValoresPorId[itemChave] || estado.mapaValores[chaveNome] || 0);

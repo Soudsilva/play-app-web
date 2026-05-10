@@ -314,6 +314,10 @@
             <span>Fluxo de Caixa</span>
         </div>
 
+        <div class="botao" id="btnRepresentante" onclick="window.location.href='representante.html'" style="display: none;">
+            <span class="icone">&#128372;</span>
+            <span>Representante</span>
+        </div>
 
     </div>
 
@@ -620,6 +624,11 @@
         return valor.includes('gestao') || valor.includes('gestor');
     }
 
+    function usuarioTemComissaoGlobal(usuario) {
+        const percentual = parseFloat(String(usuario?.comissaoGlobal || '').replace(/%/g, '').replace(',', '.').trim()) || 0;
+        return percentual > 0;
+    }
+
     window.abrirTela = async function(tela){
         if (tela === 'manutencao') {
             if (await balancoBloqueiaAcessoIndex()) return;
@@ -702,7 +711,8 @@
             financeiro: document.getElementById('btnFinanceiro'),
             pix: document.getElementById('btnPix'),
             fluxoCaixa: document.getElementById('btnFluxoCaixa'),
-            pagamentosGestor: document.getElementById('btnPagamentosGestor')
+            pagamentosGestor: document.getElementById('btnPagamentosGestor'),
+            representante: document.getElementById('btnRepresentante')
         };
 
         // Por padrÃ£o, garante que o bloco de GestÃ£o nÃ£o vai deixar "espaÃ§o vazio" no menu.
@@ -850,6 +860,18 @@
         if (usuario?.producaoProdutos) {
             btns.financeiro.style.display = 'flex';
         }
+
+        // Remuneração "Comissão Global": exibe o botão Balanço para qualquer perfil
+        if (usuarioTemComissaoGlobal(usuario)) {
+            btns.balanco.style.display = 'flex';
+        }
+
+        // Remuneração "Representante": exibe o botão Representante para qualquer perfil
+        const taxaRepresentante = parseFloat(String(usuario?.representanteComissao || '').replace(/%/g, '').replace(',', '.').trim()) || 0;
+        if (taxaRepresentante > 0) {
+            btns.representante.style.display = 'flex';
+        }
+
         iniciarStatusBalancoIndex(nomeNormalizado);
     }
 

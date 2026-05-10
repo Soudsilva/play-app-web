@@ -2264,14 +2264,14 @@ export async function dbRecalcularRemuneracoes() {
             const baseGlobal = financeirosMes.reduce((soma, item) => soma + _obterSaldoParcialRemuneracao(item?.financeiro), 0);
             const baseProducaoEquipamentosGeral = historicoBalancoMes.reduce((soma, item) => {
                 if (item?.cancelado) return soma;
-                if (String(item?.origemRegistro || '').trim() !== 'cadastro_cliente') return soma;
-                if (String(item?.tipo || '').trim() !== 'cadastro_cliente_adicao') return soma;
+                if (!_ehProducaoEquipamentoRemuneravel(item)) return soma;
                 if (String(item?.categoria || '').trim() !== 'maquina') return soma;
                 const qtd = Math.abs(_parseNumeroRemuneracao(item?.movimento));
                 if (qtd <= 0 || _parseNumeroRemuneracao(item?.movimento) >= 0) return soma;
                 const itemChave = String(item?.itemChave || item?.refId || '').trim();
                 const nomeItem = String(item?.itemNome || '').trim();
-                const valorUnit = _parseNumeroRemuneracao(mapaValoresEstoquePorChave[itemChave])
+                const valorUnit = _parseNumeroRemuneracao(item?.valorUnitario)
+                    || _parseNumeroRemuneracao(mapaValoresEstoquePorChave[itemChave])
                     || _parseNumeroRemuneracao(mapaValoresEstoque[_normalizarNomeRemuneracao(nomeItem)]);
                 return soma + (qtd * valorUnit);
             }, 0);
@@ -2346,7 +2346,10 @@ export async function dbRecalcularRemuneracoes() {
                 }
 
                 const bonusProducao = _parseNumeroRemuneracao(colab?.bonusManutencao);
-                if (bonusProducao > 0) {
+                const bonusProducaoTemDestinoEspecifico = colab?.producaoEquipamentos === true
+                    || colab?.producaoPecas === true
+                    || colab?.prestacaoServico === true;
+                if (bonusProducao > 0 && !bonusProducaoTemDestinoEspecifico) {
                     _registrarPerfilRemuneracao(perfis, 'bonus_producao', {
                         valor: 0,
                         configurado: Math.round(bonusProducao),
@@ -2726,6 +2729,15 @@ function _normalizarChavePosseItem(itemChave, itemNome) {
     return base.replace(/[.#$/[\]]/g, '_');
 }
 
+function _ehProducaoEquipamentoRemuneravel(item) {
+    const origem = String(item?.origemRegistro || '').trim();
+    const tipo = String(item?.tipo || '').trim();
+    return (
+        (origem === 'cadastro_cliente' && tipo === 'cadastro_cliente_adicao') ||
+        (origem === 'manutencao' && tipo === 'manutencao_adicao')
+    );
+}
+
 const RESUMO_BALANCO_ID = 'resumo_balanco';
 
 function _dataBrasiliaISOData(date = new Date()) {
@@ -2851,12 +2863,39 @@ async function _atualizarPosseItensUsuario(entrada, movimento) {
     };
 }
 
+async function _obterValorUnitarioHistoricoBalanco(entrada, itemChave = '') {
+    const valorInformado = _parseNumeroRemuneracao(entrada?.valorUnitario);
+    if (valorInformado > 0) return valorInformado;
+
+    const chaveItem = String(itemChave || entrada?.itemChave || entrada?.refId || '').trim();
+    if (chaveItem) {
+        const snap = await get(ref(db, `estoque/${chaveItem}`));
+        if (snap.exists()) {
+            const valor = _parseNumeroRemuneracao(snap.val()?.valorEquipamento);
+            if (valor > 0) return valor;
+        }
+    }
+
+    const nomeNormalizado = _normalizarNomeHistoricoBalancoItem(entrada?.itemNome);
+    if (!nomeNormalizado) return null;
+
+    const estoqueSnap = await get(ref(db, 'estoque'));
+    if (!estoqueSnap.exists()) return null;
+
+    const itemEncontrado = Object.values(estoqueSnap.val() || {}).find(item =>
+        _normalizarNomeHistoricoBalancoItem(item?.nome) === nomeNormalizado
+    );
+    const valor = _parseNumeroRemuneracao(itemEncontrado?.valorEquipamento);
+    return valor > 0 ? valor : null;
+}
+
 async function _salvarEntradaHistoricoBalanco(chaveUsuario, entrada, totais = {}) {
     const movimento = _obterMovimentacaoHistoricoBalanco(entrada);
     const timestampEntrada = String(entrada?.timestamp || entrada?.data || '').trim();
     const timestamp = timestampEntrada && !Number.isNaN(Date.parse(timestampEntrada))
         ? timestampEntrada
         : new Date().toISOString();
+    const valorUnitario = _parseNumeroRemuneracao(entrada?.valorUnitario);
     return push(ref(db, `movimentacao_balanco_historico/${chaveUsuario}`), {
         timestamp,
         tipo: String(entrada.tipo || ''),
@@ -2878,6 +2917,7 @@ async function _salvarEntradaHistoricoBalanco(chaveUsuario, entrada, totais = {}
         ...(entrada?.ignorarValidacaoPosse === true ? { ignorarValidacaoPosse: true } : {}),
         isDefeitoEntry: Boolean(entrada.isDefeitoEntry),
         qtdDefeitoConsumida: Number(entrada.qtdDefeitoConsumida || 0),
+        ...(valorUnitario > 0 ? { valorUnitario } : {}),
         ...(entrada?.valorConferido != null ? { valorConferido: Number(entrada.valorConferido) } : {}),
         ...(entrada?.estoqueAntes != null ? { estoqueAntes: Number(entrada.estoqueAntes) } : {}),
         ...(entrada?.estoqueDepois != null ? { estoqueDepois: Number(entrada.estoqueDepois) } : {})
@@ -2893,10 +2933,12 @@ export async function dbSalvarHistoricoBalanco(entrada, opcoes = {}) {
         if (!chaveU || !entrada.itemNome) return;
         if (!movimento && entrada?.controlarPosse !== false) return;
         const totais = await _atualizarPosseItensUsuario(entrada, movimento);
+        const valorUnitario = await _obterValorUnitarioHistoricoBalanco(entrada, totais?.itemChave || entrada?.itemChave || '');
         const novoRef = await _salvarEntradaHistoricoBalanco(chaveU, {
             ...entrada,
             movimento,
-            itemChave: totais?.itemChave || entrada?.itemChave || ''
+            itemChave: totais?.itemChave || entrada?.itemChave || '',
+            ...(valorUnitario > 0 ? { valorUnitario } : {})
         }, totais);
         if (entrada?.controlarPosse !== false || String(entrada?.tipo || '').trim() === 'balanco_aprovado') {
             await dbAtualizarResumoBalanco(entrada.responsavel);
