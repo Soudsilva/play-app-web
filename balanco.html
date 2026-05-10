@@ -372,8 +372,109 @@
             border-radius:14px; padding:14px; margin-bottom:10px;
         }
         .ficha-card:last-child { margin-bottom:0; }
+        .ficha-data-separador {
+            margin: 18px 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .ficha-data-separador::before,
+        .ficha-data-separador::after {
+            content: "";
+            height: 1px;
+            background: #314b8c;
+            flex: 1;
+        }
+        .ficha-data-texto {
+            color: #ffeb3b;
+            font-size: 13px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .ficha-data-numero {
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 4px;
+        }
+        .ficha-dia-btn {
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 16px 0 0;
+            background: linear-gradient(135deg, #1a3d8f 0%, #0f2a66 100%);
+            border: 2px solid rgba(255,255,255,0.18);
+            border-left: 4px solid #ffeb3b;
+            border-radius: 14px;
+            padding: 13px 14px;
+            gap: 12px;
+            transition: background 0.15s, border-radius 0.2s;
+        }
+        .ficha-dia-btn:active { background: linear-gradient(135deg, #1f4aaa 0%, #122c60 100%); }
+        .ficha-dia-btn.aberta { border-radius: 14px 14px 0 0; border-bottom-color: transparent; }
+        .ficha-dia-btn::before, .ficha-dia-btn::after { display: none; }
+        .ficha-dia-btn { flex-direction: row; align-items: center; gap: 14px; }
+        .ficha-dia-count {
+            background: #ffeb3b;
+            color: #0b2256;
+            font-size: 15px;
+            font-weight: 900;
+            border-radius: 10px;
+            min-width: 42px;
+            padding: 4px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            line-height: 1.2;
+        }
+        .ficha-dia-count-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .ficha-dia-info {
+            display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0;
+        }
+        .ficha-dia-btn .ficha-data-texto { text-align: left; font-size: 15px; }
+        .ficha-dia-btn .ficha-data-numero { font-size: 14px; }
+        .ficha-dia-linha-baixo {
+            display: flex; align-items: center; gap: 6px;
+        }
+        .ficha-dia-toque {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+        }
+        .ficha-dia-seta {
+            font-size: 13px;
+            color: rgba(255,255,255,0.55);
+            transition: transform 0.25s;
+            flex-shrink: 0;
+        }
+        .ficha-dia-seta.girada { transform: rotate(180deg); }
+        .ficha-dia-corpo {
+            display: none;
+            background: rgba(8,22,65,0.5);
+            border: 2px solid rgba(255,255,255,0.18);
+            border-left: 4px solid rgba(255,235,59,0.3);
+            border-top: none;
+            border-radius: 0 0 14px 14px;
+            padding: 8px 0 12px;
+            margin-bottom: 4px;
+        }
+        .ficha-dia-corpo.aberto { display: block; }
         .ficha-info { flex:1; min-width:0; }
-        .ficha-numero { font-size:16px; font-weight:bold; color:#ffeb3b; margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .ficha-numero { font-size:16px; font-weight:bold; color:#ffeb3b; margin-bottom:10px; }
         .ficha-linha { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; gap:8px; }
         .ficha-chave { font-size:11px; color:#fff; text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; }
         .ficha-val { font-size:13px; font-weight:bold; color:#fff; }
@@ -1389,6 +1490,16 @@
         const dataStr = data.toLocaleDateString('pt-BR');
         const horaStr = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         return `${dataStr} &middot; ${horaStr}`;
+    }
+
+    function obterRotuloDataFinanceiro(valor) {
+        const data = new Date(valor || 0);
+        if (isNaN(data)) return null;
+        return {
+            chave: dataLocalStr(data),
+            diaSemana: data.toLocaleDateString('pt-BR', { weekday: 'long' }).toUpperCase(),
+            data: data.toLocaleDateString('pt-BR')
+        };
     }
 
     function ehMovimentoEstoqueHistoricoGestor(mov) {
@@ -2947,14 +3058,29 @@
             ${filtradosFinanceiros.length > 0 && dataDe && !usaResumoComissao ? `
             <div class="secao">
                 <div class="secao-titulo">&#128203; Fichas do Per&iacute;odo</div>
-                ${filtradosFinanceiros.map((a, i) => {
-                    const f = a.financeiro || {};
-                    const totalPix = obterTotalPix(f);
-                    const liquidoEmpresa = obterLiquidoEmpresa(f);
-                    const depositar = obterSaldoDepositar(f);
-                    const fotoUrl = a.fotos?.ficha || '';
-                    const dataFicha = new Date(a.data || a.dataHora || 0).toLocaleDateString('pt-BR');
-                    return `
+                ${(() => {
+                    const grupos = [];
+                    let grupoAtual = null;
+                    filtradosFinanceiros.forEach((a, i) => {
+                        const dataBaseFicha = a.data || a.dataHora || 0;
+                        const rotuloData = obterRotuloDataFinanceiro(dataBaseFicha);
+                        const chave = rotuloData?.chave || 'sem-data';
+                        if (!grupoAtual || grupoAtual.chave !== chave) {
+                            grupoAtual = { chave, rotuloData, items: [] };
+                            grupos.push(grupoAtual);
+                        }
+                        grupoAtual.items.push({ a, i });
+                    });
+                    return grupos.map(grupo => {
+                        const { chave, rotuloData, items } = grupo;
+                        const cards = items.map(({ a, i }) => {
+                            const f = a.financeiro || {};
+                            const totalPix = obterTotalPix(f);
+                            const depositar = obterSaldoDepositar(f);
+                            const fotoUrl = a.fotos?.ficha || '';
+                            const dataBaseFicha = a.data || a.dataHora || 0;
+                            const dataFicha = new Date(dataBaseFicha).toLocaleDateString('pt-BR');
+                            return `
                 <div class="ficha-card">
                     <div class="ficha-foto-col">
                         ${fotoUrl ? `
@@ -2971,7 +3097,7 @@
                             <span class="ficha-val">${moeda(f.totalGeral || 0)}</span>
                         </div>
                         <div class="ficha-linha">
-                            <span class="ficha-chave">Dinheiro em Esp&eacute;cie</span>
+                            <span class="ficha-chave">Dinheiro</span>
                             <span class="ficha-val dinheiro">${moeda(f.dinheiro || 0)}</span>
                         </div>
                         ${totalPix > 0 ? `
@@ -2990,7 +3116,21 @@
                         </div>
                     </div>
                 </div>`;
-                }).join('')}
+                        }).join('');
+                        return `
+                <div class="ficha-data-separador ficha-dia-btn" id="btn-dia-${chave}" onclick="toggleFichaDia('${chave}')">
+                    <span class="ficha-dia-count">${items.length}<span class="ficha-dia-count-label">ficha${items.length !== 1 ? 's' : ''}</span></span>
+                    <div class="ficha-dia-info">
+                        <div class="ficha-data-texto">${rotuloData?.diaSemana || ''}<span class="ficha-data-numero">${rotuloData?.data || ''}</span></div>
+                        <div class="ficha-dia-linha-baixo">
+                            <span class="ficha-dia-toque">Toque aqui para ver</span>
+                            <span class="ficha-dia-seta" id="seta-dia-${chave}">&#9660;</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="ficha-dia-corpo" id="ficha-dia-${chave}">${cards}</div>`;
+                    }).join('');
+                })()}
             </div>` : ''}
 
             <!-- Por dia -->
@@ -3156,6 +3296,27 @@
         header.classList.toggle('aberto', movimentacoesGestorAberto);
         seta.classList.toggle('girada', movimentacoesGestorAberto);
         if (movimentacoesGestorAberto) window.filtrarMovimentacoesGestor();
+    };
+
+    window.toggleFichaDia = function(chave) {
+        const corpo = document.getElementById('ficha-dia-' + chave);
+        const seta  = document.getElementById('seta-dia-' + chave);
+        const btn   = document.getElementById('btn-dia-' + chave);
+        if (!corpo) return;
+        const abrindo = !corpo.classList.contains('aberto');
+        document.querySelectorAll('.ficha-dia-corpo.aberto').forEach(el => {
+            el.classList.remove('aberto');
+            const k = el.id.replace('ficha-dia-', '');
+            const s = document.getElementById('seta-dia-' + k);
+            const b = document.getElementById('btn-dia-' + k);
+            if (s) s.classList.remove('girada');
+            if (b) b.classList.remove('aberta');
+        });
+        if (abrindo) {
+            corpo.classList.add('aberto');
+            if (seta) seta.classList.add('girada');
+            if (btn)  btn.classList.add('aberta');
+        }
     };
 
     window.filtrarMovimentacoesGestor = function() {

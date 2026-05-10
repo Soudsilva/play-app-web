@@ -580,6 +580,73 @@
         .btn-contestar.aguardando { background: #b45309; border: 2px solid #f59e0b; }
         .btn-contestar.contestado { background: #374151; color: #9ca3af; cursor: default; }
 
+        .contestacao-box {
+            margin-top: 10px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .contestacao-observacao {
+            width: 100%;
+            min-height: 82px;
+            resize: vertical;
+            border-radius: 10px;
+            border: 1px solid #f59e0b;
+            background: #0f2d68;
+            color: #ffffff;
+            padding: 10px;
+            font-size: 15px;
+            font-weight: 400;
+            box-sizing: border-box;
+        }
+
+        .contestacao-observacao::placeholder {
+            color: #ffffff;
+        }
+
+        .btn-confirmar-contestacao {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            background: #b45309;
+            color: #ffffff;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .contestacao-acoes {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .btn-fechar-contestacao {
+            width: 46px;
+            min-width: 46px;
+            border: 1px solid #ffffff;
+            border-radius: 10px;
+            background: #243f78;
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .btn-fechar-contestacao:active {
+            transform: scale(0.98);
+        }
+
+        .btn-confirmar-contestacao:disabled {
+            background: #6b7280;
+            cursor: default;
+        }
+
 .validacao-chip {
             display: none;
             margin-bottom: 10px;
@@ -1543,6 +1610,46 @@
         return String(str || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
+    function fecharCampoContestacao(panel) {
+        if (!panel) return;
+        const id = panel.dataset.contestarId || '';
+        const btnContestar = Array.from(panel.closest('.section')?.querySelectorAll('.btn-contestar') || [])
+            .find(btn => btn.dataset.contestarId === id);
+        if (btnContestar) {
+            btnContestar.style.display = '';
+            btnContestar.classList.remove('aguardando');
+        }
+        panel.remove();
+    }
+
+    function abrirCampoContestacao(btnContestar, atendimentoId) {
+        const section = btnContestar.closest('.section');
+        if (!section) return;
+
+        const existente = section.querySelector('.contestacao-box');
+        if (existente) {
+            existente.querySelector('.contestacao-observacao')?.focus();
+            return;
+        }
+
+        btnContestar.style.display = 'none';
+        btnContestar.classList.add('aguardando');
+
+        const panel = document.createElement('div');
+        panel.className = 'contestacao-box';
+        panel.dataset.contestarId = atendimentoId;
+        panel.innerHTML = `
+            <textarea class="contestacao-observacao" rows="3" placeholder="Digite o motivo da contestacao..."></textarea>
+            <div class="contestacao-acoes">
+                <button class="btn-fechar-contestacao" type="button" aria-label="Fechar contestacao">×</button>
+                <button class="btn-confirmar-contestacao" data-contestar-confirmar-id="${escAttr(atendimentoId)}">Confirmar contestacao</button>
+            </div>
+        `;
+
+        section.appendChild(panel);
+        panel.querySelector('.contestacao-observacao')?.focus();
+    }
+
     /* ── CARD HTML ── */
     function criarCardHTML(a, cardIdx) {
         const id         = a.firebaseUrl || '';
@@ -1734,6 +1841,40 @@
             return;
         }
 
+        const btnFecharContestacao = e.target.closest('.btn-fechar-contestacao');
+        if (btnFecharContestacao) {
+            fecharCampoContestacao(btnFecharContestacao.closest('.contestacao-box'));
+            return;
+        }
+
+        // Confirmar contestacao
+        const btnConfirmarContestacao = e.target.closest('.btn-confirmar-contestacao');
+        if (btnConfirmarContestacao) {
+            const id = btnConfirmarContestacao.dataset.contestarConfirmarId;
+            const panel = btnConfirmarContestacao.closest('.contestacao-box');
+            const campoObservacao = panel?.querySelector('.contestacao-observacao');
+            const observacao = (campoObservacao?.value || '').trim();
+            const gestor = gestorLogado();
+
+            if (!observacao) {
+                mostrarToast('Digite o motivo da contestacao.');
+                campoObservacao?.focus();
+                return;
+            }
+
+            btnConfirmarContestacao.disabled = true;
+            btnConfirmarContestacao.textContent = 'Salvando...';
+            try {
+                await dbContestarAtendimento(id, gestor, observacao);
+                mostrarToast('Atendimento contestado. O tecnico tem 24h para corrigir.');
+            } catch (err) {
+                btnConfirmarContestacao.disabled = false;
+                btnConfirmarContestacao.textContent = 'Confirmar contestacao';
+                alert('Erro ao contestar: ' + (err.message || err));
+            }
+            return;
+        }
+
         // Confirmar
         const btnConf = e.target.closest('.btn-confirmar');
         if (btnConf) {
@@ -1768,22 +1909,8 @@
                     mostrarToast('Contestação removida.');
                 }
             } else {
-                if (!btnCont._pendente) {
-                    btnCont._pendente = true;
-                    btnCont.textContent = 'Confirmar?';
-                    btnCont.classList.add('aguardando');
-                    btnCont._timer = setTimeout(() => {
-                        btnCont._pendente = false;
-                        btnCont.textContent = '⚠ Contestar';
-                        btnCont.classList.remove('aguardando');
-                    }, 3000);
-                } else {
-                    clearTimeout(btnCont._timer);
-                    btnCont._pendente = false;
-                    const gestor = String(localStorage.getItem('usuarioLogado') || '').trim() || 'Gestor';
-                    await dbContestarAtendimento(id, gestor);
-                    mostrarToast('Atendimento contestado. O técnico tem 24h para corrigir.');
-                }
+                abrirCampoContestacao(btnCont, id);
+                return;
             }
             return;
         }

@@ -1431,9 +1431,17 @@
             if (estaContestado) card.classList.add('contestado');
             const horasRestantes = estaContestado ? Math.ceil((new Date(envio.contestadoAte) - new Date()) / 3600000) : 0;
             const liberado = !ehMovimentoEstoque(envio) && podeAlterarEnvio(envio);
+            const contestacaoObservacao = String(envio.contestacaoObservacao || '').trim();
+            const htmlContestacaoObservacao = contestacaoObservacao
+                ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid #f59e0b;">
+                        <div style="color:#ffeb3b;font-size:14px;font-weight:bold;line-height:1.2;margin-bottom:4px;user-select:none;-webkit-user-select:none;">Situação:</div>
+                        <div style="color:#ffffff;font-size:16px;font-weight:bold;line-height:1.35;">${escaparHtml(contestacaoObservacao)}</div>
+                   </div>`
+                : '';
             const htmlAvisoContestacao = estaContestado ? `
                 <div style="padding:10px 12px;background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.5);border-radius:10px;color:#f59e0b;font-size:14px;font-weight:bold;margin-bottom:8px;user-select:none;-webkit-user-select:none;">
                     ⚠ O gestor contestou este atendimento. Você tem ${horasRestantes}h para editar ou excluir.
+                    ${htmlContestacaoObservacao}
                 </div>` : '';
             const htmlAcoes = liberado ? `
                 <div class="envio-acoes">
