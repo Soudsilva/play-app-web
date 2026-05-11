@@ -9,7 +9,7 @@
 
         body {
             font-family: Arial, Helvetica, sans-serif;
-            background: #0f2a66;
+            background: #042d86;
             display: flex;
             justify-content: center;
             min-height: 100vh;
@@ -24,9 +24,8 @@
             min-height: 100vh;
         }
 
-        /* ── HEADER ── */
         .header {
-            background: #0a1f50;
+            background: #042d86;
             padding: 14px 16px;
             display: flex;
             align-items: center;
@@ -36,25 +35,6 @@
             z-index: 20;
             border-bottom: 2px solid #1e3d7a;
         }
-
-        .btn-voltar {
-            background: transparent;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            user-select: none;
-            -webkit-user-select: none;
-            transition: 0.15s;
-        }
-        .btn-voltar:active { background: rgba(255,255,255,0.1); }
 
         .header-titulo {
             flex: 1;
@@ -66,91 +46,41 @@
             -webkit-user-select: none;
         }
 
-        .select-estilo {
-            background: #1a3872;
-            border: 2px solid rgba(255,255,255,0.25);
-            border-radius: 20px;
-            color: white;
-            font-size: 15px;
-            font-weight: bold;
-            padding: 5px 12px;
+        .btn-home {
+            background: rgba(255,255,255,0.1);
+            padding: 8px;
+            border-radius: 50%;
             cursor: pointer;
-            appearance: none;
-            -webkit-appearance: none;
-            text-align: center;
-        }
-
-        /* ── ABAS ── */
-        .abas {
-            background: #0d2460;
-            padding: 10px 16px;
             display: flex;
-            gap: 8px;
-            border-bottom: 1px solid #1e3d7a;
-        }
-
-        .aba {
-            border-radius: 20px;
-            padding: 6px 16px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
             user-select: none;
             -webkit-user-select: none;
-            transition: 0.15s;
-        }
-        .aba.ativa {
-            background: #4467a8;
-            border: 2px solid #d7dce3;
-            color: white;
-        }
-        .aba.inativa {
-            background: transparent;
-            border: 2px solid rgba(255,255,255,0.2);
-            color: rgba(255,255,255,0.55);
         }
 
-        /* ── RESUMO DO MÊS ── */
-        .resumo-mes {
-            margin: 14px 14px 0;
-            background: #1a3872;
-            border-radius: 16px;
-            border: 2px solid rgba(255,255,255,0.12);
-            padding: 14px 18px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            gap: 8px;
+        .btn-home img {
+            width: 20px;
+            height: 20px;
+            filter: brightness(0) invert(1);
         }
 
-        .resumo-bloco {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .resumo-label {
-            font-size: 13px;
-            color: rgba(255,255,255,0.6);
+        .periodo-info {
+            position: absolute;
+            bottom: -10px;
+            right: 0;
+            font-size: 10px;
+            color: #9fb4df;
             font-weight: 400;
+            line-height: 1;
+            background: #042d86;
+            padding: 0 5px;
             user-select: none;
             -webkit-user-select: none;
+            white-space: nowrap;
         }
 
-        .resumo-valor {
-            font-size: 22px;
-            font-weight: bold;
-            color: #ffeb3b;
-        }
-
-        .resumo-divider {
-            width: 1px;
-            height: 40px;
-            background: rgba(255,255,255,0.15);
-        }
-
-        /* ── LISTA ── */
         .lista {
             flex: 1;
             padding: 12px 14px 100px;
@@ -162,19 +92,22 @@
         .secao-label {
             font-size: 13px;
             font-weight: bold;
-            color: rgba(255,255,255,0.45);
+            color: #9fb4df;
             text-transform: uppercase;
             letter-spacing: 1px;
             padding: 4px 2px 0;
+            text-align: center;
             user-select: none;
             -webkit-user-select: none;
         }
 
-        /* ── CARD ── */
         .card {
-            background: #1a3872;
+            background: rgba(255,255,255,0.08);
             border-radius: 16px;
-            border: 2px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-left: 4px solid #ffeb3b;
+            border-bottom: 2px solid #ffffff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
             overflow: hidden;
             cursor: pointer;
             transition: 0.15s;
@@ -196,7 +129,7 @@
             font-size: 34px;
             flex-shrink: 0;
             border-right: 2px solid rgba(255,255,255,0.08);
-            color: rgba(255,255,255,0.3);
+            color: #5f7fc6;
         }
 
         .card-foto img {
@@ -223,9 +156,10 @@
 
         .card-num {
             font-size: 13px;
-            color: rgba(255,255,255,0.55);
+            color: #c8d6f2;
             font-weight: 400;
         }
+
         .card-num b {
             color: white;
             font-weight: bold;
@@ -233,7 +167,7 @@
 
         .chip {
             background: transparent;
-            border: 1.5px solid rgba(255,255,255,0.4);
+            border: 1.5px solid #8ba4da;
             border-radius: 20px;
             color: white;
             font-size: 13px;
@@ -257,13 +191,13 @@
 
         .card-saldo-label {
             font-size: 13px;
-            color: rgba(255,255,255,0.55);
+            color: #c8d6f2;
             font-weight: 400;
         }
 
         .chip-saldo {
             background: transparent;
-            border: 1.5px solid rgba(255,255,255,0.35);
+            border: 1.5px solid #8ba4da;
             border-radius: 10px;
             color: white;
             font-size: 17px;
@@ -273,8 +207,8 @@
 
         .card-rodape {
             padding: 8px 14px;
-            background: rgba(0,0,0,0.18);
-            border-top: 1px solid rgba(255,255,255,0.07);
+            background: #173c86;
+            border-top: 1px solid #315596;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -288,11 +222,41 @@
 
         .card-tag {
             font-size: 12px;
-            color: rgba(255,255,255,0.4);
+            color: #9fb4df;
             font-weight: 400;
         }
 
-        /* ── RODAPÉ FIXO ── */
+        .estado-vazio,
+        .estado-carregando {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            padding: 34px 18px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .estado-carregando {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 3px solid #5f7fc6;
+            border-top-color: #ffeb3b;
+            animation: girar 0.8s linear infinite;
+        }
+
+        @keyframes girar {
+            to { transform: rotate(360deg); }
+        }
+
         .rodape {
             position: fixed;
             bottom: 0;
@@ -300,7 +264,7 @@
             transform: translateX(-50%);
             width: 100%;
             max-width: 440px;
-            background: #0a1f50;
+            background: #042d86;
             border-top: 2px solid #1e3d7a;
             padding: 10px 16px;
             display: flex;
@@ -319,7 +283,7 @@
 
         .rodape-label {
             font-size: 12px;
-            color: rgba(255,255,255,0.55);
+            color: #c8d6f2;
             font-weight: 400;
             text-align: center;
             user-select: none;
@@ -335,13 +299,13 @@
         .rodape-div {
             width: 1px;
             height: 38px;
-            background: rgba(255,255,255,0.15);
+            background: #315596;
             flex-shrink: 0;
         }
 
         .select-mes {
             background: #1a3872;
-            border: 2px solid rgba(255,255,255,0.25);
+            border: 2px solid #8ba4da;
             border-radius: 20px;
             color: white;
             font-size: 15px;
@@ -357,152 +321,250 @@
 <body>
 
 <div class="app">
-
-    <!-- Header -->
     <div class="header">
-        <select class="select-estilo">
-            <option>Lista</option>
-        </select>
         <div class="header-titulo">Representante</div>
-        <div style="font-size: 10px; color: rgba(255,255,255,0.45); font-weight: 400; user-select: none; -webkit-user-select: none; white-space: nowrap; align-self: flex-end; padding-bottom: 4px;">Últimos 4 anos</div>
+        <div class="periodo-info">Últimos 4 anos</div>
+        <div class="btn-home" onclick="window.location.href='index.html'">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
+        </div>
     </div>
 
-    <!-- Lista -->
-    <div class="lista">
-
-        <div class="secao-label">Setembro 2025</div>
-
-        <!-- Card 1 -->
-        <div class="card">
-            <div class="card-corpo">
-                <div class="card-foto">&#128247;</div>
-                <div class="card-info">
-                    <div class="card-linha-topo">
-                        <div class="card-num">Núm. <b>64</b></div>
-                        <div class="chip">20%</div>
-                    </div>
-                    <div class="card-nome">Pizza e Cia</div>
-                    <div class="card-saldo-linha">
-                        <div class="card-saldo-label">Saldo</div>
-                        <div class="chip-saldo">59</div>
-                    </div>
-                </div>
-            </div>
-            <div class="card-rodape">
-                <div class="card-data">29/09/2025</div>
-                <div class="card-tag">último atendimento</div>
-            </div>
+    <div class="lista" id="listaRepresentante">
+        <div class="secao-label">Carregando</div>
+        <div class="estado-carregando">
+            <div class="spinner"></div>
+            <div>Carregando atendimentos...</div>
         </div>
-
-        <!-- Card 2 -->
-        <div class="card">
-            <div class="card-corpo">
-                <div class="card-foto">&#128247;</div>
-                <div class="card-info">
-                    <div class="card-linha-topo">
-                        <div class="card-num">Núm. <b>26</b></div>
-                        <div class="chip">20%</div>
-                    </div>
-                    <div class="card-nome">Bora Bora Gastrobar</div>
-                    <div class="card-saldo-linha">
-                        <div class="card-saldo-label">Saldo</div>
-                        <div class="chip-saldo">648</div>
-                    </div>
-                </div>
-            </div>
-            <div class="card-rodape">
-                <div class="card-data">29/09/2025</div>
-                <div class="card-tag">último atendimento</div>
-            </div>
-        </div>
-
-        <!-- Card 3 -->
-        <div class="card">
-            <div class="card-corpo">
-                <div class="card-foto">&#128247;</div>
-                <div class="card-info">
-                    <div class="card-linha-topo">
-                        <div class="card-num">Núm. <b>208</b></div>
-                        <div class="chip">20%</div>
-                    </div>
-                    <div class="card-nome">La Casa do Açaí</div>
-                    <div class="card-saldo-linha">
-                        <div class="card-saldo-label">Saldo</div>
-                        <div class="chip-saldo">1.120</div>
-                    </div>
-                </div>
-            </div>
-            <div class="card-rodape">
-                <div class="card-data">27/09/2025</div>
-                <div class="card-tag">último atendimento</div>
-            </div>
-        </div>
-
-        <!-- Card 4 -->
-        <div class="card">
-            <div class="card-corpo">
-                <div class="card-foto">&#128247;</div>
-                <div class="card-info">
-                    <div class="card-linha-topo">
-                        <div class="card-num">Núm. <b>31</b></div>
-                        <div class="chip">15%</div>
-                    </div>
-                    <div class="card-nome">Sorveteria Gelato</div>
-                    <div class="card-saldo-linha">
-                        <div class="card-saldo-label">Saldo</div>
-                        <div class="chip-saldo">390</div>
-                    </div>
-                </div>
-            </div>
-            <div class="card-rodape">
-                <div class="card-data">25/09/2025</div>
-                <div class="card-tag">último atendimento</div>
-            </div>
-        </div>
-
     </div>
 
-    <!-- Rodapé fixo -->
     <div class="rodape">
         <div class="rodape-bloco">
             <div class="rodape-label">Clientes</div>
-            <div class="rodape-valor">12</div>
+            <div class="rodape-valor">0</div>
         </div>
         <div class="rodape-div"></div>
         <div class="rodape-bloco">
             <div class="rodape-label">Comissão</div>
-            <div class="rodape-valor">253</div>
+            <div class="rodape-valor">0</div>
         </div>
         <div class="rodape-div"></div>
         <select class="select-mes">
-            <option>Janeiro 2025</option>
-            <option>Fevereiro 2025</option>
-            <option>Março 2025</option>
-            <option>Abril 2025</option>
-            <option>Maio 2025</option>
-            <option>Junho 2025</option>
-            <option>Julho 2025</option>
-            <option>Agosto 2025</option>
-            <option selected>Setembro 2025</option>
-            <option>Outubro 2025</option>
-            <option>Novembro 2025</option>
-            <option>Dezembro 2025</option>
-            <option>Janeiro 2024</option>
-            <option>Fevereiro 2024</option>
-            <option>Março 2024</option>
-            <option>Abril 2024</option>
-            <option>Maio 2024</option>
-            <option>Junho 2024</option>
-            <option>Julho 2024</option>
-            <option>Agosto 2024</option>
-            <option>Setembro 2024</option>
-            <option>Outubro 2024</option>
-            <option>Novembro 2024</option>
-            <option>Dezembro 2024</option>
+            <option>Carregando</option>
         </select>
     </div>
-
 </div>
+
+<script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    import { dbEscutarAtendimentos } from './database.js';
+
+    verificarAutenticacao();
+
+    const MESES = [
+        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+
+    let atendimentosRepresentante = [];
+    let mesSelecionado = obterMesAtual();
+
+    const listaEl = document.getElementById('listaRepresentante');
+    const rodapeValores = Array.from(document.querySelectorAll('.rodape-valor'));
+    const totalClientesEl = rodapeValores[0];
+    const totalComissaoEl = rodapeValores[1];
+    const selectMesEl = document.querySelector('.select-mes');
+
+    function normalizarNome(valor) {
+        return String(valor || '').trim().toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function obterMesAtual() {
+        const data = new Date();
+        return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function obterMesAnoData(valor) {
+        if (!valor) return '';
+        const texto = String(valor);
+        if (/^\d{4}-\d{2}/.test(texto)) return texto.slice(0, 7);
+        const data = new Date(texto);
+        if (Number.isNaN(data.getTime())) return '';
+        return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function textoMes(mesAno) {
+        const [ano, mes] = String(mesAno || '').split('-').map(Number);
+        if (!ano || !mes) return '';
+        return `${MESES[mes - 1]} ${ano}`;
+    }
+
+    function numeroFinanceiro(valor) {
+        if (typeof valor === 'number') return Number.isFinite(valor) ? valor : 0;
+        const texto = String(valor ?? '').trim();
+        if (!texto) return 0;
+        const normalizado = texto.replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+        const numero = Number(normalizado);
+        return Number.isFinite(numero) ? numero : 0;
+    }
+
+    function obterBaseAtendimento(atendimento) {
+        const fin = atendimento?.financeiro || {};
+        const saldo = numeroFinanceiro(fin.saldoFinal);
+        if (saldo > 0) return saldo;
+        return Math.max(numeroFinanceiro(fin.totalGeral) - numeroFinanceiro(fin.comissaoValor), 0);
+    }
+
+    function formatarInteiro(valor) {
+        return Math.round(Number(valor || 0)).toLocaleString('pt-BR');
+    }
+
+    function formatarData(valor) {
+        const data = new Date(valor);
+        if (Number.isNaN(data.getTime())) return '';
+        return data.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    }
+
+    function escaparHtml(valor) {
+        return String(valor || '').replace(/[&<>"']/g, (char) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[char]));
+    }
+
+    function fotoAtendimento(atendimento) {
+        return atendimento?.fotos?.fichaThumb || atendimento?.fotos?.ficha || '';
+    }
+
+    function atendimentoValidoRepresentante(item) {
+        const usuarioNorm = normalizarNome(localStorage.getItem('usuarioLogado') || '');
+        return Boolean(
+            usuarioNorm &&
+            normalizarNome(item?.representante) === usuarioNorm &&
+            obterMesAnoData(item?.data) &&
+            numeroFinanceiro(item?.representanteComissao) > 0 &&
+            obterBaseAtendimento(item) > 0 &&
+            String(item?.cliente?.id || '').trim()
+        );
+    }
+
+    function montarMeses() {
+        if (!selectMesEl) return;
+        const mesesComDados = Array.from(new Set(
+            (atendimentosRepresentante || [])
+                .filter(atendimentoValidoRepresentante)
+                .map(item => obterMesAnoData(item?.data))
+                .filter(Boolean)
+        )).sort().reverse();
+
+        if (mesesComDados.length > 0 && !mesesComDados.includes(mesSelecionado)) {
+            mesSelecionado = mesesComDados[0];
+        }
+
+        const opcoes = mesesComDados.length > 0 ? mesesComDados : [mesSelecionado || obterMesAtual()];
+        selectMesEl.innerHTML = '';
+        opcoes.forEach(valor => {
+            const option = document.createElement('option');
+            option.value = valor;
+            option.textContent = textoMes(valor);
+            option.selected = valor === mesSelecionado;
+            selectMesEl.appendChild(option);
+        });
+    }
+
+    function obterGruposDoMes() {
+        const filtrados = (atendimentosRepresentante || []).filter(item =>
+            atendimentoValidoRepresentante(item) &&
+            obterMesAnoData(item?.data) === mesSelecionado
+        );
+
+        const porCliente = new Map();
+        filtrados.forEach(item => {
+            const clienteId = String(item?.cliente?.id || '').trim();
+            if (!porCliente.has(clienteId)) {
+                porCliente.set(clienteId, {
+                    numero: item?.cliente?.numero || '',
+                    nome: item?.cliente?.nome || 'Cliente',
+                    saldo: 0,
+                    comissao: 0,
+                    ultimo: item,
+                    ultimoMs: 0
+                });
+            }
+
+            const grupo = porCliente.get(clienteId);
+            const base = obterBaseAtendimento(item);
+            const percentual = numeroFinanceiro(item?.representanteComissao);
+            const dataMs = new Date(item?.data || '').getTime() || 0;
+            grupo.saldo += base;
+            grupo.comissao += base * percentual / 100;
+            if (dataMs >= grupo.ultimoMs) {
+                grupo.ultimo = item;
+                grupo.ultimoMs = dataMs;
+                grupo.numero = item?.cliente?.numero || grupo.numero;
+                grupo.nome = item?.cliente?.nome || grupo.nome;
+            }
+        });
+
+        return Array.from(porCliente.values()).sort((a, b) => b.ultimoMs - a.ultimoMs);
+    }
+
+    function renderizar() {
+        const grupos = obterGruposDoMes();
+        if (totalClientesEl) totalClientesEl.textContent = String(grupos.length);
+        if (totalComissaoEl) {
+            totalComissaoEl.textContent = formatarInteiro(grupos.reduce((soma, item) => soma + item.comissao, 0));
+        }
+
+        const cabecalho = `<div class="secao-label">${escaparHtml(textoMes(mesSelecionado).toUpperCase())}</div>`;
+        if (grupos.length === 0) {
+            listaEl.innerHTML = `${cabecalho}<div class="estado-vazio">Nenhum atendimento de representante neste período.</div>`;
+            return;
+        }
+
+        listaEl.innerHTML = cabecalho + grupos.map(grupo => {
+            const ultimo = grupo.ultimo || {};
+            const foto = fotoAtendimento(ultimo);
+            const percentual = numeroFinanceiro(ultimo?.representanteComissao);
+            return `
+                <div class="card">
+                    <div class="card-corpo">
+                        <div class="card-foto">${foto ? `<img src="${escaparHtml(foto)}" alt="">` : '&#128247;'}</div>
+                        <div class="card-info">
+                            <div class="card-linha-topo">
+                                <div class="card-num">Núm. <b>${escaparHtml(grupo.numero)}</b></div>
+                                <div class="chip">${formatarInteiro(percentual)}%</div>
+                            </div>
+                            <div class="card-nome">${escaparHtml(grupo.nome)}</div>
+                            <div class="card-saldo-linha">
+                                <div class="card-saldo-label">Saldo</div>
+                                <div class="chip-saldo">${formatarInteiro(grupo.saldo)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-rodape">
+                        <div class="card-data">${escaparHtml(formatarData(ultimo?.data))}</div>
+                        <div class="card-tag">último atendimento</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    selectMesEl?.addEventListener('change', () => {
+        mesSelecionado = selectMesEl.value || obterMesAtual();
+        renderizar();
+    });
+
+    dbEscutarAtendimentos((lista) => {
+        atendimentosRepresentante = Array.isArray(lista) ? lista : [];
+        montarMeses();
+        renderizar();
+    });
+</script>
 
 </body>
 </html>

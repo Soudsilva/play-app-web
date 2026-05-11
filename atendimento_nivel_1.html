@@ -638,12 +638,13 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbVerificarELiberarRota, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
+    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbVerificarELiberarRota, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
     import { enfileirarAtendimento } from './offline-sync.js';
 
     let listaClientes = [];
     let listaClientesBruta = [];
     let listaProdutos = [];
+    let listaColaboradores = [];
     let listaAtendimentos = [];
     let clientesPermitidosSet = null; // null = carregando | Set = pronto (vazio = nenhum cliente permitido)
     let numeroClientePendente = '';
@@ -652,6 +653,11 @@
     let currentFileInputId = null;
     let historicoBalancoEdicao = null;
     let unsubscribeHistoricoBalancoEdicao = null;
+
+    try {
+        const cacheColaboradores = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
+        if (Array.isArray(cacheColaboradores)) listaColaboradores = cacheColaboradores;
+    } catch {}
 
 function obterIdAtendimentoEmEdicao() {
         return new URLSearchParams(window.location.search).get('edit') || "";
@@ -669,6 +675,22 @@ function obterIdAtendimentoEmEdicao() {
         localStorage.removeItem('atendimento_em_edicao_data');
         localStorage.removeItem('atendimento_em_edicao_atendente');
         localStorage.removeItem('atendimento_edicao_gestor');
+    }
+
+    function normalizarNomeComparacao(valor) {
+        return String(valor || '').trim().toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function obterPercentualRepresentante(nomeRepresentante) {
+        const nomeNorm = normalizarNomeComparacao(nomeRepresentante);
+        if (!nomeNorm) return 0;
+        const colaborador = (listaColaboradores || []).find(item =>
+            normalizarNomeComparacao(item?.nome) === nomeNorm
+        );
+        const valor = String(colaborador?.representanteComissao || '').replace(',', '.').replace('%', '').trim();
+        const numero = parseFloat(valor);
+        return Number.isFinite(numero) ? numero : 0;
     }
 
     function atualizarModoEdicao() {
@@ -1206,6 +1228,10 @@ function obterIdAtendimentoEmEdicao() {
     dbEscutarClientes((lista) => {
         listaClientesBruta = lista || [];
         aplicarFiltroClientes(lista);
+    });
+
+    dbEscutarColaboradores((lista) => {
+        listaColaboradores = Array.isArray(lista) ? lista : [];
     });
 
     function aplicarFiltroClientes(lista) {
@@ -1984,9 +2010,15 @@ function obterIdAtendimentoEmEdicao() {
 
             // --- 3. Montagem do Objeto Final ---
             const clienteCompleto = listaClientes.find(c => c.firebaseUrl === idCliente) || {};
+            const representanteAtendimento = String(clienteCompleto.representante || '').trim();
+            const representanteComissaoAtendimento = representanteAtendimento
+                ? obterPercentualRepresentante(representanteAtendimento)
+                : 0;
             const dadosAtendimento = {
                 atendente,
                 data: atendimentoEmEdicaoId ? (dataOriginalEdicao || atendimentoOriginal?.data || new Date().toISOString()) : new Date().toISOString(),
+                ...(representanteAtendimento ? { representante: representanteAtendimento } : {}),
+                ...(representanteAtendimento && representanteComissaoAtendimento > 0 ? { representanteComissao: representanteComissaoAtendimento } : {}),
                 cliente: {
                     id:              idCliente,
                     nome:            clienteCompleto.nome            || clienteNome,

@@ -1205,7 +1205,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbExcluirCliente, dbSalvarCliente, dbEscutarColaboradores, dbListarAtendimentos, dbEscutarManutencoes, dbBuscarProdutosDoAtendimento, dbEscutarEstoque, dbSalvarHistoricoBalanco } from './database.js';
+    import { dbEscutarClientes, dbExcluirCliente, dbSalvarCliente, dbEscutarColaboradores, dbEscutarAtendimentos, dbListarAtendimentos, dbEscutarManutencoes, dbBuscarProdutosDoAtendimento, dbEscutarEstoque, dbSalvarHistoricoBalanco } from './database.js';
 
     // --- CACHE LOCAL DE CLIENTES ---
     // Salva a lista e a versão no localStorage para acesso offline e economia de dados.
@@ -1282,7 +1282,17 @@
             return String(usuario?.nivel_completo || '');
         } catch (_) { return ''; }
     })();
+    let representanteComissaoUsuario = (() => {
+        try {
+            const cache = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
+            const usuario = cache.find(c => String(c?.nome || '').trim() === nomeUsuarioLogado);
+            const valor = String(usuario?.representanteComissao || '').replace(',', '.').replace('%', '').trim();
+            const numero = parseFloat(valor);
+            return Number.isFinite(numero) ? numero : 0;
+        } catch (_) { return 0; }
+    })();
     let clientesSalvos = [];
+    const ultimasVisitasPorClienteId = {};
     let pontosNovos = [];
     let listaProdutosRepor = [];
     let reposicaoClienteAtivo = null;
@@ -1468,6 +1478,49 @@
         ].filter(Boolean).join(' '));
     }
 
+    function obterInicioDiaBrasilia(data) {
+        const partes = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/Sao_Paulo',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).formatToParts(data).reduce((acc, parte) => {
+            acc[parte.type] = parte.value;
+            return acc;
+        }, {});
+        return new Date(`${partes.year}-${partes.month}-${partes.day}T00:00:00`);
+    }
+
+    function formatarDataUltimaVisita(valor) {
+        const data = new Date(valor);
+        if (Number.isNaN(data.getTime())) return "";
+        const hoje = obterInicioDiaBrasilia(new Date());
+        const visita = obterInicioDiaBrasilia(data);
+        const dias = Math.max(0, Math.round((hoje - visita) / 86400000));
+        if (dias === 0) return "hoje";
+        if (dias === 1) return "ontem";
+        return `há ${dias} dias`;
+    }
+
+    function atualizarMapaUltimasVisitas(atendimentos) {
+        Object.keys(ultimasVisitasPorClienteId).forEach(chave => delete ultimasVisitasPorClienteId[chave]);
+
+        (Array.isArray(atendimentos) ? atendimentos : []).forEach(atendimento => {
+            const clienteId = String(atendimento?.cliente?.id || '').trim();
+            if (!clienteId) return;
+            const dataMs = new Date(atendimento?.data || '').getTime();
+            if (!Number.isFinite(dataMs) || dataMs <= 0) return;
+
+            const atual = ultimasVisitasPorClienteId[clienteId];
+            if (atual && atual.dataMs >= dataMs) return;
+
+            const dataTexto = formatarDataUltimaVisita(atendimento?.data);
+            const operador = String(atendimento?.atendente || '').trim();
+            if (!dataTexto) return;
+            ultimasVisitasPorClienteId[clienteId] = { dataMs, dataTexto, operador };
+        });
+    }
+
     function renderizarLista(clientes) {
         _pararLoadingCli();
         const listaHTML = document.getElementById("listaClientes");
@@ -1510,9 +1563,15 @@
 
             if (c.endereco) campos.push(`<div class="campo-item"><b>End.:</b> <span>${c.endereco}</span></div>`);
             const representanteCliente = String(c.representante || '').trim();
-            const podeVerRepresentante = perfilUsuarioLogado.includes('gestao');
+            const representanteEhUsuarioLogado = normalizarTexto(representanteCliente) === normalizarTexto(nomeUsuarioLogado);
+            const podeVerRepresentante = perfilUsuarioLogado.includes('gestao') || (representanteEhUsuarioLogado && representanteComissaoUsuario > 0);
             if (podeVerRepresentante && representanteCliente) {
                 campos.push(`<div class="campo-item"><b>Representante:</b> <span>${escaparHtmlLocal(representanteCliente)}</span></div>`);
+            }
+            const ultimaVisita = ultimasVisitasPorClienteId[String(c.firebaseUrl || '').trim()];
+            if (ultimaVisita) {
+                const operadorVisita = ultimaVisita.operador ? ` &mdash; ${escaparHtmlLocal(ultimaVisita.operador)}` : '';
+                campos.push(`<div class="campo-item"><b>&Uacute;ltima visita:</b> <span>${escaparHtmlLocal(ultimaVisita.dataTexto)}${operadorVisita}</span></div>`);
             }
             if (c.obs) campos.push(`<div class="campo-item obs-item"><b>Obs:</b> ${c.obs}</div>`);
             const camposLargura = [];
@@ -1615,10 +1674,21 @@
         nomeUsuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
         const usuarioAtual = colaboradores.find(c => String(c?.nome || '').trim() === nomeUsuarioLogado);
         const novoPerfil = String(usuarioAtual?.nivel_completo || '');
-        if (novoPerfil !== perfilUsuarioLogado) {
+        const novoRepresentanteComissao = (() => {
+            const valor = String(usuarioAtual?.representanteComissao || '').replace(',', '.').replace('%', '').trim();
+            const numero = parseFloat(valor);
+            return Number.isFinite(numero) ? numero : 0;
+        })();
+        if (novoPerfil !== perfilUsuarioLogado || novoRepresentanteComissao !== representanteComissaoUsuario) {
             perfilUsuarioLogado = novoPerfil;
+            representanteComissaoUsuario = novoRepresentanteComissao;
             renderizarLista(clientesSalvos);
         }
+    });
+
+    dbEscutarAtendimentos((atendimentos) => {
+        atualizarMapaUltimasVisitas(atendimentos);
+        if (clientesSalvos.length > 0) renderizarLista(clientesSalvos);
     });
 
     // Carrega cache imediatamente (funciona offline).

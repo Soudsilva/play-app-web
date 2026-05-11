@@ -2314,11 +2314,16 @@ export async function dbRecalcularRemuneracoes() {
                 }
 
                 const taxaRepresentante = _parsePercentualRemuneracao(colab?.representanteComissao);
-                if (taxaRepresentante > 0) {
-                    const baseRepresentante = financeirosMes
-                        .filter(item => _normalizarNomeRemuneracao(_obterRepresentanteAtendimentoRemuneracao(item, mapaClientesRepresentante)) === nomeNorm)
+                const atendimentosRepresentante = financeirosMes
+                    .filter(item => _normalizarNomeRemuneracao(_obterRepresentanteAtendimentoRemuneracao(item, mapaClientesRepresentante)) === nomeNorm);
+                if (taxaRepresentante > 0 || atendimentosRepresentante.some(item => _parsePercentualRemuneracao(item?.representanteComissao) > 0)) {
+                    const baseRepresentante = atendimentosRepresentante
                         .reduce((soma, item) => soma + _obterSaldoParcialRemuneracao(item?.financeiro), 0);
-                    const valor = Math.round(baseRepresentante * taxaRepresentante / 100);
+                    const valor = Math.round(atendimentosRepresentante.reduce((soma, item) => {
+                        const percentualAtendimento = _parsePercentualRemuneracao(item?.representanteComissao);
+                        const percentual = percentualAtendimento > 0 ? percentualAtendimento : taxaRepresentante;
+                        return soma + (_obterSaldoParcialRemuneracao(item?.financeiro) * percentual / 100);
+                    }, 0));
                     if (valor > 0) {
                         _registrarPerfilRemuneracao(perfis, 'representante', {
                             valor,
