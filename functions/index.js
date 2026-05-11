@@ -14,6 +14,8 @@ const RESUMO_BALANCO_ID = "resumo_balanco";
 const CINCO_DIAS_MS = 5 * 24 * 60 * 60 * 1000;
 const DEPOSITOS_RESUMO_ROOT = "firebase_functions_depositos";
 const LIMITE_BLOQUEIO_DEPOSITO = 5000;
+const MEDIA_VENDAS_ROOT = "Media_de_Vendas";
+const MEDIA_VENDAS_METADATA_PATH = "metadata/media_de_vendas_versao";
 
 function dataBrasiliaISOData(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -46,6 +48,332 @@ function normalizarChaveUsuario(nomeUsuario) {
 function numero(valor) {
   const n = Number(valor || 0);
   return Number.isFinite(n) ? n : 0;
+}
+
+function normalizarNumeroCliente(valor) {
+  return String(valor ?? "").trim();
+}
+
+function arredondar2(valor) {
+  return Math.round((Number(valor || 0) + Number.EPSILON) * 100) / 100;
+}
+
+function inicioDiaBrasiliaMs(valor) {
+  const data = valor ? new Date(valor) : new Date();
+  if (Number.isNaN(data.getTime())) return null;
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(data);
+  const get = (type) => partes.find((p) => p.type === type)?.value;
+  return Date.parse(`${get("year")}-${get("month")}-${get("day")}T00:00:00-03:00`);
+}
+
+function diasEntreDatasBrasilia(dataMaisRecente, dataMaisAntiga) {
+  const rec = inicioDiaBrasiliaMs(dataMaisRecente);
+  const ant = inicioDiaBrasiliaMs(dataMaisAntiga);
+  if (rec == null || ant == null) return 0;
+  return Math.max(0, Math.round((rec - ant) / 86400000));
+}
+
+function obterTotalCobrancaAtendimento(atendimento) {
+  const total = Number(
+    atendimento?.financeiro?.totalGeral ??
+    atendimento?.financeiro?.total ??
+    atendimento?.totalGeral ??
+    atendimento?.total ??
+    0,
+  );
+  return Number.isFinite(total) ? total : 0;
+}
+
+function obterDataAtendimento(atendimento) {
+  const data = atendimento?.data || atendimento?.dataHora || null;
+  const timestamp = Date.parse(data || "");
+  return Number.isNaN(timestamp) ? null : {data, timestamp};
+}
+
+function obterReferenciasClienteMedia(item) {
+  const cliente = item?.cliente || {};
+  return {
+    id: String(cliente.id || cliente.firebaseUrl || "").trim(),
+    numero: normalizarNumeroCliente(cliente.numero),
+  };
+}
+
+function obterAlvosMediaPorAtendimento(before, after) {
+  const alvos = new Map();
+  [before, after].forEach((item) => {
+    if (!item || typeof item !== "object") return;
+    const refCliente = obterReferenciasClienteMedia(item);
+    if (!refCliente.id && !refCliente.numero) return;
+    const chave = refCliente.id || refCliente.numero;
+    alvos.set(chave, refCliente);
+  });
+  return [...alvos.values()];
+}
+
+function obterAlvosMediaPorCliente(clienteId, before, after) {
+  const alvos = new Map();
+  [before, after].forEach((cliente) => {
+    if (!cliente || typeof cliente !== "object") return;
+    const numero = normalizarNumeroCliente(cliente.numero);
+    if (!clienteId && !numero) return;
+    alvos.set(`${clienteId || ""}/${numero}`, {id: clienteId, numero});
+  });
+  return [...alvos.values()];
+}
+
+function clienteCorrespondeAoAlvo(atendimento, alvo, clienteAtual) {
+  const refCliente = obterReferenciasClienteMedia(atendimento);
+  const idAtual = String(clienteAtual?.id || "").trim();
+  const numeroAtual = normalizarNumeroCliente(clienteAtual?.numero);
+  const ids = [alvo.id, idAtual].filter(Boolean);
+  const numeros = [alvo.numero, numeroAtual].filter(Boolean);
+  return Boolean(
+    (refCliente.id && ids.includes(refCliente.id)) ||
+    (refCliente.numero && numeros.includes(refCliente.numero)),
+  );
+}
+
+function valorAtualMedia(registroAtual, campo) {
+  const valor = campo ? registroAtual?.[campo] : null;
+  if (valor !== undefined && valor !== null && valor !== "") return valor;
+  return null;
+}
+
+function numeroAtualMedia(registroAtual, campo) {
+  const valor = Number(valorAtualMedia(registroAtual, campo));
+  return Number.isFinite(valor) ? valor : 0;
+}
+
+function montarRegistroMediaDeVendas(
+  clienteId,
+  cliente,
+  cobrancas,
+  hoje,
+  atualizadoEm,
+  registroAtual = {},
+) {
+  const usadas = cobrancas.slice(0, 3);
+  let ultima = usadas[0] || null;
+  let penultima = usadas[1] || null;
+  let antepenultima = usadas[2] || null;
+  let mediaVendaPorDia = 0;
+  let estimativaAtualDia = 0;
+
+  if (usadas.length >= 2) {
+    const totalBase = usadas
+      .slice(0, -1)
+      .reduce((soma, item) => soma + item.total, 0);
+    const maisAntiga = usadas[usadas.length - 1];
+    const intervaloDias = diasEntreDatasBrasilia(ultima.data, maisAntiga.data);
+    const divisor = intervaloDias > 0 ? intervaloDias : 1;
+    mediaVendaPorDia = arredondar2(totalBase / divisor);
+    const diasDesdeUltima = diasEntreDatasBrasilia(`${hoje}T00:00:00-03:00`, ultima.data);
+    estimativaAtualDia = arredondar2(mediaVendaPorDia * diasDesdeUltima);
+  } else {
+    mediaVendaPorDia = arredondar2(numeroAtualMedia(registroAtual, "mediaVendaPorDia"));
+
+    if (usadas.length === 1) {
+      const ultimaAtual = valorAtualMedia(registroAtual, "ultimaCobrancaEm");
+      const ultimaAtualValor = numeroAtualMedia(registroAtual, "ultimaCobrancaValor");
+      const mesmaUltima = ultimaAtual && Date.parse(ultimaAtual) === Date.parse(ultima.data);
+      penultima = {
+        data: valorAtualMedia(registroAtual, "penultimaCobrancaEm") ||
+          (!mesmaUltima ? ultimaAtual : ""),
+        total: numeroAtualMedia(registroAtual, "penultimaCobrancaValor") ||
+          (!mesmaUltima ? ultimaAtualValor : 0),
+      };
+      antepenultima = {
+        data: valorAtualMedia(registroAtual, "antepenultimaCobrancaEm") || "",
+        total: numeroAtualMedia(registroAtual, "antepenultimaCobrancaValor"),
+      };
+    } else {
+      ultima = {
+        data: valorAtualMedia(registroAtual, "ultimaCobrancaEm") || "",
+        total: numeroAtualMedia(registroAtual, "ultimaCobrancaValor"),
+      };
+      penultima = {
+        data: valorAtualMedia(registroAtual, "penultimaCobrancaEm") || "",
+        total: numeroAtualMedia(registroAtual, "penultimaCobrancaValor"),
+      };
+      antepenultima = {
+        data: valorAtualMedia(registroAtual, "antepenultimaCobrancaEm") || "",
+        total: numeroAtualMedia(registroAtual, "antepenultimaCobrancaValor"),
+      };
+    }
+
+    const diasDesdeUltima = ultima?.data ?
+      diasEntreDatasBrasilia(`${hoje}T00:00:00-03:00`, ultima.data) :
+      0;
+    estimativaAtualDia = arredondar2(mediaVendaPorDia * diasDesdeUltima);
+  }
+
+  return {
+    cliente: {
+      id: clienteId || "",
+      numero: cliente?.numero ?? "",
+      nome: cliente?.nome || "",
+      rota: cliente?.rota || "",
+    },
+    rota: cliente?.rota || "",
+    ultimaCobrancaEm: ultima?.data || "",
+    penultimaCobrancaEm: penultima?.data || "",
+    antepenultimaCobrancaEm: antepenultima?.data || "",
+    ultimaCobrancaValor: ultima ? arredondar2(ultima.total) : 0,
+    penultimaCobrancaValor: penultima ? arredondar2(penultima.total) : 0,
+    antepenultimaCobrancaValor: antepenultima ? arredondar2(antepenultima.total) : 0,
+    mediaVendaPorDia,
+    hoje,
+    estimativaAtualDia,
+    atualizadoEm,
+  };
+}
+
+async function carregarClienteParaMedia(db, alvo) {
+  if (alvo.id) {
+    const snap = await db.ref(`clientes/${alvo.id}`).get();
+    if (snap.exists()) return {id: alvo.id, dados: snap.val()};
+  }
+
+  const numeroAlvo = normalizarNumeroCliente(alvo.numero);
+  if (!numeroAlvo) return null;
+
+  const clientesSnap = await db.ref("clientes").get();
+  const clientes = clientesSnap.val() || {};
+  const encontrado = Object.entries(clientes).find(([, cliente]) =>
+    normalizarNumeroCliente(cliente?.numero) === numeroAlvo,
+  );
+  return encontrado ? {id: encontrado[0], dados: encontrado[1]} : null;
+}
+
+async function recalcularMediaDeVendasCliente(alvo) {
+  const db = admin.database();
+  const numeroAlvo = normalizarNumeroCliente(alvo.numero);
+  const clienteEncontrado = await carregarClienteParaMedia(db, alvo);
+
+  if (!clienteEncontrado && numeroAlvo) {
+    await db.ref(`${MEDIA_VENDAS_ROOT}/${numeroAlvo}`).remove();
+    await db.ref(MEDIA_VENDAS_METADATA_PATH).set(Date.now());
+    logger.info("Media de vendas removida: cliente nao encontrado.", {alvo});
+    return;
+  }
+  if (!clienteEncontrado) return;
+
+  const clienteId = clienteEncontrado.id;
+  const cliente = clienteEncontrado.dados || {};
+  const numeroKey = normalizarNumeroCliente(cliente.numero);
+  if (!numeroKey) return;
+
+  const atendimentosSnap = await db.ref("atendimentos").get();
+  const registroAtualSnap = await db.ref(`${MEDIA_VENDAS_ROOT}/${numeroKey}`).get();
+  const registroAtual = registroAtualSnap.val() || {};
+  const cobrancas = Object.entries(atendimentosSnap.val() || {})
+    .map(([id, atendimento]) => ({id, atendimento}))
+    .filter(({atendimento}) => clienteCorrespondeAoAlvo(
+      atendimento,
+      alvo,
+      {id: clienteId, numero: cliente.numero},
+    ))
+    .map(({id, atendimento}) => {
+      const dataInfo = obterDataAtendimento(atendimento);
+      const total = obterTotalCobrancaAtendimento(atendimento);
+      if (!dataInfo || total <= 0) return null;
+      return {atendimentoId: id, data: dataInfo.data, timestamp: dataInfo.timestamp, total};
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.timestamp - a.timestamp);
+
+  const agora = new Date();
+  const registro = montarRegistroMediaDeVendas(
+    clienteId,
+    cliente,
+    cobrancas,
+    dataBrasiliaISOData(agora),
+    agora.toISOString(),
+    registroAtual,
+  );
+
+  const updates = {
+    [`${MEDIA_VENDAS_ROOT}/${numeroKey}`]: registro,
+    [MEDIA_VENDAS_METADATA_PATH]: Date.now(),
+  };
+
+  if (numeroAlvo && numeroAlvo !== numeroKey) {
+    updates[`${MEDIA_VENDAS_ROOT}/${numeroAlvo}`] = null;
+  }
+
+  await db.ref().update(updates);
+  logger.info("Media de vendas recalculada.", {
+    numero: numeroKey,
+    clienteId,
+    cobrancas: cobrancas.length,
+  });
+}
+
+async function recalcularTodasMediasDeVendas() {
+  const db = admin.database();
+  const [clientesSnap, atendimentosSnap, mediaSnap] = await Promise.all([
+    db.ref("clientes").get(),
+    db.ref("atendimentos").get(),
+    db.ref(MEDIA_VENDAS_ROOT).get(),
+  ]);
+  const clientes = clientesSnap.val() || {};
+  const mediasAtuais = mediaSnap.val() || {};
+  const atendimentos = Object.entries(atendimentosSnap.val() || {})
+    .map(([id, atendimento]) => ({id, atendimento}));
+  const agora = new Date();
+  const hoje = dataBrasiliaISOData(agora);
+  const atualizadoEm = agora.toISOString();
+  const updates = {};
+  const chavesClientes = new Set();
+
+  Object.entries(clientes).forEach(([clienteId, cliente]) => {
+    const numeroKey = normalizarNumeroCliente(cliente?.numero);
+    if (!numeroKey) return;
+    chavesClientes.add(numeroKey);
+
+    const cobrancas = atendimentos
+      .filter(({atendimento}) => clienteCorrespondeAoAlvo(
+        atendimento,
+        {id: clienteId, numero: numeroKey},
+        {id: clienteId, numero: numeroKey},
+      ))
+      .map(({id, atendimento}) => {
+        const dataInfo = obterDataAtendimento(atendimento);
+        const total = obterTotalCobrancaAtendimento(atendimento);
+        if (!dataInfo || total <= 0) return null;
+        return {atendimentoId: id, data: dataInfo.data, timestamp: dataInfo.timestamp, total};
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.timestamp - a.timestamp);
+
+    updates[`${MEDIA_VENDAS_ROOT}/${numeroKey}`] =
+      montarRegistroMediaDeVendas(
+        clienteId,
+        cliente,
+        cobrancas,
+        hoje,
+        atualizadoEm,
+        mediasAtuais[numeroKey] || {},
+      );
+  });
+
+  Object.keys(mediasAtuais).forEach((numeroKey) => {
+    if (!chavesClientes.has(normalizarNumeroCliente(numeroKey))) {
+      updates[`${MEDIA_VENDAS_ROOT}/${numeroKey}`] = null;
+    }
+  });
+
+  updates[MEDIA_VENDAS_METADATA_PATH] = Date.now();
+  await db.ref().update(updates);
+  logger.info("Todas as medias de vendas recalculadas.", {
+    totalClientes: chavesClientes.size,
+    data: hoje,
+  });
 }
 
 function bsbDate(valor) {
@@ -187,6 +515,36 @@ exports.atualizarResumoDepositosPorDeposito = onValueWritten(
     const after = event.data.after.exists() ? event.data.after.val() : null;
     const alvos = obterAlvosDeposito(event.params.usuario, before, after);
     await recalcularAlvosDepositos(alvos, "deposito");
+  },
+);
+
+exports.atualizarMediaDeVendasPorAtendimento = onValueWritten(
+  "/atendimentos/{atendimentoId}",
+  async (event) => {
+    const before = event.data.before.exists() ? event.data.before.val() : null;
+    const after = event.data.after.exists() ? event.data.after.val() : null;
+    const alvos = obterAlvosMediaPorAtendimento(before, after);
+    await Promise.all(alvos.map((alvo) => recalcularMediaDeVendasCliente(alvo)));
+  },
+);
+
+exports.atualizarMediaDeVendasPorCliente = onValueWritten(
+  "/clientes/{clienteId}",
+  async (event) => {
+    const before = event.data.before.exists() ? event.data.before.val() : null;
+    const after = event.data.after.exists() ? event.data.after.val() : null;
+    const alvos = obterAlvosMediaPorCliente(event.params.clienteId, before, after);
+    await Promise.all(alvos.map((alvo) => recalcularMediaDeVendasCliente(alvo)));
+  },
+);
+
+exports.atualizarMediaDeVendasDiaria = onSchedule(
+  {
+    schedule: "10 0 * * *",
+    timeZone: "America/Sao_Paulo",
+  },
+  async () => {
+    await recalcularTodasMediasDeVendas();
   },
 );
 

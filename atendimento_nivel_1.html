@@ -2047,17 +2047,6 @@ function obterIdAtendimentoEmEdicao() {
                 dadosAtendimento.ultimaEdicao = new Date().toISOString();
             }
 
-            // Indicador de Venda/dia fica salvo apenas no atendimento mais recente (novo atendimento)
-            if (!atendimentoEmEdicaoId && navigator.onLine) {
-                const ind = calcularIndicadorVendaDiaCliente(listaAtendimentos, dadosAtendimento);
-                dadosAtendimento.indicadores_venda_dia = ind;
-                dadosAtendimento.cliente.venda_por_dia = ind.venda_por_dia;
-                dadosAtendimento.cliente.venda_por_dia_msg = ind.msg;
-                dadosAtendimento.cliente.venda_por_dia_intervalo_dias = ind.diasEntre;
-                dadosAtendimento.cliente.venda_por_dia_base_total = ind.baseTotal;
-                dadosAtendimento.cliente.venda_por_dia_atualizado_em = ind.calculadoEm;
-            }
-
             if (atendimentoEmEdicaoId && atendimentoOriginal?._gestor_ultima_edicao) {
                 dadosAtendimento._gestor_ultima_edicao = atendimentoOriginal._gestor_ultima_edicao;
             }

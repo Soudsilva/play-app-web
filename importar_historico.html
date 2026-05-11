@@ -266,13 +266,13 @@
         <div class="secao-titulo">Cole os dados do Dataverse</div>
         <div class="dica">
             Copie diretamente do Excel ou do Dataverse e cole abaixo.<br>
-            Colunas esperadas: <strong>nº cliente · rota · venda/dia · última visita · penúltima visita</strong><br>
+            Colunas esperadas: <strong>nº cliente · rota · media/dia · valor ultima cobranca · ultima cobranca · penultima cobranca</strong><br>
             Linhas sem rota são ignoradas automaticamente.
         </div>
         <textarea
             id="txtDados"
             class="textarea-dados"
-            placeholder="Cole aqui os dados copiados do Dataverse...&#10;&#10;Ex:&#10;1	R.03	10,20	02/04/2026	23/03/2026&#10;2	R.44	46,66	27/03/2026	07/01/2026&#10;3		&#10;4	R.22	3,24	07/04/2026	21/03/2026"
+            placeholder="Cole aqui os dados copiados do Dataverse...&#10;&#10;Ex:&#10;1	R.03	8,43	118	30/04/2026	16/04/2026&#10;2	R.44	45,68	1.142	21/04/2026	27/03/2026&#10;5	R.40				"
         ></textarea>
 
         <button class="btn-principal btn-analisar" onclick="analisarDados()">
@@ -291,8 +291,8 @@
                             <th>Nº</th>
                             <th>Nome / Observação</th>
                             <th>Rota</th>
-                            <th>Venda/dia</th>
-                            <th>Último atend.</th>
+                            <th>Media/dia</th>
+                            <th>Ultima cobranca</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -370,17 +370,29 @@ function parsearData(str) {
 }
 
 // ── Calcular estimativa (igual ao app) ───────────────────────────────────────
-function calcularEstimativa(venda_por_dia, ultimo_iso) {
-    if (typeof venda_por_dia !== 'number' || !ultimo_iso) return null;
+function calcularEstimativa(mediaVendaPorDia, ultimaCobrancaIso) {
+    if (typeof mediaVendaPorDia !== 'number' || !ultimaCobrancaIso) return null;
     const hoje  = new Date(); hoje.setHours(0, 0, 0, 0);
-    const ultimo = new Date(ultimo_iso); ultimo.setHours(0, 0, 0, 0);
+    const ultimo = new Date(ultimaCobrancaIso); ultimo.setHours(0, 0, 0, 0);
     const dias  = Math.max(0, Math.round((hoje - ultimo) / 86400000));
-    return Math.round(((venda_por_dia * dias) + Number.EPSILON) * 100) / 100;
+    return Math.round(((mediaVendaPorDia * dias) + Number.EPSILON) * 100) / 100;
 }
 
 function hojeYMD() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function parsearMoedaNumero(valor) {
+    const bruto = String(valor ?? '').trim();
+    if (!bruto) return 0;
+    const normalizado = bruto.replace(/\./g, '').replace(',', '.');
+    const numero = Number(normalizado);
+    return Number.isFinite(numero) ? numero : NaN;
+}
+
+function normalizarRotaImportacao(valor) {
+    return String(valor || '').trim().replace(/^R\.?\s*/i, '').trim();
 }
 
 // ── Parsear linhas coladas ────────────────────────────────────────────────────
@@ -392,9 +404,10 @@ function parsearLinhas(texto) {
         const cols      = linha.split('\t').map(c => c.trim());
         const numero    = String(cols[0] ?? '').trim();
         const rotaRaw   = String(cols[1] ?? '').trim();
-        const vendaRaw  = String(cols[2] ?? '').trim();
-        const ultimoRaw = String(cols[3] ?? '').trim();
-        const penulRaw  = String(cols[4] ?? '').trim();
+        const mediaRaw  = String(cols[2] ?? '').trim();
+        const valorRaw  = String(cols[3] ?? '').trim();
+        const ultimoRaw = String(cols[4] ?? '').trim();
+        const penulRaw  = String(cols[5] ?? '').trim();
 
         if (!numero) return;
 
@@ -405,27 +418,35 @@ function parsearLinhas(texto) {
         }
 
         // Valor da venda (trocar vírgula por ponto)
-        const venda_por_dia = parseFloat(vendaRaw.replace(',', '.'));
-        if (isNaN(venda_por_dia) || venda_por_dia < 0) {
-            result.push({ numero, status: 'erro', motivo: `valor inválido: "${vendaRaw}"` });
+        const rota = normalizarRotaImportacao(rotaRaw);
+        const mediaVendaPorDia = parsearMoedaNumero(mediaRaw);
+        if (Number.isNaN(mediaVendaPorDia) || mediaVendaPorDia < 0) {
+            result.push({ numero, status: 'erro', motivo: `media invalida: "${mediaRaw}"` });
             return;
         }
 
         // Data do último atendimento
-        const ultimo_atendimento_em = parsearData(ultimoRaw);
-        if (!ultimo_atendimento_em) {
+        const ultimaCobrancaValor = parsearMoedaNumero(valorRaw);
+        if (Number.isNaN(ultimaCobrancaValor) || ultimaCobrancaValor < 0) {
+            result.push({ numero, status: 'erro', motivo: `valor da ultima cobranca invalido: "${valorRaw}"` });
+            return;
+        }
+
+        const ultimaCobrancaEm = ultimoRaw ? parsearData(ultimoRaw) : '';
+        if (ultimoRaw && !ultimaCobrancaEm) {
             result.push({ numero, status: 'erro', motivo: `data inválida: "${ultimoRaw}"` });
             return;
         }
 
         // Dias entre última e penúltima visita (se disponível)
-        let diasEntre = 0;
+        let penultimaCobrancaEm = '';
         if (penulRaw) {
             const penulIso = parsearData(penulRaw);
             if (penulIso) {
-                diasEntre = Math.abs(Math.round(
-                    (new Date(ultimo_atendimento_em) - new Date(penulIso)) / 86400000
-                ));
+                penultimaCobrancaEm = penulIso;
+            } else {
+                result.push({ numero, status: 'erro', motivo: `data da penultima cobranca invalida: "${penulRaw}"` });
+                return;
             }
         }
 
@@ -439,9 +460,11 @@ function parsearLinhas(texto) {
         result.push({
             numero,
             status: 'ok',
-            venda_por_dia,
-            ultimo_atendimento_em,
-            diasEntre,
+            rota,
+            mediaVendaPorDia,
+            ultimaCobrancaValor,
+            ultimaCobrancaEm,
+            penultimaCobrancaEm,
             cliente: clienteFirebase   // usa os dados do Firebase (nome, rota, id)
         });
     });
@@ -468,9 +491,9 @@ function renderizarPreview(dados) {
             return `<tr class="row-ok">
                 <td>${d.numero}</td>
                 <td>${d.cliente.nome || '—'}</td>
-                <td>${d.cliente.rota || '—'}</td>
-                <td>R$ ${d.venda_por_dia.toFixed(2)}/dia</td>
-                <td>${d.ultimo_atendimento_em}</td>
+                <td>${d.rota || d.cliente.rota || '-'}</td>
+                <td>R$ ${d.mediaVendaPorDia.toFixed(2)}/dia</td>
+                <td>${d.ultimaCobrancaEm || '-'}</td>
                 <td>✓ importar</td>
             </tr>`;
         }
@@ -517,29 +540,28 @@ window.importarDados = async function () {
 
     for (const item of paraImportar) {
         try {
-            const baseTotal   = item.diasEntre > 0
-                ? Math.round(item.venda_por_dia * item.diasEntre * 100) / 100
-                : 0;
-            const estimativa  = calcularEstimativa(item.venda_por_dia, item.ultimo_atendimento_em);
+            const estimativa = calcularEstimativa(item.mediaVendaPorDia, item.ultimaCobrancaEm);
+            const rota = item.rota || item.cliente.rota || "";
 
-            // Estrutura exata que o app já usa em Media_de_Vendas
+            // Formato novo mantido pelas Cloud Functions.
             const registro = {
                 cliente: {
                     id: item.cliente.id,
                     numero: item.cliente.numero,
                     nome: item.cliente.nome,
-                    rota: item.cliente.rota
+                    rota
                 },
-                rota: item.cliente.rota,
-                ultimo_atendimento_em: item.ultimo_atendimento_em,
-                venda_por_dia: item.venda_por_dia,
-                venda_por_dia_msg: null,
-                venda_por_dia_base_total: baseTotal,
-                venda_por_dia_intervalo_dias: item.diasEntre,
-                venda_por_dia_atualizado_em: agoraIso,
-                hoje_dia: hojeStr,
-                estimativa_hoje: estimativa,
-                atualizado_em: agoraIso
+                rota,
+                ultimaCobrancaEm: item.ultimaCobrancaEm || "",
+                penultimaCobrancaEm: item.penultimaCobrancaEm || "",
+                antepenultimaCobrancaEm: "",
+                ultimaCobrancaValor: item.ultimaCobrancaValor || 0,
+                penultimaCobrancaValor: 0,
+                antepenultimaCobrancaValor: 0,
+                mediaVendaPorDia: item.mediaVendaPorDia || 0,
+                hoje: hojeStr,
+                estimativaAtualDia: estimativa || 0,
+                atualizadoEm: agoraIso
             };
 
             await set(ref(db, `Media_de_Vendas/${item.cliente.numero}`), registro);

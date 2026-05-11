@@ -1397,16 +1397,16 @@ async function calcularValoresPorRota() {
         if (!numRota) return;
 
         const mediaAtual = mediaPorNumero[String(c.numero ?? '').trim()] || null;
-        const ultimoAtendimentoIso = mediaAtual?.ultimo_atendimento_em || null;
-        const vendaPorDia = typeof mediaAtual?.venda_por_dia === 'number' ? mediaAtual.venda_por_dia : null;
+        const ultimaCobrancaEm = mediaAtual?.ultimaCobrancaEm || null;
+        const mediaVendaPorDia = typeof mediaAtual?.mediaVendaPorDia === 'number' ? mediaAtual.mediaVendaPorDia : null;
         let estimativa = 0;
 
-        if (ultimoAtendimentoIso && vendaPorDia !== null) {
-            const ultimo = new Date(ultimoAtendimentoIso);
+        if (ultimaCobrancaEm && mediaVendaPorDia !== null) {
+            const ultimo = new Date(ultimaCobrancaEm);
             if (!Number.isNaN(ultimo.getTime())) {
                 ultimo.setHours(0,0,0,0);
                 const diasDesdeUltimo = Math.max(0, Math.round((hoje - ultimo) / 86400000));
-                estimativa = Math.round(((vendaPorDia * diasDesdeUltimo) + Number.EPSILON) * 100) / 100;
+                estimativa = Math.round(((mediaVendaPorDia * diasDesdeUltimo) + Number.EPSILON) * 100) / 100;
             }
         }
 
@@ -1424,8 +1424,8 @@ async function calcularValoresPorRota() {
             cidade: c.cidade || '',
             aberto: c.aberto || '',
             estimativa_valor: estimativa,
-            venda_por_dia: vendaPorDia,
-            ultimo_atendimento_em: ultimoAtendimentoIso
+            mediaVendaPorDia,
+            ultimaCobrancaEm
         });
     });
 

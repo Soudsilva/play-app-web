@@ -223,7 +223,7 @@
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
-    import { dbEscutarAtendimentos, dbEscutarClientes, dbEscutarColaboradores, dbEscutarMediaDeVendas, dbEscutarEstoque } from './database.js';
+    import { dbEscutarClientes, dbEscutarColaboradores, dbEscutarMediaDeVendas, dbEscutarEstoque } from './database.js';
 
     verificarAutenticacao();
 
@@ -231,7 +231,6 @@
     let colaboradores = [];
     let autorizado = false;
     let listaBase = [];
-    let listaAtendimentos = [];
     let mapaClientesPorId = new Map();
     let mapaClientesPorNumero = new Map();
     let termo = '';
@@ -265,16 +264,6 @@
         return `${y}-${m}-${day}`;
     }
 
-    function somarDiasYMD(ymdBase, dias) {
-        const base = new Date(`${ymdBase}T00:00:00`);
-        if (Number.isNaN(base.getTime())) return ymdBase;
-        base.setDate(base.getDate() + Number(dias || 0));
-        const y = base.getFullYear();
-        const m = String(base.getMonth() + 1).padStart(2, '0');
-        const day = String(base.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
-    }
-
     function inicioDiaLocalFromIso(iso) {
         if (!iso) return null;
         const d = new Date(iso);
@@ -297,13 +286,6 @@
         if (!dUlt || !dAlvo) return null;
         const diff = Math.round((dAlvo - dUlt) / 86400000);
         return Math.max(0, diff);
-    }
-
-    function fimDiaLocalFromYMD(ymd) {
-        if (!ymd) return null;
-        const d = new Date(`${ymd}T23:59:59`);
-        if (Number.isNaN(d.getTime())) return null;
-        return d;
     }
 
     function fmtDataHora(iso) {
@@ -428,8 +410,8 @@
                 },
                 cliente_numero: cliente?.numero ?? '',
                 rota: cliente?.rota || '',
-                atualizado_em: null,
-                ultimo_atendimento_em: null
+                atualizadoEm: null,
+                ultimaCobrancaEm: null
             };
         });
     }
@@ -439,66 +421,7 @@
         return String(perfil || '').includes('gestao') || String(perfil || '').includes('atendimento_2');
     }
 
-    function calcularIndicadorHistoricoCliente(numeroCliente, ymdAlvo) {
-        const numero = String(numeroCliente ?? '').trim();
-        if (!numero) {
-            return { venda_por_dia: null, msg: 'N\u00e3o calculado', baseTotal: 0, diasEntre: 0, ultimoAtendimentoEm: null, usados: [] };
-        }
-
-        const dataLimite = fimDiaLocalFromYMD(ymdAlvo);
-        const limiteTs = dataLimite ? dataLimite.getTime() : null;
-
-        const validos = listaAtendimentos
-            .filter(item => String(item?.cliente?.numero ?? '').trim() === numero)
-            .filter(item => {
-                const total = Number(item?.financeiro?.totalGeral) || 0;
-                const data = Date.parse(item?.data || '');
-                if (total <= 0 || Number.isNaN(data)) return false;
-                if (limiteTs === null) return true;
-                return data <= limiteTs;
-            })
-            .map(item => ({
-                data: item.data,
-                totalGeral: Number(item?.financeiro?.totalGeral) || 0,
-                saldoFinal: Number(item?.financeiro?.saldoFinal) || 0
-            }))
-            .sort((a, b) => Date.parse(b.data) - Date.parse(a.data));
-
-        const usadosBase = validos.slice(0, 3);
-        const usados = usadosBase.length >= 3 ? usadosBase : usadosBase.slice(0, 2);
-        const ultimoAtendimentoEm = validos[0]?.data || null;
-
-        if (usados.length < 2) {
-            return {
-                venda_por_dia: null,
-                msg: 'aguardando mais atendimentos para a media por dia',
-                baseTotal: usados.length === 1 ? (Number(usados[0]?.totalGeral) || 0) : 0,
-                diasEntre: 0,
-                ultimoAtendimentoEm,
-                usados
-            };
-        }
-
-        const baseTotal = usados.reduce((soma, item) => soma + (Number(item.totalGeral) || 0), 0);
-        const maisRecente = new Date(usados[0].data);
-        const maisAntigo = new Date(usados[usados.length - 1].data);
-        maisRecente.setHours(0, 0, 0, 0);
-        maisAntigo.setHours(0, 0, 0, 0);
-        const diasEntreCalc = Math.abs(Math.round((maisRecente - maisAntigo) / 86400000));
-        const dias = diasEntreCalc > 0 ? diasEntreCalc : 1;
-        const vendaPorDia = Math.round(((baseTotal / dias) + Number.EPSILON) * 100) / 100;
-
-        return {
-            venda_por_dia: vendaPorDia,
-            msg: null,
-            baseTotal,
-            diasEntre: diasEntreCalc,
-            ultimoAtendimentoEm,
-            usados
-        };
-    }
-
-    function ordenarLista(lista, ymdAlvo) {
+    function ordenarLista(lista) {
         return [...lista].sort((a, b) => {
             const clienteA = obterClienteFonte(a);
             const clienteB = obterClienteFonte(b);
@@ -507,8 +430,8 @@
             const aEhNumero = Number.isFinite(numeroA);
             const bEhNumero = Number.isFinite(numeroB);
 
-            const ea = calcularEstimativaHistorica(a, ymdAlvo)?.estimativa ?? -1;
-            const eb = calcularEstimativaHistorica(b, ymdAlvo)?.estimativa ?? -1;
+            const ea = calcularEstimativaHistorica(a)?.estimativa ?? -1;
+            const eb = calcularEstimativaHistorica(b)?.estimativa ?? -1;
 
             if (modoOrdenacao === 'numero_menor') {
                 if (aEhNumero && bEhNumero && numeroA !== numeroB) return numeroA - numeroB;
@@ -533,17 +456,16 @@
         });
     }
 
-    function calcularEstimativaHistorica(reg, ymdAlvo) {
-        const clienteNumero = reg?.cliente?.numero ?? reg?.cliente_numero ?? null;
-        const hist = calcularIndicadorHistoricoCliente(clienteNumero, ymdAlvo);
-        const vendaDia = (typeof hist?.venda_por_dia === 'number') ? hist.venda_por_dia : null;
-        const msg = hist?.msg || null;
-        const ultimo = hist?.ultimoAtendimentoEm || null;
-        const dias = diasEntre(ultimo, ymdAlvo);
-        if (msg) return { msg, dias, estimativa: null, vendaDia, ultimoAtendimentoEm: ultimo };
-        if (vendaDia === null || !ultimo || dias === null) return { msg: 'N\u00e3o calculado', dias, estimativa: null, vendaDia, ultimoAtendimentoEm: ultimo };
-        const est = Math.round(((vendaDia * dias) + Number.EPSILON) * 100) / 100;
-        return { msg: null, dias, estimativa: est, vendaDia, ultimoAtendimentoEm: ultimo };
+    function calcularEstimativaHistorica(reg) {
+        const vendaDia = Number(reg?.mediaVendaPorDia);
+        const ultimo = reg?.ultimaCobrancaEm || null;
+        const dias = diasEntre(ultimo, hojeLocalYYYYMMDD());
+        if (!Number.isFinite(vendaDia) || vendaDia <= 0 || !ultimo || dias === null) {
+            return { msg: 'N\u00e3o calculado', dias, estimativa: null, vendaDia: null, ultimoAtendimentoEm: ultimo };
+        }
+        const periodo = Number(elPeriodo.value || 15);
+        const estimativa = Math.round(((vendaDia * periodo) + Number.EPSILON) * 100) / 100;
+        return { msg: null, dias, estimativa, vendaDia, ultimoAtendimentoEm: ultimo };
     }
 
     function render() {
@@ -555,8 +477,6 @@
         }
 
         const diasProjetados = Number(elPeriodo.value || 15);
-        const ymdHoje = hojeLocalYYYYMMDD();
-        const ymd = somarDiasYMD(ymdHoje, diasProjetados);
         const filtradaBusca = obterListaBaseCompleta().filter(reg => {
             const cliente = obterClienteFonte(reg);
             if (modoBusca === 'maquina') {
@@ -570,17 +490,17 @@
                 cliente.numero,
                 cliente.rota,
                 reg?.rota,
-                reg?.ultimo_atendimento_em ? fmtDataHora(reg.ultimo_atendimento_em) : ''
+                reg?.ultimaCobrancaEm ? fmtDataHora(reg.ultimaCobrancaEm) : ''
             ];
             return campos.some(c => normalizar(c).includes(termo));
         });
 
         const filtrada = filtradaBusca.filter(reg => {
-            const calc = calcularEstimativaHistorica(reg, ymd);
+            const calc = calcularEstimativaHistorica(reg);
             return typeof calc?.vendaDia === 'number' && calc.vendaDia >= 1;
         });
 
-        const listaOrdenada = ordenarLista(filtrada, ymd);
+        const listaOrdenada = ordenarLista(filtrada);
 
         if (listaOrdenada.length === 0) {
             elLista.innerHTML = '';
@@ -592,7 +512,7 @@
         elVazia.style.display = 'none';
         elLista.innerHTML = '';
         const listaCalculada = listaOrdenada.map(reg => {
-            const calc = calcularEstimativaHistorica(reg, ymd);
+            const calc = calcularEstimativaHistorica(reg);
             return { reg, calc };
         });
         const vendasDiaValidas = listaCalculada
@@ -696,11 +616,6 @@
 
     dbEscutarClientes((lista) => {
         atualizarMapasClientes(Array.isArray(lista) ? lista : []);
-        render();
-    });
-
-    dbEscutarAtendimentos((lista) => {
-        listaAtendimentos = Array.isArray(lista) ? lista : [];
         render();
     });
 

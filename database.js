@@ -214,20 +214,12 @@ export async function dbSalvarCliente(cliente, idExistente = null) {
         if (idExistente) {
             // Modo Edição: Atualiza o cliente específico
             const clienteRef = ref(db, `clientes/${idExistente}`);
-            const snapAnt = await get(clienteRef);
-            const dadosAnt = snapAnt.exists() ? snapAnt.val() : null;
-            const numeroAntigo = dadosAnt?.numero ?? null;
-            // Usa update para preservar campos calculados/gerados pelo sistema (ex: venda_por_dia)
             await update(clienteRef, cliente);
-            await _upsertMediaDeVendasPorCliente(cliente, idExistente, numeroAntigo);
-            await _atualizarVersaoMediaDeVendas();
         } else {
             // Modo Criação: Cria um novo cliente com chave única
             const clientesRef = ref(db, 'clientes');
             const novoRef = await push(clientesRef, cliente);
             clienteId = novoRef.key || '';
-            await _upsertMediaDeVendasPorCliente(cliente, novoRef.key || null, null);
-            await _atualizarVersaoMediaDeVendas();
         }
         // Avisa todos os dispositivos que a lista mudou
         await _atualizarVersaoClientes();
@@ -792,9 +784,6 @@ export async function dbSalvarAtendimento(atendimento, idExistente = null) {
             atendimentoId = String(novoRef?.key || '').trim();
         }
         await _sincronizarContadorAtualClientePorAtendimento(atendimento);
-        // Atualiza a base "Media_de_Vendas" (tempo real, sem depender do cache offline)
-        await _upsertMediaDeVendasPorAtendimento(atendimento);
-        await _atualizarVersaoMediaDeVendas();
         await _tentarRecalcularRemuneracoes();
         return atendimentoId || null;
     } catch (error) {
@@ -1225,115 +1214,9 @@ export async function dbListarMediaDeVendas() {
 }
 
 export async function dbSincronizarMediaDeVendasComClientes() {
-    const [snapClientes, snapBase, snapAtendimentos] = await Promise.all([
-        get(ref(db, 'clientes')),
-        get(ref(db, 'Media_de_Vendas')),
-        get(ref(db, 'atendimentos'))
-    ]);
-    if (!snapClientes.exists()) return 0;
-
-    const data = snapClientes.val();
-    const baseAtual = snapBase.exists() ? (snapBase.val() || {}) : {};
-    const atendimentos = snapAtendimentos.exists() ? (snapAtendimentos.val() || {}) : {};
-
-    const agoraIso = new Date().toISOString();
-    const hojeYmd = _hojeLocalYYYYMMDD();
-
-    const updates = {};
-    let total = 0;
-
-    const ultimosAtendimentos = {};
-    const ultimosIndicadores = {};
-
-    Object.keys(atendimentos).forEach((id) => {
-        const at = atendimentos[id] || {};
-        const numeroKey = _normalizarNumeroCliente(at?.cliente?.numero);
-        const dataAt = at?.data || null;
-        const ts = Date.parse(dataAt || "");
-        if (!numeroKey || Number.isNaN(ts)) return;
-
-        const atualUltimo = ultimosAtendimentos[numeroKey];
-        if (!atualUltimo || ts > atualUltimo.ts) {
-            ultimosAtendimentos[numeroKey] = { ts, at };
-        }
-
-        const ind = at?.indicadores_venda_dia || null;
-        const temIndicador =
-            (typeof ind?.venda_por_dia === 'number') ||
-            Boolean(ind?.msg) ||
-            (typeof at?.cliente?.venda_por_dia === 'number') ||
-            Boolean(at?.cliente?.venda_por_dia_msg);
-
-        if (temIndicador) {
-            const atualComIndicador = ultimosIndicadores[numeroKey];
-            if (!atualComIndicador || ts > atualComIndicador.ts) {
-                ultimosIndicadores[numeroKey] = { ts, at };
-            }
-        }
-    });
-
-    const chavesClientes = new Set();
-
-    Object.keys(data).forEach(id => {
-        const c = data[id] || {};
-        const key = _normalizarNumeroCliente(c?.numero);
-        if (!key) return;
-        chavesClientes.add(key);
-        total++;
-
-        const reg = baseAtual[key] || {};
-        const ultimoAt = ultimosAtendimentos[key]?.at || null;
-        const ultimoAtComIndicador = ultimosIndicadores[key]?.at || null;
-
-        const origemIndicador = ultimoAtComIndicador || ultimoAt || null;
-        const ind = origemIndicador?.indicadores_venda_dia || null;
-
-        const vendaDia = (typeof ind?.venda_por_dia === 'number')
-            ? ind.venda_por_dia
-            : (typeof origemIndicador?.cliente?.venda_por_dia === 'number'
-                ? origemIndicador.cliente.venda_por_dia
-                : (typeof reg?.venda_por_dia === 'number' ? reg.venda_por_dia : null));
-        const vendaMsg = (ind?.msg ?? origemIndicador?.cliente?.venda_por_dia_msg ?? reg?.venda_por_dia_msg ?? null);
-        const vendaBaseTotal = (typeof ind?.baseTotal === 'number')
-            ? ind.baseTotal
-            : (Number(origemIndicador?.cliente?.venda_por_dia_base_total) || Number(reg?.venda_por_dia_base_total) || 0);
-        const vendaDiasEntre = (typeof ind?.diasEntre === 'number')
-            ? ind.diasEntre
-            : (Number(origemIndicador?.cliente?.venda_por_dia_intervalo_dias) || Number(reg?.venda_por_dia_intervalo_dias) || 0);
-        const ultimo = ultimoAt?.data || reg?.ultimo_atendimento_em || null;
-
-        updates[`Media_de_Vendas/${key}/cliente/id`] = id;
-        updates[`Media_de_Vendas/${key}/cliente/numero`] = c.numero ?? null;
-        updates[`Media_de_Vendas/${key}/cliente/nome`] = c.nome || "";
-        updates[`Media_de_Vendas/${key}/cliente/rota`] = c.rota || "";
-        updates[`Media_de_Vendas/${key}/rota`] = c.rota || "";
-        updates[`Media_de_Vendas/${key}/ultimo_atendimento_em`] = ultimo;
-        updates[`Media_de_Vendas/${key}/venda_por_dia`] = vendaDia;
-        updates[`Media_de_Vendas/${key}/venda_por_dia_msg`] = vendaMsg;
-        updates[`Media_de_Vendas/${key}/venda_por_dia_base_total`] = vendaBaseTotal;
-        updates[`Media_de_Vendas/${key}/venda_por_dia_intervalo_dias`] = vendaDiasEntre;
-        updates[`Media_de_Vendas/${key}/venda_por_dia_atualizado_em`] =
-            ind?.calculadoEm ??
-            origemIndicador?.cliente?.venda_por_dia_atualizado_em ??
-            reg?.venda_por_dia_atualizado_em ??
-            agoraIso;
-        updates[`Media_de_Vendas/${key}/hoje_dia`] = hojeYmd;
-        updates[`Media_de_Vendas/${key}/estimativa_hoje`] = _calcularEstimativa(vendaDia, ultimo, hojeYmd);
-        updates[`Media_de_Vendas/${key}/atualizado_em`] = agoraIso;
-    });
-
-    Object.keys(baseAtual).forEach((key) => {
-        if (!chavesClientes.has(String(key))) {
-            updates[`Media_de_Vendas/${key}`] = null;
-        }
-    });
-
-    if (Object.keys(updates).length > 0) {
-        await update(ref(db), updates);
-        await _atualizarVersaoMediaDeVendas();
-    }
-
-    return total;
+    // Media_de_Vendas agora é mantido pelas Cloud Functions.
+    // Mantido como no-op para telas antigas não sobrescreverem o formato novo.
+    return 0;
 }
 
 /* --- FUNCOES PARA MANUTENCAO --- */

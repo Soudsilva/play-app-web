@@ -262,6 +262,10 @@
                     <span class="icone">&#128640;</span>
                     <span>Sele&ccedil;&atilde;o de rotas</span>
                 </div>
+                <div class="botao-sub" id="btnVerificarRotas" onclick="window.location.href='verificar_rotas.html'" style="display:none;">
+                    <span class="icone">&#128270;</span>
+                    <span>Verificar Rotas</span>
+                </div>
             </div>
         </div>
 
@@ -712,7 +716,8 @@
             pix: document.getElementById('btnPix'),
             fluxoCaixa: document.getElementById('btnFluxoCaixa'),
             pagamentosGestor: document.getElementById('btnPagamentosGestor'),
-            representante: document.getElementById('btnRepresentante')
+            representante: document.getElementById('btnRepresentante'),
+            verificarRotas: document.getElementById('btnVerificarRotas')
         };
 
         // Por padrÃ£o, garante que o bloco de GestÃ£o nÃ£o vai deixar "espaÃ§o vazio" no menu.
@@ -813,6 +818,7 @@
             btns.importarHistorico.style.display = 'flex';
 
             btns.rotas.style.display = 'none';
+            btns.verificarRotas.style.display = 'flex';
 
             btns.cadColab.style.display = 'flex';
             btns.cadastroItens.style.display = 'flex';

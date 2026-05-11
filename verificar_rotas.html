@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Rotas</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #042d86;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            color: #ffffff;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 440px;
+            min-height: 100vh;
+            padding-bottom: 24px;
+        }
+
+        .header {
+            background: #042d86;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            border-bottom: 2px solid #1e3d7a;
+        }
+
+        .header-titulo {
+            color: #ffffff;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .btn-home {
+            position: absolute;
+            left: 12px;
+            width: 36px;
+            height: 36px;
+            border: 1px solid #5874b6;
+            border-radius: 10px;
+            background: #123b92;
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .lista {
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .estado {
+            margin: 32px 14px 0;
+            padding: 18px 14px;
+            border: 1px solid #ffffff;
+            border-radius: 12px;
+            background: #123b92;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.35;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .card {
+            overflow: hidden;
+            border: 1px solid #4f68a6;
+            border-left: 4px solid #ffeb3b;
+            border-bottom: 2px solid #ffffff;
+            border-radius: 12px;
+            background: #0f347e;
+            box-shadow: 0 4px 8px #021944;
+        }
+
+        .card-header {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .rota-badge {
+            background: #ffeb3b;
+            color: #042d86;
+            font-size: 17px;
+            font-weight: bold;
+            border-radius: 8px;
+            padding: 4px 11px;
+            white-space: nowrap;
+        }
+
+        .card-info {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .card-topline {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            align-items: center;
+        }
+
+        .chip-header,
+        .chip-info {
+            background: transparent;
+            border: 1.5px solid #ffffff;
+            border-radius: 20px;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: bold;
+            padding: 4px 10px;
+            white-space: nowrap;
+        }
+
+        .chip-header .chip-label {
+            color: #dce6ff;
+            font-weight: 400;
+            margin-right: 4px;
+        }
+
+        .card-sub {
+            color: #dce6ff;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .expand-icon {
+            color: #ffffff;
+            font-size: 14px;
+            transition: transform 0.2s;
+            justify-self: end;
+        }
+
+        .card.expanded .expand-icon { transform: rotate(180deg); }
+
+        .card-body {
+            display: none;
+            border-top: 1px solid #425f9e;
+            background: #0b2b6d;
+        }
+
+        .card.expanded .card-body { display: block; }
+
+        .resumo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 12px 14px;
+            border-bottom: 1px solid #425f9e;
+        }
+
+        .resumo-item {
+            border: 1px solid #ffffff;
+            border-radius: 10px;
+            padding: 8px 9px;
+            text-align: center;
+        }
+
+        .resumo-label {
+            color: #dce6ff;
+            display: block;
+            font-size: 13px;
+            font-weight: 400;
+            margin-bottom: 4px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .resumo-valor {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .clientes {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            padding: 12px 14px 14px;
+        }
+
+        .clientes-titulo {
+            color: #ffeb3b;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 0.7px;
+            text-align: center;
+            text-transform: uppercase;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .cliente-card {
+            border: 1px solid #5c78b8;
+            border-radius: 10px;
+            background: #133985;
+            padding: 10px;
+        }
+
+        .cliente-nome {
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: bold;
+            line-height: 1.25;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .cliente-dados {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 7px;
+        }
+
+        .dado {
+            border: 1px solid #ffffff;
+            border-radius: 9px;
+            padding: 6px 7px;
+            min-width: 0;
+            text-align: center;
+        }
+
+        .dado-label {
+            color: #dce6ff;
+            display: block;
+            font-size: 13px;
+            font-weight: 400;
+            margin-bottom: 3px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .dado-valor {
+            color: #ffffff;
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            overflow-wrap: anywhere;
+        }
+
+        .dado.full { grid-column: 1 / -1; }
+
+        @media (max-width: 360px) {
+            .card-header { grid-template-columns: auto 1fr; }
+            .expand-icon { grid-column: 2; grid-row: 1; }
+            .resumo-grid,
+            .cliente-dados { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="header">
+        <button class="btn-home" type="button" aria-label="Voltar ao menu" onclick="window.location.href='index.html'">‹</button>
+        <div class="header-titulo">Verificar Rotas</div>
+    </div>
+
+    <div id="lista" class="lista"></div>
+    <div id="estado" class="estado">Carregando rotas...</div>
+</div>
+
+<script src="assets/js/play-dialogs.js"></script>
+<script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    import { dbEscutarMediaDeVendas } from './database.js';
+
+    verificarAutenticacao();
+
+    const elLista = document.getElementById('lista');
+    const elEstado = document.getElementById('estado');
+
+    function escaparHtml(valor) {
+        return String(valor ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function normalizarRota(valor) {
+        const limpa = String(valor ?? '').trim().replace(/^R\.?\s*/i, '');
+        return limpa || '';
+    }
+
+    function obterNumeroCliente(item) {
+        return String(item?.cliente?.numero ?? item?.cliente_numero ?? item?.firebaseUrl ?? '').trim();
+    }
+
+    function obterNomeCliente(item) {
+        return String(item?.cliente?.nome || '').trim() || 'Cliente sem nome';
+    }
+
+    function numeroFinito(valor) {
+        const n = Number(valor);
+        return Number.isFinite(n) ? n : 0;
+    }
+
+    function parseData(valor) {
+        if (!valor) return null;
+        const texto = String(valor).trim();
+        const d = new Date(texto.includes('T') ? texto : `${texto}T00:00:00`);
+        return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    function inicioDia(data) {
+        if (!data) return null;
+        const d = new Date(data);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }
+
+    function diasDesde(valor) {
+        const data = inicioDia(parseData(valor));
+        if (!data) return null;
+        const hoje = inicioDia(new Date());
+        return Math.max(0, Math.round((hoje - data) / 86400000));
+    }
+
+    function textoDias(valor) {
+        const dias = diasDesde(valor);
+        if (dias === null) return 'Sem cobrança';
+        if (dias === 0) return 'Hoje';
+        if (dias === 1) return 'Há 1 dia';
+        return `Há ${dias} dias`;
+    }
+
+    function fmtData(valor) {
+        const data = parseData(valor);
+        if (!data) return '-';
+        return data.toLocaleDateString('pt-BR');
+    }
+
+    function fmtMoeda(valor) {
+        return numeroFinito(valor).toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+    }
+
+    function agruparRotas(lista) {
+        const mapa = new Map();
+
+        (Array.isArray(lista) ? lista : []).forEach(item => {
+            const rota = normalizarRota(item?.rota || item?.cliente?.rota);
+            if (!rota) return;
+
+            if (!mapa.has(rota)) {
+                mapa.set(rota, {
+                    numero: rota,
+                    clientes: [],
+                    valorEstimado: 0,
+                    mediaDiaTotal: 0,
+                    ultimoAtendimentoEm: null
+                });
+            }
+
+            const grupo = mapa.get(rota);
+            const estimativa = numeroFinito(item?.estimativaAtualDia);
+            const vendaDia = numeroFinito(item?.mediaVendaPorDia);
+            const ultimo = item?.ultimaCobrancaEm || null;
+            const ultimoData = parseData(ultimo);
+            const ultimoGrupoData = parseData(grupo.ultimoAtendimentoEm);
+
+            grupo.valorEstimado += estimativa;
+            grupo.mediaDiaTotal += vendaDia;
+            if (ultimoData && (!ultimoGrupoData || ultimoData > ultimoGrupoData)) {
+                grupo.ultimoAtendimentoEm = ultimo;
+            }
+
+            grupo.clientes.push({
+                numero: obterNumeroCliente(item),
+                nome: obterNomeCliente(item),
+                vendaDia,
+                estimativa,
+                ultimoAtendimentoEm: ultimo
+            });
+        });
+
+        return Array.from(mapa.values())
+            .map(rota => ({
+                ...rota,
+                valorEstimado: Math.round((rota.valorEstimado + Number.EPSILON) * 100) / 100,
+                mediaDiaTotal: Math.round((rota.mediaDiaTotal + Number.EPSILON) * 100) / 100,
+                clientes: rota.clientes.sort((a, b) => {
+                    if (b.estimativa !== a.estimativa) return b.estimativa - a.estimativa;
+                    return a.nome.localeCompare(b.nome, 'pt-BR');
+                })
+            }))
+            .sort((a, b) => {
+                if (b.valorEstimado !== a.valorEstimado) return b.valorEstimado - a.valorEstimado;
+                return Number(a.numero) - Number(b.numero);
+            });
+    }
+
+    function montarClienteHtml(cliente) {
+        const mediaTxt = cliente.vendaDia > 0 ? fmtMoeda(cliente.vendaDia) : '-';
+        const diasUltimaTxt = textoDias(cliente.ultimoAtendimentoEm);
+
+        return `
+            <div class="cliente-card">
+                <div class="cliente-nome">Nº ${escaparHtml(cliente.numero || '-')} - ${escaparHtml(cliente.nome)}</div>
+                <div class="cliente-dados">
+                    <div class="dado"><span class="dado-label">Venda/dia</span><span class="dado-valor">${mediaTxt}</span></div>
+                    <div class="dado"><span class="dado-label">Desde última</span><span class="dado-valor">${escaparHtml(diasUltimaTxt)}</span></div>
+                    <div class="dado"><span class="dado-label">Estimativa</span><span class="dado-valor">${fmtMoeda(cliente.estimativa)}</span></div>
+                </div>
+            </div>
+        `;
+    }
+
+    function montarRotaHtml(rota) {
+        const id = `rota-${rota.numero.replace(/[^a-z0-9_-]/gi, '-')}`;
+        const clientesHtml = rota.clientes.map(montarClienteHtml).join('');
+        const ultimaTxt = textoDias(rota.ultimoAtendimentoEm);
+
+        return `
+            <div class="card" id="${escaparHtml(id)}">
+                <div class="card-header" role="button" tabindex="0" data-toggle-card>
+                    <div class="rota-badge">R.${escaparHtml(rota.numero)}</div>
+                    <div class="card-info">
+                        <div class="card-topline">
+                            <div class="chip-header"><span class="chip-label">Valor</span>${fmtMoeda(rota.valorEstimado)}</div>
+                            <div class="chip-header"><span class="chip-label">Clientes</span>${rota.clientes.length}</div>
+                        </div>
+                        <div class="card-sub">Última cobrança: ${escaparHtml(ultimaTxt)}</div>
+                    </div>
+                    <div class="expand-icon">▼</div>
+                </div>
+
+                <div class="card-body">
+                    <div class="resumo-grid">
+                        <div class="resumo-item">
+                            <span class="resumo-label">Total da rota</span>
+                            <span class="resumo-valor">${fmtMoeda(rota.valorEstimado)}</span>
+                        </div>
+                        <div class="resumo-item">
+                            <span class="resumo-label">Média/dia rota</span>
+                            <span class="resumo-valor">${fmtMoeda(rota.mediaDiaTotal)}</span>
+                        </div>
+                        <div class="resumo-item">
+                            <span class="resumo-label">Última cobrança</span>
+                            <span class="resumo-valor">${fmtData(rota.ultimoAtendimentoEm)}</span>
+                        </div>
+                        <div class="resumo-item">
+                            <span class="resumo-label">Tempo</span>
+                            <span class="resumo-valor">${escaparHtml(ultimaTxt)}</span>
+                        </div>
+                    </div>
+
+                    <div class="clientes">
+                        <div class="clientes-titulo">Clientes da rota</div>
+                        ${clientesHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function render(lista) {
+        const rotas = agruparRotas(lista);
+        if (rotas.length === 0) {
+            elLista.innerHTML = '';
+            elEstado.style.display = 'block';
+            elEstado.textContent = 'Nenhuma rota encontrada em Media_de_Vendas.';
+            return;
+        }
+
+        elEstado.style.display = 'none';
+        elLista.innerHTML = rotas.map(montarRotaHtml).join('');
+    }
+
+    elLista.addEventListener('click', (event) => {
+        const header = event.target.closest('[data-toggle-card]');
+        if (!header) return;
+        header.closest('.card')?.classList.toggle('expanded');
+    });
+
+    elLista.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const header = event.target.closest('[data-toggle-card]');
+        if (!header) return;
+        event.preventDefault();
+        header.closest('.card')?.classList.toggle('expanded');
+    });
+
+    dbEscutarMediaDeVendas(render);
+</script>
+</body>
+</html>
