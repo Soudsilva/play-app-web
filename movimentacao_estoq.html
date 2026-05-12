@@ -24,6 +24,10 @@
 
         /* Card de Formulário */
         .card-form { background: rgba(255,255,255,0.07); padding: 20px; border-radius: 18px; border: 2px solid rgba(255,255,255,0.85); }
+        .card-form.modo-pix {
+            border-color: #c9a7ff;
+            background: #4b2f9f;
+        }
 
         /* Grade 2×2 dos campos */
         .card-grid {
@@ -547,111 +551,18 @@
             background: #fffde7;
             border-color: #f9a825;
         }
-        .pp-secao { margin-top: 20px; }
-        .pp-secao-header {
-            background: #4b2f9f;
-            border: 2px solid #c9a7ff;
-            border-radius: 14px;
-            padding: 13px 15px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            cursor: pointer;
-            transition: background 0.15s, border-radius 0.2s;
-            min-height: 48px;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .pp-secao-header:active { transform: translateY(1px); }
-        .pp-secao-header.aberta { border-radius: 14px 14px 0 0; border-bottom-color: rgba(255,255,255,0.2); }
-        .pp-secao-icone {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255,235,59,0.15);
-            border: 1.5px solid rgba(255,235,59,0.4);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: #ffffff;
-            font-size: 14px;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-        .pp-secao-titulo {
-            color: #ffeb3b;
-            font-size: 18px;
-            font-weight: bold;
-            text-transform: uppercase;
-            flex: 1;
-            text-align: center;
-        }
-        .pp-secao-seta {
-            flex-shrink: 0;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.07);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.35s cubic-bezier(.4,0,.2,1), background 0.3s;
-        }
-        .pp-secao-seta svg {
-            width: 16px; height: 16px;
-            stroke: rgba(255,235,59,0.9);
-            fill: none;
-            stroke-width: 2.5;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-        .pp-secao-seta.girada { transform: rotate(180deg); }
-        .pp-secao-corpo {
+        .pix-card-campo {
             display: none;
-            background: rgba(8, 22, 65, 0.75);
-            border: 2px solid #c9a7ff;
-            border-top: none;
-            border-radius: 0 0 14px 14px;
-            padding: 16px;
+            grid-column: 1 / -1;
         }
-        .pp-secao-corpo.aberto { display: block; }
-        .pp-secao-sub {
-            color: #ffffff;
-            font-size: 13px;
+        .pix-card-campo.visivel {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .pix-card-campo input {
             text-align: center;
-            margin-bottom: 14px;
-        }
-        .pix-posse-grid {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 10px;
-        }
-        .pix-posse-campo label {
-            display: block;
-            color: #ffffff;
-            font-size: 16px;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 5px;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .btn-confirmar-pix-posse {
-            width: 100%;
-            min-height: 50px;
-            border: 1px solid #ffffff;
-            border-radius: 12px;
-            background: #0b7a34;
-            color: #ffffff;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            margin-top: 14px;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .btn-confirmar-pix-posse:active {
-            transform: scale(0.98);
+            font-size: 19px;
         }
     </style>
 </head>
@@ -670,7 +581,7 @@
         <div id="tabEntrada" class="btn-mov entrada" onclick="mudarModo('entrada')">ENTRADA (+)</div>
     </div>
 
-    <div class="card-form">
+    <div class="card-form" id="cardMovimentacao">
         <div class="card-grid">
             <div class="campo-form">
                 <label>Tipo</label>
@@ -680,6 +591,7 @@
                     <option value="peca">Peça</option>
                     <option value="produtos">Produtos</option>
                     <option value="materiais">Materiais</option>
+                    <option value="pix">PIX</option>
                 </select>
             </div>
             <div class="campo-form campo-oculto">
@@ -696,10 +608,14 @@
                 <input type="text" id="qtdInput" class="inp-qtd" placeholder="0" inputmode="numeric">
             </div>
             <div class="campo-form campo-responsavel">
-                <label>Responsável</label>
+                <label id="labelResponsavelPrincipal">Responsável</label>
                 <select id="responsavel">
                     <option value="">Selecione...</option>
                 </select>
+            </div>
+            <div class="campo-form pix-card-campo" id="campoPixPrincipal">
+                <label for="pixPrincipalNumero">Num. Pix</label>
+                <input type="text" id="pixPrincipalNumero" inputmode="numeric" placeholder="Nº" autocomplete="off" oninput="this.value = this.value.replace(/[^0-9]/g, '')" onblur="validarPixPrincipal()">
             </div>
             <div class="linhas-movimentacao" id="containerMovimentacaoItens"></div>
         </div>
@@ -709,7 +625,7 @@
             <div class="info-atual" id="textoSaldo">—</div>
         </div>
 
-        <button class="btn-confirmar" id="btnAcao" style="background:#f44336;" onclick="salvarMovimentacao()">CONFIRMAR SAÍDA</button>
+        <button class="btn-confirmar" id="btnAcao" style="background:#f44336;" onclick="salvarAcaoMovimentacao()">CONFIRMAR SAÍDA</button>
     </div>
 
     <div class="secao-historico">
@@ -736,36 +652,13 @@
             <div id="listaItens"></div>
         </div>
     </div>
-
-    <div class="pp-secao">
-        <div class="pp-secao-header" id="hdr-pix-posse" onclick="togglePixPosse()">
-            <span class="pp-secao-icone">Pix</span>
-            <span class="pp-secao-titulo">Área Pix</span>
-            <span class="pp-secao-seta" id="seta-pix-posse"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
-        </div>
-        <div class="pp-secao-corpo" id="corpo-pix-posse">
-<div class="pix-posse-grid">
-                <div class="pix-posse-campo">
-                    <label for="pixPosseNumero">Num. Pix</label>
-                    <input type="text" id="pixPosseNumero" inputmode="numeric" placeholder="Nº" autocomplete="off" style="width:90px;font-size:19px;text-align:center;" oninput="this.value = this.value.replace(/[^0-9]/g, '')" onblur="validarPixPosse()">
-                </div>
-                <div class="pix-posse-campo">
-                    <label for="pixPosseResponsavel">Quem está retirando</label>
-                    <select id="pixPosseResponsavel" style="font-size:19px;">
-                        <option value="">Selecione...</option>
-                    </select>
-                </div>
-            </div>
-            <button type="button" class="btn-confirmar-pix-posse" id="btnConfirmarPixPosse" onclick="salvarPixEmPosseMovimentacao()">CONFIRMAR PIX</button>
-        </div>
-    </div>
 </div>
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbAdicionarPixEmPosse, dbSalvarHistoricoBalanco, dbEscutarHistoricoBalanco, dbExcluirHistoricoBalanco, dbRecalcularRemuneracoes, dbEscutarClientes, dbEscutarTodosPixEmPosse } from './database.js';
+    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, dbLerPixEmPosse, dbSalvarHistoricoBalanco, dbEscutarHistoricoBalanco, dbExcluirHistoricoBalanco, dbRecalcularRemuneracoes, dbEscutarClientes, dbEscutarTodosPixEmPosse } from './database.js';
 
     let listaGlobal = [];
     let historicoGlobal = [];
@@ -999,7 +892,6 @@
     dbEscutarColaboradores((colabs) => {
         colabsGlobal = colabs;
         renderizarResponsaveis();
-        renderizarResponsaveisPixPosse();
     });
 
     dbEscutarClientes((lista) => {
@@ -1022,18 +914,52 @@
         return emUso;
     }
 
-    window.validarPixPosse = async function() {
-        const input = document.getElementById('pixPosseNumero');
+    function tipoSelecionadoEhPix() {
+        return document.getElementById('filtroCategoria')?.value === 'pix';
+    }
+
+    function atualizarVisualModoPix() {
+        const ehPix = tipoSelecionadoEhPix();
+        const card = document.getElementById('cardMovimentacao');
+        const campoPix = document.getElementById('campoPixPrincipal');
+        const linhas = document.getElementById('containerMovimentacaoItens');
+        const saldoBox = document.getElementById('saldoBox');
+        const btn = document.getElementById('btnAcao');
+        const labelResponsavel = document.getElementById('labelResponsavelPrincipal');
+
+        card?.classList.toggle('modo-pix', ehPix);
+        campoPix?.classList.toggle('visivel', ehPix);
+        if (labelResponsavel) labelResponsavel.textContent = ehPix ? 'Quem está retirando' : 'Responsável';
+        if (linhas) linhas.style.display = ehPix ? 'none' : 'flex';
+        if (ehPix && saldoBox) saldoBox.style.display = 'none';
+
+        if (!btn || salvandoMovimentacao) return;
+        if (ehPix) {
+            btn.textContent = 'CONFIRMAR PIX';
+            btn.style.background = '#0b7a34';
+        } else if (modoAtual === 'entrada') {
+            btn.textContent = 'CONFIRMAR ENTRADA';
+            btn.style.background = '#4caf50';
+        } else {
+            btn.textContent = 'CONFIRMAR SAÍDA';
+            btn.style.background = '#f44336';
+        }
+    }
+
+    window.validarPixPrincipal = async function() {
+        const input = document.getElementById('pixPrincipalNumero');
         const valor = String(input?.value || '').trim();
         if (!valor) return;
         if (pixEmUsoSet().has(valor)) {
             await window.playAlert(`Pix ${valor} já está instalado em outro equipamento.`);
-            if (input) { input.value = ''; input.focus(); }
+            input.value = '';
+            input.focus();
             return;
         }
-        if (pixEmPosseGlobal.has(valor)) {
+        if (modoAtual === 'saida' && pixEmPosseGlobal.has(valor)) {
             await window.playAlert(`Pix ${valor} já está em posse de outro usuário.`);
-            if (input) { input.value = ''; input.focus(); }
+            input.value = '';
+            input.focus();
         }
     };
 
@@ -1042,97 +968,26 @@
         return nivel === 'atendimento_2' || nivel === 'atendimento nivel 2' || nivel === 'atendimento nível 2';
     }
 
-    function renderizarResponsaveisPixPosse() {
-        const select = document.getElementById('pixPosseResponsavel');
-        const registrador = document.getElementById('pixPosseRegistradoPor');
-        if (!select) return;
-
-        select.innerHTML = '<option value="">Selecione...</option>';
-        colabsGlobal
-            .filter(usuarioTemPerfilAtendimentoNivel2)
-            .forEach((colab) => {
-                const nome = String(colab?.nome || '').trim();
-                if (!nome) return;
-                const opt = document.createElement('option');
-                opt.value = nome;
-                opt.innerText = nome;
-                select.appendChild(opt);
-            });
-
-        if (registrador) {
-            registrador.textContent = String(localStorage.getItem('usuarioLogado') || '').trim() || 'Usuário não identificado';
-        }
-    }
-
-    window.togglePixPosse = function() {
-        const header = document.getElementById('hdr-pix-posse');
-        const corpo = document.getElementById('corpo-pix-posse');
-        const seta = document.getElementById('seta-pix-posse');
-        const aberto = corpo.classList.contains('aberto');
-        corpo.classList.toggle('aberto', !aberto);
-        header.classList.toggle('aberta', !aberto);
-        seta.classList.toggle('girada', !aberto);
-    };
-
-    window.salvarPixEmPosseMovimentacao = async function() {
-        const inputPix = document.getElementById('pixPosseNumero');
-        const selectResponsavel = document.getElementById('pixPosseResponsavel');
-        const btn = document.getElementById('btnConfirmarPixPosse');
-        const numeroPix = String(inputPix?.value || '').trim();
-        const responsavel = String(selectResponsavel?.value || '').trim();
-        const registradoPor = String(localStorage.getItem('usuarioLogado') || '').trim();
-
-        if (!numeroPix) {
-            await window.playAlert('Informe o número do Pix.');
-            inputPix?.focus();
-            return;
-        }
-        if (!responsavel) {
-            await window.playAlert('Selecione quem está retirando o Pix.');
-            selectResponsavel?.focus();
-            return;
-        }
-        if (!registradoPor) {
-            await window.playAlert('Usuário registrador não identificado. Entre novamente no sistema.');
-            return;
-        }
-
-        const textoOriginal = btn?.innerText || 'CONFIRMAR PIX';
-        if (btn) {
-            btn.disabled = true;
-            btn.innerText = 'SALVANDO...';
-        }
-
-        try {
-            await dbAdicionarPixEmPosse(responsavel, numeroPix, {
-                responsavel,
-                retiradoPor: responsavel,
-                registradoPor,
-                origemRegistro: 'movimentacao_estoque',
-                tipo: 'pix_em_posse',
-                timestamp: new Date().toISOString()
-            });
-
-            if (inputPix) inputPix.value = '';
-            if (selectResponsavel) selectResponsavel.value = '';
-            await window.playAlert('Pix registrado em posse com sucesso.');
-        } catch (error) {
-            console.error('Erro ao registrar Pix em posse:', error);
-            await window.playAlert('Erro ao registrar Pix em posse. Tente novamente.');
-        } finally {
-            if (btn) {
-                btn.disabled = false;
-                btn.innerText = textoOriginal;
-            }
-        }
-    };
-
     function renderizarResponsaveis() {
         const select = document.getElementById('responsavel');
         select.innerHTML = '<option value="">Responsável</option>';
 
         const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
         const categoriaAtual = document.getElementById('filtroCategoria').value;
+
+        if (categoriaAtual === 'pix') {
+            colabsGlobal
+                .filter(usuarioTemPerfilAtendimentoNivel2)
+                .forEach((colab) => {
+                    const nome = String(colab?.nome || '').trim();
+                    if (!nome) return;
+                    const opt = document.createElement('option');
+                    opt.value = nome;
+                    opt.innerText = nome;
+                    select.appendChild(opt);
+                });
+            return;
+        }
 
         // Adiciona "Fornecedor" e usuário logado apenas se for ENTRADA
         if (modoAtual === 'entrada') {
@@ -1276,6 +1131,7 @@
             btn.style.background = "#f44336";
         }
         renderizarResponsaveis(); // Atualiza a lista para mostrar/esconder "Fornecedor"
+        atualizarVisualModoPix();
     };
 
     // 5. ATUALIZAR ESTOQUE NO BANCO
@@ -1555,7 +1411,12 @@
             btn.innerHTML = '<span class="btn-spinner"></span><span>Salvando...</span>';
             return;
         }
-        btn.textContent = btn.dataset.textoOriginal || (modoAtual === 'saida' ? 'CONFIRMAR SAÍDA' : 'CONFIRMAR ENTRADA');
+        if (tipoSelecionadoEhPix()) {
+            btn.textContent = 'CONFIRMAR PIX';
+            btn.style.background = '#0b7a34';
+        } else {
+            btn.textContent = btn.dataset.textoOriginal || (modoAtual === 'saida' ? 'CONFIRMAR SAÍDA' : 'CONFIRMAR ENTRADA');
+        }
     }
 
     window.salvarMovimentacao = async function() {
@@ -1702,6 +1563,12 @@
         const categoriaSelecionada = document.getElementById('filtroCategoria').value;
         const container = document.getElementById('containerMovimentacaoItens');
         if (!container) return;
+        atualizarVisualModoPix();
+
+        if (categoriaSelecionada === 'pix') {
+            mostrarSaldoAtual();
+            return;
+        }
 
         if (categoriaAtualLinhasMovimentacao !== categoriaSelecionada) {
             categoriaAtualLinhasMovimentacao = categoriaSelecionada;
@@ -1807,6 +1674,86 @@
             salvandoMovimentacao = false;
             definirEstadoSalvando(false);
         }
+    };
+
+    async function salvarPixPrincipalMovimentacao() {
+        if (salvandoMovimentacao) return;
+        const inputPix = document.getElementById('pixPrincipalNumero');
+        const selectResponsavel = document.getElementById('responsavel');
+        const numeroPix = String(inputPix?.value || '').trim();
+        const responsavel = String(selectResponsavel?.value || '').trim();
+        const registradoPor = String(localStorage.getItem('usuarioLogado') || '').trim();
+
+        if (!numeroPix) {
+            await window.playAlert('Informe o número do Pix.');
+            inputPix?.focus();
+            return;
+        }
+        if (!responsavel) {
+            await window.playAlert('Selecione o responsável.');
+            selectResponsavel?.focus();
+            return;
+        }
+        if (!registradoPor) {
+            await window.playAlert('Usuário registrador não identificado. Entre novamente no sistema.');
+            return;
+        }
+        if (pixEmUsoSet().has(numeroPix)) {
+            await window.playAlert(`Pix ${numeroPix} já está instalado em outro equipamento.`);
+            inputPix.value = '';
+            inputPix.focus();
+            return;
+        }
+        if (modoAtual === 'saida' && pixEmPosseGlobal.has(numeroPix)) {
+            await window.playAlert(`Pix ${numeroPix} já está em posse de outro usuário.`);
+            inputPix.value = '';
+            inputPix.focus();
+            return;
+        }
+        if (modoAtual === 'entrada') {
+            const pixDoResponsavel = await dbLerPixEmPosse(responsavel);
+            const usuarioTemPix = pixDoResponsavel.some(item => String(item?.numero_pix || '').trim() === numeroPix);
+            if (!usuarioTemPix) {
+                await window.playAlert('Usuário não tem esse Pix com ele para dar entrada.');
+                inputPix.focus();
+                return;
+            }
+        }
+
+        try {
+            salvandoMovimentacao = true;
+            definirEstadoSalvando(true);
+            if (modoAtual === 'entrada') {
+                await dbRemoverPixEmPosse(responsavel, numeroPix);
+            } else {
+                await dbAdicionarPixEmPosse(responsavel, numeroPix, {
+                    responsavel,
+                    retiradoPor: responsavel,
+                    registradoPor,
+                    origemRegistro: 'movimentacao_estoque',
+                    tipo: 'pix_em_posse',
+                    timestamp: new Date().toISOString()
+                });
+            }
+
+            inputPix.value = '';
+            selectResponsavel.value = '';
+            await window.playAlert(modoAtual === 'entrada' ? 'Pix registrado no estoque com sucesso.' : 'Pix registrado em posse com sucesso.');
+        } catch (error) {
+            console.error('Erro ao registrar Pix em posse:', error);
+            await window.playAlert('Erro ao registrar Pix. Tente novamente.');
+        } finally {
+            salvandoMovimentacao = false;
+            definirEstadoSalvando(false);
+        }
+    }
+
+    window.salvarAcaoMovimentacao = function() {
+        if (tipoSelecionadoEhPix()) {
+            salvarPixPrincipalMovimentacao();
+            return;
+        }
+        window.salvarMovimentacao();
     };
 
     function atualizarBotaoItens() {
