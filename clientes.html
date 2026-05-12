@@ -644,6 +644,58 @@
     }
     .filtro-rota-fechar:active { opacity: 0.5; }
 
+    .filtro-representante-wrap {
+        display: none;
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 3;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
+    .filtro-representante-wrap.visivel { display: flex; }
+    .filtro-representante-btn {
+        width: 42px;
+        height: 42px;
+        border: 1px solid rgba(255,255,255,0.32);
+        border-radius: 50%;
+        background: transparent;
+        color: #ffffff;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    .filtro-representante-btn svg {
+        width: 25px;
+        height: 25px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .filtro-representante-btn.ativo {
+        border-color: #ffeb3b;
+        color: #ffeb3b;
+        background: rgba(255,235,59,0.1);
+    }
+    .filtro-representante-dica {
+        color: #cfd6e3;
+        font-size: 10px;
+        font-weight: 400;
+        line-height: 1;
+        text-align: center;
+        width: 54px;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
     /* Modal escolha tipo de cadastro */
     .escolha-overlay {
         display: none;
@@ -1042,6 +1094,17 @@
 
 <div class="app">
     <div class="topo">
+        <div id="filtroRepresentanteWrap" class="filtro-representante-wrap">
+            <button id="filtroRepresentanteBtn" class="filtro-representante-btn" type="button" aria-label="Filtrar meus representados" title="Meus representados">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="8" cy="8" r="3"/>
+                    <path d="M3 19a5 5 0 0 1 10 0"/>
+                    <path d="M17 7v6"/>
+                    <path d="M14 10h6"/>
+                </svg>
+            </button>
+            <div class="filtro-representante-dica">Clique aqui</div>
+        </div>
         <div class="titulo-wrap">
             <div class="titulo">Clientes</div>
             <div class="subtitulo">Lista geral</div>
@@ -1291,6 +1354,7 @@
             return Number.isFinite(numero) ? numero : 0;
         } catch (_) { return 0; }
     })();
+    let filtroRepresentanteAtivo = false;
     let clientesSalvos = [];
     const ultimasVisitasPorClienteId = {};
     let pontosNovos = [];
@@ -1326,6 +1390,33 @@
         const mesmoDia = diaCadastro === obterDataLocalIso();
         return mesmoUsuario && mesmoDia;
     }
+
+    function usuarioTemFiltroRepresentante() {
+        return representanteComissaoUsuario > 0;
+    }
+
+    function clienteEhRepresentadoDoUsuario(cliente) {
+        return normalizarTexto(cliente?.representante || '') === normalizarTexto(nomeUsuarioLogado);
+    }
+
+    function atualizarFiltroRepresentanteUi() {
+        const wrap = document.getElementById('filtroRepresentanteWrap');
+        const btn = document.getElementById('filtroRepresentanteBtn');
+        if (!wrap || !btn) return;
+
+        const podeFiltrar = usuarioTemFiltroRepresentante();
+        wrap.classList.toggle('visivel', podeFiltrar);
+        btn.classList.toggle('ativo', filtroRepresentanteAtivo);
+        btn.title = filtroRepresentanteAtivo ? 'Mostrando meus representados' : 'Meus representados';
+        btn.setAttribute('aria-pressed', filtroRepresentanteAtivo ? 'true' : 'false');
+        const dica = wrap.querySelector('.filtro-representante-dica');
+        if (dica) dica.textContent = filtroRepresentanteAtivo ? 'Limpar' : 'Clique aqui';
+
+        if (!podeFiltrar && filtroRepresentanteAtivo) {
+            filtroRepresentanteAtivo = false;
+        }
+    }
+
     function obterEquipamentosClienteParaCard(cliente) {
         if (Array.isArray(cliente?.equipDetalhes) && cliente.equipDetalhes.length > 0) {
             return cliente.equipDetalhes
@@ -1604,6 +1695,7 @@
             card.dataset.rota = c.rota || '';
             card.dataset.numero = normalizarNumeroBusca(c.numero);
             card.dataset.indiceBusca = montarIndiceBuscaCliente(c);
+            card.dataset.representanteUsuario = clienteEhRepresentadoDoUsuario(c) ? '1' : '0';
             card.innerHTML = `
                 <div class="cliente-accent"></div>
                 <div class="cliente-corpo">
@@ -1798,6 +1890,7 @@
     }
 
     function aplicarFiltrosVisuais() {
+        atualizarFiltroRepresentanteUi();
         const cards = Array.from(document.querySelectorAll('.cliente'));
         const termoPuro = String(termoPesquisaAtivo || '').trim();
         const termoNormalizado = normalizarTextoBusca(termoPuro);
@@ -1808,6 +1901,7 @@
         const rotaFixa = rotaFiltroAtivo ? normalizarRota(rotaFiltroAtivo) : null;
 
         const cardsBase = cards.filter(card => {
+            if (filtroRepresentanteAtivo && card.dataset.representanteUsuario !== '1') return false;
             if (!rotaFixa) return true;
             return normalizarRota(card.dataset.rota) === rotaFixa;
         });
@@ -1892,6 +1986,11 @@
     document.getElementById('campoPesquisaFlutuante').oninput = (e) => {
         aplicarBusca(e.target.value);
     };
+
+    document.getElementById('filtroRepresentanteBtn')?.addEventListener('click', () => {
+        filtroRepresentanteAtivo = !filtroRepresentanteAtivo;
+        aplicarFiltrosVisuais();
+    });
 
     const barraBusca = document.getElementById('searchFlutuante');
     const barraNormal = document.querySelector('.search-wrap');

@@ -316,6 +316,20 @@
             -webkit-appearance: none;
             text-align: center;
         }
+
+        /* ── LIGHTBOX ── */
+        .lb-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+        }
+        .lb-overlay.aberto { display: flex; }
+        .lb-img { max-width: 96vw; max-height: 90vh; border-radius: 10px; object-fit: contain; }
+        .lb-fechar { position: absolute; top: 16px; right: 16px; font-size: 28px; color: white; cursor: pointer; background: rgba(255,255,255,0.1); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
@@ -353,6 +367,24 @@
         </select>
     </div>
 </div>
+
+<script>
+    function abrirFoto(url) {
+        if (!url) return;
+        document.getElementById('lbImg').src = url;
+        document.getElementById('lbOverlay').classList.add('aberto');
+        history.pushState({ lightbox: true }, '');
+    }
+    function fecharLightbox() {
+        document.getElementById('lbOverlay').classList.remove('aberto');
+        document.getElementById('lbImg').src = '';
+        if (history.state?.lightbox) history.back();
+    }
+    window.addEventListener('popstate', () => {
+        document.getElementById('lbOverlay').classList.remove('aberto');
+        document.getElementById('lbImg').src = '';
+    });
+</script>
 
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
@@ -435,8 +467,12 @@
         }[char]));
     }
 
-    function fotoAtendimento(atendimento) {
+    function fotoThumb(atendimento) {
         return atendimento?.fotos?.fichaThumb || atendimento?.fotos?.ficha || '';
+    }
+
+    function fotoCompleta(atendimento) {
+        return atendimento?.fotos?.ficha || atendimento?.fotos?.fichaThumb || '';
     }
 
     function atendimentoValidoRepresentante(item) {
@@ -527,12 +563,13 @@
 
         listaEl.innerHTML = cabecalho + grupos.map(grupo => {
             const ultimo = grupo.ultimo || {};
-            const foto = fotoAtendimento(ultimo);
+            const foto = fotoThumb(ultimo);
+            const fotoFull = fotoCompleta(ultimo);
             const percentual = numeroFinanceiro(ultimo?.representanteComissao);
             return `
                 <div class="card">
                     <div class="card-corpo">
-                        <div class="card-foto">${foto ? `<img src="${escaparHtml(foto)}" alt="">` : '&#128247;'}</div>
+                        <div class="card-foto"${fotoFull ? ` onclick="abrirFoto('${escaparHtml(fotoFull)}')" style="cursor:pointer;"` : ''}>${foto ? `<img src="${escaparHtml(foto)}" alt="">` : '&#128247;'}</div>
                         <div class="card-info">
                             <div class="card-linha-topo">
                                 <div class="card-num">Núm. <b>${escaparHtml(grupo.numero)}</b></div>
@@ -541,7 +578,7 @@
                             <div class="card-nome">${escaparHtml(grupo.nome)}</div>
                             <div class="card-saldo-linha">
                                 <div class="card-saldo-label">Saldo</div>
-                                <div class="chip-saldo">${formatarInteiro(grupo.saldo)}</div>
+                                <div class="chip-saldo">${formatarInteiro(grupo.comissao)}</div>
                             </div>
                         </div>
                     </div>
@@ -565,6 +602,12 @@
         renderizar();
     });
 </script>
+
+<!-- Lightbox -->
+<div class="lb-overlay" id="lbOverlay" onclick="fecharLightbox()">
+    <div class="lb-fechar" onclick="fecharLightbox()">&times;</div>
+    <img class="lb-img" id="lbImg" src="" alt="Ficha">
+</div>
 
 </body>
 </html>

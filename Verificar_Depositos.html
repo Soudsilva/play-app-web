@@ -972,7 +972,7 @@
         return `<img src="${escaparHtml(thumb)}" data-full="${escaparHtml(foto || thumb)}" alt="Foto do comprovante">`;
     }
 
-    function cardDeposito(deposito, expandido) {
+    function cardDeposito(deposito) {
         const data = dataDeposito(deposito);
         const dataHora = formatarDataHora(data);
         const conferido = ehConferido(deposito);
@@ -986,7 +986,7 @@
         const observacao = String(deposito?.obs || '').trim();
 
         return `
-            <div class="card ${classe}${expandido ? ' expanded' : ''}" data-id="${escaparHtml(deposito.firebaseUrl)}" data-usuario="${escaparHtml(deposito.usuarioChave || deposito.usuario || '')}" data-valor="${valorOriginal}">
+            <div class="card ${classe}" data-id="${escaparHtml(deposito.firebaseUrl)}" data-usuario="${escaparHtml(deposito.usuarioChave || deposito.usuario || '')}" data-valor="${valorOriginal}">
                 <div class="card-header">
                     <div class="status-dot ${classe}"></div>
                     <div class="card-info">
@@ -1054,25 +1054,46 @@
         });
 
         let html = '';
-        let primeiro = true;
         grupos.forEach(grupo => {
             html += `<div class="rotulo-dia">${escaparHtml(rotuloDia(grupo.data))}</div>`;
             grupo.itens.forEach(d => {
-                html += cardDeposito(d, primeiro);
-                primeiro = false;
+                html += cardDeposito(d);
             });
         });
         content.innerHTML = html;
     }
 
+    function fecharFotoAberta({ voltarHistorico = false } = {}) {
+        const overlay = document.getElementById('overlayFotoDeposito');
+        if (!overlay) return false;
+        overlay.remove();
+        if (voltarHistorico && history.state?.fotoDepositoAberta) {
+            history.back();
+        }
+        return true;
+    }
+
+    function abrirFotoDeposito(src) {
+        fecharFotoAberta();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'overlayFotoDeposito';
+        overlay.style.cssText = 'position:fixed;inset:0;background:#000000;z-index:9999;display:flex;align-items:center;justify-content:center;padding:12px;';
+        overlay.innerHTML = `<img src="${escaparHtml(src)}" style="max-width:96vw;max-height:92vh;border-radius:10px;object-fit:contain;">`;
+        overlay.addEventListener('click', () => fecharFotoAberta({ voltarHistorico: true }));
+        document.body.appendChild(overlay);
+
+        history.pushState({ ...(history.state || {}), fotoDepositoAberta: true }, '');
+    }
+
+    window.addEventListener('popstate', () => {
+        fecharFotoAberta();
+    });
+
     content.addEventListener('click', async (event) => {
         const foto = event.target.closest('.conf-thumb img');
         if (foto) {
-            const overlay = document.createElement('div');
-            overlay.style.cssText = 'position:fixed;inset:0;background:#000000;z-index:9999;display:flex;align-items:center;justify-content:center;padding:12px;';
-            overlay.innerHTML = `<img src="${escaparHtml(foto.dataset.full || foto.src)}" style="max-width:96vw;max-height:92vh;border-radius:10px;object-fit:contain;">`;
-            overlay.addEventListener('click', () => overlay.remove());
-            document.body.appendChild(overlay);
+            abrirFotoDeposito(foto.dataset.full || foto.src);
             return;
         }
 
@@ -1167,7 +1188,15 @@
         }
 
         const header = event.target.closest('.card-header');
-        if (header) header.closest('.card')?.classList.toggle('expanded');
+        if (header) {
+            const card = header.closest('.card');
+            if (!card) return;
+            const abrir = !card.classList.contains('expanded');
+            content.querySelectorAll('.card.expanded').forEach(item => {
+                if (item !== card) item.classList.remove('expanded');
+            });
+            card.classList.toggle('expanded', abrir);
+        }
     });
 
     content.addEventListener('input', (event) => {

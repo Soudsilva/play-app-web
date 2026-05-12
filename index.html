@@ -325,7 +325,7 @@
 
     </div>
 
-    <div class="app-versao">V 3.3</div>
+    <div class="app-versao">V 3.4</div>
 
 </div>
 
@@ -842,6 +842,9 @@
         if (perfil.includes('gestao_2') || perfil.includes('gestao_3')) {
             btns.movimentacao.style.display = 'flex';
         }
+
+        // Verificar Rotas: apenas Gestão Nível 3
+        btns.verificarRotas.style.display = perfil.includes('gestao_3') ? 'flex' : 'none';
 
         // GESTOR NÍVEL 3: botão Financeiro (Pagamentos_Gestor), sem Fluxo de Caixa
         if (perfil.includes('gestao_3')) {
