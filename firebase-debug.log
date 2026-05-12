@@ -2232,3 +2232,41 @@
 [debug] [2026-05-11T22:54:07.907Z] >>> [apiv2][query] POST https://logging.googleapis.com/v2/entries:list [none]
 [debug] [2026-05-11T22:54:07.907Z] >>> [apiv2][body] POST https://logging.googleapis.com/v2/entries:list {"resourceNames":["projects/play-na-web"],"filter":"resource.type=\"cloud_function\" OR (resource.type=\"cloud_run_revision\" AND labels.\"goog-managed-by\"=\"cloudfunctions\")\n(resource.labels.function_name=\"atualizarMediaDeVendasDiaria\" OR resource.labels.service_name=\"atualizarMediaDeVendasDiaria\")","orderBy":"timestamp desc","pageSize":35}
 [debug] [2026-05-11T22:54:14.504Z] <<< [apiv2][status] POST https://logging.googleapis.com/v2/entries:list 200
+[debug] [2026-05-12T19:02:20.566Z] ----------------------------------------------------------------------
+[debug] [2026-05-12T19:02:20.590Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\souds\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js database:get /Media_de_Vendas --project play-na-web
+[debug] [2026-05-12T19:02:20.590Z] CLI Version:   15.15.0
+[debug] [2026-05-12T19:02:20.590Z] Platform:      win32
+[debug] [2026-05-12T19:02:20.590Z] Node Version:  v25.8.1
+[debug] [2026-05-12T19:02:20.590Z] Time:          Tue May 12 2026 16:02:20 GMT-0300 (Horário Padrão de Brasília)
+[debug] [2026-05-12T19:02:20.591Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-05-12T19:02:22.946Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-12T19:02:22.949Z] > authorizing via signed-in user (soudsilva@gmail.com)
+[debug] [2026-05-12T19:02:22.949Z] [iam] checking project play-na-web for permissions ["firebase.projects.get","firebasedatabase.instances.get"]
+[debug] [2026-05-12T19:02:22.951Z] Checked if tokens are valid: false, expires at: 1778541528259
+[debug] [2026-05-12T19:02:22.951Z] Checked if tokens are valid: false, expires at: 1778541528259
+[debug] [2026-05-12T19:02:22.951Z] > refreshing access token with scopes: []
+[debug] [2026-05-12T19:02:22.953Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-05-12T19:02:22.953Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-12T19:02:23.260Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-05-12T19:02:23.260Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-12T19:02:23.377Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/play-na-web:testIamPermissions [none]
+[debug] [2026-05-12T19:02:23.377Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/play-na-web:testIamPermissions  x-goog-user-project=play-na-web
+[debug] [2026-05-12T19:02:23.378Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/play-na-web:testIamPermissions {"permissions":["firebase.projects.get","firebasedatabase.instances.get"]}
+[debug] [2026-05-12T19:02:24.388Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/play-na-web:testIamPermissions 200
+[debug] [2026-05-12T19:02:24.388Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/play-na-web:testIamPermissions {"permissions":["firebase.projects.get","firebasedatabase.instances.get"]}
+[debug] [2026-05-12T19:02:24.388Z] Checked if tokens are valid: true, expires at: 1778616142260
+[debug] [2026-05-12T19:02:24.388Z] Checked if tokens are valid: true, expires at: 1778616142260
+[debug] [2026-05-12T19:02:24.388Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/play-na-web [none]
+[debug] [2026-05-12T19:02:24.856Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/play-na-web 200
+[debug] [2026-05-12T19:02:24.856Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/play-na-web {"projectId":"play-na-web","projectNumber":"278404685529","displayName":"Play-na-Web","name":"projects/play-na-web","resources":{"hostingSite":"play-na-web","realtimeDatabaseInstance":"play-na-web-default-rtdb"},"state":"ACTIVE","etag":"1_b2c0ac29-32c4-4c68-a910-24dc5136279f"}
+[debug] [2026-05-12T19:02:24.856Z] Checked if tokens are valid: true, expires at: 1778616142260
+[debug] [2026-05-12T19:02:24.856Z] Checked if tokens are valid: true, expires at: 1778616142260
+[debug] [2026-05-12T19:02:24.856Z] >>> [apiv2][query] GET https://firebasedatabase.googleapis.com/v1beta/projects/play-na-web/locations/-/instances/play-na-web-default-rtdb [none]
+[debug] [2026-05-12T19:02:26.113Z] <<< [apiv2][status] GET https://firebasedatabase.googleapis.com/v1beta/projects/play-na-web/locations/-/instances/play-na-web-default-rtdb 200
+[debug] [2026-05-12T19:02:26.113Z] <<< [apiv2][body] GET https://firebasedatabase.googleapis.com/v1beta/projects/play-na-web/locations/-/instances/play-na-web-default-rtdb {"name":"projects/278404685529/locations/us-central1/instances/play-na-web-default-rtdb","project":"projects/278404685529","databaseUrl":"https://play-na-web-default-rtdb.firebaseio.com","type":"DEFAULT_DATABASE","state":"ACTIVE"}
+[debug] [2026-05-12T19:02:26.114Z] Checked if tokens are valid: true, expires at: 1778616142260
+[debug] [2026-05-12T19:02:26.114Z] Checked if tokens are valid: true, expires at: 1778616142260
+[debug] [2026-05-12T19:02:26.114Z] >>> [apiv2][query] GET https://play-na-web-default-rtdb.firebaseio.com/Media_de_Vendas.json 
+[debug] [2026-05-12T19:02:26.697Z] <<< [apiv2][status] GET https://play-na-web-default-rtdb.firebaseio.com/Media_de_Vendas.json 200
+[debug] [2026-05-12T19:02:26.697Z] <<< [apiv2][body] GET https://play-na-web-default-rtdb.firebaseio.com/Media_de_Vendas.json [stream]

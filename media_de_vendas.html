@@ -108,9 +108,14 @@
         .card {
             background: rgba(255,255,255,0.08);
             border: 1px solid rgba(255,255,255,0.18);
+            border-left: 4px solid #ffeb3b;
+            border-bottom: 2px solid #ffffff;
             border-radius: 14px;
             padding: 14px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .card-top { display:flex; justify-content: space-between; gap: 10px; align-items: baseline; }
         .cliente { font-size: 18px; font-weight: 900; }
@@ -149,11 +154,16 @@
             font-size: 12px;
             opacity: 0.82;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
         }
         .resumo-venda .meta strong {
             color: white;
             font-size: 14px;
-            margin-left: 4px;
+            margin-left: 0;
+            display: block;
         }
         .badge-venda-dia {
             background: rgba(76,175,80,0.16);
@@ -172,7 +182,178 @@
             color: #ffe082;
         }
 
+        .detalhe-fotos {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed rgba(255,255,255,0.22);
+        }
+        .detalhe-fotos[hidden] { display: none; }
+        .detalhe-status {
+            padding: 14px 10px;
+            text-align: center;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: bold;
+        }
+        .secao-titulo {
+            font-size: 13px;
+            font-weight: bold;
+            color: #ffeb3b;
+            text-transform: uppercase;
+            border-bottom: 1px dashed rgba(255,255,255,0.2);
+            padding-bottom: 5px;
+            margin: 12px 0 10px;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .foto-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+        .foto-item {
+            background: rgba(0,0,0,0.30);
+            border-radius: 8px;
+            padding: 5px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .foto-botao {
+            display: block;
+            width: 100%;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            cursor: pointer;
+        }
+        .foto-item img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            border: 1px solid rgba(255,255,255,0.2);
+            display: block;
+        }
+        .foto-legenda {
+            font-size: 11px;
+            color: #ffffff;
+            font-weight: bold;
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .modal-foto {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            background: #06142e;
+        }
+        .modal-foto[hidden] { display: none; }
+        .modal-foto-topo {
+            min-height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 12px;
+            box-sizing: border-box;
+            background: #082462;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .modal-foto-titulo {
+            min-width: 0;
+            color: #ffffff;
+            font-size: 17px;
+            font-weight: bold;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .modal-foto-fechar {
+            width: 40px;
+            height: 40px;
+            border: 0;
+            border-radius: 50%;
+            background: #244f9f;
+            color: #ffffff;
+            font-size: 28px;
+            line-height: 1;
+            font-weight: normal;
+            cursor: pointer;
+            flex-shrink: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .modal-foto-espaco {
+            width: 40px;
+            flex-shrink: 0;
+        }
+        .modal-foto-corpo {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #06142e;
+        }
+        .modal-foto-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+        .modal-foto-img.visivel { display: block; }
+        .modal-foto-status {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
         .vazia { text-align:center; opacity: 0.65; margin-top: 45px; background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.12); padding: 18px; border-radius: 14px; }
+
+        @keyframes led-pulse {
+            0%, 100% { color: #7eb8ff; text-shadow: 0 0 6px #4a90e2; }
+            50%       { color: #c8e0ff; text-shadow: 0 0 12px #82bfff; }
+        }
+        .card-expand-hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 10px;
+            padding: 7px 0 1px;
+            border-top: 1px solid rgba(255,255,255,0.10);
+            font-size: 13px;
+            font-weight: bold;
+            color: #7eb8ff;
+            text-shadow: 0 0 6px #4a90e2;
+            animation: led-pulse 2.4s ease-in-out infinite;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .card-expand-hint .hint-icon {
+            font-size: 11px;
+            transition: transform 0.2s ease;
+            display: inline-block;
+        }
+        .hint-label-recolher { display: none; }
+        .card.expandido .hint-label-recolher { display: inline; }
+        .card.expandido .hint-label-expandir { display: none; }
+        .card.expandido .hint-icon { transform: rotate(180deg); }
+        .card.expandido .card-expand-hint { animation: none; color: #a0c8ff; text-shadow: none; }
     </style>
 </head>
 <body>
@@ -220,10 +401,23 @@
     <div id="vazia" class="vazia" style="display:none;"></div>
 </div>
 
+<div class="modal-foto" id="modalFotoSaude" hidden>
+    <div class="modal-foto-topo">
+        <div class="modal-foto-espaco"></div>
+        <div class="modal-foto-titulo" id="modalFotoTitulo">Imagem</div>
+        <button class="modal-foto-fechar" id="btnFecharModalFoto" type="button" aria-label="Fechar imagem">&times;</button>
+    </div>
+    <div class="modal-foto-corpo">
+        <div class="modal-foto-status" id="modalFotoCarregando">Carregando imagem...</div>
+        <div class="modal-foto-status" id="modalFotoErro" hidden>N&atilde;o foi poss&iacute;vel carregar a imagem.</div>
+        <img class="modal-foto-img" id="modalFotoImg" alt="Imagem ampliada">
+    </div>
+</div>
+
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
-    import { dbEscutarClientes, dbEscutarColaboradores, dbEscutarMediaDeVendas, dbEscutarEstoque } from './database.js';
+    import { dbEscutarClientes, dbEscutarColaboradores, dbEscutarMediaDeVendas, dbEscutarEstoque, dbListarAtendimentos } from './database.js';
 
     verificarAutenticacao();
 
@@ -238,6 +432,9 @@
     let termoMaquina = '';
     let modoOrdenacao = 'numero_menor';
     let nomesMaquinasEstoque = [];
+    let cardExpandidoId = '';
+    let atendimentosCachePromise = null;
+    const detalhesFotosCache = new Map();
 
     const elLista = document.getElementById('lista');
     const elVazia = document.getElementById('vazia');
@@ -248,6 +445,34 @@
     const elBtnModoMaquina = document.getElementById('btnModoMaquina');
     const elPeriodo = document.getElementById('periodoDias');
     const elOrdenacao = document.getElementById('ordenacao');
+    const elModalFoto = document.getElementById('modalFotoSaude');
+    const elModalFotoImg = document.getElementById('modalFotoImg');
+    const elModalFotoTitulo = document.getElementById('modalFotoTitulo');
+    const elModalFotoCarregando = document.getElementById('modalFotoCarregando');
+    const elModalFotoErro = document.getElementById('modalFotoErro');
+    const elBtnFecharModalFoto = document.getElementById('btnFecharModalFoto');
+
+    function escaparHtml(valor) {
+        return String(valor ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function escaparAttr(valor) {
+        return escaparHtml(valor);
+    }
+
+    function obterIdCliente(cliente, reg) {
+        return String(cliente?.firebaseUrl || reg?.cliente?.id || reg?.firebaseUrl || '').trim();
+    }
+
+    function obterNumeroCliente(cliente, reg) {
+        return String(cliente?.numero ?? reg?.cliente?.numero ?? reg?.cliente_numero ?? '').trim();
+    }
+
     function normalizar(txt) {
         return String(txt || '')
             .toLowerCase()
@@ -302,8 +527,162 @@
         return d.toLocaleDateString('pt-BR');
     }
 
+    function fmtDiasUltimoAtendimento(dias) {
+        if (typeof dias !== 'number' || !Number.isFinite(dias)) return '&mdash;';
+        return dias === 1 ? '1 dia' : `${dias} dias`;
+    }
+
     function fmtMoeda(v) {
         return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    function imagemValida(url) {
+        const texto = String(url || '').trim();
+        return Boolean(texto && (texto.startsWith('data:') || texto.includes('firebasestorage') || texto.startsWith('http')));
+    }
+
+    function obterAtendimentosCache() {
+        if (!atendimentosCachePromise) {
+            atendimentosCachePromise = dbListarAtendimentos().catch((erro) => {
+                atendimentosCachePromise = null;
+                throw erro;
+            });
+        }
+        return atendimentosCachePromise;
+    }
+
+    function obterUltimoAtendimentoCliente(atendimentos, cliente, reg) {
+        const idCliente = obterIdCliente(cliente, reg);
+        const numeroCliente = obterNumeroCliente(cliente, reg);
+        const lista = (Array.isArray(atendimentos) ? atendimentos : [])
+            .filter(atendimento => {
+                const clienteAt = atendimento?.cliente || {};
+                const idAt = String(clienteAt?.id || clienteAt?.firebaseUrl || '').trim();
+                const numeroAt = String(clienteAt?.numero ?? atendimento?.cliente_numero ?? '').trim();
+                return Boolean((idCliente && idAt === idCliente) || (numeroCliente && numeroAt === numeroCliente));
+            })
+            .sort((a, b) => {
+                const ta = Date.parse(a?.dataHora || a?.data || a?.timestamp || '') || 0;
+                const tb = Date.parse(b?.dataHora || b?.data || b?.timestamp || '') || 0;
+                return tb - ta;
+            });
+        return lista[0] || null;
+    }
+
+    function montarHtmlThumbFoto(foto) {
+        const url = String(foto?.url || '').trim();
+        if (!imagemValida(url)) return '';
+        const thumb = String(foto?.thumbUrl || url).trim();
+        const legenda = String(foto?.titulo || 'Imagem').trim();
+        return `
+            <div class="foto-item">
+                <button class="foto-botao" type="button" data-foto-url="${escaparAttr(url)}" data-foto-legenda="${escaparAttr(legenda)}">
+                    <img src="${escaparAttr(thumb)}" loading="lazy" alt="${escaparAttr(legenda)}">
+                </button>
+                <div class="foto-legenda">${escaparHtml(legenda)}</div>
+            </div>
+        `;
+    }
+
+    function montarHtmlSecaoFotos(nome, fotos) {
+        const itens = (Array.isArray(fotos) ? fotos : []).map(montarHtmlThumbFoto).filter(Boolean).join('');
+        if (!itens) return '';
+        return `
+            <div>
+                <div class="secao-titulo">${escaparHtml(nome)}</div>
+                <div class="foto-grid">${itens}</div>
+            </div>
+        `;
+    }
+
+    async function obterDetalheFotosCliente(cliente, reg) {
+        const idCache = obterIdCliente(cliente, reg) || obterNumeroCliente(cliente, reg);
+        if (idCache && detalhesFotosCache.has(idCache)) return detalhesFotosCache.get(idCache);
+
+        const atendimentos = await obterAtendimentosCache();
+        const ultimoAtendimento = obterUltimoAtendimentoCliente(atendimentos, cliente, reg);
+        const secoes = [];
+
+        const fotosFicha = [];
+        const fichaInstalacao = cliente?.fotoFichaInstalacao || cliente?.fotosInstalacao?.ficha || '';
+        if (fichaInstalacao) {
+            fotosFicha.push({
+                titulo: 'Ficha',
+                url: fichaInstalacao,
+                thumbUrl: cliente?.fotoFichaInstalacaoThumb || fichaInstalacao
+            });
+        }
+        if (ultimoAtendimento?.fotos?.ficha) {
+            fotosFicha.push({
+                titulo: 'Ficha',
+                url: ultimoAtendimento.fotos.ficha,
+                thumbUrl: ultimoAtendimento.fotos.fichaThumb || ultimoAtendimento.fotos.ficha
+            });
+        }
+        if (fotosFicha.length > 0) secoes.push({ nome: 'Foto da Ficha', fotos: fotosFicha });
+
+        const fotosMaquinas = [];
+        if (Array.isArray(ultimoAtendimento?.fotos?.maquinas) && ultimoAtendimento.fotos.maquinas.length > 0) {
+            ultimoAtendimento.fotos.maquinas.forEach((foto, i) => {
+                const url = foto?.url || foto?.src || '';
+                if (!url) return;
+                fotosMaquinas.push({
+                    titulo: foto?.nome ? String(foto.nome).trim() : `Maquina ${i + 1}`,
+                    url,
+                    thumbUrl: foto?.thumbUrl || url
+                });
+            });
+        } else if (Array.isArray(cliente?.fotosMaquinasInstalacao)) {
+            cliente.fotosMaquinasInstalacao.forEach((foto, i) => {
+                const url = foto?.url || foto?.src || '';
+                if (!url) return;
+                fotosMaquinas.push({
+                    titulo: foto?.nome ? String(foto.nome).trim() : `Maquina ${i + 1}`,
+                    url,
+                    thumbUrl: foto?.thumbUrl || url
+                });
+            });
+        }
+        if (fotosMaquinas.length > 0) secoes.push({ nome: 'Fotos de Maquinas', fotos: fotosMaquinas });
+
+        const html = secoes.map(secao => montarHtmlSecaoFotos(secao.nome, secao.fotos)).join('');
+        const resultado = html || '<div class="detalhe-status">Nenhuma foto encontrada para este cliente.</div>';
+        if (idCache) detalhesFotosCache.set(idCache, resultado);
+        return resultado;
+    }
+
+    async function carregarDetalheFotos(card, cliente, reg) {
+        const detalhe = card.querySelector('.detalhe-fotos');
+        if (!detalhe || detalhe.dataset.carregado === '1') return;
+        detalhe.innerHTML = '<div class="detalhe-status">Carregando fotos...</div>';
+        try {
+            detalhe.innerHTML = await obterDetalheFotosCliente(cliente, reg);
+            detalhe.dataset.carregado = '1';
+        } catch (erro) {
+            console.error('Erro ao carregar fotos do cliente:', erro);
+            detalhe.innerHTML = '<div class="detalhe-status">Erro ao carregar fotos.</div>';
+        }
+    }
+
+    function alternarCardExpandido(card, cliente, reg) {
+        const id = card.dataset.cardId || '';
+        const jaExpandido = card.classList.contains('expandido');
+        document.querySelectorAll('.card.expandido').forEach(item => {
+            item.classList.remove('expandido');
+            const detalhe = item.querySelector('.detalhe-fotos');
+            if (detalhe) detalhe.hidden = true;
+        });
+
+        if (jaExpandido) {
+            cardExpandidoId = '';
+            return;
+        }
+
+        card.classList.add('expandido');
+        const detalhe = card.querySelector('.detalhe-fotos');
+        if (detalhe) detalhe.hidden = false;
+        cardExpandidoId = id;
+        carregarDetalheFotos(card, cliente, reg);
     }
 
     function perfilPorNome(nome) {
@@ -527,17 +906,19 @@
             const numero = cliente.numero ?? reg?.cliente_numero ?? '&mdash;';
             const nome = cliente.nome || '&mdash;';
             const rota = cliente.rota || reg?.rota || '&mdash;';
-            const ultimoTxt = fmtData(calc?.ultimoAtendimentoEm);
+            const ultimoTxt = fmtDiasUltimoAtendimento(calc?.dias);
             const vendaDiaTxt = (typeof calc?.vendaDia === 'number') ? fmtMoeda(calc.vendaDia) : '&mdash;';
             const estTxt = (typeof calc?.estimativa === 'number') ? fmtMoeda(calc.estimativa) : '&mdash;';
             const abaixoDaMedia = mediaVendaDia !== null && typeof calc?.vendaDia === 'number' && calc.vendaDia < mediaVendaDia;
-
+            const idCard = obterIdCliente(cliente, reg) || obterNumeroCliente(cliente, reg) || String(numero);
+            const cardEstaExpandido = idCard && idCard === cardExpandidoId;
             const card = document.createElement('div');
-            card.className = 'card';
+            card.className = `card${cardEstaExpandido ? ' expandido' : ''}`;
+            card.dataset.cardId = idCard;
             card.innerHTML = `
                 <div class="card-top">
-                    <div class="cliente">N&ordm; ${numero} - ${nome} <small></small></div>
-                    <div class="rota">Rota: ${rota}</div>
+                    <div class="cliente">N&ordm; ${escaparHtml(numero)} - ${escaparHtml(nome)} <small></small></div>
+                    <div class="rota">Rota: ${escaparHtml(rota)}</div>
                 </div>
 
                 <div class="estimativa">
@@ -549,13 +930,85 @@
                 </div>
 
                 <div class="resumo-venda">
-                    <div class="meta">&Uacute;ltimo atendimento <strong>${ultimoTxt}</strong></div>
+                    <div class="meta"><span>&Uacute;ltimo atendimento</span><strong>${ultimoTxt}</strong></div>
                     <div class="badge-venda-dia${abaixoDaMedia ? ' abaixo-media' : ''}">Venda/dia ${vendaDiaTxt}</div>
                 </div>
+                <div class="card-expand-hint">
+                    <span>📷</span>
+                    <span class="hint-label-expandir">Ver fotos</span>
+                    <span class="hint-label-recolher">Fechar fotos</span>
+                    <span class="hint-icon">▼</span>
+                </div>
+                <div class="detalhe-fotos" hidden></div>
             `;
+            const detalhe = card.querySelector('.detalhe-fotos');
+            if (cardEstaExpandido && detalhe) {
+                detalhe.hidden = false;
+                carregarDetalheFotos(card, cliente, reg);
+            }
+            card.addEventListener('click', (event) => {
+                if (event.target.closest('.foto-botao')) return;
+                alternarCardExpandido(card, cliente, reg);
+            });
             elLista.appendChild(card);
         });
     }
+
+    function abrirModalFoto(url, legenda) {
+        if (!url) return;
+        elModalFotoTitulo.textContent = legenda || 'Imagem';
+        elModalFoto.hidden = false;
+        elModalFotoImg.classList.remove('visivel');
+        elModalFotoImg.removeAttribute('src');
+        elModalFotoCarregando.hidden = false;
+        elModalFotoErro.hidden = true;
+        document.body.style.overflow = 'hidden';
+        elModalFotoImg.onload = () => {
+            elModalFotoCarregando.hidden = true;
+            elModalFotoErro.hidden = true;
+            elModalFotoImg.classList.add('visivel');
+        };
+        elModalFotoImg.onerror = () => {
+            elModalFotoCarregando.hidden = true;
+            elModalFotoErro.hidden = false;
+            elModalFotoImg.classList.remove('visivel');
+        };
+        elModalFotoImg.src = url;
+        if (!history.state?.fotoSaudeVendas) {
+            history.pushState({ fotoSaudeVendas: true }, '');
+        }
+    }
+
+    function fecharModalFoto(voltarHistorico = true) {
+        if (elModalFoto.hidden) return;
+        elModalFoto.hidden = true;
+        elModalFotoImg.classList.remove('visivel');
+        elModalFotoImg.removeAttribute('src');
+        document.body.style.overflow = '';
+        if (voltarHistorico && history.state?.fotoSaudeVendas) {
+            history.back();
+        }
+    }
+
+    elLista.addEventListener('click', (event) => {
+        const botaoFoto = event.target.closest('.foto-botao');
+        if (!botaoFoto) return;
+        event.stopPropagation();
+        abrirModalFoto(botaoFoto.dataset.fotoUrl, botaoFoto.dataset.fotoLegenda);
+    });
+
+    elBtnFecharModalFoto.addEventListener('click', fecharModalFoto);
+    elModalFoto.addEventListener('click', (event) => {
+        if (event.target === elModalFoto) fecharModalFoto();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') fecharModalFoto();
+    });
+    window.addEventListener('popstate', () => {
+        if (!elModalFoto.hidden) {
+            fecharModalFoto(false);
+        }
+    });
 
     elBusca.addEventListener('input', () => {
         termo = normalizar(elBusca.value);

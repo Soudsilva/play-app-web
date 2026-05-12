@@ -518,6 +518,7 @@
         font-weight: bold;
         color: rgba(255,255,255,0.75);
         padding: 6px 8px;
+        text-align: center;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -2075,8 +2076,8 @@
             if (podeVerFicha) {
                 const fotosficha = [];
                 const fichaInstalacao = cliente.fotoFichaInstalacao || cliente.fotosInstalacao?.ficha || "";
-                if (fichaInstalacao) fotosficha.push({ titulo: 'Ficha (instalação)', url: fichaInstalacao, thumbUrl: cliente.fotoFichaInstalacaoThumb || fichaInstalacao });
-                if (ultimoAtendimento?.fotos?.ficha) fotosficha.push({ titulo: 'Ficha (último atend.)', url: ultimoAtendimento.fotos.ficha, thumbUrl: ultimoAtendimento.fotos.fichaThumb || ultimoAtendimento.fotos.ficha });
+                if (fichaInstalacao) fotosficha.push({ titulo: 'Ficha', url: fichaInstalacao, thumbUrl: cliente.fotoFichaInstalacaoThumb || fichaInstalacao });
+                if (ultimoAtendimento?.fotos?.ficha) fotosficha.push({ titulo: 'Ficha', url: ultimoAtendimento.fotos.ficha, thumbUrl: ultimoAtendimento.fotos.fichaThumb || ultimoAtendimento.fotos.ficha });
                 if (fotosficha.length > 0) secoes.push({ nome: 'Foto da Ficha', fotos: fotosficha });
             }
 
@@ -2085,12 +2086,12 @@
             if (Array.isArray(ultimoAtendimento?.fotos?.maquinas) && ultimoAtendimento.fotos.maquinas.length > 0) {
                 ultimoAtendimento.fotos.maquinas.forEach((f, i) => {
                     const u = f?.url || f?.src || "";
-                    if (u) fotosMaquinas.push({ titulo: f?.nome ? `Máq: ${f.nome}` : `Máquina ${i+1}`, url: u, thumbUrl: f?.thumbUrl || u });
+                    if (u) fotosMaquinas.push({ titulo: f?.nome ? String(f.nome).trim() : `Maquina ${i+1}`, url: u, thumbUrl: f?.thumbUrl || u });
                 });
             } else if (Array.isArray(cliente.fotosMaquinasInstalacao)) {
                 cliente.fotosMaquinasInstalacao.forEach((f, i) => {
                     const u = f?.url || f?.src || "";
-                    if (u) fotosMaquinas.push({ titulo: f?.nome ? `Máq: ${f.nome}` : `Máquina ${i+1}`, url: u, thumbUrl: f?.thumbUrl || u });
+                    if (u) fotosMaquinas.push({ titulo: f?.nome ? String(f.nome).trim() : `Maquina ${i+1}`, url: u, thumbUrl: f?.thumbUrl || u });
                 });
             }
             if (fotosMaquinas.length > 0) secoes.push({ nome: 'Fotos de Máquinas', fotos: fotosMaquinas });
