@@ -174,7 +174,9 @@ export function dbEscutarClientes(callback) {
 
 async function _atualizarVersaoClientes() {
     try {
-        await set(ref(db, 'metadata/clientes_versao'), Date.now());
+        const versao = Date.now();
+        await set(ref(db, 'metadata/clientes_versao'), versao);
+        return versao;
     } catch (e) {
         // Não bloquear a operação principal se isso falhar
         console.warn("Não foi possível atualizar versão dos clientes:", e);
@@ -185,6 +187,35 @@ async function _atualizarVersaoClientes() {
 // O que faz: Escuta APENAS um número (timestamp) no banco. Quando ele muda,
 // significa que alguém alterou a lista de clientes. Economiza dados pois não
 // baixa a lista inteira — só avisa que ela mudou.
+async function _atualizarClienteNoCacheLocal(clienteId, patchCliente = {}, versao = 0) {
+    const id = String(clienteId || '').trim();
+    if (!id) return;
+
+    try {
+        const cache = await _lerRegistroCacheClientes();
+        const lista = Array.isArray(cache?.dados) ? cache.dados : [];
+        if (lista.length === 0) return;
+
+        let encontrado = false;
+        const listaAtualizada = lista.map(cliente => {
+            if (String(cliente?.firebaseUrl || '').trim() !== id) return cliente;
+            encontrado = true;
+            return { ...cliente, ...(patchCliente || {}), firebaseUrl: id };
+        });
+
+        if (!encontrado) {
+            listaAtualizada.push({ ...(patchCliente || {}), firebaseUrl: id });
+        }
+
+        const versaoCache = Number(versao || cache?.versao || Date.now());
+        clientesCacheMemoria = listaAtualizada;
+        clientesCacheVersaoMemoria = versaoCache;
+        await salvarCacheClientes(listaAtualizada, versaoCache);
+    } catch (e) {
+        console.warn("Nao foi possivel atualizar cliente no cache local:", e);
+    }
+}
+
 async function _atualizarVersaoMediaDeVendas() {
     try {
         await set(ref(db, 'metadata/media_de_vendas_versao'), Date.now());
@@ -222,7 +253,8 @@ export async function dbSalvarCliente(cliente, idExistente = null) {
             clienteId = novoRef.key || '';
         }
         // Avisa todos os dispositivos que a lista mudou
-        await _atualizarVersaoClientes();
+        const versaoClientes = await _atualizarVersaoClientes();
+        await _atualizarClienteNoCacheLocal(clienteId, cliente, versaoClientes);
         await _tentarRecalcularRemuneracoes();
         return clienteId || null;
     } catch (error) {
@@ -646,6 +678,65 @@ function _extrairPixValidosAtendimento(atendimento) {
         .filter(Boolean);
 }
 
+function _parseInteiroFinanceiro(valor) {
+    if (typeof valor === "number") return Number.isFinite(valor) ? Math.round(valor) : 0;
+    return parseInt(String(valor || "").replace(/\D/g, ""), 10) || 0;
+}
+
+function _obterClienteIdAtendimento(atendimento) {
+    return String(
+        atendimento?.cliente?.id
+        || atendimento?.cliente?.firebaseUrl
+        || atendimento?.clienteId
+        || atendimento?.clienteFirebaseUrl
+        || ''
+    ).trim();
+}
+
+function _obterDevolucaoConsumidaAtendimento(atendimento) {
+    if (atendimento?._teste) return 0;
+    return _parseInteiroFinanceiro(atendimento?.financeiro?.pixDevolvido);
+}
+
+async function _ajustarDevolucaoClientePorAtendimento(atendimento, delta) {
+    const clienteId = _obterClienteIdAtendimento(atendimento);
+    const ajuste = Math.round(Number(delta) || 0);
+    if (!clienteId || ajuste === 0) return;
+
+    const resultado = await runTransaction(ref(db, `clientes/${clienteId}/devolucao`), (valorAtual) => {
+        const atual = _parseInteiroFinanceiro(valorAtual);
+        return Math.max(atual + ajuste, 0);
+    });
+
+    if (resultado?.committed) {
+        const novoValor = _parseInteiroFinanceiro(resultado.snapshot?.val());
+        const versaoClientes = await _atualizarVersaoClientes();
+        await _atualizarClienteNoCacheLocal(clienteId, { devolucao: novoValor }, versaoClientes);
+    }
+}
+
+async function _sincronizarDevolucaoClientePorAtendimentoSalvo(atendimentoAnterior, atendimentoNovo) {
+    const clienteAnteriorId = _obterClienteIdAtendimento(atendimentoAnterior);
+    const clienteNovoId = _obterClienteIdAtendimento(atendimentoNovo);
+    const valorAnterior = _obterDevolucaoConsumidaAtendimento(atendimentoAnterior);
+    const valorNovo = _obterDevolucaoConsumidaAtendimento(atendimentoNovo);
+
+    if (!clienteAnteriorId && !clienteNovoId) return;
+
+    if (clienteAnteriorId && clienteNovoId && clienteAnteriorId === clienteNovoId) {
+        await _ajustarDevolucaoClientePorAtendimento(atendimentoNovo, valorAnterior - valorNovo);
+        return;
+    }
+
+    if (clienteAnteriorId && valorAnterior > 0) {
+        await _ajustarDevolucaoClientePorAtendimento(atendimentoAnterior, valorAnterior);
+    }
+
+    if (clienteNovoId && valorNovo > 0) {
+        await _ajustarDevolucaoClientePorAtendimento(atendimentoNovo, -valorNovo);
+    }
+}
+
 async function _listarAtendimentosDoCliente(clienteRef = {}) {
     const resultados = new Map();
     const clienteId = String(clienteRef?.id || clienteRef?.firebaseUrl || "").trim();
@@ -772,6 +863,12 @@ export async function dbRemoverContestacao(id) {
 export async function dbSalvarAtendimento(atendimento, idExistente = null) {
     try {
         let atendimentoId = String(idExistente || '').trim();
+        let atendimentoAnterior = null;
+        if (idExistente) {
+            const snapAnterior = await get(ref(db, `atendimentos/${idExistente}`));
+            atendimentoAnterior = snapAnterior.exists() ? { ...snapAnterior.val(), firebaseUrl: idExistente } : null;
+        }
+
         const payloadAtendimento = { ...(atendimento || {}) };
         const ehAtendimentoComum = !payloadAtendimento?.origemRegistro || payloadAtendimento.origemRegistro === 'atendimento';
         if (ehAtendimentoComum) delete payloadAtendimento.produtos;
@@ -783,6 +880,7 @@ export async function dbSalvarAtendimento(atendimento, idExistente = null) {
             const novoRef = await push(atendimentosRef, payloadAtendimento);
             atendimentoId = String(novoRef?.key || '').trim();
         }
+        await _sincronizarDevolucaoClientePorAtendimentoSalvo(atendimentoAnterior, payloadAtendimento);
         await _sincronizarContadorAtualClientePorAtendimento(atendimento);
         await _tentarRecalcularRemuneracoes();
         return atendimentoId || null;
@@ -958,6 +1056,10 @@ export async function dbExcluirAtendimento(id) {
         await remove(ref(db, `atendimentos/${id}`));
 
         if (atendimento) {
+            const devolucaoConsumida = _obterDevolucaoConsumidaAtendimento(atendimento);
+            if (devolucaoConsumida > 0) {
+                await _ajustarDevolucaoClientePorAtendimento(atendimento, devolucaoConsumida);
+            }
             await _reverterContadorClientePorAtendimentoExcluido(atendimento);
             await _cancelarMovimentacoesHistoricoBalancoPorRefId(
                 atendimento.firebaseUrl,

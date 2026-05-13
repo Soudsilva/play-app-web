@@ -30,3 +30,4 @@ Use essas credenciais apenas para validação/testes do sistema.
 statusBalancoPendenteIndex === true E essa  variável vira true quando o resumo do balanço no Firebase vem assim:js contestacao_balanco/{usuario}/resumo_balanco/statusBalanco = "pendente"
 o estilo das mensagens padrão são.. procure: play-dialogs.js. 
 Sempre me diga o que entendeu antes de implementar qualquer coisa.
+As permissões, por padrão, vem desse local localStorage.cache_colaboradores

@@ -34,6 +34,159 @@
         font-size: 28px;
         font-weight: bold;
     }
+    .btn-pix-dev {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255,255,255,0.2);
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+    .btn-pix-dev:active {
+        background: rgba(50,188,173,0.4);
+        transform: translateY(-50%) scale(0.9);
+    }
+    .btn-pix-dev-label {
+        position: absolute;
+        left: 0;
+        top: calc(50% + 24px);
+        width: 42px;
+        text-align: center;
+        font-size: 10px;
+        font-weight: bold;
+        color: white;
+        white-space: nowrap;
+    }
+
+    /* Modal Devolução Pix */
+    .modal-pix-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.65);
+        z-index: 200;
+        align-items: flex-end;
+        justify-content: center;
+    }
+    .modal-pix-overlay.aberto {
+        display: flex;
+    }
+    .modal-pix {
+        width: 100%;
+        max-width: 420px;
+        background: #0a3a9e;
+        border-radius: 20px 20px 0 0;
+        padding: 24px 20px 36px;
+        box-sizing: border-box;
+        border-top: 3px solid #32BCAD;
+    }
+    .modal-pix-topo {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+    .modal-pix-titulo {
+        font-size: 18px;
+        font-weight: 900;
+        color: #32BCAD;
+        letter-spacing: 0.5px;
+    }
+    .modal-pix-fechar {
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.25);
+        color: white;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        font-size: 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-pix-saldo-btn {
+        width: 100%;
+        background: rgba(50,188,173,0.15);
+        border: 1px solid rgba(50,188,173,0.4);
+        border-radius: 12px;
+        padding: 12px;
+        text-align: center;
+        margin-bottom: 20px;
+        cursor: pointer;
+    }
+    .modal-pix-saldo-label {
+        font-size: 11px;
+        color: rgba(255,255,255,0.7);
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 4px;
+    }
+    .modal-pix-saldo-valor {
+        font-size: 22px;
+        font-weight: 900;
+        color: #32BCAD;
+    }
+    .modal-pix-campo-label {
+        font-size: 12px;
+        color: rgba(255,255,255,0.75);
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        margin-bottom: 8px;
+    }
+    .modal-pix-input-wrap {
+        display: flex;
+        align-items: center;
+        background: rgba(0,0,0,0.25);
+        border: 1px solid rgba(255,255,255,0.25);
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        gap: 8px;
+    }
+    .modal-pix-prefix {
+        font-size: 20px;
+        font-weight: 900;
+        color: rgba(255,255,255,0.6);
+    }
+    .modal-pix-input {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: white;
+        font-size: 28px;
+        font-weight: 900;
+        width: 100%;
+        text-align: left;
+    }
+    .modal-pix-input::placeholder {
+        color: rgba(255,255,255,0.25);
+    }
+    .modal-pix-input::-webkit-outer-spin-button,
+    .modal-pix-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .modal-pix-input[type=number] { -moz-appearance: textfield; }
+    .modal-pix-enviar {
+        width: 100%;
+        background: #ffeb3b;
+        color: #042d86;
+        border: none;
+        border-radius: 14px;
+        padding: 15px;
+        font-size: 17px;
+        font-weight: 900;
+        cursor: pointer;
+        letter-spacing: 0.5px;
+    }
+    .modal-pix-enviar:active {
+        opacity: 0.85;
+        transform: scale(0.98);
+    }
     .btn-home {
         position: absolute;
         right: 0;
@@ -270,6 +423,36 @@
 
 <div class="app">
     <div class="topo">
+        <div class="btn-pix-dev" id="btnPixDev" aria-label="Devolução Pix">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="42" height="42">
+                <rect x="4" y="4" width="16" height="16" rx="3.5" transform="rotate(45 12 12)" fill="#32BCAD"/>
+                <text x="12" y="12" text-anchor="middle" dominant-baseline="middle" font-size="7" font-weight="900" font-family="Arial, sans-serif" stroke="#1a8a7a" stroke-width="0.8" paint-order="stroke" fill="white" letter-spacing="0.8">PIX</text>
+            </svg>
+        </div>
+        <div class="btn-pix-dev-label">Devolu&ccedil;&atilde;o</div>
+
+    <!-- Modal Devolução Pix -->
+    <div class="modal-pix-overlay" id="modalPixOverlay">
+        <div class="modal-pix">
+            <div class="modal-pix-topo">
+                <div class="modal-pix-titulo">&#128257; Devolu&ccedil;&atilde;o Pix</div>
+                <button class="modal-pix-fechar" id="btnFecharModalPix">&times;</button>
+            </div>
+
+            <button class="modal-pix-saldo-btn" type="button">
+                <div class="modal-pix-saldo-label">Total de devolu&ccedil;&otilde;es informado</div>
+                <div class="modal-pix-saldo-valor" id="modalPixSaldoValor">R$ ---</div>
+            </button>
+
+            <div class="modal-pix-campo-label">Valor a devolver</div>
+            <div class="modal-pix-input-wrap">
+                <span class="modal-pix-prefix">R$</span>
+                <input class="modal-pix-input" id="modalPixValorInput" type="number" inputmode="numeric" maxlength="4" max="999" min="-999" placeholder="0">
+            </div>
+
+            <button class="modal-pix-enviar" id="btnEnviarDevolucaoPix" type="button">Enviar Devolu&ccedil;&atilde;o</button>
+        </div>
+    </div>
         <div class="titulo">Manuten&ccedil;&atilde;o</div>
         <div id="btnHomeTopo" class="btn-home" aria-label="Home" role="button" tabindex="0">
             <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
@@ -344,9 +527,10 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbListarAtendimentos, dbListarClientes, dbSalvarManutencao, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
+    import { dbListarAtendimentos, dbListarClientes, dbSalvarCliente, dbSalvarManutencao, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
 
     let clienteAtual = null;
+    let usuarioPodeDevolverPix = false;
     let currentFileInputId = null;
     let fotosClienteReferenciaAtuais = [];
 
@@ -366,6 +550,90 @@
     function obterClienteIdDaUrl() {
         const params = new URLSearchParams(window.location.search);
         return String(params.get('cliente') || "").trim();
+    }
+
+    function parseValorInteiro(valor) {
+        return parseInt(String(valor || "").replace(/\D/g, ""), 10) || 0;
+    }
+
+    function parseValorInteiroComSinal(valor) {
+        const texto = String(valor || "").trim();
+        const numero = parseValorInteiro(texto);
+        return texto.startsWith("-") ? -numero : numero;
+    }
+
+    function formatarMoedaInteira(valor) {
+        return (Number(valor) || 0).toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+    }
+
+    function atualizarTotalDevolucaoPix() {
+        const valorEl = document.getElementById('modalPixSaldoValor');
+        if (!valorEl) return;
+        valorEl.textContent = formatarMoedaInteira(clienteAtual?.devolucao || 0);
+    }
+
+    function perfilPodeDevolverPix(perfil) {
+        const valor = String(perfil || "")
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+        return valor.includes('gestao_3')
+            || valor.includes('gestao nivel 3')
+            || valor.includes('gestao_nivel_3')
+            || valor.includes('atendimento_2')
+            || valor.includes('atendimento nivel 2')
+            || valor.includes('atendimento_nivel_2');
+    }
+
+    function clienteTemPix(cliente) {
+        if (Array.isArray(cliente?.equipDetalhes)) {
+            return cliente.equipDetalhes.some(item => String(item?.pix || "").trim());
+        }
+
+        const equipTexto = String(cliente?.equip || "").trim();
+        return /\[Pix:\s*[^\]]+\]/i.test(equipTexto) || /\bPix\s+\d+/i.test(equipTexto);
+    }
+
+    function aplicarVisibilidadeDevolucaoPix() {
+        const btn = document.getElementById('btnPixDev');
+        const label = document.querySelector('.btn-pix-dev-label');
+        const ocultar = () => {
+            if (btn) btn.style.display = 'none';
+            if (label) label.style.display = 'none';
+        };
+
+        ocultar();
+
+        if (!usuarioPodeDevolverPix || !clienteTemPix(clienteAtual)) return;
+
+        if (btn) btn.style.display = 'flex';
+        if (label) label.style.display = 'block';
+    }
+
+    function aplicarPermissaoDevolucaoPix() {
+        try {
+            const nomeLogado = String(localStorage.getItem('usuarioLogado') || "").trim();
+            if (!nomeLogado) {
+                usuarioPodeDevolverPix = false;
+                aplicarVisibilidadeDevolucaoPix();
+                return;
+            }
+
+            const colaboradores = JSON.parse(localStorage.getItem('cache_colaboradores') || "[]");
+            const usuario = colaboradores.find(item => String(item?.nome || "").trim() === nomeLogado);
+            const perfil = usuario?.nivel_completo || "";
+            usuarioPodeDevolverPix = perfilPodeDevolverPix(perfil);
+            aplicarVisibilidadeDevolucaoPix();
+        } catch (erro) {
+            usuarioPodeDevolverPix = false;
+            aplicarVisibilidadeDevolucaoPix();
+            console.warn('Nao foi possivel ler o cache de permissao da devolucao Pix:', erro);
+        }
     }
 
     function obterTimestampAtendimento(atendimento) {
@@ -597,6 +865,8 @@
 
             renderizarResumoCliente(clienteAtual);
             renderizarFotosCliente(clienteAtual, atendimentos);
+            atualizarTotalDevolucaoPix();
+            aplicarVisibilidadeDevolucaoPix();
             status.style.display = 'none';
             conteudo.style.display = 'block';
         } catch (error) {
@@ -701,7 +971,57 @@
         }
     }
 
+    async function salvarDevolucaoPixCliente() {
+        if (!clienteAtual?.firebaseUrl) {
+            await window.playAlert("Cliente nao carregado para salvar a devolucao.");
+            return;
+        }
+
+        const input = document.getElementById('modalPixValorInput');
+        const btn = document.getElementById('btnEnviarDevolucaoPix');
+        const valorInformado = parseValorInteiroComSinal(input?.value || "");
+
+        if (valorInformado === 0) {
+            await window.playAlert("Informe o valor da devolucao.");
+            input?.focus();
+            return;
+        }
+
+        const totalAtual = parseValorInteiro(clienteAtual.devolucao || 0);
+        const novoTotal = totalAtual + valorInformado;
+
+        try {
+            btn.innerText = "Enviando...";
+            btn.style.pointerEvents = "none";
+            await dbSalvarCliente({ devolucao: novoTotal }, clienteAtual.firebaseUrl);
+            clienteAtual.devolucao = novoTotal;
+            if (input) input.value = "";
+            atualizarTotalDevolucaoPix();
+            await window.playAlert("Devolucao Pix salva com sucesso!");
+            voltarParaClientes();
+        } catch (error) {
+            await window.playAlert(error?.message || "Nao foi possivel salvar a devolucao Pix.");
+        } finally {
+            btn.innerText = "Enviar Devolu\u00e7\u00e3o";
+            btn.style.pointerEvents = "auto";
+        }
+    }
+
+    document.getElementById('btnPixDev').addEventListener('click', () => {
+        if (!usuarioPodeDevolverPix) return;
+        atualizarTotalDevolucaoPix();
+        document.getElementById('modalPixOverlay').classList.add('aberto');
+    });
+    document.getElementById('btnFecharModalPix').addEventListener('click', () => {
+        document.getElementById('modalPixOverlay').classList.remove('aberto');
+    });
+    document.getElementById('modalPixOverlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('modalPixOverlay'))
+            document.getElementById('modalPixOverlay').classList.remove('aberto');
+    });
+
     document.getElementById('btnSalvar').addEventListener('click', salvarManutencao);
+    document.getElementById('btnEnviarDevolucaoPix').addEventListener('click', salvarDevolucaoPixCliente);
     document.getElementById('btnHomeTopo').addEventListener('click', () => {
         window.location.href = 'index.html';
     });
@@ -743,6 +1063,7 @@
         if (confirmar) voltarParaClientes();
     });
 
+    aplicarPermissaoDevolucaoPix();
     carregarCliente();
 </script>
 

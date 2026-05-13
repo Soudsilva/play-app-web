@@ -292,6 +292,10 @@
         .pix-devolucao-input-wrap {
             position: relative;
             width: 75px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
         }
         .pix-devolucao-input-wrap input {
             width: 100%;
@@ -304,34 +308,34 @@
             font-weight: 400;
         }
         .pix-devolucao-label {
-            position: absolute;
-            top: 50%;
-            right: 6px;
-            transform: translateY(-50%);
-            text-align: right;
-            color: rgba(255,255,255,0.80);
+            position: static;
+            transform: none;
+            text-align: center;
+            color: #ffffff;
             font-size: 10px;
             font-weight: 700;
             letter-spacing: 0.6px;
             text-transform: uppercase;
             pointer-events: none;
-            transition: opacity 0.15s;
-        }
-        #valorPixDevolvido:not(:placeholder-shown) ~ .pix-devolucao-icone,
-        #valorPixDevolvido:not(:placeholder-shown) ~ .pix-devolucao-label {
-            display: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         .pix-devolucao-icone {
-            position: absolute;
-            left: 9px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 15px;
+            position: static;
+            transform: none;
+            font-size: 13px;
             line-height: 1;
             pointer-events: none;
             -webkit-user-select: none;
             user-select: none;
-            transition: opacity 0.15s;
+        }
+        .pix-devolucao-legenda {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            width: 100%;
+            line-height: 1;
         }
         
         /* Readonly inputs visual style */
@@ -544,9 +548,11 @@
                     <span class="titulo-sub-espaco" aria-hidden="true"></span>
                 </div>
                 <div class="pix-devolucao-input-wrap" id="pixDevolucaoWrap">
-                    <input type="text" inputmode="numeric" id="valorPixDevolvido" placeholder="0" oninput="formatarNumero(this, 4); calcularTotais(); salvarRascunho()">
-                    <span class="pix-devolucao-icone" aria-hidden="true">💸</span>
-                    <span class="pix-devolucao-label">Devol.</span>
+                    <input type="text" inputmode="numeric" id="valorPixDevolvido" class="input-readonly" readonly placeholder="0">
+                    <span class="pix-devolucao-legenda">
+                        <span class="pix-devolucao-icone" aria-hidden="true">💸</span>
+                        <span class="pix-devolucao-label">Devol.</span>
+                    </span>
                 </div>
             </div>
             <div id="containerPix">
@@ -1163,6 +1169,13 @@ function obterIdAtendimentoEmEdicao() {
         });
     }
 
+    function atualizarVisibilidadePixDevolucao() {
+        const input = document.getElementById('valorPixDevolvido');
+        const wrap = document.getElementById('pixDevolucaoWrap');
+        if (!input || !wrap) return;
+        wrap.style.display = window.parseFormatted(input.value) > 0 ? 'flex' : 'none';
+    }
+
     window.atualizarValorLinhaPix = function(linha) {
         if (!linha) return;
 
@@ -1405,7 +1418,9 @@ function obterIdAtendimentoEmEdicao() {
             const containerFotosPix = document.getElementById('containerFotosPix');
             const containerFotosMaquinas = document.getElementById('containerFotosMaquinas');
             containerPix.innerHTML = ''; // Limpa as linhas existentes
-            document.getElementById('valorPixDevolvido').value = '';
+            document.getElementById('valorPixDevolvido').value = cliente.devolucao ?? '';
+            formatarNumero(document.getElementById('valorPixDevolvido'), 8);
+            atualizarVisibilidadePixDevolucao();
             containerFotosMaquinas.innerHTML = ''; // Limpa as fotos das maquinas existentes
             containerFotosPix.innerHTML = ''; // Limpa as fotos pix existentes
 
@@ -2263,6 +2278,7 @@ function obterIdAtendimentoEmEdicao() {
                 formatarNumero(document.getElementById('valorDinheiro'), 8);
                 document.getElementById('valorPixDevolvido').value = dados.valorPixDevolvido ?? "";
                 formatarNumero(document.getElementById('valorPixDevolvido'), 8);
+                atualizarVisibilidadePixDevolucao();
 
                 document.getElementById('porcComissao').value = dados.porcComissao ? String(dados.porcComissao).replace('%','').trim() + '%' : "";
                 calcularTotais(); // Atualiza os cálculos visuais
@@ -2362,6 +2378,7 @@ function obterIdAtendimentoEmEdicao() {
             document.getElementById('containerFotosMaquinas').innerHTML = '';
             document.getElementById('areaPix').style.display = 'block';
             document.getElementById('valorPixDevolvido').value = '';
+            atualizarVisibilidadePixDevolucao();
             document.getElementById('containerPix').innerHTML = "";
             // Se estiver vazio, tenta criar a primeira linha novamente
             if (document.querySelectorAll('.linha-produto').length === 0 && typeof window.adicionarLinhaProduto === 'function') {
