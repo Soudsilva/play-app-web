@@ -3119,6 +3119,7 @@ window.finalizarRegistro = async function() {
 
         if (foiConcluido) {
             dadosFinais.dataConclusao = new Date().toISOString();
+            dadosFinais.finalizadoPor = usuarioLogado;
         }
 
         const clienteSnapshotAtendimento = {

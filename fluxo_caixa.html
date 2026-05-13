@@ -43,10 +43,18 @@
             justify-content: space-between;
         }
         .saldo-label {
-            font-size: 12px;
+            font-size: 15px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 1.5px;
+        }
+        .saldo-contexto {
+            margin-top: 3px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #c8d8f0;
+            letter-spacing: 0;
+            text-transform: none;
         }
         .saldo-valor {
             font-size: 28px;
@@ -367,12 +375,15 @@
     <div class="topo">&#128184; Fluxo de Caixa</div>
 
     <div class="card-saldo">
-        <div class="saldo-label">Saldo Atual</div>
+        <div>
+            <div class="saldo-label">Saldo Atual</div>
+            <div class="saldo-contexto" id="saldoContexto"></div>
+        </div>
         <div class="saldo-valor" id="saldoAtual">R$ 0</div>
     </div>
 
     <div class="lista" id="listaMov">
-        <div class="vazio" id="msgVazio">Nenhuma movimentacao ainda.</div>
+        <div class="vazio" id="msgVazio">Nenhuma movimentação ainda.</div>
     </div>
 </div>
 
@@ -392,7 +403,7 @@
     </div>
 
     <div class="form-main-row">
-        <input class="campo-obs" id="inputObs" type="text" placeholder="Observacao...">
+        <input class="campo-obs" id="inputObs" type="text" placeholder="Observação...">
         <div class="form-valor-wrap">
             <span class="valor-prefix">R$</span>
             <input class="campo-valor" id="inputValor" type="text" inputmode="decimal" placeholder="0" autocomplete="off">
@@ -433,6 +444,7 @@
 
     const els = {
         saldoAtual: document.getElementById('saldoAtual'),
+        saldoContexto: document.getElementById('saldoContexto'),
         listaCount: document.getElementById('listaCount'),
         listaMov: document.getElementById('listaMov'),
         msgVazio: document.getElementById('msgVazio'),
@@ -627,6 +639,9 @@
         const saldo = calcularSaldo(obterMovimentacoesFiltradas());
         els.saldoAtual.textContent = 'R$ ' + Math.abs(saldo).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
         els.saldoAtual.className = 'saldo-valor' + (saldo < 0 ? ' negativo' : '');
+        els.saldoContexto.textContent = saldo < 0
+            ? 'Caixa me deve'
+            : (saldo > 0 ? 'Dinheiro do caixa comigo' : '');
     }
 
 

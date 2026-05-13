@@ -735,6 +735,12 @@ function formatarDataHoraLiberacao(timestamp) {
     });
 }
 
+function formatarTextoLiberacaoAutomatica(quando) {
+    return quando === 'amanhã'
+        ? 'Rota será liberada automaticamente amanhã'
+        : `Rota será liberada automaticamente em ${quando}`;
+}
+
 function obterTextoLiberacaoRota(status) {
     if (status?.motivo === 'aguardando_primeiro_atendimento') {
         return 'Aguardando o primeiro atendimento da rota para começar a contar a justificativa.';
@@ -744,11 +750,11 @@ function obterTextoLiberacaoRota(status) {
 
     const quando = formatarTempoRestante(status.tempoRestanteMs);
     if (status.motivo === 'aguardando_ultima_justificativa') {
-        return `Rota será liberada automaticamente em ${quando}`;
+        return formatarTextoLiberacaoAutomatica(quando);
     }
 
     if (status.motivo === 'aguardando_prazo_maximo') {
-        return `Rota será liberada automaticamente em ${quando}`;
+        return formatarTextoLiberacaoAutomatica(quando);
     }
 
     return '';
