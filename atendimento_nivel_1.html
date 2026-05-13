@@ -494,7 +494,7 @@
                 <span class="numero-cliente-prefixo">Nº</span>
                 <input type="text" inputmode="numeric" id="inputBuscaCliente" name="cliente_busca_manual" placeholder=""
                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"
-                       oninput="this.value = this.value.replace(/[^0-9]/g, ''); buscarCliente()"
+                       oninput="this.value = this.value.replace(/[^0-9]/g, ''); salvarClienteManualSessao(this.value); buscarCliente()"
                        style="font-size: 24px; text-align: left; font-weight: bold;">
             </div>
             <div id="rotaClienteDestaque" class="rota-cliente-destaque"></div>
@@ -659,6 +659,7 @@
     let currentFileInputId = null;
     let historicoBalancoEdicao = null;
     let unsubscribeHistoricoBalancoEdicao = null;
+    const CHAVE_CLIENTE_MANUAL_SESSAO = 'atendimento_cliente_manual_numero';
 
     try {
         const cacheColaboradores = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
@@ -720,6 +721,16 @@ function obterIdAtendimentoEmEdicao() {
     function obterUsuarioAtendimento() {
         return String(localStorage.getItem('usuarioLogado') || '').trim();
     }
+
+    window.salvarClienteManualSessao = function(numero) {
+        if (obterIdAtendimentoEmEdicao()) return;
+        const normalizado = normalizarNumeroClienteBusca(numero);
+        if (normalizado) {
+            sessionStorage.setItem(CHAVE_CLIENTE_MANUAL_SESSAO, normalizado);
+        } else {
+            sessionStorage.removeItem(CHAVE_CLIENTE_MANUAL_SESSAO);
+        }
+    };
 
     // --- CLIENTES PERMITIDOS (rotas selecionadas pelo usuário na sessão) ---
     async function carregarClientesPermitidos() {
@@ -879,6 +890,7 @@ function obterIdAtendimentoEmEdicao() {
                     const input = document.getElementById('inputBuscaCliente');
                     if (input && numero) {
                         input.value = numero;
+                        salvarClienteManualSessao(numero);
                         buscarCliente();
                     }
                     fecharPainelClientesRota();
@@ -2095,6 +2107,7 @@ function obterIdAtendimentoEmEdicao() {
             sessionStorage.removeItem('rota_filtro_numero_rota');
             sessionStorage.removeItem('cliente_pre_selecionado');
             limparEstadoEdicao();
+            sessionStorage.removeItem(CHAVE_CLIENTE_MANUAL_SESSAO);
             sessionStorage.removeItem('atendimento_tela_origem');
             const msgFim = semInternet
                 ? "📵 Sem internet — atendimento salvo localmente!\nSerá enviado automaticamente quando a conexão voltar."
@@ -2390,14 +2403,16 @@ function obterIdAtendimentoEmEdicao() {
         }
     });
 
-    // Pré-preenche o número do cliente se vier via URL (?numero=X)
+    // Pré-preenche o número do cliente salvo na tela ou vindo via URL (?numero=X)
     const _paramNumero = new URLSearchParams(window.location.search).get('numero');
-    if (_paramNumero) {
+    const _numeroManualSessao = sessionStorage.getItem(CHAVE_CLIENTE_MANUAL_SESSAO) || '';
+    const _numeroInicial = _numeroManualSessao || _paramNumero;
+    if (_numeroInicial) {
         sessionStorage.removeItem('rota_filtro_numeros');
         sessionStorage.removeItem('rota_filtro_numero_rota');
         sessionStorage.removeItem('cliente_pre_selecionado');
         aplicarBannerRotaFiltro();
-        numeroClientePendente = _paramNumero.replace(/[^0-9]/g, '');
+        numeroClientePendente = String(_numeroInicial || '').replace(/[^0-9]/g, '');
         tentarAplicarClientePendente();
     }
 

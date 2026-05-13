@@ -1045,6 +1045,7 @@ window.irParaAtendimentoPorCliente = function(numeroCliente) {
     sessionStorage.removeItem('rota_filtro_numeros');
     sessionStorage.removeItem('rota_filtro_numero_rota');
     sessionStorage.removeItem('cliente_pre_selecionado');
+    sessionStorage.removeItem('atendimento_cliente_manual_numero');
     sessionStorage.setItem('atendimento_tela_origem', 'selecionar_rota.html');
 
     window.location.href = `atendimento_nivel_1.html?numero=${encodeURIComponent(numero)}`;
