@@ -1399,6 +1399,8 @@ async function calcularValoresPorRota() {
     const rotasMap = {}; // { "01": { valor_estimado, clientes: [] } }
 
     clientes.forEach(c => {
+        if (c?.emRecuperacao === true) return;
+
         const numRota = (c.rota || '').trim();
         if (!numRota) return;
 

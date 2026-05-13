@@ -961,6 +961,9 @@
             };
 
             await dbSalvarManutencao(manutencao);
+            if (manutencao.tipoAcao === "Retirar" && clienteAtual.firebaseUrl) {
+                await dbSalvarCliente({ emRecuperacao: true }, clienteAtual.firebaseUrl);
+            }
             await window.playAlert("Manutencao salva com sucesso!");
             voltarParaClientes();
         } catch (error) {

@@ -999,7 +999,7 @@
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
 verificarAutenticacao();
-import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, storageSalvarFotoComThumb, dbSalvarMovimentoFluxoCaixa, dbSincronizarItensManutencaoNoHistorico } from './database.js';
+import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbSalvarCliente, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, storageSalvarFotoComThumb, dbSalvarMovimentoFluxoCaixa, dbSincronizarItensManutencaoNoHistorico } from './database.js';
 
 // ════════════════════════════════════════════════
 // DADOS DA MANUTENÇÃO
@@ -3255,6 +3255,10 @@ window.finalizarRegistro = async function() {
                 equipamentosRetiradosDetalhes: camposExtras.equipamentosRetiradosDetalhes || [],
                 pontoEncerrado: camposExtras.pontoEncerrado === true
             });
+        }
+
+        if (foiConcluido && clienteSnapshotAtendimento.id) {
+            await dbSalvarCliente({ emRecuperacao: null }, clienteSnapshotAtendimento.id);
         }
 
         sessionStorage.removeItem('manutencao_realizando');
