@@ -580,6 +580,36 @@
         .btn-contestar.aguardando { background: #b45309; border: 2px solid #f59e0b; }
         .btn-contestar.contestado { background: #374151; color: #9ca3af; cursor: default; }
 
+        .contestacao-resumo {
+            margin-bottom: 10px;
+            border: 1px solid #f59e0b;
+            border-radius: 10px;
+            background: #243f78;
+            color: #ffffff;
+            padding: 10px 12px;
+            font-size: 15px;
+            line-height: 1.35;
+            text-align: center;
+        }
+
+        .contestacao-resumo-titulo {
+            display: block;
+            color: #ffeb3b;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .contestacao-resumo-texto {
+            display: block;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
         .contestacao-box {
             margin-top: 10px;
             display: grid;
@@ -1610,6 +1640,15 @@
         return String(str || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
+    function escHTML(str) {
+        return String(str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function fecharCampoContestacao(panel) {
         if (!panel) return;
         const id = panel.dataset.contestarId || '';
@@ -1777,8 +1816,16 @@
 
         if (!confirmado) {
             const btnContestarLabel = jaContestado ? '⚠ Contestado' : '⚠ Contestar';
+            const contestacaoTexto = String(a.contestacaoObservacao || '').trim();
+            const contestacaoHTML = jaContestado && contestacaoTexto
+                ? `<div class="contestacao-resumo">
+                    <span class="contestacao-resumo-titulo">Situação:</span>
+                    <span class="contestacao-resumo-texto">${escHTML(contestacaoTexto)}</span>
+                   </div>`
+                : '';
             rodapeHTML = `<div class="section">
                 <div class="validacao-chip" data-validacao-status="${escAttr(id)}">${resumoValidacao.total === 0 ? 'Nenhuma foto para revisar' : `Fotos revisadas ${resumoValidacao.concluidas}/${resumoValidacao.total}`}</div>
+                ${contestacaoHTML}
                 <div class="rodape-acoes">
                     <button class="btn-contestar${jaContestado ? ' contestado' : ''}" data-contestar-id="${escAttr(id)}">${btnContestarLabel}</button>
                     <button class="btn-confirmar" data-confirmar-id="${escAttr(id)}" data-confirmar-nome="${escAttr(a.cliente?.nome || '')}" ${resumoValidacao.liberado ? '' : 'disabled'} style="flex:1">

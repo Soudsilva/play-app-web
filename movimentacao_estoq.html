@@ -206,8 +206,256 @@
         /* Seções */
         .secao-historico { margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; border-radius: 16px; transition: border 0.3s, padding 0.3s; }
         .secao-historico:has(.titulo-hist.aberto) { border: 3px solid rgba(76,175,80,0.75); padding: 15px; }
+        .historico-sticky {
+            z-index: 40;
+        }
+        .secao-historico:has(.titulo-hist.aberto) .historico-sticky {
+            position: sticky;
+            top: 0;
+            background: #042d86;
+            padding-top: 6px;
+            padding-bottom: 8px;
+        }
+        .historico-filtros {
+            display: grid;
+            grid-template-columns: 118px 1fr;
+            gap: 8px;
+            align-items: center;
+        }
+        .historico-filtros .input-busca {
+            margin-bottom: 0;
+        }
+        .historico-mes-select {
+            height: 48px;
+            margin-bottom: 0;
+            border-radius: 10px;
+            border: 1.5px solid #7fa6ff;
+            background: #244d9b;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .historico-responsavel-chip {
+            display: none;
+            margin-top: 8px;
+            border: 2px solid #ffeb3b;
+            border-radius: 12px;
+            background: #0b7a34;
+            color: #ffffff;
+            padding: 9px 12px;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.2;
+            box-shadow: 0 4px 12px #001b4f;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .historico-responsavel-chip.visivel {
+            display: block;
+        }
+        .historico-responsavel-chip.todos {
+            border-color: #ffffff;
+            background: #243f78;
+        }
+        .historico-responsavel-label {
+            display: block;
+            color: #ffeb3b;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 3px;
+        }
+        .historico-responsavel-nome {
+            display: block;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 700;
+        }
 
         .secao-itens:has(.titulo-hist.aberto) { border: 3px solid rgba(33,150,243,0.75); border-radius: 16px; padding: 15px; }
+        .secao-itens.oculta-por-posse { display: none; }
+        .itens-sticky {
+            z-index: 40;
+        }
+        .secao-itens:has(.titulo-hist.aberto) .itens-sticky {
+            position: sticky;
+            top: 0;
+            background: #042d86;
+            padding-top: 6px;
+            padding-bottom: 8px;
+        }
+        .itens-controles {
+            display: none;
+        }
+        .secao-itens:has(.titulo-hist.aberto) .itens-controles {
+            display: block;
+        }
+
+        .secao-posse-usuario {
+            display: none;
+            margin-top: 20px;
+            border: 3px solid #ffeb3b;
+            border-radius: 16px;
+            padding: 12px;
+        }
+        .secao-posse-usuario.visivel {
+            display: block;
+        }
+        .posse-header {
+            margin-bottom: 0;
+            border-radius: 10px;
+            border: 1.5px solid #ffeb3b;
+            background: #0f3d93;
+            padding: 10px 42px;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .posse-header:active {
+            transform: scale(0.985);
+        }
+        .posse-header.aberto {
+            margin-bottom: 10px;
+        }
+        .posse-header-centro {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .posse-header-label {
+            color: #ffeb3b;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .posse-header-nome {
+            margin-top: 3px;
+            color: #ffffff;
+            font-size: 17px;
+            font-weight: 700;
+        }
+        .posse-header-seta {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #ffeb3b;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .posse-header.aberto .posse-header-seta {
+            transform: translateY(-50%) rotate(180deg);
+        }
+        .posse-secao {
+            margin-top: 12px;
+        }
+        .posse-secao:first-child {
+            margin-top: 0;
+        }
+        .posse-secao-titulo {
+            color: #ffeb3b;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 8px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .posse-lista-card {
+            display: block;
+            width: 100%;
+            border-top: 2px solid #ffffff;
+            border-bottom: 2px solid #ffffff;
+            background: transparent;
+        }
+        .posse-lista-item {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 72px;
+            align-items: stretch;
+            min-height: 26px;
+            border-bottom: 1px solid #9bb8ff;
+        }
+        .posse-lista-item:last-child {
+            border-bottom: none;
+        }
+        .posse-item-nome {
+            min-width: 0;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+            padding: 5px 8px;
+            display: flex;
+            align-items: center;
+        }
+        .posse-item-barra-wrap {
+            display: none;
+        }
+        .posse-item-badge {
+            color: #ffffff;
+            padding: 5px 8px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.2;
+            white-space: nowrap;
+            border-left: 1px solid #9bb8ff;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .posse-item-badge.negativo,
+        .posse-item-barra.negativo {
+            color: #ffb3b3;
+        }
+        .posse-pix-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: #12367f;
+            border: 1px solid #7fa6ff;
+            border-left: 3px solid #00c8ff;
+            border-radius: 14px;
+            padding: 12px;
+        }
+        .posse-pix-label {
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .posse-pix-numeros {
+            color: #ffeb3b;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+        .posse-vazio {
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 400;
+            text-align: center;
+            padding: 18px 8px;
+        }
 
         @keyframes shimmer-btn {
             0%   { background-position: -200% center; }
@@ -629,27 +877,54 @@
     </div>
 
     <div class="secao-historico">
-        <div class="titulo-hist">Últimas Movimentações</div>
-        <input type="text" id="filtroHistorico" class="input-busca" placeholder="Pesquisar no histórico..." oninput="filtrarHistorico()">
+        <div class="historico-sticky">
+            <div class="titulo-hist">Últimas Movimentações</div>
+            <div class="historico-filtros">
+                <select id="mesHistorico" class="historico-mes-select" onchange="alterarMesHistorico(this.value)">
+                    <option value="">Mês</option>
+                </select>
+                <input type="text" id="filtroHistorico" class="input-busca" placeholder="Pesquisar no histórico..." oninput="filtrarHistorico()">
+            </div>
+            <div id="historicoResponsavelAtual" class="historico-responsavel-chip"></div>
+        </div>
         <div id="listaHistorico">
             <p style="text-align:center; font-size:11px; opacity:0.5;">Carregando...</p>
         </div>
     </div>
 
     <div class="secao-itens">
-        <div class="titulo-hist" id="btnToggleItens" role="button" tabindex="0" aria-expanded="false"
-             onclick="toggleItens()"
-             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleItens();}">
+        <div class="itens-sticky">
+            <div class="titulo-hist" id="btnToggleItens" role="button" tabindex="0" aria-expanded="false"
+                 onclick="toggleItens()"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleItens();}">
+            </div>
+            <div class="itens-controles">
+                <input type="text" id="filtroItens" class="input-busca" placeholder="Buscar item no estoque..." oninput="filtrarItensLista()">
+                <div class="filtros-est">
+                    <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="produtos" checked onclick="selecionarFiltroTipo(this)"><span class="f-icon">🟢</span><span class="f-label">Produtos</span></label>
+                    <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="peca" onclick="selecionarFiltroTipo(this)"><span class="f-icon">🟠</span><span class="f-label">Peças</span></label>
+                    <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="maquina" onclick="selecionarFiltroTipo(this)"><span class="f-icon">🟣</span><span class="f-label">Máquinas</span></label>
+                    <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="materiais" onclick="selecionarFiltroTipo(this)"><span class="f-icon">🔵</span><span class="f-label">Materiais</span></label>
+                </div>
+            </div>
         </div>
         <div id="conteudoItens" class="oculto">
-            <input type="text" id="filtroItens" class="input-busca" placeholder="Buscar item no estoque..." oninput="filtrarItensLista()">
-            <div class="filtros-est">
-                <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="produtos" checked onclick="selecionarFiltroTipo(this)"><span class="f-icon">🟢</span><span class="f-label">Produtos</span></label>
-                <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="peca" onclick="selecionarFiltroTipo(this)"><span class="f-icon">🟠</span><span class="f-label">Peças</span></label>
-                <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="maquina" onclick="selecionarFiltroTipo(this)"><span class="f-icon">🟣</span><span class="f-label">Máquinas</span></label>
-                <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="materiais" onclick="selecionarFiltroTipo(this)"><span class="f-icon">🔵</span><span class="f-label">Materiais</span></label>
-            </div>
             <div id="listaItens"></div>
+        </div>
+    </div>
+
+    <div class="secao-posse-usuario" id="secaoPosseUsuario">
+        <div class="posse-header" id="btnTogglePosseUsuario" role="button" tabindex="0" aria-expanded="false"
+             onclick="togglePosseUsuario()"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();togglePosseUsuario();}">
+            <div class="posse-header-centro">
+                <div class="posse-header-label">Itens em posse</div>
+                <div class="posse-header-nome" id="posseUsuarioNome">Responsável</div>
+            </div>
+            <div class="posse-header-seta">▼</div>
+        </div>
+        <div id="conteudoPosseUsuario" class="oculto">
+            <div class="posse-vazio">Selecione um responsável.</div>
         </div>
     </div>
 </div>
@@ -658,29 +933,276 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, dbLerPixEmPosse, dbSalvarHistoricoBalanco, dbEscutarHistoricoBalanco, dbExcluirHistoricoBalanco, dbRecalcularRemuneracoes, dbEscutarClientes, dbEscutarTodosPixEmPosse } from './database.js';
+    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, dbLerPixEmPosse, dbSalvarHistoricoBalanco, dbEscutarHistoricoBalancoDoUsuario, dbEscutarPosseItensUsuario, dbEscutarPixEmPosse, dbExcluirHistoricoBalanco, dbRecalcularRemuneracoes, dbEscutarClientes, dbEscutarTodosPixEmPosse } from './database.js';
 
     let listaGlobal = [];
     let historicoGlobal = [];
     let colabsGlobal = [];
     let clientesGlobal = [];
     let pixEmPosseGlobal = new Set();
+    let posseUsuarioAtual = [];
+    let pixUsuarioAtual = [];
     let itensPendentes = [];
     let timerAdicionarPendente = null;
     let salvandoMovimentacao = false;
     let modoAtual = 'saida';
     let historicoVisivel = false;
     let itensVisivelEstoque = false;
+    let posseUsuarioVisivel = false;
+    let mesHistoricoSelecionado = '';
+    let responsavelHistoricoAtual = '';
+    let unsubscribeHistoricoResponsavel = null;
+    let unsubscribePosseUsuario = null;
+    let unsubscribePixUsuario = null;
 
     const tituloHistorico = document.querySelector('.titulo-hist');
     const filtroHistoricoEl = document.getElementById('filtroHistorico');
     const listaHistoricoEl = document.getElementById('listaHistorico');
+    const mesHistoricoEl = document.getElementById('mesHistorico');
+    const historicoResponsavelAtualEl = document.getElementById('historicoResponsavelAtual');
+    const historicoFiltrosEl = document.querySelector('.historico-filtros');
+    const secaoItensEl = document.querySelector('.secao-itens');
+    const secaoPosseUsuarioEl = document.getElementById('secaoPosseUsuario');
+    const conteudoPosseUsuarioEl = document.getElementById('conteudoPosseUsuario');
+    const posseUsuarioNomeEl = document.getElementById('posseUsuarioNome');
+    const btnTogglePosseUsuarioEl = document.getElementById('btnTogglePosseUsuario');
+
+    function escaparHtml(valor) {
+        return String(valor || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function normalizarBusca(valor) {
+        return String(valor || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function obterDataMovimentacao(mov) {
+        const data = new Date(mov?.timestamp || mov?.data || '');
+        return Number.isFinite(data.getTime()) ? data : null;
+    }
+
+    function obterAnoMesMovimentacao(mov) {
+        const data = obterDataMovimentacao(mov);
+        if (!data) return '';
+        return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function rotuloAnoMes(anoMes) {
+        const [ano, mes] = String(anoMes || '').split('-').map(Number);
+        if (!ano || !mes) return 'Mês';
+        const data = new Date(ano, mes - 1, 1);
+        const texto = data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        return texto.charAt(0).toUpperCase() + texto.slice(1);
+    }
+
+    function obterMesAtual() {
+        const agora = new Date();
+        return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function atualizarResponsavelHistoricoChip() {
+        if (!historicoResponsavelAtualEl) return;
+        historicoResponsavelAtualEl.innerHTML = responsavelHistoricoAtual
+            ? `<span class="historico-responsavel-label">Responsável selecionado</span><span class="historico-responsavel-nome">${escaparHtml(responsavelHistoricoAtual)}</span>`
+            : `<span class="historico-responsavel-label">Aguardando responsável</span><span class="historico-responsavel-nome">Selecione um responsável</span>`;
+        historicoResponsavelAtualEl.classList.toggle('visivel', historicoVisivel);
+        historicoResponsavelAtualEl.classList.toggle('todos', !responsavelHistoricoAtual);
+    }
+
+    function atualizarMesesHistorico() {
+        if (!mesHistoricoEl) return;
+        const meses = [...new Set(historicoGlobal.map(obterAnoMesMovimentacao).filter(Boolean))]
+            .sort((a, b) => b.localeCompare(a));
+        const mesAtual = obterMesAtual();
+        if (!mesHistoricoSelecionado || !meses.includes(mesHistoricoSelecionado)) {
+            mesHistoricoSelecionado = meses.includes(mesAtual) ? mesAtual : (meses[0] || '');
+        }
+        mesHistoricoEl.innerHTML = meses.length
+            ? meses.map(mes => `<option value="${escaparHtml(mes)}"${mes === mesHistoricoSelecionado ? ' selected' : ''}>${escaparHtml(rotuloAnoMes(mes))}</option>`).join('')
+            : '<option value="">Mês</option>';
+    }
+
+    function aplicarHistoricoRecebido(lista) {
+        historicoGlobal = (Array.isArray(lista) ? lista : []).filter(ehMovimentoEstoqueHistorico);
+        atualizarMesesHistorico();
+        atualizarBotaoHistorico();
+        atualizarResponsavelHistoricoChip();
+        filtrarHistorico();
+    }
+
+    function atualizarHistoricoPorResponsavelSelecionado() {
+        const responsavel = String(document.getElementById('responsavel')?.value || '').trim();
+        if (responsavel === responsavelHistoricoAtual) {
+            atualizarResponsavelHistoricoChip();
+            atualizarSecaoPosseUsuario();
+            filtrarHistorico();
+            return;
+        }
+
+        responsavelHistoricoAtual = responsavel;
+        atualizarLeiturasPosseUsuario();
+        if (unsubscribeHistoricoResponsavel) {
+            unsubscribeHistoricoResponsavel();
+            unsubscribeHistoricoResponsavel = null;
+        }
+
+        if (responsavelHistoricoAtual) {
+            unsubscribeHistoricoResponsavel = dbEscutarHistoricoBalancoDoUsuario(responsavelHistoricoAtual, aplicarHistoricoRecebido);
+            return;
+        }
+
+        aplicarHistoricoRecebido([]);
+    }
+
+    function ordenarItensPosse(lista) {
+        return [...(Array.isArray(lista) ? lista : [])]
+            .filter(item => item.itemNome && Number(item.quantidade || 0) !== 0)
+            .sort((a, b) => Math.abs(Number(b.quantidade || 0)) - Math.abs(Number(a.quantidade || 0))
+                || String(a.itemNome || '').localeCompare(String(b.itemNome || ''), 'pt-BR'));
+    }
+
+    function ordenarPixUsuario(lista) {
+        return [...(Array.isArray(lista) ? lista : [])].sort((a, b) => {
+            const pa = String(a?.numero_pix || '').trim();
+            const pb = String(b?.numero_pix || '').trim();
+            const na = /^\d+$/.test(pa) ? Number(pa) : Number.MAX_SAFE_INTEGER;
+            const nb = /^\d+$/.test(pb) ? Number(pb) : Number.MAX_SAFE_INTEGER;
+            if (na !== nb) return na - nb;
+            return pa.localeCompare(pb, 'pt-BR');
+        });
+    }
+
+    function formatarPixUsuario(lista) {
+        return ordenarPixUsuario(lista)
+            .map(item => escaparHtml(String(item?.numero_pix || '').trim()))
+            .filter(Boolean)
+            .join(', ');
+    }
+
+    function renderizarListaPosse(titulo, itens, tipo = 'produto') {
+        if (!itens.length) return '';
+        const max = Math.max(1, ...itens.map(item => Math.abs(Number(item.quantidade || 0))));
+        const icone = tipo === 'maquina' ? '&#127920;' : '&#129371;';
+        const tituloTexto = tipo === 'maquina' ? 'Máquinas em Posse' : titulo;
+        return `
+            <div class="posse-secao">
+                <div class="posse-secao-titulo">${icone} ${tituloTexto}</div>
+                <div class="posse-lista-card">
+                    ${itens.map(item => {
+                        const qtd = Number(item.quantidade || 0);
+                        const largura = Math.max(8, Math.round((Math.abs(qtd) / max) * 100));
+                        return `
+                            <div class="posse-lista-item">
+                                <div class="posse-item-nome">${escaparHtml(item.itemNome)}</div>
+                                <div class="posse-item-barra-wrap">
+                                    <div class="posse-item-barra-bg">
+                                        <div class="posse-item-barra${qtd < 0 ? ' negativo' : ''}" style="width:${largura}%"></div>
+                                    </div>
+                                </div>
+                                <div class="posse-item-badge${qtd < 0 ? ' negativo' : ''}">${qtd}</div>
+                            </div>`;
+                    }).join('')}
+                </div>
+            </div>`;
+    }
+
+    function renderizarPosseUsuario() {
+        if (!conteudoPosseUsuarioEl) return;
+        const responsavel = responsavelHistoricoAtual;
+        if (posseUsuarioNomeEl) posseUsuarioNomeEl.textContent = responsavel || 'Responsável';
+
+        if (!responsavel) {
+            conteudoPosseUsuarioEl.innerHTML = '<div class="posse-vazio">Selecione um responsável.</div>';
+            return;
+        }
+
+        const produtos = ordenarItensPosse(posseUsuarioAtual)
+            .filter(item => String(item.categoria || '').trim() !== 'maquina');
+        const maquinas = ordenarItensPosse(posseUsuarioAtual)
+            .filter(item => String(item.categoria || '').trim() === 'maquina');
+        const pixTexto = formatarPixUsuario(pixUsuarioAtual);
+        const pixHtml = pixTexto
+            ? `<div class="posse-secao">
+                <div class="posse-secao-titulo">PIX em Posse</div>
+                <div class="posse-pix-card">
+                    <div class="posse-pix-label">Números Pix</div>
+                    <div class="posse-pix-numeros">${pixTexto}</div>
+                </div>
+               </div>`
+            : '';
+        const html = [
+            renderizarListaPosse('Produtos em Posse', produtos, 'produto'),
+            renderizarListaPosse('Máquinas em Posse', maquinas, 'maquina'),
+            pixHtml
+        ].filter(Boolean).join('');
+
+        conteudoPosseUsuarioEl.innerHTML = html || '<div class="posse-vazio">Nenhum item em posse desse responsável.</div>';
+    }
+
+    function atualizarBotaoPosseUsuario() {
+        if (!btnTogglePosseUsuarioEl) return;
+        btnTogglePosseUsuarioEl.classList.toggle('aberto', posseUsuarioVisivel);
+        btnTogglePosseUsuarioEl.setAttribute('aria-expanded', posseUsuarioVisivel ? 'true' : 'false');
+        conteudoPosseUsuarioEl?.classList.toggle('oculto', !posseUsuarioVisivel);
+    }
+
+    function atualizarSecaoPosseUsuario() {
+        const temResponsavel = !!responsavelHistoricoAtual;
+        secaoItensEl?.classList.toggle('oculta-por-posse', temResponsavel);
+        secaoPosseUsuarioEl?.classList.toggle('visivel', temResponsavel);
+        if (temResponsavel) {
+            itensVisivelEstoque = false;
+            document.getElementById('conteudoItens')?.classList.add('oculto');
+            atualizarBotaoItens();
+        } else {
+            posseUsuarioVisivel = false;
+        }
+        atualizarBotaoPosseUsuario();
+        renderizarPosseUsuario();
+    }
+
+    function atualizarLeiturasPosseUsuario() {
+        if (unsubscribePosseUsuario) {
+            unsubscribePosseUsuario();
+            unsubscribePosseUsuario = null;
+        }
+        if (unsubscribePixUsuario) {
+            unsubscribePixUsuario();
+            unsubscribePixUsuario = null;
+        }
+
+        posseUsuarioAtual = [];
+        pixUsuarioAtual = [];
+        if (!responsavelHistoricoAtual) {
+            atualizarSecaoPosseUsuario();
+            return;
+        }
+
+        unsubscribePosseUsuario = dbEscutarPosseItensUsuario(responsavelHistoricoAtual, (lista) => {
+            posseUsuarioAtual = Array.isArray(lista) ? lista : [];
+            renderizarPosseUsuario();
+        });
+        unsubscribePixUsuario = dbEscutarPixEmPosse(responsavelHistoricoAtual, (lista) => {
+            pixUsuarioAtual = Array.isArray(lista) ? lista : [];
+            renderizarPosseUsuario();
+        });
+        atualizarSecaoPosseUsuario();
+    }
 
     function atualizarBotaoHistorico() {
         tituloHistorico.classList.toggle('aberto', historicoVisivel);
         tituloHistorico.setAttribute('aria-expanded', historicoVisivel ? 'true' : 'false');
-        const total = historicoGlobal.length;
+        const total = mesHistoricoSelecionado
+            ? historicoGlobal.filter(mov => obterAnoMesMovimentacao(mov) === mesHistoricoSelecionado).length
+            : historicoGlobal.length;
         const badgeTexto = total > 0 ? total : '';
+        const subtexto = !responsavelHistoricoAtual
+            ? 'Selecione um responsável'
+            : (historicoVisivel ? rotuloAnoMes(mesHistoricoSelecionado) : 'Toque para ver as movimentações');
         tituloHistorico.innerHTML = `
             <span class="titulo-hist-olho"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></span>
             <span class="titulo-hist-info">
@@ -688,7 +1210,7 @@
                     Movimentações
                     ${badgeTexto ? `<span class="titulo-hist-badge">${badgeTexto}</span>` : ''}
                 </span>
-                <span class="titulo-hist-subtexto">${historicoVisivel ? 'Toque para ocultar' : 'Toque para ver todas as movimentações'}</span>
+                <span class="titulo-hist-subtexto">${subtexto}</span>
             </span>
             <span class="titulo-hist-seta">
                 <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -708,6 +1230,7 @@
     };
 
     filtroHistoricoEl.classList.add('oculto');
+    historicoFiltrosEl.classList.add('oculto');
     listaHistoricoEl.classList.add('oculto');
     atualizarBotaoHistorico();
 
@@ -765,13 +1288,6 @@
         return { icone: '📦', texto: 'Manual', cor: '#e0e0e0' };
     }
 
-    // Histórico único vindo do movimentacao_balanco_historico
-    dbEscutarHistoricoBalanco((lista) => {
-        historicoGlobal = lista.filter(ehMovimentoEstoqueHistorico);
-        atualizarBotaoHistorico();
-        filtrarHistorico();
-    });
-
     window.toggleHistorico = function() {
         historicoVisivel = !historicoVisivel;
 
@@ -783,20 +1299,34 @@
         }
 
         filtroHistoricoEl.classList.toggle('oculto', !historicoVisivel);
+        historicoFiltrosEl.classList.toggle('oculto', !historicoVisivel);
         listaHistoricoEl.classList.toggle('oculto', !historicoVisivel);
         atualizarBotaoHistorico();
+        atualizarResponsavelHistoricoChip();
 
         if (historicoVisivel) {
             filtrarHistorico();
         }
     };
 
+    window.alterarMesHistorico = function(valor) {
+        mesHistoricoSelecionado = String(valor || '');
+        atualizarBotaoHistorico();
+        filtrarHistorico();
+    };
+
     window.filtrarHistorico = function() {
         if (!historicoVisivel) return;
 
-        const termo = document.getElementById('filtroHistorico').value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (!responsavelHistoricoAtual) {
+            renderizarHistorico([]);
+            return;
+        }
+
+        const termo = normalizarBusca(document.getElementById('filtroHistorico').value);
         const listaFiltrada = historicoGlobal.filter(mov => {
-            const texto = (mov.itemNome + " " + mov.responsavel + " " + mov.tipo + " " + (mov.descricao || "")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            if (mesHistoricoSelecionado && obterAnoMesMovimentacao(mov) !== mesHistoricoSelecionado) return false;
+            const texto = normalizarBusca(`${mov.itemNome} ${mov.responsavel} ${mov.tipo} ${mov.descricao || ""}`);
             return texto.includes(termo);
         });
         renderizarHistorico(listaFiltrada);
@@ -819,6 +1349,11 @@
     function renderizarHistorico(lista) {
         const container = document.getElementById('listaHistorico');
         container.innerHTML = "";
+
+        if (!responsavelHistoricoAtual) {
+            container.innerHTML = '<p style="text-align:center; font-size:15px; color:#ffffff; padding:16px 8px;">Selecione um responsável para ver as movimentações.</p>';
+            return;
+        }
 
         if(lista.length === 0) {
             container.innerHTML = '<p style="text-align:center; font-size:11px; opacity:0.5;">Nenhum registro encontrado.</p>';
@@ -852,11 +1387,6 @@
                     <span class="hist-nome-item">${mov.itemNome}</span>
                     <span class="hist-dir ${classeCor}" style="margin:0;">${quantidade}</span>
                 </div>
-                ${(mov.estoqueAntes != null && mov.estoqueDepois != null) ? `
-                <div class="hist-saldo-linha">
-                    <span class="hist-obs-label" style="margin:0;">Saldo do estoque</span>
-                    <span class="hist-resp-label" style="color:#d7e3ff;">${mov.estoqueAntes} &rarr; ${mov.estoqueDepois}</span>
-                </div>` : ''}
                 <div class="hist-registro-rodape">
                     <span>${mov.registradoPor && mov.registradoPor !== mov.responsavel ? `Registrado por: ${mov.registradoPor}` : ''}</span>
                     <span>${dataFormatada}</span>
@@ -970,6 +1500,7 @@
 
     function renderizarResponsaveis() {
         const select = document.getElementById('responsavel');
+        const valorAtual = select.value;
         select.innerHTML = '<option value="">Responsável</option>';
 
         const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
@@ -986,6 +1517,10 @@
                     opt.innerText = nome;
                     select.appendChild(opt);
                 });
+            if (valorAtual && Array.from(select.options).some(opt => opt.value === valorAtual)) {
+                select.value = valorAtual;
+            }
+            atualizarHistoricoPorResponsavelSelecionado();
             return;
         }
 
@@ -1048,6 +1583,11 @@
             opt.innerText = c.nome;
             select.appendChild(opt);
         });
+
+        if (valorAtual && Array.from(select.options).some(opt => opt.value === valorAtual)) {
+            select.value = valorAtual;
+        }
+        atualizarHistoricoPorResponsavelSelecionado();
     }
 
     // 2. FILTRAR ITENS POR CATEGORIA
@@ -1473,7 +2013,10 @@
         adicionarPendenteAtual({ silencioso: true });
     });
     document.getElementById('selectItem').addEventListener('change', tentarAdicionarPendenteSeCompleto);
-    document.getElementById('responsavel').addEventListener('change', tentarAdicionarPendenteSeCompleto);
+    document.getElementById('responsavel').addEventListener('change', () => {
+        tentarAdicionarPendenteSeCompleto();
+        atualizarHistoricoPorResponsavelSelecionado();
+    });
 
     // ── ITENS DO ESTOQUE ──
 
@@ -1738,6 +2281,7 @@
 
             inputPix.value = '';
             selectResponsavel.value = '';
+            atualizarHistoricoPorResponsavelSelecionado();
             await window.playAlert(modoAtual === 'entrada' ? 'Pix registrado no estoque com sucesso.' : 'Pix registrado em posse com sucesso.');
         } catch (error) {
             console.error('Erro ao registrar Pix em posse:', error);
@@ -1785,8 +2329,10 @@
         if (itensVisivelEstoque && historicoVisivel) {
             historicoVisivel = false;
             filtroHistoricoEl.classList.add('oculto');
+            historicoFiltrosEl.classList.add('oculto');
             listaHistoricoEl.classList.add('oculto');
             atualizarBotaoHistorico();
+            atualizarResponsavelHistoricoChip();
         }
 
         document.getElementById('conteudoItens').classList.toggle('oculto', !itensVisivelEstoque);
@@ -1795,6 +2341,12 @@
             filtrarItensLista();
             atualizarVisualFiltrosItens();
         }
+    };
+
+    window.togglePosseUsuario = function() {
+        if (!responsavelHistoricoAtual) return;
+        posseUsuarioVisivel = !posseUsuarioVisivel;
+        atualizarBotaoPosseUsuario();
     };
 
     function atualizarVisualFiltrosItens() {
