@@ -4016,6 +4016,26 @@ export async function dbEncerrarSessaoRotas() {
 
 // Tenta atomicamente reivindicar a rota de maior valor disponível para o usuário.
 // Retorna { numeroRota, ...dadosRota } se conseguir, ou null se não houver rotas disponíveis.
+export async function dbDefinirPrioridadeManualRota(numeroRota, usuario, ativa) {
+    const rota = String(numeroRota || '').trim();
+    if (!rota) return;
+
+    const rotaRef = ref(db, `selecao_rotas/ativa/rotas/${rota}`);
+    const patch = ativa
+        ? {
+            prioridade_manual: true,
+            prioridade_manual_em: new Date().toISOString(),
+            prioridade_manual_por: String(usuario || '').trim() || null
+        }
+        : {
+            prioridade_manual: null,
+            prioridade_manual_em: null,
+            prioridade_manual_por: null
+        };
+
+    await update(rotaRef, patch);
+}
+
 export async function dbSelecionarRota(nomeUsuario) {
     const sessionRef = ref(db, 'selecao_rotas/ativa');
     const snapshot = await get(sessionRef);
@@ -4025,9 +4045,25 @@ export async function dbSelecionarRota(nomeUsuario) {
     const rotas = sessao.rotas;
 
     // Ordena as disponíveis pelo maior valor estimado
+    function obterPrioridadeMs(rota) {
+        const ts = Date.parse(rota?.prioridade_manual_em || '');
+        return Number.isNaN(ts) ? Number.MAX_SAFE_INTEGER : ts;
+    }
+
     const disponiveis = Object.entries(rotas)
         .filter(([_, r]) => !r.selecionada_por)
-        .sort(([_, a], [__, b]) => (b.valor_estimado || 0) - (a.valor_estimado || 0));
+        .sort(([numA, a], [numB, b]) => {
+            const prioA = a?.prioridade_manual === true;
+            const prioB = b?.prioridade_manual === true;
+            if (prioA !== prioB) return prioA ? -1 : 1;
+            if (prioA && prioB) {
+                const porData = obterPrioridadeMs(a) - obterPrioridadeMs(b);
+                if (porData !== 0) return porData;
+            }
+            const porValor = (b.valor_estimado || 0) - (a.valor_estimado || 0);
+            if (porValor !== 0) return porValor;
+            return String(numA).localeCompare(String(numB), 'pt-BR', { numeric: true });
+        });
 
     if (disponiveis.length === 0) return null;
 
@@ -4050,7 +4086,10 @@ export async function dbSelecionarRota(nomeUsuario) {
                 prazo_justificativa_em: null,
                 liberar_em: validadeMaximaEm,
                 motivo_liberacao: 'prazo_maximo',
-                timestamp_selecao: null
+                timestamp_selecao: null,
+                prioridade_manual: null,
+                prioridade_manual_em: null,
+                prioridade_manual_por: null
             };
         }
         return undefined; // aborta: rota já foi pega
@@ -4379,7 +4418,10 @@ export async function dbLiberarRota(numeroRota) {
             primeiro_atendimento_em: null,
             ultima_justificativa_em: null,
             controle_liberacao_atualizado_em: null,
-            timestamp_selecao: null
+            timestamp_selecao: null,
+            prioridade_manual: null,
+            prioridade_manual_em: null,
+            prioridade_manual_por: null
         });
     } catch (error) {
         console.error("ERRO AO LIBERAR ROTA:", error);
@@ -4401,6 +4443,9 @@ export async function dbLimparSelecoes(numerosRota) {
         updates[`selecao_rotas/ativa/rotas/${n}/ultima_justificativa_em`] = null;
         updates[`selecao_rotas/ativa/rotas/${n}/controle_liberacao_atualizado_em`] = null;
         updates[`selecao_rotas/ativa/rotas/${n}/timestamp_selecao`] = null;
+        updates[`selecao_rotas/ativa/rotas/${n}/prioridade_manual`] = null;
+        updates[`selecao_rotas/ativa/rotas/${n}/prioridade_manual_em`] = null;
+        updates[`selecao_rotas/ativa/rotas/${n}/prioridade_manual_por`] = null;
     });
     await update(ref(db, '/'), updates);
 }

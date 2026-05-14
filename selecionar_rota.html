@@ -1363,9 +1363,6 @@ async function calcularValoresPorRota() {
     });
     atualizarClientesAtendidosRecentes(atendimentos);
 
-    const hoje = new Date();
-    hoje.setHours(0,0,0,0);
-
     // Agrupa atendimentos por clienteId, ordena por data desc
     const atendPorCliente = {};
     atendimentos.forEach(a => {
@@ -1408,18 +1405,9 @@ async function calcularValoresPorRota() {
         if (!numRota) return;
 
         const mediaAtual = mediaPorNumero[String(c.numero ?? '').trim()] || null;
-        const ultimaCobrancaEm = mediaAtual?.ultimaCobrancaEm || null;
-        const mediaVendaPorDia = typeof mediaAtual?.mediaVendaPorDia === 'number' ? mediaAtual.mediaVendaPorDia : null;
-        let estimativa = 0;
-
-        if (ultimaCobrancaEm && mediaVendaPorDia !== null) {
-            const ultimo = new Date(ultimaCobrancaEm);
-            if (!Number.isNaN(ultimo.getTime())) {
-                ultimo.setHours(0,0,0,0);
-                const diasDesdeUltimo = Math.max(0, Math.round((hoje - ultimo) / 86400000));
-                estimativa = Math.round(((mediaVendaPorDia * diasDesdeUltimo) + Number.EPSILON) * 100) / 100;
-            }
-        }
+        const estimativa = Number.isFinite(Number(mediaAtual?.estimativaAtualDia))
+            ? Math.round((Number(mediaAtual.estimativaAtualDia) + Number.EPSILON) * 100) / 100
+            : 0;
 
         if (!rotasMap[numRota]) {
             rotasMap[numRota] = { valor_estimado: 0, clientes: [], num_clientes: 0 };
@@ -1433,10 +1421,7 @@ async function calcularValoresPorRota() {
             endereco: c.endereco || '',
             numero_endereco: c.numero_endereco || '',
             cidade: c.cidade || '',
-            aberto: c.aberto || '',
-            estimativa_valor: estimativa,
-            mediaVendaPorDia,
-            ultimaCobrancaEm
+            aberto: c.aberto || ''
         });
     });
 
@@ -1477,13 +1462,39 @@ async function iniciarSessao() {
             validade_maxima_em: null,
             prazo_justificativa_em: null,
             liberar_em: null,
-            motivo_liberacao: null
+            motivo_liberacao: null,
+            prioridade_manual: null,
+            prioridade_manual_em: null,
+            prioridade_manual_por: null
         };
     });
 
-    const clientesPorRota = { ...(dados.clientesPorRota || {}) };
+    function limparClienteRota(cliente) {
+        return {
+            id: cliente?.id || cliente?.firebaseUrl || '',
+            numero: cliente?.numero || '',
+            nome: cliente?.nome || '',
+            endereco: cliente?.endereco || '',
+            numero_endereco: cliente?.numero_endereco || '',
+            cidade: cliente?.cidade || '',
+            aberto: cliente?.aberto || ''
+        };
+    }
+
+    const clientesPorRota = Object.fromEntries(
+        Object.entries(dados.clientesPorRota || {}).map(([numero, lista]) => [
+            numero,
+            (Array.isArray(lista) ? lista : []).map(limparClienteRota)
+        ])
+    );
 
     Object.entries(rotasAntigas).forEach(([numero, rotaAntiga]) => {
+        if (rotaAntiga?.prioridade_manual && rotasObj[numero]) {
+            rotasObj[numero].prioridade_manual = true;
+            rotasObj[numero].prioridade_manual_em = rotaAntiga.prioridade_manual_em || null;
+            rotasObj[numero].prioridade_manual_por = rotaAntiga.prioridade_manual_por || null;
+        }
+
         if (!rotaAntiga?.selecionada_por) return;
 
         if (!rotasObj[numero]) {
@@ -1495,24 +1506,28 @@ async function iniciarSessao() {
                 validade_maxima_em: rotaAntiga.validade_maxima_em || null,
                 prazo_justificativa_em: rotaAntiga.prazo_justificativa_em || null,
                 liberar_em: rotaAntiga.liberar_em || null,
-                motivo_liberacao: rotaAntiga.motivo_liberacao || null
+                motivo_liberacao: rotaAntiga.motivo_liberacao || null,
+                prioridade_manual: rotaAntiga.prioridade_manual === true ? true : null,
+                prioridade_manual_em: rotaAntiga.prioridade_manual_em || null,
+                prioridade_manual_por: rotaAntiga.prioridade_manual_por || null
             };
         } else {
             rotasObj[numero] = {
                 ...rotasObj[numero],
-                valor_estimado: rotaAntiga.valor_estimado || 0,
-                num_clientes: rotaAntiga.num_clientes ?? ((clientesPorRotaAntigos[numero] || []).length),
                 selecionada_por: rotaAntiga.selecionada_por,
                 selecionada_em: rotaAntiga.selecionada_em || null,
                 validade_maxima_em: rotaAntiga.validade_maxima_em || null,
                 prazo_justificativa_em: rotaAntiga.prazo_justificativa_em || null,
                 liberar_em: rotaAntiga.liberar_em || null,
-                motivo_liberacao: rotaAntiga.motivo_liberacao || null
+                motivo_liberacao: rotaAntiga.motivo_liberacao || null,
+                prioridade_manual: rotaAntiga.prioridade_manual === true ? true : null,
+                prioridade_manual_em: rotaAntiga.prioridade_manual_em || null,
+                prioridade_manual_por: rotaAntiga.prioridade_manual_por || null
             };
         }
 
         if (clientesPorRotaAntigos[numero]) {
-            clientesPorRota[numero] = clientesPorRotaAntigos[numero];
+            clientesPorRota[numero] = (clientesPorRotaAntigos[numero] || []).map(limparClienteRota);
         }
     });
 

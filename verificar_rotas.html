@@ -49,15 +49,23 @@
             right: 12px;
             width: 36px;
             height: 36px;
-            border: 1px solid #5874b6;
-            border-radius: 10px;
-            background: #123b92;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
             color: #ffffff;
-            font-size: 19px;
-            font-weight: bold;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
             user-select: none;
             -webkit-user-select: none;
+        }
+
+        .btn-home svg {
+            width: 20px;
+            height: 20px;
+            fill: #ffffff;
         }
 
         .lista {
@@ -84,9 +92,14 @@
 
         .filtros {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 6px;
-            padding: 12px 14px 0;
+            padding: 12px 14px 10px;
+            position: sticky;
+            top: 52px;
+            z-index: 19;
+            background: #042d86;
+            border-bottom: 1px solid #1e3d7a;
         }
 
         .filtro-select {
@@ -108,6 +121,37 @@
             color: #ffffff;
         }
 
+        .filtro-tempo-btn {
+            width: 100%;
+            min-width: 0;
+            border: 1px solid #ffffff;
+            border-radius: 9px;
+            background: #123b92;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 7px 4px;
+            text-align: center;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .filtro-tempo-texto {
+            font-size: 13px;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .filtro-tempo-btn.ativo {
+            border-color: #ffeb3b;
+            color: #ffeb3b;
+        }
+
         .card {
             overflow: hidden;
             border: 1px solid #4f68a6;
@@ -116,6 +160,16 @@
             border-radius: 12px;
             background: #0f347e;
             box-shadow: 0 4px 8px #021944;
+        }
+
+        @keyframes piscar-borda-rota {
+            0%, 100% { border-color: #f59e0b; box-shadow: 0 4px 8px #021944; }
+            50% { border-color: #fcd34d; box-shadow: 0 0 10px #f59e0b; }
+        }
+
+        .card.rota-tempo-alerta {
+            border-color: #f59e0b;
+            animation: piscar-borda-rota 2s ease-in-out infinite;
         }
 
         .card-header {
@@ -205,9 +259,11 @@
         }
 
         .card-limpar-slot {
+            width: 24px;
             display: flex;
             align-items: center;
             justify-content: center;
+            flex: 0 0 24px;
         }
 
         .btn-limpar-selecao {
@@ -231,6 +287,45 @@
             border-color: #ffffff;
             color: #ffffff;
             cursor: wait;
+        }
+
+        .btn-prioridade-rota {
+            width: 24px;
+            height: 24px;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 24px;
+            padding: 0;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .btn-prioridade-rota.ativo {
+            color: #ffeb3b;
+        }
+
+        .btn-prioridade-rota:disabled {
+            color: #ffffff;
+            cursor: wait;
+        }
+
+        .prioridade-chip {
+            border: 1px solid #ffeb3b;
+            border-radius: 20px;
+            color: #ffeb3b;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 3px 9px;
+            text-align: center;
+            white-space: nowrap;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .selecionada-por {
@@ -355,11 +450,16 @@
 <body>
 <div class="app">
     <div class="header">
-        <button class="btn-home" type="button" aria-label="Ir para tela inicial" onclick="window.location.href='index.html'">⌂</button>
+        <button class="btn-home" type="button" aria-label="Ir para tela inicial" onclick="window.location.href='index.html'">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        </button>
         <div class="header-titulo">Verificar Rotas</div>
     </div>
 
     <div class="filtros" aria-label="Filtros de rotas">
+        <button id="filtroTempo" class="filtro-tempo-btn" type="button" aria-label="Filtrar rotas por tempo" title="Filtrar por tempo">
+            <span id="filtroTempoTexto" class="filtro-tempo-texto">+80 Dias</span>
+        </button>
         <select id="filtroNumero" class="filtro-select" aria-label="Ordenar por número da rota">
             <option value="">Rota</option>
             <option value="numero_asc">Rota ↑</option>
@@ -384,7 +484,7 @@
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
-    import { dbEscutarMediaDeVendas, dbEscutarSessaoRotas, dbLiberarRota } from './database.js';
+    import { dbEscutarMediaDeVendas, dbEscutarSessaoRotas, dbLiberarRota, dbDefinirPrioridadeManualRota } from './database.js';
 
     verificarAutenticacao();
 
@@ -393,11 +493,14 @@
     const filtroNumero = document.getElementById('filtroNumero');
     const filtroValor = document.getElementById('filtroValor');
     const filtroSelecao = document.getElementById('filtroSelecao');
+    const filtroTempo = document.getElementById('filtroTempo');
+    const filtroTempoTexto = document.getElementById('filtroTempoTexto');
     let listaMediaDeVendasAtual = [];
     let mediaDeVendasCarregada = false;
     let sessaoRotasAtual = null;
     let ordemAtual = 'valor_desc';
     let selecaoAtual = 'todas';
+    let filtrarTempo80 = false;
 
     function escaparHtml(valor) {
         return String(valor ?? '')
@@ -434,6 +537,10 @@
         return String(obterRotaSessao(numeroRota)?.selecionada_por || '').trim();
     }
 
+    function obterPrioridadeRota(numeroRota) {
+        return obterRotaSessao(numeroRota)?.prioridade_manual === true;
+    }
+
     function rotaEstaSelecionada(numeroRota) {
         return Boolean(obterSelecionadaPor(numeroRota));
     }
@@ -454,6 +561,10 @@
             filtradas = filtradas.filter(rota => rotaEstaSelecionada(rota.numero));
         } else if (selecaoAtual === 'livres') {
             filtradas = filtradas.filter(rota => !rotaEstaSelecionada(rota.numero));
+        }
+
+        if (filtrarTempo80) {
+            filtradas = filtradas.filter(rota => (rota.diasSemFazer ?? -1) > 80);
         }
 
         filtradas.sort((a, b) => {
@@ -565,6 +676,7 @@
                 ...rota,
                 valorEstimado: Math.round((rota.valorEstimado + Number.EPSILON) * 100) / 100,
                 mediaDiaTotal: Math.round((rota.mediaDiaTotal + Number.EPSILON) * 100) / 100,
+                diasSemFazer: diasDesde(rota.ultimoAtendimentoEm),
                 clientes: rota.clientes.sort((a, b) => {
                     if (b.estimativa !== a.estimativa) return b.estimativa - a.estimativa;
                     return a.nome.localeCompare(b.nome, 'pt-BR');
@@ -597,16 +709,23 @@
         const clientesHtml = rota.clientes.map(montarClienteHtml).join('');
         const ultimaTxt = textoDias(rota.ultimoAtendimentoEm);
         const selecionadaPor = obterSelecionadaPor(rota.numero);
+        const prioridadeAtiva = obterPrioridadeRota(rota.numero);
         const chaveRotaSessao = obterEntradaRotaSessao(rota.numero)?.chave || rota.numero;
         const botaoLimparHtml = selecionadaPor
             ? `<button class="btn-limpar-selecao" type="button" data-liberar-rota="${escaparHtml(chaveRotaSessao)}" aria-label="Remover seleção da rota ${escaparHtml(rota.numero)}" title="Remover seleção">×</button>`
             : '';
+        const botaoPrioridadeHtml = !selecionadaPor
+            ? `<button class="btn-prioridade-rota ${prioridadeAtiva ? 'ativo' : ''}" type="button" data-prioridade-rota="${escaparHtml(chaveRotaSessao)}" data-prioridade-ativa="${prioridadeAtiva ? '1' : '0'}" aria-label="${prioridadeAtiva ? 'Remover prioridade da rota' : 'Priorizar rota'} ${escaparHtml(rota.numero)}" title="${prioridadeAtiva ? 'Remover prioridade' : 'Priorizar rota'}">${prioridadeAtiva ? '★' : '⌛'}</button>`
+            : '';
         const selecionadaHtml = selecionadaPor
             ? `<div class="selecionada-por"><span class="selecionada-label">Selecionada</span>${escaparHtml(selecionadaPor)}</div>`
             : '';
+        const prioridadeHtml = prioridadeAtiva
+            ? `<div class="prioridade-chip">Prioridade</div>`
+            : '';
 
         return `
-            <div class="card" id="${escaparHtml(id)}">
+            <div class="card ${Number(rota.diasSemFazer || 0) > 80 ? 'rota-tempo-alerta' : ''}" id="${escaparHtml(id)}">
                 <div class="card-header" role="button" tabindex="0" data-toggle-card>
                     <div class="card-mainline">
                         <div class="rota-badge">R.${escaparHtml(rota.numero)}</div>
@@ -619,10 +738,11 @@
                     <div class="card-subline">
                         <div class="card-feito-grupo">
                             <div class="card-limpar-slot">
-                                ${botaoLimparHtml}
+                                ${botaoLimparHtml || botaoPrioridadeHtml}
                             </div>
                             <div class="card-sub">Feito ${escaparHtml(ultimaTxt)}</div>
                             ${selecionadaHtml}
+                            ${prioridadeHtml}
                         </div>
                     </div>
                 </div>
@@ -691,7 +811,34 @@
         }
     }
 
+    async function alternarPrioridadeRota(botao) {
+        const numeroRota = botao?.dataset?.prioridadeRota;
+        if (!numeroRota || botao.disabled) return;
+
+        const ativar = botao.dataset.prioridadeAtiva !== '1';
+        botao.disabled = true;
+        botao.textContent = '...';
+
+        try {
+            const usuario = String(localStorage.getItem('usuarioLogado') || localStorage.getItem('usuario_selecionado') || '').trim();
+            await dbDefinirPrioridadeManualRota(numeroRota, usuario, ativar);
+        } catch (error) {
+            console.error('Erro ao alterar prioridade da rota:', error);
+            botao.disabled = false;
+            botao.textContent = botao.dataset.prioridadeAtiva === '1' ? '★' : '⌛';
+            await window.playAlert('Não foi possível alterar a prioridade da rota. Tente novamente.');
+        }
+    }
+
     elLista.addEventListener('click', (event) => {
+        const botaoPrioridade = event.target.closest('[data-prioridade-rota]');
+        if (botaoPrioridade) {
+            event.preventDefault();
+            event.stopPropagation();
+            alternarPrioridadeRota(botaoPrioridade);
+            return;
+        }
+
         const botaoLimpar = event.target.closest('[data-liberar-rota]');
         if (botaoLimpar) {
             event.preventDefault();
@@ -706,7 +853,7 @@
     });
 
     elLista.addEventListener('keydown', (event) => {
-        if (event.target.closest('[data-liberar-rota]')) return;
+        if (event.target.closest('[data-liberar-rota], [data-prioridade-rota]')) return;
         if (event.key !== 'Enter' && event.key !== ' ') return;
         const header = event.target.closest('[data-toggle-card]');
         if (!header) return;
@@ -729,6 +876,13 @@
 
     filtroSelecao.addEventListener('change', () => {
         selecaoAtual = filtroSelecao.value || 'todas';
+        render();
+    });
+
+    filtroTempo.addEventListener('click', () => {
+        filtrarTempo80 = !filtrarTempo80;
+        filtroTempo.classList.toggle('ativo', filtrarTempo80);
+        filtroTempoTexto.textContent = filtrarTempo80 ? 'Limpar' : '+80 Dias';
         render();
     });
 
