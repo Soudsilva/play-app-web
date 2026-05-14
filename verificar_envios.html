@@ -383,7 +383,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbExcluirAtendimento, dbReverterEncerramentoCliente, dbExcluirMovimentoFluxoCaixa, dbReverterConclusaoManutencao, dbEscutarHistoricoBalancoDoUsuario, dbRemoverContestacao } from './database.js';
+    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbExcluirAtendimento, dbReverterEncerramentoCliente, dbExcluirMovimentoFluxoCaixa, dbReverterConclusaoManutencao, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
 
     // Pega quem estÃ¡ logado no celular no momento
     const usuarioLogado = localStorage.getItem('usuarioLogado');
@@ -395,8 +395,7 @@
     let colaboradoresSalvos = [];
     let colaboradoresCarregados = false;
     let termoBusca = '';
-    let filtroContestacoesAtivo = false;
-    const contestacoesExpiradasEmLimpeza = new Set();
+    let filtroContestacoesAtivo = new URLSearchParams(window.location.search).get('contestacao') === '1';
     let mapaMovimentacoesPorAtendimento = {}; // { atendimentoRefId -> [{ nome, movimento, totalApos }] }
     const carregamentosEnvios = {
         historicoBalanco: false,
@@ -1042,7 +1041,7 @@
             return false;
         }
 
-        if (envio.contestado && envio.contestadoAte && new Date() < new Date(envio.contestadoAte)) {
+        if (envio.contestado) {
             return true;
         }
 
@@ -1051,33 +1050,6 @@
 
     function contestacaoRegistrada(envio) {
         return !!envio?.contestado;
-    }
-
-    function contestacaoExpirada(envio) {
-        if (!envio?.contestado || !envio?.contestadoAte) return false;
-        const limite = new Date(envio.contestadoAte).getTime();
-        return Number.isFinite(limite) && Date.now() >= limite;
-    }
-
-    async function limparContestacoesExpiradas(atendimentos) {
-        const expiradas = (Array.isArray(atendimentos) ? atendimentos : [])
-            .filter(envio => envio?.firebaseUrl && contestacaoExpirada(envio) && !contestacoesExpiradasEmLimpeza.has(envio.firebaseUrl));
-
-        if (expiradas.length === 0) return;
-
-        expiradas.forEach(envio => contestacoesExpiradasEmLimpeza.add(envio.firebaseUrl));
-
-        const resultados = await Promise.allSettled(
-            expiradas.map(envio => dbRemoverContestacao(envio.firebaseUrl))
-        );
-
-        resultados.forEach((resultado, index) => {
-            const id = expiradas[index]?.firebaseUrl;
-            if (id) contestacoesExpiradasEmLimpeza.delete(id);
-            if (resultado.status === 'rejected') {
-                console.warn('Falha ao limpar contestacao expirada:', resultado.reason);
-            }
-        });
     }
 
     function atualizarResumoContestacoes() {
@@ -1427,9 +1399,8 @@
                 htmlFotos = '';
             }
 
-            const estaContestado = !!(envio.contestado && envio.contestadoAte && new Date() < new Date(envio.contestadoAte));
+            const estaContestado = !!envio.contestado;
             if (estaContestado) card.classList.add('contestado');
-            const horasRestantes = estaContestado ? Math.ceil((new Date(envio.contestadoAte) - new Date()) / 3600000) : 0;
             const liberado = !ehMovimentoEstoque(envio) && podeAlterarEnvio(envio);
             const contestacaoObservacao = String(envio.contestacaoObservacao || '').trim();
             const htmlContestacaoObservacao = contestacaoObservacao
@@ -1439,8 +1410,8 @@
                    </div>`
                 : '';
             const htmlAvisoContestacao = estaContestado ? `
-                <div style="padding:10px 12px;background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.5);border-radius:10px;color:#f59e0b;font-size:14px;font-weight:bold;margin-bottom:8px;user-select:none;-webkit-user-select:none;">
-                    ⚠ O gestor contestou este atendimento. Você tem ${horasRestantes}h para editar ou excluir.
+                <div style="padding:10px 12px;background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.5);border-radius:10px;color:#f59e0b;font-size:14px;font-weight:bold;margin-bottom:8px;text-align:center;user-select:none;-webkit-user-select:none;">
+                    ⚠ O gestor contestou esse atendimento.
                     ${htmlContestacaoObservacao}
                 </div>` : '';
             const htmlAcoes = liberado ? `
@@ -1507,7 +1478,6 @@
 
     dbEscutarAtendimentos((atendimentos) => {
         atendimentosSalvos = atendimentos;
-        limparContestacoesExpiradas(atendimentosSalvos);
         marcarEnviosCarregados('atendimentos');
     });
 

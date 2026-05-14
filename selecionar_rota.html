@@ -785,7 +785,9 @@ async function processarLiberacoesMinhasRotas(sessao) {
             nomeUsuario: usuarioAtual
         });
 
-        if (!status.liberarAgora) {
+        const podeLiberarNoCliente = status.liberarAgora && status.motivo === 'todos_atendidos';
+
+        if (!podeLiberarNoCliente) {
             await dbAtualizarControleLiberacaoRota(rota.numero, status);
             if (sessao?.rotas?.[rota.numero]) {
                 sessao.rotas[rota.numero].validade_maxima_em = status.prazoMaximoMs ? new Date(status.prazoMaximoMs).toISOString() : null;

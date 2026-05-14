@@ -142,7 +142,7 @@
         .submenu.aberto { display: flex; }
         .botao-sub {
             background: rgba(255,255,255,0.08);
-            border: 2px solid rgba(255,255,255,0.18);
+            border: 2px solid #d7dce3;
             border-radius: 35px;
             padding: 10px;
             min-height: 35px;
@@ -388,6 +388,7 @@
     let statusBalancoPendenteIndex = false;
     let statusBalancoCarregadoIndex = false;
     let usuarioAtendimentoNivel2Index = false;
+    let totalContestacoesUsuarioIndex = 0;
     const CACHE_STATUS_BALANCO_PREFIX = 'cache_status_balanco_index_';
     const CACHE_STATUS_BALANCO_VALIDADE_MS = 20 * 60 * 60 * 1000;
 
@@ -528,10 +529,16 @@
             const total = (lista || []).filter(a =>
                 !!a?.contestado
             ).length;
+            totalContestacoesUsuarioIndex = total;
             const btn = document.getElementById('btnGestao');
-            if (!btn) return;
-            btn.classList.toggle('botao-contestacao-alerta', total > 0);
+            const btnVerificarEnvios = document.getElementById('btnVerificarEnvios');
+            btn?.classList.toggle('botao-contestacao-alerta', total > 0);
+            btnVerificarEnvios?.classList.toggle('botao-contestacao-alerta', total > 0);
         });
+    }
+
+    function temContestacaoUsuarioIndex() {
+        return totalContestacoesUsuarioIndex > 0;
     }
 
     let _depositosBadgeStarted = false;
@@ -655,6 +662,15 @@
             if (!navigator.onLine) return;
             if (statusBalancoPendenteIndex) {
                 if (window.playAlert) await window.playAlert('Confira o material e envie o Balanço');
+                return;
+            }
+            if (temContestacaoUsuarioIndex()) {
+                const abrirContestacoes = window.playConfirm
+                    ? await window.playConfirm('Existe contestação do gestor pendente. Você quer ver agora?')
+                    : confirm('Existe contestação do gestor pendente. Você quer ver agora?');
+                if (abrirContestacoes) {
+                    window.location.href = 'verificar_envios.html?contestacao=1';
+                }
                 return;
             }
             window.location.href = 'selecionar_rota.html';

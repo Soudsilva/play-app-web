@@ -4334,7 +4334,9 @@ export async function dbVerificarELiberarRota(numeroRota, nomeUsuario, dados = {
             nomeUsuario: rotaDados?.selecionada_por || nomeUsuario
         });
 
-        if (!status?.liberarAgora) {
+        const podeLiberarNoCliente = status?.liberarAgora && status?.motivo === 'todos_atendidos';
+
+        if (!podeLiberarNoCliente) {
             await dbAtualizarControleLiberacaoRota(numeroRota, status);
             return { liberada: false, status };
         }

@@ -1913,7 +1913,7 @@
             btnConfirmarContestacao.textContent = 'Salvando...';
             try {
                 await dbContestarAtendimento(id, gestor, observacao);
-                mostrarToast('Atendimento contestado. O tecnico tem 24h para corrigir.');
+                mostrarToast('Atendimento contestado.');
             } catch (err) {
                 btnConfirmarContestacao.disabled = false;
                 btnConfirmarContestacao.textContent = 'Confirmar contestacao';
