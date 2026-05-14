@@ -2586,15 +2586,18 @@ export function dbEscutarTodosPixEmPosse(callback) {
     return onValue(ref(db, 'pix_em_posse'), (snapshot) => {
         const data = snapshot.val() || {};
         const numeros = new Set();
-        Object.values(data).forEach(usuario => {
+        const porNumero = new Map();
+        Object.entries(data).forEach(([usuarioKey, usuario]) => {
             if (usuario && typeof usuario === 'object') {
                 Object.values(usuario).forEach(registro => {
                     const pix = String(registro?.numero_pix || '').trim();
-                    if (pix) numeros.add(pix);
+                    if (!pix) return;
+                    numeros.add(pix);
+                    porNumero.set(pix, String(registro?.responsavel || registro?.retiradoPor || usuarioKey || '').trim());
                 });
             }
         });
-        callback(numeros);
+        callback(numeros, porNumero);
     });
 }
 

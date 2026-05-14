@@ -357,6 +357,8 @@
             letter-spacing: 0.8px;
             color: rgba(255,235,59,0.85);
             margin-bottom: 10px;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         /* ── PIX ── */
@@ -544,7 +546,7 @@
             background: linear-gradient(135deg, #43a047, #2e7d32);
             color: white;
             border: none;
-            padding: 15px;
+            padding: 10px 12px;
             border-radius: 12px;
             font-size: 17px;
             font-weight: bold;
@@ -566,7 +568,7 @@
             background: #7c3aed;
             color: white;
             border: none;
-            padding: 15px 14px;
+            padding: 10px 12px;
             border-radius: 12px;
             font-size: 15px;
             font-weight: bold;
@@ -1222,10 +1224,13 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarAtendimentos, dbSalvarAtendimento, dbContestarAtendimento, dbRemoverContestacao, dbBuscarProdutosDoAtendimento } from './database.js';
+    import { dbEscutarAtendimentos, dbEscutarClientes, dbSalvarAtendimento, dbContestarAtendimento, dbRemoverContestacao, dbBuscarProdutosDoAtendimento } from './database.js';
 
     /* ── ESTADO ── */
     let todosAtendimentos = [];
+    let clientesSalvos = [];
+    let clientesPorId = new Map();
+    let clientesPorNumero = new Map();
     let abaAtiva = 'pendente';
     let idParaConfirmar = null;
     const fotoMap = {}; // { fotoId -> { urlFull, label } }
@@ -1258,10 +1263,81 @@
                 <span class="prod-nome">${p.nome}</span>
                 <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
                     <span class="prod-qtd">${p.movimento} usados</span>
-                    ${p.totalApos != null ? `<span class="prod-saldo" style="color:${p.totalApos < 0 ? '#f44336' : '#81c784'}">total ${p.totalApos}</span>` : ''}
                 </div>
             </div>`).join('');
         prodsSection.innerHTML = titulo + html;
+    }
+
+    function normalizarNumeroCliente(valor) {
+        return String(valor ?? '').replace(/\D/g, '').trim();
+    }
+
+    function indexarClientes(lista) {
+        clientesPorId = new Map();
+        clientesPorNumero = new Map();
+
+        (Array.isArray(lista) ? lista : []).forEach(cliente => {
+            [cliente?.firebaseUrl, cliente?.id, cliente?.clienteId, cliente?.clienteFirebaseUrl].forEach(id => {
+                const chave = String(id || '').trim();
+                if (chave) clientesPorId.set(chave, cliente);
+            });
+
+            const numero = normalizarNumeroCliente(cliente?.numero);
+            if (numero) clientesPorNumero.set(numero, cliente);
+        });
+    }
+
+    function obterClienteCompletoDoAtendimento(atendimento) {
+        const ids = [
+            atendimento?.cliente?.id,
+            atendimento?.cliente?.firebaseUrl,
+            atendimento?.clienteId,
+            atendimento?.clienteFirebaseUrl
+        ];
+
+        for (const id of ids) {
+            const chave = String(id || '').trim();
+            if (chave && clientesPorId.has(chave)) return clientesPorId.get(chave);
+        }
+
+        const numero = normalizarNumeroCliente(atendimento?.cliente?.numero || atendimento?.clienteNumero);
+        return numero ? clientesPorNumero.get(numero) || null : null;
+    }
+
+    function obterMaquinasCliente(atendimento) {
+        const cliente = obterClienteCompletoDoAtendimento(atendimento);
+        if (!Array.isArray(cliente?.equipDetalhes)) return [];
+
+        return cliente.equipDetalhes
+            .map((item, index) => ({
+                rowId: String(item?.rowId || `equip_${index + 1}`),
+                nome: String(item?.nome || '').trim(),
+                qtd: String(item?.qtd || item?.quantidade || '1').trim() || '1',
+                pix: String(item?.pix || '').trim(),
+                contador: String(item?.contador || '').trim()
+            }))
+            .filter(item => item.nome);
+    }
+
+    function montarMaquinasClienteHTML(atendimento) {
+        const maquinas = obterMaquinasCliente(atendimento);
+        if (maquinas.length === 0) {
+            return '<span class="sem-foto">Nenhuma maquina cadastrada</span>';
+        }
+
+        return maquinas.map(item => {
+            const detalhes = [];
+            const qtd = String(item.qtd || '1').trim() || '1';
+            if (qtd !== '1') detalhes.push(`${escHTML(qtd)} un.`);
+            if (item.pix) detalhes.push(`Pix ${escHTML(item.pix)}`);
+            if (item.contador) detalhes.push(`Cont. ${escHTML(item.contador)}`);
+
+            return `
+                <div class="prod-row">
+                    <span class="prod-nome">${escHTML(item.nome)}</span>
+                    ${detalhes.length ? `<span class="prod-qtd">${detalhes.join(' · ')}</span>` : ''}
+                </div>`;
+        }).join('');
     }
 
     /* ── BUSCA ── */
@@ -1294,6 +1370,12 @@
     /* ── DADOS ── */
     dbEscutarAtendimentos((lista) => {
         todosAtendimentos = lista || [];
+        renderizarLista();
+    });
+
+    dbEscutarClientes((lista) => {
+        clientesSalvos = lista || [];
+        indexarClientes(clientesSalvos);
         renderizarLista();
     });
 
@@ -1658,6 +1740,8 @@
             btnContestar.style.display = '';
             btnContestar.classList.remove('aguardando');
         }
+        const btnConfirmar = panel.closest('.section')?.querySelector('.btn-confirmar');
+        if (btnConfirmar) btnConfirmar.style.display = '';
         panel.remove();
     }
 
@@ -1673,6 +1757,8 @@
 
         btnContestar.style.display = 'none';
         btnContestar.classList.add('aguardando');
+        const btnConfirmar = section.querySelector('.btn-confirmar');
+        if (btnConfirmar) btnConfirmar.style.display = 'none';
 
         const panel = document.createElement('div');
         panel.className = 'contestacao-box';
@@ -1800,7 +1886,7 @@
                </div>`
             : `<div class="section">
                 <button class="btn-confirmar" data-confirmar-id="${escAttr(id)}" data-confirmar-nome="${escAttr(a.cliente?.nome || '')}">
-                    ✅ Confirmar este atendimento
+                    ✅ Confirmar
                 </button>
                </div>`;
 
@@ -1829,7 +1915,7 @@
                 <div class="rodape-acoes">
                     <button class="btn-contestar${jaContestado ? ' contestado' : ''}" data-contestar-id="${escAttr(id)}">${btnContestarLabel}</button>
                     <button class="btn-confirmar" data-confirmar-id="${escAttr(id)}" data-confirmar-nome="${escAttr(a.cliente?.nome || '')}" ${resumoValidacao.liberado ? '' : 'disabled'} style="flex:1">
-                        Confirmar este atendimento
+                        Confirmar
                     </button>
                 </div>
                </div>`;
@@ -1852,6 +1938,11 @@
                 <div class="section">
                     <div class="section-title">📷 Fotos</div>
                     ${fotosHTML}
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Maquinas no cliente</div>
+                    ${montarMaquinasClienteHTML(a)}
                 </div>
 
                 <div class="section" data-prods-id="${escAttr(id)}" data-prods-atendente="${escAttr(a.atendente || '')}">

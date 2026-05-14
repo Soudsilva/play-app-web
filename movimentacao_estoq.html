@@ -940,6 +940,7 @@
     let colabsGlobal = [];
     let clientesGlobal = [];
     let pixEmPosseGlobal = new Set();
+    let pixEmPossePorNumero = new Map();
     let posseUsuarioAtual = [];
     let pixUsuarioAtual = [];
     let itensPendentes = [];
@@ -1428,20 +1429,113 @@
         clientesGlobal = Array.isArray(lista) ? lista : [];
     });
 
-    dbEscutarTodosPixEmPosse((numeros) => {
-        pixEmPosseGlobal = numeros;
+    dbEscutarTodosPixEmPosse((numeros, porNumero) => {
+        pixEmPosseGlobal = numeros instanceof Set ? numeros : new Set();
+        pixEmPossePorNumero = porNumero instanceof Map ? porNumero : new Map();
     });
+
+    function obterEquipamentosDetalhadosClientePix(cliente) {
+        if (Array.isArray(cliente?.equipDetalhes) && cliente.equipDetalhes.length > 0) {
+            return cliente.equipDetalhes.map((item, index) => ({
+                rowId: String(item?.rowId || `eq_${index + 1}`),
+                nome: String(item?.nome || '').trim(),
+                pix: String(item?.pix || '').trim(),
+                manutencaoPendente: String(item?.manutencaoPendente || '').trim(),
+                aguardandoConfirmacao: item?.aguardandoConfirmacao === true
+            }));
+        }
+
+        const texto = String(cliente?.equip || '').trim();
+        if (!texto) return [];
+        const partes = texto.includes('|')
+            ? texto.split(/\s*\|\s*/)
+            : texto.split(/\s*,\s*/);
+
+        return partes.map((parte, index) => {
+            let trecho = String(parte || '').trim();
+            if (!trecho) return null;
+
+            let pix = '';
+            const matchPixLegado = trecho.match(/\s*\[Pix:\s*([^\]]+)\]\s*$/i);
+            if (matchPixLegado) {
+                pix = String(matchPixLegado[1] || '').trim();
+                trecho = trecho.replace(/\s*\[Pix:\s*([^\]]+)\]\s*$/i, '').trim();
+            } else {
+                const matchPixTexto = trecho.match(/\s+Pix\s+([0-9]+)\s*$/i);
+                if (matchPixTexto) {
+                    pix = String(matchPixTexto[1] || '').trim();
+                    trecho = trecho.replace(/\s+Pix\s+[0-9]+\s*$/i, '').trim();
+                }
+            }
+
+            return {
+                rowId: `legacy_${index + 1}`,
+                nome: trecho.replace(/\s*\(([^)]+)\)\s*$/, '').trim(),
+                pix,
+                manutencaoPendente: '',
+                aguardandoConfirmacao: false
+            };
+        }).filter(item => item && item.nome);
+    }
+
+    function obterPixParaValidacaoMovimentacao() {
+        const lista = [];
+        clientesGlobal.forEach(cliente => {
+            obterEquipamentosDetalhadosClientePix(cliente).forEach(equip => {
+                const pixAtual = String(equip?.pix || '').trim();
+                if (!pixAtual) return;
+
+                let situacao = 'instalado';
+                let pendenciaTipo = '';
+                if (equip.aguardandoConfirmacao && equip.manutencaoPendente === 'adicao') {
+                    situacao = 'em_analise';
+                    pendenciaTipo = 'adicao';
+                }
+
+                lista.push({
+                    numero_pix: pixAtual,
+                    situacao,
+                    pendenciaTipo
+                });
+            });
+        });
+        return lista;
+    }
 
     function pixEmUsoSet() {
         const emUso = new Set();
-        clientesGlobal.forEach(cliente => {
-            const equips = Array.isArray(cliente?.equipDetalhes) ? cliente.equipDetalhes : [];
-            equips.forEach(equip => {
-                const pix = String(equip?.pix || '').trim();
+        obterPixParaValidacaoMovimentacao().forEach(item => {
+            const situacao = String(item?.situacao || '').trim().toLowerCase();
+            const pendenciaTipo = String(item?.pendenciaTipo || '').trim().toLowerCase();
+            if (situacao === 'instalado' || (situacao === 'em_analise' && pendenciaTipo === 'adicao')) {
+                const pix = String(item?.numero_pix || '').trim();
                 if (pix) emUso.add(pix);
-            });
+            }
         });
         return emUso;
+    }
+
+    function obterResponsavelPixEmPosse(numeroPix) {
+        return pixEmPossePorNumero.get(String(numeroPix || '').trim()) || '';
+    }
+
+    function pixJaEstaEmPosse(numeroPix) {
+        const pix = String(numeroPix || '').trim();
+        return !!pix && pixEmPosseGlobal.has(pix);
+    }
+
+    function registrarPixEmPosseLocal(numeroPix, responsavel) {
+        const pix = String(numeroPix || '').trim();
+        if (!pix) return;
+        pixEmPosseGlobal.add(pix);
+        pixEmPossePorNumero.set(pix, String(responsavel || '').trim());
+    }
+
+    function removerPixEmPosseLocal(numeroPix) {
+        const pix = String(numeroPix || '').trim();
+        if (!pix) return;
+        pixEmPosseGlobal.delete(pix);
+        pixEmPossePorNumero.delete(pix);
     }
 
     function tipoSelecionadoEhPix() {
@@ -1478,6 +1572,7 @@
 
     window.validarPixPrincipal = async function() {
         const input = document.getElementById('pixPrincipalNumero');
+        const responsavel = String(document.getElementById('responsavel')?.value || '').trim();
         const valor = String(input?.value || '').trim();
         if (!valor) return;
         if (pixEmUsoSet().has(valor)) {
@@ -1486,8 +1581,11 @@
             input.focus();
             return;
         }
-        if (modoAtual === 'saida' && pixEmPosseGlobal.has(valor)) {
-            await window.playAlert(`Pix ${valor} já está em posse de outro usuário.`);
+        if (modoAtual === 'saida' && pixJaEstaEmPosse(valor)) {
+            const responsavelAtual = obterResponsavelPixEmPosse(valor);
+            await window.playAlert(responsavelAtual
+                ? `Pix ${valor} já está em posse de ${responsavelAtual}.`
+                : `Pix ${valor} já está em posse de um usuário.`);
             input.value = '';
             input.focus();
         }
@@ -2247,8 +2345,11 @@
             inputPix.focus();
             return;
         }
-        if (modoAtual === 'saida' && pixEmPosseGlobal.has(numeroPix)) {
-            await window.playAlert(`Pix ${numeroPix} já está em posse de outro usuário.`);
+        if (modoAtual === 'saida' && pixJaEstaEmPosse(numeroPix)) {
+            const responsavelAtual = obterResponsavelPixEmPosse(numeroPix);
+            await window.playAlert(responsavelAtual
+                ? `Pix ${numeroPix} já está em posse de ${responsavelAtual}.`
+                : `Pix ${numeroPix} já está em posse de um usuário.`);
             inputPix.value = '';
             inputPix.focus();
             return;
@@ -2268,6 +2369,7 @@
             definirEstadoSalvando(true);
             if (modoAtual === 'entrada') {
                 await dbRemoverPixEmPosse(responsavel, numeroPix);
+                removerPixEmPosseLocal(numeroPix);
             } else {
                 await dbAdicionarPixEmPosse(responsavel, numeroPix, {
                     responsavel,
@@ -2277,6 +2379,7 @@
                     tipo: 'pix_em_posse',
                     timestamp: new Date().toISOString()
                 });
+                registrarPixEmPosseLocal(numeroPix, responsavel);
             }
 
             inputPix.value = '';

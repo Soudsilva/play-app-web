@@ -1390,6 +1390,10 @@
             .trim();
     }
 
+    function usuarioEhGestaoNivel3() {
+        return String(perfilUsuarioLogado || '').toLowerCase().includes('gestao_3');
+    }
+
     function obterDataLocalIso(data) {
         const base = data ? new Date(data) : new Date();
         if (Number.isNaN(base.getTime())) return "";
@@ -1691,7 +1695,7 @@
 
             const acoesVisuaisHtml = usuarioPodeGerenciarCliente(c) ? `
                 <div class="acoes-cliente">
-                    ${perfilUsuarioLogado.includes('gestao') ? `
+                    ${usuarioEhGestaoNivel3() ? `
                     <div onclick="alternarRecuperacaoCliente('${c.firebaseUrl}')" class="acao-cliente recuperacao${clienteEmRecuperacao ? ' ativo' : ''}">
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.7 2.4 17.4A2 2 0 0 0 4.1 20h15.8a2 2 0 0 0 1.7-2.6L13.7 3.7a2 2 0 0 0-3.4 0z"/>
@@ -2060,7 +2064,7 @@
     window.alternarRecuperacaoCliente = async function(url) {
         const id = String(url || '').split('/').pop().replace('.json', '');
         const cliente = clientesSalvos.find(c => c.firebaseUrl === id);
-        if (!cliente || !perfilUsuarioLogado.includes('gestao')) {
+        if (!cliente || !usuarioEhGestaoNivel3()) {
             alert("VocÃª nÃ£o tem permissÃ£o para alterar este cliente.");
             return;
         }
