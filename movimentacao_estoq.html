@@ -1946,10 +1946,7 @@
 
         if (modo === 'entrada') {
             if (usaDefeito) {
-                if (responsavelEhFornecedorOuEstoque(responsavel)) {
-                    novaQtd += qtdMovimento;
-                    defeitoOperacao = 'entrada_ok';
-                } else if (responsavelEhUsuarioLogado(responsavel)) {
+                if (responsavelEhUsuarioLogado(responsavel)) {
                     if (qtdMovimento > novaQtdDefeito) {
                         throw new Error(`Quantidade com defeito insuficiente para recuperar ${itemOriginal.nome}.`);
                     }
@@ -1957,6 +1954,9 @@
                     novaQtd += qtdMovimento;
                     qtdDefeitoConsumida = qtdMovimento;
                     defeitoOperacao = 'conversao_ok';
+                } else if (responsavelEhFornecedorOuEstoque(responsavel)) {
+                    novaQtd += qtdMovimento;
+                    defeitoOperacao = 'entrada_ok';
                 } else {
                     novaQtdDefeito += qtdMovimento;
                     isDefeitoEntry = true;
