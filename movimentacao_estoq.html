@@ -687,8 +687,8 @@
         .btn-excluir-hist { background: #f44336; color: white; }
 
         /* ── Seção Itens do Estoque ── */
-        .secao-itens { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; order: 20; }
-        .secao-posse-usuario { order: 21; }
+        .secao-posse-usuario { order: 20; }
+        .secao-itens { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; order: 21; }
         .secao-historico { order: 22; }
         .card-est {
             background: rgba(255,255,255,0.06);
@@ -1188,13 +1188,9 @@
         const temResponsavel = !!responsavelHistoricoAtual;
         const responsavelFornecedor = responsavelHistoricoAtual === 'Fornecedor';
         const mostrarPosse = temResponsavel && !responsavelFornecedor;
-        secaoItensEl?.classList.toggle('oculta-por-posse', mostrarPosse);
+        secaoItensEl?.classList.remove('oculta-por-posse');
         secaoPosseUsuarioEl?.classList.toggle('visivel', mostrarPosse);
-        if (mostrarPosse) {
-            itensVisivelEstoque = false;
-            document.getElementById('conteudoItens')?.classList.add('oculto');
-            atualizarBotaoItens();
-        } else {
+        if (!mostrarPosse) {
             posseUsuarioVisivel = false;
         }
         atualizarBotaoPosseUsuario();
