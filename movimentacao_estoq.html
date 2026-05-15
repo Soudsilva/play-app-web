@@ -6,7 +6,7 @@
     <title>Movimentação de Estoque</title>
     <style>
         body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; }
-        .app { width:100%; max-width:420px; padding:15px; box-sizing:border-box; min-height: 100vh; }
+        .app { width:100%; max-width:420px; padding:15px; box-sizing:border-box; min-height: 100vh; display:flex; flex-direction:column; }
         
         /* Topo */
         .topo { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; position: relative; width: 100%; min-height: 45px; }
@@ -687,33 +687,38 @@
         .btn-excluir-hist { background: #f44336; color: white; }
 
         /* ── Seção Itens do Estoque ── */
-        .secao-itens { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; }
+        .secao-itens { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; order: 20; }
+        .secao-posse-usuario { order: 21; }
+        .secao-historico { order: 22; }
         .card-est {
             background: rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,0.12);
             border-radius: 12px;
-            padding: 11px 13px;
+            padding: 11px 13px 4px;
             margin-bottom: 10px;
             display: flex;
             flex-direction: column;
             gap: 0;
         }
         .card-est-topo {
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
             align-items: center;
-            justify-content: space-between;
             gap: 8px;
         }
         .card-est-nome {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 800;
             color: #fff;
             letter-spacing: 0.01em;
-            flex: 1;
             min-width: 0;
-            white-space: nowrap;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            line-height: 1.16;
             overflow: hidden;
-            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }
         .badge-est {
             display: inline-block;
@@ -730,14 +735,48 @@
         .bg-materiais-est { background: #00acc1; }
         .card-est-rodape {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
             margin-top: 8px;
         }
         .card-est-minimo {
             font-size: 11px;
             color: #888;
+            display: block;
+            width: 100%;
+            margin-top: auto;
+            padding-top: 8px;
+            text-align: left;
         }
+        .estoque-totais {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            width: 100%;
+            margin-top: 7px;
+        }
+        .estoque-total-item {
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 8px;
+            padding: 5px 6px;
+            text-align: center;
+            background: rgba(255,255,255,0.08);
+        }
+        .estoque-total-item span {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        .estoque-total-item strong {
+            display: block;
+            margin-top: 2px;
+            font-size: 19px;
+            line-height: 1;
+            color: #ffeb3b;
+        }
+        .estoque-total-item.defeito strong { color: #ff9800; }
         .qtd-est {
             font-size: 26px;
             font-weight: 900;
@@ -900,12 +939,6 @@
             </div>
             <div class="itens-controles">
                 <input type="text" id="filtroItens" class="input-busca" placeholder="Buscar item no estoque..." oninput="filtrarItensLista()">
-                <div class="filtros-est">
-                    <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="produtos" checked onclick="selecionarFiltroTipo(this)"><span class="f-icon">🟢</span><span class="f-label">Produtos</span></label>
-                    <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="peca" onclick="selecionarFiltroTipo(this)"><span class="f-icon">🟠</span><span class="f-label">Peças</span></label>
-                    <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="maquina" onclick="selecionarFiltroTipo(this)"><span class="f-icon">🟣</span><span class="f-label">Máquinas</span></label>
-                    <label class="filtro-est"><input type="checkbox" class="filtro-tipo-est" value="materiais" onclick="selecionarFiltroTipo(this)"><span class="f-icon">🔵</span><span class="f-label">Materiais</span></label>
-                </div>
             </div>
         </div>
         <div id="conteudoItens" class="oculto">
@@ -1153,9 +1186,11 @@
 
     function atualizarSecaoPosseUsuario() {
         const temResponsavel = !!responsavelHistoricoAtual;
-        secaoItensEl?.classList.toggle('oculta-por-posse', temResponsavel);
-        secaoPosseUsuarioEl?.classList.toggle('visivel', temResponsavel);
-        if (temResponsavel) {
+        const responsavelFornecedor = responsavelHistoricoAtual === 'Fornecedor';
+        const mostrarPosse = temResponsavel && !responsavelFornecedor;
+        secaoItensEl?.classList.toggle('oculta-por-posse', mostrarPosse);
+        secaoPosseUsuarioEl?.classList.toggle('visivel', mostrarPosse);
+        if (mostrarPosse) {
             itensVisivelEstoque = false;
             document.getElementById('conteudoItens')?.classList.add('oculto');
             atualizarBotaoItens();
@@ -1290,6 +1325,12 @@
     }
 
     window.toggleHistorico = function() {
+        if (!historicoVisivel && !responsavelHistoricoAtual) {
+            if (window.playAlert) window.playAlert('Selecione um responsável para ver as movimentações.');
+            else alert('Selecione um responsável para ver as movimentações.');
+            return;
+        }
+
         historicoVisivel = !historicoVisivel;
 
         // Fecha itens se estiver abrindo o histórico
@@ -1629,7 +1670,7 @@
             optForn.innerText = "Fornecedor";
             select.appendChild(optForn);
 
-            if (nomeLogado && categoriaAtual !== 'maquina' && categoriaAtual !== 'produtos' && categoriaAtual !== 'materiais') {
+            if (nomeLogado && categoriaAtual !== 'produtos' && categoriaAtual !== 'materiais') {
                 const optUser = document.createElement('option');
                 optUser.value = nomeLogado;
                 optUser.innerText = nomeLogado;
@@ -1676,6 +1717,7 @@
         }
 
         listaFiltrada.forEach(c => {
+            if (Array.from(select.options).some(opt => opt.value === c.nome)) return;
             const opt = document.createElement('option');
             opt.value = c.nome;
             opt.innerText = c.nome;
@@ -1690,6 +1732,8 @@
 
     // 2. FILTRAR ITENS POR CATEGORIA
     window.filtrarItens = function() {
+        const filtroItens = document.getElementById('filtroItens');
+        if (filtroItens) filtroItens.value = '';
         renderizarResponsaveis(); // atualiza dropdown de responsável conforme tipo selecionado
         const categoriaSelecionada = document.getElementById('filtroCategoria').value;
         const selectItem = document.getElementById('selectItem');
@@ -1699,6 +1743,8 @@
 
         if (!categoriaSelecionada) {
             mostrarSaldoAtual();
+            atualizarBotaoItens();
+            if (itensVisivelEstoque) filtrarItensLista();
             return;
         }
 
@@ -1706,6 +1752,8 @@
 
         if (itensFiltrados.length === 0) {
             mostrarSaldoAtual();
+            atualizarBotaoItens();
+            if (itensVisivelEstoque) filtrarItensLista();
             return;
         }
 
@@ -1724,6 +1772,8 @@
         }
 
         mostrarSaldoAtual();
+        atualizarBotaoItens();
+        if (itensVisivelEstoque) filtrarItensLista();
     };
 
     // 3. MOSTRAR SALDO
@@ -1735,13 +1785,13 @@
         if (itemSelecionado && itemSelecionado.value) {
             const qtdBoa = parseInt(itemSelecionado.dataset.qtdAtual || 0);
             const qtdDefeito = parseInt(itemSelecionado.dataset.qtdDefeito || 0);
-            const isPeca = itemSelecionado.dataset.categItem === 'peca';
+            const isPeca = itemUsaControleDefeito(itemSelecionado.dataset.categItem);
 
-            if (isPeca && qtdDefeito > 0) {
+            if (isPeca) {
                 const total = qtdBoa + qtdDefeito;
                 document.getElementById('textoSaldo').innerHTML =
                     `<span class="saldo-total-disc">Total ${total}</span>` +
-                    `<span class="saldo-defeito-label">&#9888; Defeito <span class="saldo-defeito-num">${qtdDefeito}</span></span>` +
+                    `<span class="saldo-defeito-label">&#9888; Ruim <span class="saldo-defeito-num">${qtdDefeito}</span></span>` +
                     `<span class="destaque-qtd">${qtdBoa}</span>`;
             } else {
                 document.getElementById('textoSaldo').innerHTML = `<span class="destaque-qtd">${qtdBoa}</span>`;
@@ -1869,6 +1919,66 @@
         return listaGlobal.find(i => i.firebaseUrl === idItem);
     }
 
+    function itemUsaControleDefeito(itemOuCategoria) {
+        const categoria = typeof itemOuCategoria === 'string'
+            ? itemOuCategoria
+            : String(itemOuCategoria?.categoria || '');
+        return categoria === 'peca' || categoria === 'maquina';
+    }
+
+    function responsavelEhUsuarioLogado(responsavel) {
+        const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
+        return !!nomeLogado && normalizarBusca(responsavel).trim() === normalizarBusca(nomeLogado).trim();
+    }
+
+    function responsavelEhFornecedorOuEstoque(responsavel) {
+        if (responsavel === 'Fornecedor') return true;
+        return colabsGlobal.some(c =>
+            c.nome === responsavel &&
+            c.nivel_completo &&
+            c.nivel_completo.startsWith('estoque')
+        );
+    }
+
+    function calcularMovimentoEstoque(itemOriginal, qtdMovimento, responsavel, modo) {
+        const usaDefeito = itemUsaControleDefeito(itemOriginal);
+        let novaQtd = parseInt(itemOriginal.quantidade) || 0;
+        let novaQtdDefeito = parseInt(itemOriginal.qtd_defeito) || 0;
+        let isDefeitoEntry = false;
+        let qtdDefeitoConsumida = 0;
+        let defeitoOperacao = '';
+
+        if (modo === 'entrada') {
+            if (usaDefeito) {
+                if (responsavelEhFornecedorOuEstoque(responsavel)) {
+                    novaQtd += qtdMovimento;
+                    defeitoOperacao = 'entrada_ok';
+                } else if (responsavelEhUsuarioLogado(responsavel)) {
+                    if (qtdMovimento > novaQtdDefeito) {
+                        throw new Error(`Quantidade com defeito insuficiente para recuperar ${itemOriginal.nome}.`);
+                    }
+                    novaQtdDefeito -= qtdMovimento;
+                    novaQtd += qtdMovimento;
+                    qtdDefeitoConsumida = qtdMovimento;
+                    defeitoOperacao = 'conversao_ok';
+                } else {
+                    novaQtdDefeito += qtdMovimento;
+                    isDefeitoEntry = true;
+                    defeitoOperacao = 'entrada_defeito';
+                }
+            } else {
+                novaQtd += qtdMovimento;
+            }
+        } else {
+            if (qtdMovimento > novaQtd) {
+                throw new Error(`Quantidade insuficiente em estoque para ${itemOriginal.nome}.`);
+            }
+            novaQtd -= qtdMovimento;
+        }
+
+        return { novaQtd, novaQtdDefeito, isDefeitoEntry, qtdDefeitoConsumida, defeitoOperacao };
+    }
+
     function obterSaldoProjetadoPendente(idItem) {
         const item = obterItemEstoqueAtual(idItem);
         if (!item) return 0;
@@ -1969,36 +2079,13 @@
         const itemOriginal = obterItemEstoqueAtual(idItem, mapaEstoque);
         if (!itemOriginal) throw new Error('Erro ao localizar item.');
 
-        const isPeca = itemOriginal.categoria === 'peca';
-        let novaQtd = parseInt(itemOriginal.quantidade) || 0;
-        let novaQtdDefeito = parseInt(itemOriginal.qtd_defeito) || 0;
-        let isDefeitoEntry = false;
-        let qtdDefeitoConsumida = 0;
-
-        if (modo === 'entrada') {
-            if (isPeca) {
-                const ehFornecedor = responsavel === 'Fornecedor';
-                const responsavelEhEstoque = colabsGlobal.some(
-                    c => c.nome === responsavel && c.nivel_completo && c.nivel_completo.startsWith('estoque')
-                );
-
-                if (ehFornecedor || responsavelEhEstoque) {
-                    qtdDefeitoConsumida = Math.min(qtdMovimento, novaQtdDefeito);
-                    novaQtdDefeito -= qtdDefeitoConsumida;
-                    novaQtd += qtdMovimento - qtdDefeitoConsumida;
-                } else {
-                    novaQtdDefeito += qtdMovimento;
-                    isDefeitoEntry = true;
-                }
-            } else {
-                novaQtd += qtdMovimento;
-            }
-        } else {
-            if (qtdMovimento > novaQtd) {
-                throw new Error(`Quantidade insuficiente em estoque para ${itemOriginal.nome}.`);
-            }
-            novaQtd -= qtdMovimento;
-        }
+        const {
+            novaQtd,
+            novaQtdDefeito,
+            isDefeitoEntry,
+            qtdDefeitoConsumida,
+            defeitoOperacao
+        } = calcularMovimentoEstoque(itemOriginal, qtdMovimento, responsavel, modo);
 
         const itemParaSalvar = {
             ...itemOriginal,
@@ -2029,6 +2116,7 @@
             controlarPosse: responsavel !== 'Fornecedor' && responsavel !== 'Máquina',
             isDefeitoEntry,
             qtdDefeitoConsumida,
+            defeitoOperacao,
             estoqueAntes,
             estoqueDepois: novaQtd
         }, { recalcular: false });
@@ -2125,6 +2213,11 @@
         return listaGlobal.filter(item => item.categoria === categoriaSelecionada);
     }
 
+    function obterCategoriaFiltroEstoqueAtual() {
+        const categoria = document.getElementById('filtroCategoria')?.value || '';
+        return categoria === 'pix' ? '' : categoria;
+    }
+
     function obterLinhasMovimentacao() {
         return Array.from(document.querySelectorAll('#containerMovimentacaoItens .linha-movimentacao'));
     }
@@ -2200,6 +2293,8 @@
     };
 
     window.filtrarItens = function() {
+        const filtroItens = document.getElementById('filtroItens');
+        if (filtroItens) filtroItens.value = '';
         renderizarResponsaveis();
         const categoriaSelecionada = document.getElementById('filtroCategoria').value;
         const container = document.getElementById('containerMovimentacaoItens');
@@ -2208,6 +2303,8 @@
 
         if (categoriaSelecionada === 'pix') {
             mostrarSaldoAtual();
+            atualizarBotaoItens();
+            if (itensVisivelEstoque) filtrarItensLista();
             return;
         }
 
@@ -2218,11 +2315,15 @@
 
         if (!categoriaSelecionada) {
             mostrarSaldoAtual();
+            atualizarBotaoItens();
+            if (itensVisivelEstoque) filtrarItensLista();
             return;
         }
 
         if (obterLinhasMovimentacao().length === 0) adicionarLinhaMovimentacao();
         atualizarOpcoesMovimentacao();
+        atualizarBotaoItens();
+        if (itensVisivelEstoque) filtrarItensLista();
     };
 
     window.mostrarSaldoAtualDaLinha = function(elemento) {
@@ -2244,11 +2345,11 @@
 
         const qtdBoa = parseInt(item.quantidade || 0, 10);
         const qtdDefeito = parseInt(item.qtd_defeito || 0, 10);
-        if (item.categoria === 'peca' && qtdDefeito > 0) {
+        if (itemUsaControleDefeito(item.categoria)) {
             const total = qtdBoa + qtdDefeito;
             document.getElementById('textoSaldo').innerHTML =
                 `<span class="saldo-total-disc">Total ${total}</span>` +
-                `<span class="saldo-defeito-label">&#9888; Defeito <span class="saldo-defeito-num">${qtdDefeito}</span></span>` +
+                `<span class="saldo-defeito-label">&#9888; Ruim <span class="saldo-defeito-num">${qtdDefeito}</span></span>` +
                 `<span class="destaque-qtd">${qtdBoa}</span>`;
         } else {
             document.getElementById('textoSaldo').innerHTML = `<span class="destaque-qtd">${qtdBoa}</span>`;
@@ -2408,8 +2509,14 @@
         if (!btn) return;
         btn.classList.toggle('aberto', itensVisivelEstoque);
         btn.setAttribute('aria-expanded', itensVisivelEstoque ? 'true' : 'false');
-        const total = listaGlobal.length;
+        const categoriaAtual = obterCategoriaFiltroEstoqueAtual();
+        const total = categoriaAtual
+            ? listaGlobal.filter(item => item.categoria === categoriaAtual).length
+            : 0;
         const badgeTexto = total > 0 ? total : '';
+        const subtexto = categoriaAtual
+            ? (itensVisivelEstoque ? 'Toque para ocultar' : 'Toque para ver todos os itens')
+            : 'Selecione um tipo';
         btn.innerHTML = `
             <span class="titulo-hist-olho"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg></span>
             <span class="titulo-hist-info">
@@ -2417,7 +2524,7 @@
                     Itens do Estoque
                     ${badgeTexto ? `<span class="titulo-hist-badge">${badgeTexto}</span>` : ''}
                 </span>
-                <span class="titulo-hist-subtexto">${itensVisivelEstoque ? 'Toque para ocultar' : 'Toque para ver todos os itens'}</span>
+                ${subtexto ? `<span class="titulo-hist-subtexto">${subtexto}</span>` : ''}
             </span>
             <span class="titulo-hist-seta">
                 <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -2426,6 +2533,13 @@
     }
 
     window.toggleItens = function() {
+        const categoriaAtual = obterCategoriaFiltroEstoqueAtual();
+        if (!itensVisivelEstoque && !categoriaAtual) {
+            if (window.playAlert) window.playAlert('Selecione o Tipo para ver o estoque.');
+            else alert('Selecione o Tipo para ver o estoque.');
+            return;
+        }
+
         itensVisivelEstoque = !itensVisivelEstoque;
 
         // Fecha histórico se estiver abrindo os itens
@@ -2453,26 +2567,21 @@
     };
 
     function atualizarVisualFiltrosItens() {
-        document.querySelectorAll('.filtro-est').forEach(label => {
-            const input = label.querySelector('.filtro-tipo-est');
-            label.classList.toggle('ativo', !!input?.checked);
-        });
+        return;
     }
 
     window.selecionarFiltroTipo = function(cb) {
-        document.querySelectorAll('.filtro-tipo-est').forEach(el => { el.checked = false; });
-        cb.checked = true;
         filtrarItensLista();
     };
 
     window.filtrarItensLista = function() {
         if (!itensVisivelEstoque) return;
         const termo = document.getElementById('filtroItens').value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-        const tiposMarcados = Array.from(document.querySelectorAll('.filtro-tipo-est:checked')).map(cb => cb.value);
+        const categoriaAtual = obterCategoriaFiltroEstoqueAtual();
         const filtrados = listaGlobal.filter(item => {
+            if (!categoriaAtual || item.categoria !== categoriaAtual) return false;
             const nome = item.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-            if (!nome.includes(termo)) return false;
-            return termo ? true : tiposMarcados.includes(item.categoria);
+            return nome.includes(termo);
         });
         renderizarItensEstoque(filtrados);
         atualizarVisualFiltrosItens();
@@ -2494,10 +2603,12 @@
             div.className = 'card-est';
             const qtdDefeito = parseInt(item.qtd_defeito) || 0;
             const qtdBoa = parseInt(item.quantidade) || 0;
-            const rodapeQtd = (item.categoria === 'peca' && qtdDefeito > 0)
-                ? `<div style="display:flex;align-items:center;gap:8px;">
-                       <span class="saldo-defeito-label" style="font-size:11px;">&#9888; <span class="saldo-defeito-num">${qtdDefeito}</span></span>
-                       <div class="qtd-est">${qtdBoa}</div>
+            const qtdTotal = qtdBoa + qtdDefeito;
+            const rodapeQtd = itemUsaControleDefeito(item.categoria)
+                ? `<div class="estoque-totais">
+                       <div class="estoque-total-item"><span>Bom</span><strong>${qtdBoa}</strong></div>
+                       <div class="estoque-total-item defeito"><span>Ruim</span><strong>${qtdDefeito}</strong></div>
+                       <div class="estoque-total-item"><span>Total</span><strong>${qtdTotal}</strong></div>
                    </div>`
                 : `<div class="qtd-est">${qtdBoa}</div>`;
 
@@ -2507,9 +2618,9 @@
                     <span class="badge-est ${classeCor}">${nomeCat}</span>
                 </div>
                 <div class="card-est-rodape">
-                    <span class="card-est-minimo">Mínimo: ${item.minimo || 0}</span>
                     ${rodapeQtd}
                 </div>
+                <span class="card-est-minimo">Mínimo: ${item.minimo || 0}</span>
             `;
             container.appendChild(div);
         });
@@ -2547,13 +2658,16 @@
 
         let novaQtd = parseInt(itemEstoque.quantidade);
         let novaQtdDefeito = parseInt(itemEstoque.qtd_defeito) || 0;
-        const isPecaRev = itemEstoque.categoria === 'peca';
+        const usaControleDefeitoRev = itemUsaControleDefeito(itemEstoque.categoria);
 
         const ehEntradaHistorico = mov.tipo === 'entrada_estoque';
         const qtdMovimento = Math.abs(Number(mov.movimento ?? 0) || 0);
 
-        if (isPecaRev && ehEntradaHistorico) {
-            if (mov.isDefeitoEntry) {
+        if (usaControleDefeitoRev && ehEntradaHistorico) {
+            if (mov.defeitoOperacao === 'conversao_ok') {
+                novaQtdDefeito += qtdMovimento;
+                novaQtd -= qtdMovimento;
+            } else if (mov.isDefeitoEntry) {
                 // Desfaz entrada defeituosa: remove do defeito
                 novaQtdDefeito -= qtdMovimento;
             } else {

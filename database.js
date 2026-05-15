@@ -2912,6 +2912,7 @@ async function _salvarEntradaHistoricoBalanco(chaveUsuario, entrada, totais = {}
         ...(entrada?.ignorarValidacaoPosse === true ? { ignorarValidacaoPosse: true } : {}),
         isDefeitoEntry: Boolean(entrada.isDefeitoEntry),
         qtdDefeitoConsumida: Number(entrada.qtdDefeitoConsumida || 0),
+        ...(entrada?.defeitoOperacao ? { defeitoOperacao: String(entrada.defeitoOperacao).trim() } : {}),
         ...(valorUnitario > 0 ? { valorUnitario } : {}),
         ...(entrada?.valorConferido != null ? { valorConferido: Number(entrada.valorConferido) } : {}),
         ...(entrada?.estoqueAntes != null ? { estoqueAntes: Number(entrada.estoqueAntes) } : {}),
