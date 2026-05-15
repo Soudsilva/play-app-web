@@ -3893,6 +3893,24 @@ export async function dbConfirmarDeposito(nomeUsuario, firebaseKey, conferidoPor
     }
 }
 
+export async function dbDesfazerConfirmacaoDeposito(nomeUsuario, firebaseKey) {
+    try {
+        const chave = _normalizarChaveUsuario(nomeUsuario);
+        const id = String(firebaseKey || '').trim();
+        if (!chave || !id) throw new Error('Deposito invalido para desfazer conferencia.');
+
+        await update(ref(db, `${DEPOSITOS_ROOT}/${chave}/${id}`), {
+            status: 'aguardando_conferencia',
+            valorConferido: null,
+            dataConferencia: null,
+            conferidoPor: null
+        });
+    } catch (error) {
+        console.error("ERRO AO DESFAZER CONFIRMACAO DEPOSITO:", error);
+        throw error;
+    }
+}
+
 export async function dbListarDepositos(nomeUsuario) {
     try {
         const chave = _normalizarChaveUsuario(nomeUsuario);

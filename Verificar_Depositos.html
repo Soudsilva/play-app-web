@@ -273,6 +273,7 @@
 
         .card-status-label.pendente  { color: #ffeb3b; }
         .card-status-label.conferido { color: #81c784; }
+        .card-status-label.divergente { color: #ff9800; }
         .card-status-label.rejeitado { color: #ef9a9a; }
 
         .card-obs {
@@ -488,6 +489,8 @@
         }
 
         .btn-divergente,
+        .btn-cancelar-divergencia,
+        .btn-desfazer-conferencia,
         .btn-confirmar {
             padding: 13px;
             border-radius: 12px;
@@ -507,6 +510,19 @@
             color: #ffb74d;
         }
 
+        .btn-cancelar-divergencia {
+            width: 46px;
+            min-width: 46px;
+            border: none;
+            background: transparent;
+            color: #ffffff;
+            line-height: 1;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .btn-confirmar {
             border: none;
             background: #4caf50;
@@ -514,11 +530,37 @@
             transition: opacity 0.15s;
         }
 
+        .btn-desfazer-conferencia {
+            border: 2px solid #ff9800;
+            background: #243f78;
+            color: #ffb74d;
+        }
+
         .btn-divergente:active { background: #3f4e72; }
+
+        .btn-cancelar-divergencia:active,
+        .btn-desfazer-conferencia:active { filter: brightness(0.85); }
         .btn-confirmar:active { opacity: 0.8; }
 
-        .card.conferido .conf-acoes {
-            display: none;
+        .conf-acoes.modo-divergencia {
+            display: grid;
+            grid-template-columns: 46px 1fr;
+            gap: 8px 1px;
+        }
+
+        .conf-acoes.modo-divergencia .valor-encontrado-input {
+            grid-column: 1 / -1;
+            order: 1;
+        }
+
+        .conf-acoes.modo-divergencia .btn-cancelar-divergencia {
+            order: 2;
+        }
+
+        .conf-acoes.modo-divergencia .btn-divergente {
+            order: 3;
+            min-width: 0;
+            white-space: nowrap;
         }
 
         .valor-encontrado-input {
@@ -577,7 +619,7 @@
     <div class="header">
         <div class="header-top">
             <span class="header-title">Verificar Depósitos</span>
-            <button class="btn-home" title="Início">
+            <button class="btn-home" title="Início" onclick="window.location.href='index.html'">
                 <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             </button>
         </div>
@@ -864,7 +906,7 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
-    import { dbConfirmarDeposito, dbEscutarTodosDepositos } from './database.js';
+    import { dbConfirmarDeposito, dbDesfazerConfirmacaoDeposito, dbEscutarTodosDepositos } from './database.js';
     import { verificarAutenticacao } from './auth.js';
 
     const content = document.querySelector('.content');
@@ -874,6 +916,7 @@
     let depositos = [];
     let busca = '';
     let abaAtiva = 'pendentes';
+    const usuarioLogado = String(localStorage.getItem('usuarioLogado') || localStorage.getItem('usuario_selecionado') || '').trim();
 
     function escaparHtml(valor) {
         return String(valor ?? '')
@@ -887,6 +930,35 @@
     function dataDeposito(deposito) {
         const data = new Date(deposito?.data || deposito?.timestamp || deposito?.criadoEm || 0);
         return Number.isNaN(data.getTime()) ? null : data;
+    }
+
+    function ehHoje(valor) {
+        if (!valor) return false;
+        const data = new Date(valor);
+        if (Number.isNaN(data.getTime())) return false;
+        const opts = { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' };
+        return data.toLocaleDateString('pt-BR', opts) === new Date().toLocaleDateString('pt-BR', opts);
+    }
+
+    function perfilUsuarioLogado() {
+        try {
+            const lista = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
+            const usuario = Array.isArray(lista)
+                ? lista.find(c => String(c?.nome || '').trim() === usuarioLogado)
+                : null;
+            return String(usuario?.nivel_completo || '').trim().toLowerCase();
+        } catch {
+            return '';
+        }
+    }
+
+    function usuarioLogadoEhGestorNivel3() {
+        const perfil = perfilUsuarioLogado();
+        return perfil.includes('gestao_3');
+    }
+
+    function podeDesfazerConfirmacao(deposito) {
+        return usuarioLogadoEhGestorNivel3() || ehHoje(deposito?.data || deposito?.timestamp || deposito?.criadoEm);
     }
 
     function formatarDataHora(data) {
@@ -984,6 +1056,7 @@
         const valorExibido = valorConferido > 0 ? valorConferido : valorOriginal;
         const foto = String(deposito?.fotoThumb || deposito?.foto || '').trim();
         const observacao = String(deposito?.obs || '').trim();
+        const podeDesfazer = conferido && podeDesfazerConfirmacao(deposito);
 
         return `
             <div class="card ${classe}" data-id="${escaparHtml(deposito.firebaseUrl)}" data-usuario="${escaparHtml(deposito.usuarioChave || deposito.usuario || '')}" data-valor="${valorOriginal}">
@@ -992,7 +1065,7 @@
                     <div class="card-info">
                         <div class="card-depositante">${escaparHtml(depositante)}</div>
                         <div class="card-data">${escaparHtml(dataHora.data)} · ${escaparHtml(dataHora.hora)}</div>
-                        <div class="card-status-label ${classe}">${divergente ? 'Conferido com divergência' : (conferido ? 'Conferido' : 'Aguardando conferência')}</div>
+                        <div class="card-status-label ${divergente ? 'divergente' : classe}">${divergente ? 'Conferido com divergência' : (conferido ? 'Conferido' : 'Aguardando conferência')}</div>
                         ${observacao ? `<div class="card-obs">${escaparHtml(observacao)}</div>` : ''}
                     </div>
                     <div class="card-right">
@@ -1008,9 +1081,16 @@
                             ${fotoHtml(deposito)}
                         </div>
                         <div class="conf-acoes">
-                            <input class="valor-encontrado-input" type="text" inputmode="numeric" placeholder="Valor conferido" style="display:none; width:100%;">
-                            <button class="btn-divergente" type="button">Valor divergente</button>
-                            <button class="btn-confirmar" type="button">Confirmar valor</button>
+                            ${conferido && podeDesfazer
+                                ? `<button class="btn-desfazer-conferencia" type="button"><span aria-hidden="true">↩</span> Desfazer confirmação</button>`
+                                : conferido
+                                    ? ''
+                                    : `<input class="valor-encontrado-input" type="text" inputmode="numeric" placeholder="Valor conferido" style="display:none; width:100%;">
+                                   <button class="btn-divergente" type="button">Valor divergente</button>
+                                   <button class="btn-cancelar-divergencia" type="button" style="display:none;" aria-label="Fechar modo divergência">
+                                       <span aria-hidden="true">❌</span>
+                                   </button>
+                                   <button class="btn-confirmar" type="button">Confirmar valor</button>`}
                         </div>
                     </div>
                 </div>
@@ -1097,10 +1177,65 @@
             return;
         }
 
+        const btnDesfazer = event.target.closest('.btn-desfazer-conferencia');
+        if (btnDesfazer) {
+            const card = btnDesfazer.closest('.card');
+            const depositoId = card?.dataset.id || '';
+            const usuario = card?.dataset.usuario || '';
+            if (!depositoId || !usuario) return;
+            const deposito = depositos.find(d => d.firebaseUrl === depositoId && String(d.usuarioChave || d.usuario || '') === usuario);
+            if (!podeDesfazerConfirmacao(deposito)) return;
+
+            btnDesfazer.disabled = true;
+            btnDesfazer.textContent = 'Desfazendo...';
+            try {
+                const confirmou = await confirmarAcao('Desfazer esta confirmação e voltar o depósito para pendente?');
+                if (!confirmou) {
+                    btnDesfazer.disabled = false;
+                    btnDesfazer.innerHTML = '<span aria-hidden="true">↩</span> Desfazer confirmação';
+                    return;
+                }
+                await dbDesfazerConfirmacaoDeposito(usuario, depositoId);
+            } catch (erro) {
+                console.error(erro);
+                btnDesfazer.disabled = false;
+                btnDesfazer.innerHTML = '<span aria-hidden="true">↩</span> Desfazer confirmação';
+                if (window.playAlert) window.playAlert(`Erro ao desfazer confirmação: ${erro?.message || 'verifique o console.'}`);
+            }
+            return;
+        }
+
+        const btnCancelarDiv = event.target.closest('.btn-cancelar-divergencia');
+        if (btnCancelarDiv) {
+            const acoes = btnCancelarDiv.closest('.conf-acoes');
+            const input = acoes?.querySelector('.valor-encontrado-input');
+            const btnDiv = acoes?.querySelector('.btn-divergente');
+            const btnConfirmar = acoes?.querySelector('.btn-confirmar');
+
+            if (input) {
+                input.style.display = 'none';
+                input.value = '';
+            }
+            btnCancelarDiv.style.display = 'none';
+            if (acoes) acoes.classList.remove('modo-divergencia');
+            if (btnDiv) {
+                btnDiv.disabled = false;
+                btnDiv.textContent = 'Valor divergente';
+            }
+            if (btnConfirmar) {
+                btnConfirmar.disabled = false;
+                btnConfirmar.style.display = '';
+            }
+            return;
+        }
+
         const btnDiv = event.target.closest('.btn-divergente');
         if (btnDiv) {
             const card = btnDiv.closest('.card');
-            const input = btnDiv.closest('.conf-acoes')?.querySelector('.valor-encontrado-input');
+            const acoes = btnDiv.closest('.conf-acoes');
+            const input = acoes?.querySelector('.valor-encontrado-input');
+            const btnConfirmar = acoes?.querySelector('.btn-confirmar');
+            const btnCancelarDiv = acoes?.querySelector('.btn-cancelar-divergencia');
             if (!card || !input) return;
 
             const visivel = input.style.display !== 'none';
@@ -1108,6 +1243,12 @@
                 input.style.display = 'block';
                 input.value = card.dataset.valor ? Number(card.dataset.valor).toLocaleString('pt-BR') : '';
                 btnDiv.textContent = 'Salvar divergência';
+                if (btnConfirmar) {
+                    btnConfirmar.disabled = true;
+                    btnConfirmar.style.display = 'none';
+                }
+                if (btnCancelarDiv) btnCancelarDiv.style.display = 'block';
+                if (acoes) acoes.classList.add('modo-divergencia');
                 input.focus();
                 input.select();
                 return;
@@ -1137,6 +1278,10 @@
                 if (!confirmou) {
                     btnDiv.disabled = false;
                     btnDiv.textContent = 'Salvar divergência';
+                    if (btnConfirmar) {
+                        btnConfirmar.disabled = true;
+                        btnConfirmar.style.display = 'none';
+                    }
                     return;
                 }
                 await dbConfirmarDeposito(usuario, depositoId, gestor, {
@@ -1147,6 +1292,10 @@
                 console.error(erro);
                 btnDiv.disabled = false;
                 btnDiv.textContent = 'Salvar divergência';
+                if (btnConfirmar) {
+                    btnConfirmar.disabled = true;
+                    btnConfirmar.style.display = 'none';
+                }
                 if (window.playAlert) window.playAlert(`Erro ao salvar divergência: ${erro?.message || 'verifique o console.'}`);
             }
             return;
