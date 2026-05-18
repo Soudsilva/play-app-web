@@ -12,6 +12,8 @@ admin.initializeApp({
 
 const RESUMO_BALANCO_ID = "resumo_balanco";
 const CINCO_DIAS_MS = 5 * 24 * 60 * 60 * 1000;
+const VALOR_MINIMO_ADIANTAR_ROTA = 2200;
+const DIAS_MINIMOS_ADIANTAR_ROTA = 60;
 const DEPOSITOS_RESUMO_ROOT = "firebase_functions_depositos";
 const LIMITE_BLOQUEIO_DEPOSITO = 5000;
 const MEDIA_VENDAS_ROOT = "Media_de_Vendas";
@@ -60,6 +62,10 @@ function normalizarNumeroCliente(valor) {
   return String(valor ?? "").trim();
 }
 
+function normalizarRota(valor) {
+  return String(valor ?? "").trim().replace(/^R\.?\s*/i, "");
+}
+
 function arredondar2(valor) {
   return Math.round((Number(valor || 0) + Number.EPSILON) * 100) / 100;
 }
@@ -82,6 +88,13 @@ function diasEntreDatasBrasilia(dataMaisRecente, dataMaisAntiga) {
   const ant = inicioDiaBrasiliaMs(dataMaisAntiga);
   if (rec == null || ant == null) return 0;
   return Math.max(0, Math.round((rec - ant) / 86400000));
+}
+
+function diasDesdeBrasilia(valor, agora = new Date()) {
+  const data = inicioDiaBrasiliaMs(valor);
+  const hoje = inicioDiaBrasiliaMs(agora);
+  if (data == null || hoje == null) return null;
+  return Math.max(0, Math.round((hoje - data) / 86400000));
 }
 
 function obterTotalCobrancaAtendimento(atendimento) {
@@ -659,6 +672,98 @@ exports.verificarLiberacaoRotasDiaria = onSchedule(
       totalLiberadas,
       totalAtualizadas,
       data: hojeBrasilia,
+    });
+  },
+);
+
+exports.adianta_rota = onSchedule(
+  {
+    schedule: "5 0 */2 * *",
+    timeZone: "America/Sao_Paulo",
+  },
+  async () => {
+    const db = admin.database();
+    const agora = new Date();
+    const agoraIso = agora.toISOString();
+    const [rotasSnap, mediaSnap] = await Promise.all([
+      db.ref("selecao_rotas/ativa/rotas").get(),
+      db.ref(MEDIA_VENDAS_ROOT).get(),
+    ]);
+
+    if (!rotasSnap.exists() || !mediaSnap.exists()) {
+      logger.info("Adianta rota sem dados suficientes para processar.");
+      return;
+    }
+
+    const rotasSessao = rotasSnap.val() || {};
+    const rotasPorNumero = new Map();
+    Object.entries(rotasSessao).forEach(([numeroRota, rota]) => {
+      const numeroNormalizado = normalizarRota(numeroRota);
+      if (numeroNormalizado) {
+        rotasPorNumero.set(numeroNormalizado, {numeroRota, rota});
+      }
+    });
+
+    const resumoPorRota = new Map();
+    Object.values(mediaSnap.val() || {}).forEach((item) => {
+      if (!item || typeof item !== "object") return;
+
+      const numeroRota = normalizarRota(item.rota || item?.cliente?.rota);
+      if (!numeroRota) return;
+
+      const resumo = resumoPorRota.get(numeroRota) || {
+        valorEstimado: 0,
+        ultimaCobrancaEm: null,
+      };
+      const estimativa = numero(item.estimativaAtualDia);
+      const ultimaCobrancaEm = item.ultimaCobrancaEm || null;
+      const ultimaAtualMs = timestampValido(resumo.ultimaCobrancaEm);
+      const ultimaItemMs = timestampValido(ultimaCobrancaEm);
+
+      resumo.valorEstimado = arredondar2(resumo.valorEstimado + estimativa);
+      if (ultimaItemMs != null && (ultimaAtualMs == null || ultimaItemMs > ultimaAtualMs)) {
+        resumo.ultimaCobrancaEm = ultimaCobrancaEm;
+      }
+      resumoPorRota.set(numeroRota, resumo);
+    });
+
+    const updates = {};
+    let totalAnalisadas = 0;
+    let totalMarcadas = 0;
+
+    resumoPorRota.forEach((resumo, numeroRota) => {
+      const entrada = rotasPorNumero.get(numeroRota);
+      if (!entrada) return;
+
+      const {numeroRota: chaveRota, rota} = entrada;
+      if (!rota || typeof rota !== "object") return;
+      if (rota.selecionada_por || rota.prioridade_manual === true) return;
+
+      totalAnalisadas += 1;
+      const diasSemFazer = diasDesdeBrasilia(resumo.ultimaCobrancaEm, agora);
+      const atendeValor = resumo.valorEstimado >= VALOR_MINIMO_ADIANTAR_ROTA;
+      const atendeTempo = diasSemFazer != null &&
+        diasSemFazer >= DIAS_MINIMOS_ADIANTAR_ROTA;
+
+      if (!atendeValor || !atendeTempo) return;
+
+      const basePath = `selecao_rotas/ativa/rotas/${chaveRota}`;
+      updates[`${basePath}/prioridade_manual`] = true;
+      updates[`${basePath}/prioridade_manual_em`] = agoraIso;
+      updates[`${basePath}/prioridade_manual_por`] = "Functions";
+      totalMarcadas += 1;
+    });
+
+    if (Object.keys(updates).length) {
+      await db.ref().update(updates);
+    }
+
+    logger.info("Adianta rota concluida.", {
+      totalAnalisadas,
+      totalMarcadas,
+      valorMinimo: VALOR_MINIMO_ADIANTAR_ROTA,
+      diasMinimos: DIAS_MINIMOS_ADIANTAR_ROTA,
+      data: dataBrasiliaISOData(agora),
     });
   },
 );
