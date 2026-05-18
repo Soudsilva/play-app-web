@@ -26,6 +26,12 @@ function dataBrasiliaISOData(date = new Date()) {
   }).format(date);
 }
 
+function dataBrasiliaISODataPorTimestamp(timestamp) {
+  return typeof timestamp === "number" && Number.isFinite(timestamp) ?
+    dataBrasiliaISOData(new Date(timestamp)) :
+    null;
+}
+
 function deveMarcarPendente(pendenteDesdeData, hojeBrasilia) {
   return Boolean(pendenteDesdeData) && String(pendenteDesdeData) < hojeBrasilia;
 }
@@ -611,8 +617,9 @@ exports.verificarLiberacaoRotasDiaria = onSchedule(
       const liberarMs = timestampValido(rota.liberar_em) ?? validadeMaximaMs;
       const validadeMaximaEm = isoOuNull(validadeMaximaMs);
       const liberarEm = isoOuNull(liberarMs);
+      const liberarDataBrasilia = dataBrasiliaISODataPorTimestamp(liberarMs);
 
-      if (liberarMs != null && agoraMs >= liberarMs) {
+      if (liberarDataBrasilia && liberarDataBrasilia <= hojeBrasilia) {
         totalLiberadas += 1;
         updates[`${basePath}/selecionada_por`] = null;
         updates[`${basePath}/selecionada_em`] = null;
