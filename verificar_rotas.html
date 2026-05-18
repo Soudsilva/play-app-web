@@ -458,7 +458,7 @@
 
     <div class="filtros" aria-label="Filtros de rotas">
         <button id="filtroTempo" class="filtro-tempo-btn" type="button" aria-label="Filtrar rotas por tempo" title="Filtrar por tempo">
-            <span id="filtroTempoTexto" class="filtro-tempo-texto">+80 Dias</span>
+            <span id="filtroTempoTexto" class="filtro-tempo-texto">+60 Dias</span>
         </button>
         <select id="filtroNumero" class="filtro-select" aria-label="Ordenar por número da rota">
             <option value="">Rota</option>
@@ -500,7 +500,7 @@
     let sessaoRotasAtual = null;
     let ordemAtual = 'valor_desc';
     let selecaoAtual = 'todas';
-    let filtrarTempo80 = false;
+    let filtrarTempo60 = false;
 
     function escaparHtml(valor) {
         return String(valor ?? '')
@@ -563,8 +563,8 @@
             filtradas = filtradas.filter(rota => !rotaEstaSelecionada(rota.numero));
         }
 
-        if (filtrarTempo80) {
-            filtradas = filtradas.filter(rota => (rota.diasSemFazer ?? -1) > 80);
+        if (filtrarTempo60) {
+            filtradas = filtradas.filter(rota => (rota.diasSemFazer ?? -1) >= 60);
         }
 
         filtradas.sort((a, b) => {
@@ -725,7 +725,7 @@
             : '';
 
         return `
-            <div class="card ${Number(rota.diasSemFazer || 0) > 80 ? 'rota-tempo-alerta' : ''}" id="${escaparHtml(id)}">
+            <div class="card ${Number(rota.diasSemFazer || 0) >= 60 ? 'rota-tempo-alerta' : ''}" id="${escaparHtml(id)}">
                 <div class="card-header" role="button" tabindex="0" data-toggle-card>
                     <div class="card-mainline">
                         <div class="rota-badge">R.${escaparHtml(rota.numero)}</div>
@@ -880,9 +880,9 @@
     });
 
     filtroTempo.addEventListener('click', () => {
-        filtrarTempo80 = !filtrarTempo80;
-        filtroTempo.classList.toggle('ativo', filtrarTempo80);
-        filtroTempoTexto.textContent = filtrarTempo80 ? 'Limpar' : '+80 Dias';
+        filtrarTempo60 = !filtrarTempo60;
+        filtroTempo.classList.toggle('ativo', filtrarTempo60);
+        filtroTempoTexto.textContent = filtrarTempo60 ? 'Limpar' : '+60 Dias';
         render();
     });
 
