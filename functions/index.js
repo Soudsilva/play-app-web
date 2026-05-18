@@ -138,17 +138,6 @@ function clienteCorrespondeAoAlvo(atendimento, alvo, clienteAtual) {
   );
 }
 
-function valorAtualMedia(registroAtual, campo) {
-  const valor = campo ? registroAtual?.[campo] : null;
-  if (valor !== undefined && valor !== null && valor !== "") return valor;
-  return null;
-}
-
-function numeroAtualMedia(registroAtual, campo) {
-  const valor = Number(valorAtualMedia(registroAtual, campo));
-  return Number.isFinite(valor) ? valor : 0;
-}
-
 function montarRegistroMediaDeVendas(
   clienteId,
   cliente,
@@ -175,41 +164,8 @@ function montarRegistroMediaDeVendas(
     const diasDesdeUltima = diasEntreDatasBrasilia(`${hoje}T00:00:00-03:00`, ultima.data);
     estimativaAtualDia = arredondar2(mediaVendaPorDia * diasDesdeUltima);
   } else {
-    mediaVendaPorDia = arredondar2(numeroAtualMedia(registroAtual, "mediaVendaPorDia"));
-
-    if (usadas.length === 1) {
-      const ultimaAtual = valorAtualMedia(registroAtual, "ultimaCobrancaEm");
-      const ultimaAtualValor = numeroAtualMedia(registroAtual, "ultimaCobrancaValor");
-      const mesmaUltima = ultimaAtual && Date.parse(ultimaAtual) === Date.parse(ultima.data);
-      penultima = {
-        data: valorAtualMedia(registroAtual, "penultimaCobrancaEm") ||
-          (!mesmaUltima ? ultimaAtual : ""),
-        total: numeroAtualMedia(registroAtual, "penultimaCobrancaValor") ||
-          (!mesmaUltima ? ultimaAtualValor : 0),
-      };
-      antepenultima = {
-        data: valorAtualMedia(registroAtual, "antepenultimaCobrancaEm") || "",
-        total: numeroAtualMedia(registroAtual, "antepenultimaCobrancaValor"),
-      };
-    } else {
-      ultima = {
-        data: valorAtualMedia(registroAtual, "ultimaCobrancaEm") || "",
-        total: numeroAtualMedia(registroAtual, "ultimaCobrancaValor"),
-      };
-      penultima = {
-        data: valorAtualMedia(registroAtual, "penultimaCobrancaEm") || "",
-        total: numeroAtualMedia(registroAtual, "penultimaCobrancaValor"),
-      };
-      antepenultima = {
-        data: valorAtualMedia(registroAtual, "antepenultimaCobrancaEm") || "",
-        total: numeroAtualMedia(registroAtual, "antepenultimaCobrancaValor"),
-      };
-    }
-
-    const diasDesdeUltima = ultima?.data ?
-      diasEntreDatasBrasilia(`${hoje}T00:00:00-03:00`, ultima.data) :
-      0;
-    estimativaAtualDia = arredondar2(mediaVendaPorDia * diasDesdeUltima);
+    mediaVendaPorDia = 0;
+    estimativaAtualDia = 0;
   }
 
   return {
