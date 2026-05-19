@@ -120,18 +120,6 @@
             color:#d8d8d8;
         }
 
-        @keyframes piscar-borda {
-            0%, 100% { border-color: #f59e0b; box-shadow: 0 0 0px rgba(245,158,11,0); }
-            50%       { border-color: #fcd34d; box-shadow: 0 0 10px rgba(245,158,11,0.6); }
-        }
-        .botao-pendente-alerta {
-            border-color: #f59e0b;
-            animation: piscar-borda 2s ease-in-out infinite;
-        }
-        .botao-contestacao-alerta {
-            border-color: #f59e0b;
-            animation: piscar-borda 2s ease-in-out infinite;
-        }
         /* Submenu Gestão */
         .submenu {
             display: none;
@@ -375,20 +363,14 @@
 </script>
 
 <script type="module">
-    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarAtendimentos, dbEscutarAtendimentosDoUsuario, dbEscutarManutencoes, dbEscutarClientes, dbEscutarResumoBalanco, dbEscutarTodasContestacoesBalanco, dbEscutarTodosDepositos } from './database.js';
+    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarResumoBalanco, dbExisteContestacaoAtendimentoDoUsuario } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
     import { sincronizarPendentes } from './offline-sync.js';
 
-    let _atendBadgeStarted = false;
-    let _contestacoesUsuarioBadgeStarted = false;
-    let _servicoBadgeStarted = false;
-    let _servicoManutencoes = [];
-    let _servicoClientes = [];
     let unsubscribeResumoBalanco = null;
     let statusBalancoPendenteIndex = false;
     let statusBalancoCarregadoIndex = false;
     let usuarioAtendimentoNivel2Index = false;
-    let totalContestacoesUsuarioIndex = 0;
     const CACHE_STATUS_BALANCO_PREFIX = 'cache_status_balanco_index_';
     const CACHE_STATUS_BALANCO_VALIDADE_MS = 20 * 60 * 60 * 1000;
 
@@ -489,89 +471,6 @@
         unsubscribeResumoBalanco = dbEscutarResumoBalanco(nome, (resumo) => atualizarStatusBalancoIndex(resumo, nome));
     }
 
-    function atualizarBadgeServico() {
-        const temPendente =
-            _servicoManutencoes.some(m =>
-                (Array.isArray(m.equipamentosAdicionados) && m.equipamentosAdicionados.length > 0 ||
-                 Array.isArray(m.equipamentosRetirados)   && m.equipamentosRetirados.length  > 0) &&
-                !m.confirmadoGestor
-            ) ||
-            _servicoClientes.some(c => c.statusCadastro === 'em_analise');
-        const btn = document.getElementById('btnServico');
-        if (!btn) return;
-        btn.classList.toggle('botao-pendente-alerta', temPendente);
-    }
-
-    function iniciarBadgeServico() {
-        if (_servicoBadgeStarted) return;
-        _servicoBadgeStarted = true;
-        dbEscutarManutencoes((lista) => { _servicoManutencoes = lista; atualizarBadgeServico(); });
-        dbEscutarClientes((lista)    => { _servicoClientes    = lista; atualizarBadgeServico(); });
-    }
-
-    function iniciarBadgeAtendimentos() {
-        if (_atendBadgeStarted) return;
-        _atendBadgeStarted = true;
-        dbEscutarAtendimentos((lista) => {
-            const pendentes = lista.filter(a =>
-                !a.confirmacao && (Number(a?.financeiro?.totalGeral) || 0) >= 1
-            ).length;
-            const btn = document.getElementById('btnAtendimento');
-            if (!btn) return;
-            btn.classList.toggle('botao-pendente-alerta', pendentes > 0);
-        });
-    }
-
-    function iniciarBadgeContestacoesUsuario(nomeUsuario) {
-        if (_contestacoesUsuarioBadgeStarted) return;
-        _contestacoesUsuarioBadgeStarted = true;
-        dbEscutarAtendimentosDoUsuario(nomeUsuario, (lista) => {
-            const total = (lista || []).filter(a =>
-                !!a?.contestado
-            ).length;
-            totalContestacoesUsuarioIndex = total;
-            const btn = document.getElementById('btnGestao');
-            const btnVerificarEnvios = document.getElementById('btnVerificarEnvios');
-            btn?.classList.toggle('botao-contestacao-alerta', total > 0);
-            btnVerificarEnvios?.classList.toggle('botao-contestacao-alerta', total > 0);
-        });
-    }
-
-    function temContestacaoUsuarioIndex() {
-        return totalContestacoesUsuarioIndex > 0;
-    }
-
-    let _depositosBadgeStarted = false;
-    function iniciarBadgeDepositos() {
-        if (_depositosBadgeStarted) return;
-        _depositosBadgeStarted = true;
-        dbEscutarTodosDepositos((lista) => {
-            if (lista?.erro) return;
-            const pendentes = lista.filter(d =>
-                String(d?.status || '').trim().toLowerCase() === 'aguardando_conferencia'
-            ).length;
-            const temPendente = pendentes > 0;
-            document.getElementById('btnDepositos')?.classList.toggle('botao-pendente-alerta', temPendente);
-            document.getElementById('btnGestao')?.classList.toggle('botao-pendente-alerta', temPendente);
-        });
-    }
-
-    let _balancoBadgeStarted = false;
-    function iniciarBadgeBalanco() {
-        if (_balancoBadgeStarted) return;
-        _balancoBadgeStarted = true;
-        dbEscutarTodasContestacoesBalanco((lista) => {
-            const pendentes = lista.filter(c =>
-                String(c?.status || '').trim() !== 'aprovado' &&
-                !c?.aprovadoEm &&
-                !c?.aprovadoPor
-            ).length;
-            const btn = document.getElementById('btnBalanco');
-            if (!btn) return;
-            btn.classList.toggle('botao-pendente-alerta', pendentes > 0);
-        });
-    }
-
     // â”€â”€ INDICADOR DE CONEXÃƒO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const pillOffline = document.getElementById('pill-offline');
     function atualizarConexao() {
@@ -664,7 +563,9 @@
                 if (window.playAlert) await window.playAlert('Confira o material e envie o Balanço');
                 return;
             }
-            if (temContestacaoUsuarioIndex()) {
+            const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
+            const temContestacao = await dbExisteContestacaoAtendimentoDoUsuario(nomeLogado);
+            if (temContestacao) {
                 const abrirContestacoes = window.playConfirm
                     ? await window.playConfirm('Existe contestação do gestor pendente. Você quer ver agora?')
                     : confirm('Existe contestação do gestor pendente. Você quer ver agora?');
@@ -819,7 +720,6 @@
             btns.pedidos.style.display = ehAtendimentoNivel2 ? 'flex' : 'none';
             btns.servico.style.display = 'none';
             btns.financeiro.style.display = 'none';
-            iniciarBadgeContestacoesUsuario(nomeNormalizado);
 
         // 3. PERFIL GESTÃO
         } else {
@@ -848,10 +748,6 @@
             btns.pix.style.display = perfil.includes('gestao') ? 'flex' : 'none'; // Apenas GestÃ£o (ou atendimento acima)
             btns.fluxoCaixa.style.display = perfil.includes('gestao') ? 'flex' : 'none';
             btns.financeiro.style.display = 'none'; // Financeiro continua restrito ao Estoque
-            iniciarBadgeAtendimentos();
-            iniciarBadgeServico();
-            iniciarBadgeBalanco();
-            iniciarBadgeDepositos();
         }
 
         // GESTOR NÍVEL 2 e 3: acesso a Entr. Saídas

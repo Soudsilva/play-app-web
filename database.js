@@ -959,6 +959,23 @@ export function dbEscutarAtendimentosDoUsuario(nomeUsuario, callback) {
     });
 }
 
+export async function dbExisteContestacaoAtendimentoDoUsuario(nomeUsuario) {
+    const nomeNormalizado = String(nomeUsuario || '').trim();
+    if (!nomeNormalizado) return false;
+
+    try {
+        const snap = await get(ref(db, 'atendimentos'));
+        if (!snap.exists()) return false;
+        return Object.values(snap.val() || {}).some(atendimento =>
+            String(atendimento?.atendente || '').trim() === nomeNormalizado &&
+            !!atendimento?.contestado
+        );
+    } catch (error) {
+        console.error("ERRO AO VERIFICAR CONTESTACAO DO USUARIO:", error);
+        return false;
+    }
+}
+
 export async function dbListarAtendimentos() {
     try {
         const snapshot = await get(ref(db, 'atendimentos'));
