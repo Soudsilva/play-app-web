@@ -1161,6 +1161,26 @@ export async function dbListarAtendimentos() {
     return [];
 }
 
+export async function dbListarAtendimentosDoUsuario(nomeUsuario) {
+    const nome = String(nomeUsuario || '').trim();
+    if (!nome) return [];
+
+    try {
+        const snapshot = await get(query(ref(db, 'atendimentos'), orderByChild('atendente'), equalTo(nome)));
+        if (!snapshot.exists()) return [];
+        const data = snapshot.val() || {};
+        return Object.keys(data).map(key => ({
+            ...data[key],
+            firebaseUrl: key
+        }));
+    } catch (error) {
+        console.warn("FALHA NA BUSCA INDEXADA DE ATENDIMENTOS DO USUARIO. USANDO FALLBACK LOCAL:", error);
+        const todos = await dbListarAtendimentos();
+        const nomeNorm = nome.toLowerCase();
+        return todos.filter(item => String(item?.atendente || '').trim().toLowerCase() === nomeNorm);
+    }
+}
+
 async function _reverterContadorClientePorAtendimentoExcluido(atendimento) {
     try {
         if (atendimento?._teste) return;

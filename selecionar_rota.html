@@ -315,6 +315,7 @@ verificarAutenticacao();
 import {
     dbListarClientes,
     dbListarAtendimentos,
+    dbListarAtendimentosDoUsuario,
     dbListarMediaDeVendas,
     dbSincronizarMediaDeVendasComClientes,
     dbEscutarSessaoRotas,
@@ -356,6 +357,9 @@ let resumoDepositosCarregado = false;
 let rotaBloqueadaPorDeposito = true;
 let mensagemBloqueioDeposito = 'Aguardando verificação dos depósitos.';
 let pararEscutaResumoDepositos = null;
+let atendimentosUsuarioCarregados = false;
+let carregamentoAtendimentosUsuarioPromise = null;
+let listasClientesRotasLazy = {};
 const MENSAGEM_LIMITE_DEPOSITO = 'Valor limite atingido. Faça o depósito integral para selecionar rota.';
 const _loadingMsgsRotas = [
     'Carregando rotas...',
@@ -403,10 +407,8 @@ function obterHojeLocal() {
 // InicializaÃƒÂ§ÃƒÂ£o
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 async function init() {
-    usuarioAtual = localStorage.getItem('usuario_selecionado') || '';
+    usuarioAtual = String(localStorage.getItem('usuarioLogado') || localStorage.getItem('usuario_selecionado') || '').trim();
     iniciarBloqueioDepositoRotas();
-    await carregarClientesPorId();
-    await carregarClientesAtendidosRecentes();
 
     if (!timerAtualizacaoLiberacaoRotas) {
         timerAtualizacaoLiberacaoRotas = setInterval(async () => {
@@ -433,6 +435,7 @@ async function init() {
 
     // Escuta a sessÃƒÂ£o em tempo real
     dbEscutarSessaoRotas(onSessaoAtualizada);
+    carregarClientesPorId();
 }
 
 function iniciarBloqueioDepositoRotas() {
@@ -504,6 +507,9 @@ let recalculandoSessaoEmSegundoPlano = false;
 async function onSessaoAtualizada(sessao) {
     sessaoAtual = sessao;
 
+    if (sessao && sessaoTemRotasDoUsuario(sessao)) {
+        await garantirAtendimentosUsuarioCarregados();
+    }
     await processarLiberacoesMinhasRotas(sessao);
 
     // Se a sessão estiver desatualizada, recalcule em segundo plano sem derrubar a tela atual.
@@ -579,6 +585,10 @@ function tentarAutoRecalcularSessao() {
 
     criarSessaoAutomatica({ mostrarTelaPreparando: false });
     return true;
+}
+
+function sessaoTemRotasDoUsuario(sessao) {
+    return Object.values(sessao?.rotas || {}).some(rota => rota?.selecionada_por === usuarioAtual);
 }
 
 
@@ -828,6 +838,31 @@ function rotaTemClienteAtendido(numeroRota) {
 }
 
 async function carregarClientesAtendidosRecentes() {
+    if (carregamentoAtendimentosUsuarioPromise) return carregamentoAtendimentosUsuarioPromise;
+
+    carregamentoAtendimentosUsuarioPromise = (async () => {
+        try {
+            const atendimentos = await dbListarAtendimentosDoUsuario(usuarioAtual);
+            atualizarClientesAtendidosRecentes(atendimentos);
+            atendimentosUsuarioCarregados = true;
+        } catch (error) {
+            console.warn('Falha ao carregar atendimentos recentes para as rotas:', error);
+            todosAtendimentosRotas = [];
+            atendimentosUsuarioCarregados = true;
+        } finally {
+            carregamentoAtendimentosUsuarioPromise = null;
+        }
+    })();
+
+    return carregamentoAtendimentosUsuarioPromise;
+}
+
+async function garantirAtendimentosUsuarioCarregados() {
+    if (atendimentosUsuarioCarregados) return;
+    await carregarClientesAtendidosRecentes();
+}
+
+async function carregarClientesAtendidosRecentesCompleto() {
     try {
         const atendimentos = await dbListarAtendimentos();
         atualizarClientesAtendidosRecentes(atendimentos);
@@ -925,6 +960,60 @@ window.abrirMapaRota = function(numeroRota) {
     );
 };
 
+function montarHtmlClientesPendentesRota(config) {
+    const clientesPendentes = Array.isArray(config?.clientes) ? config.clientes : [];
+    const totalClientes = Number(config?.totalClientes || 0);
+    const numeroRota = String(config?.numeroRota || '');
+    const justifs = config?.justifs || {};
+    const podeJustificar = Boolean(config?.podeJustificar);
+
+    if (clientesPendentes.length === 0) {
+        return `<div class="card-rota-cliente-vazio">${totalClientes > 0 ? 'Nenhum cliente pendente nesta rota.' : 'Nenhum cliente cadastrado nesta rota.'}</div>`;
+    }
+
+    return clientesPendentes.map((cliente) => {
+        const justificado = Boolean(cliente?.justif);
+        const numero = escaparHtml(obterNumeroCliente(cliente));
+        const nome = escaparHtml(String(cliente?.nome || 'Cliente sem nome').trim());
+        const texto = numero ? `${numero} - ${nome}` : nome;
+        const clienteJson = JSON.stringify(cliente).replace(/"/g, '&quot;');
+        const clienteKey = escaparHtml(obterChaveJustificativaCliente(cliente, justifs));
+        const atenderAttr = numero ? ` onclick="window.irParaAtendimentoPorCliente('${escaparHtml(obterNumeroCliente(cliente))}')"` : ' disabled';
+
+        if (justificado) {
+            return `
+                <div class="card-rota-cliente-item">
+                    <div class="card-rota-cliente-nome">⚠️ ${texto}</div>
+                    <button class="btn-ver-justif-rota" onclick="window.abrirModalVerJustif('${numeroRota}', '${clienteKey}')">Ver justificativa</button>
+                </div>`;
+        }
+
+        return `
+            <div class="card-rota-cliente-item">
+                <div class="card-rota-cliente-nome">${texto}</div>
+                <div class="card-rota-cliente-acoes">
+                    <button class="btn-justificar-rota" ${podeJustificar ? `onclick="window.abrirModalJustif('${numeroRota}', ${clienteJson})"` : 'disabled'}>Justificar</button>
+                    <button class="btn-atender-rota"${atenderAttr}>Atender</button>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function montarHtmlClientesAtendidosRota(config) {
+    const clientesAtendidos = Array.isArray(config?.clientes) ? config.clientes : [];
+
+    if (clientesAtendidos.length === 0) {
+        return '<div class="card-rota-cliente-vazio">Nenhum cliente atendido nesta rota ainda.</div>';
+    }
+
+    return clientesAtendidos.map((cliente) => {
+        const numero = escaparHtml(obterNumeroCliente(cliente));
+        const nome = escaparHtml(String(cliente?.nome || 'Cliente sem nome').trim());
+        const texto = numero ? `${numero} - ${nome}` : nome;
+        return `<div class="card-rota-cliente-chip atendido">${texto}</div>`;
+    }).join('');
+}
+
 async function mostrarMinhasRotas(numerosRota, sessao) {
     // Carrega justificativas de todas as rotas do usuário
     await Promise.all(numerosRota.map(async (nr) => {
@@ -934,6 +1023,7 @@ async function mostrarMinhasRotas(numerosRota, sessao) {
 
     const wrap = document.getElementById('detalhesMinhaRota');
     let html = `<div class="secao-titulo">Rotas Selecionadas</div>`;
+    listasClientesRotasLazy = {};
 
     numerosRota.forEach(numeroRota => {
         const clientes = (sessao.clientes_por_rota || {})[numeroRota] || [];
@@ -951,42 +1041,19 @@ async function mostrarMinhasRotas(numerosRota, sessao) {
         const clientesPendentes = [...statusRota.pendentes, ...statusRota.justificados];
         const textoLiberacao = obterTextoLiberacaoRota(statusRota);
         const podeJustificar = clientesAtendidos.length > 0;
-        const clientesPendentesHtml = clientesPendentes.length > 0
-            ? clientesPendentes.map((cliente) => {
-                const justificado = Boolean(cliente?.justif);
-                const numero = escaparHtml(obterNumeroCliente(cliente));
-                const nome = escaparHtml(String(cliente?.nome || 'Cliente sem nome').trim());
-                const texto = numero ? `${numero} - ${nome}` : nome;
-                const clienteJson = JSON.stringify(cliente).replace(/"/g, '&quot;');
-                const clienteKey = escaparHtml(obterChaveJustificativaCliente(cliente, justifs));
-                const atenderAttr = numero ? ` onclick="window.irParaAtendimentoPorCliente('${escaparHtml(obterNumeroCliente(cliente))}')"` : ' disabled';
-
-                if (justificado) {
-                    return `
-                        <div class="card-rota-cliente-item">
-                            <div class="card-rota-cliente-nome">⚠️ ${texto}</div>
-                            <button class="btn-ver-justif-rota" onclick="window.abrirModalVerJustif('${numeroRota}', '${clienteKey}')">Ver justificativa</button>
-                        </div>`;
-                }
-
-                return `
-                    <div class="card-rota-cliente-item">
-                        <div class="card-rota-cliente-nome">${texto}</div>
-                        <div class="card-rota-cliente-acoes">
-                            <button class="btn-justificar-rota" ${podeJustificar ? `onclick="window.abrirModalJustif('${numeroRota}', ${clienteJson})"` : 'disabled'}>Justificar</button>
-                            <button class="btn-atender-rota"${atenderAttr}>Atender</button>
-                        </div>
-                    </div>`;
-            }).join('')
-            : `<div class="card-rota-cliente-vazio">${clientes.length > 0 ? 'Nenhum cliente pendente nesta rota.' : 'Nenhum cliente cadastrado nesta rota.'}</div>`;
-        const clientesAtendidosHtml = clientesAtendidos.length > 0
-            ? clientesAtendidos.map((cliente) => {
-                const numero = escaparHtml(obterNumeroCliente(cliente));
-                const nome = escaparHtml(String(cliente?.nome || 'Cliente sem nome').trim());
-                const texto = numero ? `${numero} - ${nome}` : nome;
-                return `<div class="card-rota-cliente-chip atendido">${texto}</div>`;
-            }).join('')
-            : `<div class="card-rota-cliente-vazio">Nenhum cliente atendido nesta rota ainda.</div>`;
+        listasClientesRotasLazy[`pend-${numeroRota}`] = {
+            tipo: 'pendentes',
+            numeroRota,
+            clientes: clientesPendentes,
+            justifs,
+            podeJustificar,
+            totalClientes: clientes.length
+        };
+        listasClientesRotasLazy[`atend-${numeroRota}`] = {
+            tipo: 'atendidos',
+            numeroRota,
+            clientes: clientesAtendidos
+        };
         const comuns = diasEmComum(clientes);
         const diasHtml = ORDEM_DIAS
             .map(d => `<span class="dia-badge ${comuns.includes(d) ? 'disponivel' : 'indisponivel'}">${d}</span>`)
@@ -1014,7 +1081,7 @@ async function mostrarMinhasRotas(numerosRota, sessao) {
                         <span class="bloco-badge">${clientesPendentes.length}</span>
                         <span class="seta-bloco"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
                     </div>
-                    <div class="card-rota-clientes-lista" id="pend-${numeroRota}">${clientesPendentesHtml}</div>
+                    <div class="card-rota-clientes-lista" id="pend-${numeroRota}"></div>
                 </div>
                 <div class="card-rota-clientes-bloco">
                     <div class="card-rota-clientes-titulo atendidos-hdr" onclick="toggleListaRota('atend-${numeroRota}')" id="hdr-atend-${numeroRota}">
@@ -1023,7 +1090,7 @@ async function mostrarMinhasRotas(numerosRota, sessao) {
                         <span class="bloco-badge">${clientesAtendidos.length}</span>
                         <span class="seta-bloco"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
                     </div>
-                    <div class="card-rota-clientes-lista" id="atend-${numeroRota}">${clientesAtendidosHtml}</div>
+                    <div class="card-rota-clientes-lista" id="atend-${numeroRota}"></div>
                 </div>
             </div>
         </div>`;
@@ -1036,6 +1103,15 @@ window.toggleListaRota = function(id) {
     const lista = document.getElementById(id);
     const hdr = document.getElementById('hdr-' + id);
     if (!lista || !hdr) return;
+    if (!lista.dataset.renderizado) {
+        const config = listasClientesRotasLazy[id];
+        if (config?.tipo === 'pendentes') {
+            lista.innerHTML = montarHtmlClientesPendentesRota(config);
+        } else if (config?.tipo === 'atendidos') {
+            lista.innerHTML = montarHtmlClientesAtendidosRota(config);
+        }
+        lista.dataset.renderizado = '1';
+    }
     const aberto = lista.classList.toggle('aberto');
     hdr.classList.toggle('aberto', aberto);
 };
