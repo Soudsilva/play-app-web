@@ -135,6 +135,22 @@
 
         .equip-lista { margin: 4px 0 8px; }
         .equip-item { display: flex; align-items: center; gap: 8px; font-size: 16px; color: #cbd5e1; padding: 3px 0; }
+        .equip-item-nome {
+            min-width: 0;
+            flex: 1;
+        }
+        .equip-qtd {
+            flex-shrink: 0;
+            min-width: 46px;
+            padding: 2px 8px;
+            border-radius: 7px;
+            border: 1px solid #eab308;
+            color: #ffeb3b;
+            background: #334155;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+        }
         .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
         .dot.add { background: #4ade80; }
         .dot.rem { background: #f87171; }
@@ -222,7 +238,7 @@
             padding: 12px;
         }
         .pix-servico-origem-wrap {
-            display: flex;
+            display: none;
             justify-content: center;
             margin: -4px 0 12px;
         }
@@ -245,6 +261,9 @@
         }
         .pix-servico-origem.adicao { background: #166534; }
         .pix-servico-origem.retirada { background: #991b1b; }
+        .card.pix-servico > .pix-servico-origem {
+            display: none;
+        }
         .pix-servico-cliente {
             font-size: 18px;
             font-weight: 700;
@@ -255,6 +274,27 @@
         .pix-servico-cliente .num-cliente {
             color: #f9a8d4;
             margin-right: 6px;
+        }
+        .pix-servico-destaque {
+            background: #123f64;
+            border: 1px solid #38bdf8;
+            border-radius: 14px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+        }
+        .pix-servico-destaque-titulo {
+            color: #ffffff;
+            font-size: 21px;
+            font-weight: 700;
+            line-height: 1.2;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+        .pix-servico-destaque-info {
+            color: #ffffff;
+            font-size: 17px;
+            font-weight: 700;
+            text-align: center;
         }
         .pix-servico-lista {
             display: flex;
@@ -294,6 +334,7 @@
             font-weight: 700;
             color: #e5e7eb;
             text-align: center;
+            margin-top: 6px;
         }
         .pix-servico-meta {
             display: grid;
@@ -787,6 +828,60 @@
         return `<span class="num-cliente">N. ${escHtml(numeroFmt)}</span> &mdash; ${escHtml(nomeFmt)}`;
     }
 
+    function obterResumoDestaquePix(itens) {
+        const lista = Array.isArray(itens) ? itens : [];
+        const adicionados = lista.filter(item => item?.tipo === 'adicao' && String(item?.nome || '').trim());
+        const retirados = lista.filter(item => item?.tipo === 'retirada' && String(item?.nome || '').trim());
+
+        if (adicionados.length === 1) {
+            const contador = String(adicionados[0].contador || '').trim();
+            return {
+                titulo: `${adicionados[0].nome} adicionada`,
+                info: contador
+                    ? `Pix ${adicionados[0].pix || '-'} contador ${contador}`
+                    : `Pix ${adicionados[0].pix || '-'}`
+            };
+        }
+
+        if (adicionados.length > 1) {
+            return {
+                titulo: `${adicionados.length} maquinas adicionadas`,
+                info: `${lista.length} Pix`
+            };
+        }
+
+        if (retirados.length === 1) {
+            const contador = String(retirados[0].contadorAtual || retirados[0].contador || '').trim();
+            return {
+                titulo: `${retirados[0].nome} retirada`,
+                info: contador
+                    ? `Pix ${retirados[0].pix || '-'} contador ${contador}`
+                    : `Pix ${retirados[0].pix || '-'}`
+            };
+        }
+
+        if (retirados.length > 1) {
+            return {
+                titulo: `${retirados.length} maquinas retiradas`,
+                info: `${lista.length} Pix`
+            };
+        }
+
+        return {
+            titulo: 'Movimentacao Pix',
+            info: `${lista.length || 1} Pix`
+        };
+    }
+
+    function montarDestaquePixServico(itens) {
+        const resumo = obterResumoDestaquePix(itens);
+        return `
+            <div class="pix-servico-destaque">
+                <div class="pix-servico-destaque-titulo">${escHtml(resumo.titulo)}</div>
+                <div class="pix-servico-destaque-info">${escHtml(resumo.info)}</div>
+            </div>`;
+    }
+
     function montarResumoPixItem(item) {
         const fotoLabel = item.tipo === 'adicao' ? 'Foto da maquina' : 'Foto do contador';
         const fotoHtml = item.fotoThumbUrl
@@ -799,6 +894,10 @@
                         onclick="window.verFoto(this.dataset.full)">
                </div>`
             : '';
+
+        if (item.tipo === 'adicao') {
+            return fotoHtml;
+        }
 
         if (item.tipo === 'retirada' && item.mostrarResumoRetirada) {
             return `
@@ -891,10 +990,8 @@
             <div class="pix-servico-lista">
                 ${itens.map(item => `
                     <div class="pix-servico-item">
-                        <div class="pix-servico-item-top">
-                            <span class="pix-servico-badge ${item.tipo}">${item.tipo === 'retirada' ? '&minus; Retirado' : '+ Colocado'}</span>
-                        </div>
-                        <div class="pix-servico-meta">
+                        <div class="pix-servico-equip">${escHtml(item.nome || 'Maquina nao informada')}</div>
+                        <div class="pix-servico-meta" ${item.tipo === 'adicao' ? 'style="display:none;"' : ''}>
                             <div class="pix-servico-pill pix">
                                 <span>${item.tipo === 'retirada' ? 'Pix retirado' : 'Pix colocado'}</span>
                                 <strong>Pix ${escHtml(item.pix || '-')}</strong>
@@ -1020,7 +1117,9 @@
                 confirmedBy: m.confirmedBy || 'Gestor',
                 dataConfirmacao: m.dataConfirmacaoGestor || '',
                 equipColocadas: temColocacao(m) ? m.equipamentosAdicionados : [],
-                equipRetiradas: temRetirada(m)  ? m.equipamentosRetirados   : [],
+                equipRetiradas: Array.isArray(m.equipamentosRetiradosDetalhes) && m.equipamentosRetiradosDetalhes.length
+                    ? m.equipamentosRetiradosDetalhes
+                    : (temRetirada(m) ? m.equipamentosRetirados : []),
                 foto: m.fotoSolicitacao || m.fotoSolicitacaoThumb || '',
                 enderecoCliente: m.clienteEndereco || '',
                 enderecoMaquina: m.enderecoAlteracaoMaquina || '',
@@ -1117,8 +1216,9 @@
 
         return `
             <div class="card pix-servico" id="card-${ev.id}">
-                <div class="pix-servico-origem-wrap"><div class="pix-servico-origem">Pix</div></div>
+                <div class="pix-servico-origem-wrap"><div class="pix-servico-origem">${ev.pixItens.some(item => item.tipo === 'adicao' && item.nome) ? 'Maquina + Pix' : 'Pix'}</div></div>
                 <div class="pix-servico-cliente">&#128205; ${montarIdentificacaoPix(ev.clienteNumero, ev.clienteNome)}</div>
+                ${montarDestaquePixServico(ev.pixItens)}
                 ${montarListaPixServico(ev.pixItens)}
                 ${montarFotosInstalacaoHtml(ev.fotosInstalacao)}
                 <div class="card-rodape" style="margin-top:12px;">
@@ -1132,7 +1232,7 @@
         const apenasRetirada = ev.pixItens.every(item => item.tipo === 'retirada');
         const apenasAdicao = ev.pixItens.every(item => item.tipo === 'adicao');
         const origemClasse = apenasRetirada ? 'retirada' : (apenasAdicao ? 'adicao' : '');
-        const origemTexto = apenasRetirada ? 'Retirada Pix' : (apenasAdicao ? 'Inclusao Pix' : 'Movimentacao Pix');
+        const origemTexto = apenasRetirada ? 'Retirada' : (apenasAdicao ? 'Adicao' : 'Movimentacao');
         const rodape = pendente
             ? `<button class="btn-ok" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`
             : dentroDe2h(ev.dataConfirmacao)
@@ -1143,6 +1243,7 @@
             <div class="card pix-servico" id="card-${ev.id}">
                 <div class="pix-servico-origem ${origemClasse}">${origemTexto}</div>
                 <div class="pix-servico-cliente">&#128205; ${montarIdentificacaoPix(ev.clienteNumero, ev.clienteNome)}</div>
+                ${montarDestaquePixServico(ev.pixItens)}
                 ${montarListaPixServico(ev.pixItens)}
                 <div class="card-rodape" style="margin-top:12px;">
                     <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
@@ -1215,7 +1316,11 @@
     function cardRetirada(ev, pendente) {
         const equips = ev.equipRetiradas.map(e => {
             const nome = typeof e === 'string' ? e : (e.nome || '—');
-            return `<div class="equip-item"><span class="dot rem"></span>${nome}</div>`;
+            const qtdNum = typeof e === 'object' ? parseInt(e.qtd, 10) : NaN;
+            const qtdHtml = !isNaN(qtdNum) && qtdNum > 1
+                ? `<span class="equip-qtd">${qtdNum} un.</span>`
+                : '';
+            return `<div class="equip-item"><span class="dot rem"></span><span class="equip-item-nome">${nome}</span>${qtdHtml}</div>`;
         }).join('');
 
         const rodape = pendente

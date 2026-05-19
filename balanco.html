@@ -813,6 +813,22 @@
             gap:8px;
             margin-bottom:12px;
         }
+        .gestor-mov-mes-select {
+            width:100%;
+            height:44px;
+            box-sizing:border-box;
+            margin-bottom:10px;
+            border-radius:10px;
+            border:1.5px solid #7fa6ff;
+            background:#244d9b;
+            color:#ffffff;
+            font-size:13px;
+            font-weight:700;
+            text-align:center;
+            cursor:pointer;
+            user-select:none;
+            -webkit-user-select:none;
+        }
         .gestor-mov-filtro {
             display:flex;
             flex-direction:column;
@@ -1406,7 +1422,8 @@
         dbCancelarContestacaoBalanco,
         dbSalvarHistoricoBalanco,
         dbEscutarUltimosPorItem,
-        dbEscutarHistoricoBalanco
+        dbEscutarHistoricoBalanco,
+        dbEscutarHistoricoBalancoDoUsuario
     } from './database.js';
 
     const usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
@@ -1430,7 +1447,10 @@
     let filtroMovimentacoesGestor = '';
     let filtroMovimentacoesGestorUsuario = '';
     let filtroMovimentacoesGestorTipo = 'maquina';
+    let filtroMovimentacoesGestorMes = '';
     let historicoMovimentacoesGestor = [];
+    let historicoMovimentacoesGestorGlobal = [];
+    let unsubscribeHistoricoMovimentacoesGestorUsuario = null;
     let usaComissaoGlobal = false;
     let mapaRotas = {};
     let contestacaoContexto = null;
@@ -1543,14 +1563,84 @@
         return mapa[chave] || texto;
     }
 
+    function obterDataMovimentacaoGestor(mov) {
+        const data = new Date(mov?.timestamp || mov?.data || '');
+        return Number.isFinite(data.getTime()) ? data : null;
+    }
+
+    function obterAnoMesMovimentacaoGestor(mov) {
+        const data = obterDataMovimentacaoGestor(mov);
+        if (!data) return '';
+        return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function rotuloAnoMesMovimentacaoGestor(anoMes) {
+        const [ano, mes] = String(anoMes || '').split('-').map(Number);
+        if (!ano || !mes) return 'Mês';
+        return `${MESES[mes - 1]} de ${ano}`;
+    }
+
+    function obterMesAtualMovimentacoesGestor() {
+        const agora = new Date();
+        return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function obterMesesMovimentacoesGestor() {
+        return [...new Set(historicoMovimentacoesGestor.map(obterAnoMesMovimentacaoGestor).filter(Boolean))]
+            .sort((a, b) => b.localeCompare(a));
+    }
+
+    function garantirMesMovimentacoesGestor() {
+        const meses = obterMesesMovimentacoesGestor();
+        const mesAtual = obterMesAtualMovimentacoesGestor();
+        if (!filtroMovimentacoesGestorMes || !meses.includes(filtroMovimentacoesGestorMes)) {
+            filtroMovimentacoesGestorMes = meses.includes(mesAtual) ? mesAtual : (meses[0] || '');
+        }
+        return meses;
+    }
+
+    function obterTotalMovimentacoesGestorMes() {
+        garantirMesMovimentacoesGestor();
+        if (!filtroMovimentacoesGestorMes) return historicoMovimentacoesGestor.length;
+        return historicoMovimentacoesGestor
+            .filter(mov => obterAnoMesMovimentacaoGestor(mov) === filtroMovimentacoesGestorMes)
+            .length;
+    }
+
+    function aplicarHistoricoMovimentacoesGestor(lista) {
+        historicoMovimentacoesGestor = (Array.isArray(lista) ? lista : []).filter(ehMovimentoEstoqueHistoricoGestor);
+        garantirMesMovimentacoesGestor();
+        renderizar();
+    }
+
+    function atualizarFonteHistoricoMovimentacoesGestor() {
+        if (!isGestor) return;
+
+        if (unsubscribeHistoricoMovimentacoesGestorUsuario) {
+            unsubscribeHistoricoMovimentacoesGestorUsuario();
+            unsubscribeHistoricoMovimentacoesGestorUsuario = null;
+        }
+
+        const usuarioSelecionado = String(filtroMovimentacoesGestorUsuario || '').trim();
+        if (!usuarioSelecionado) {
+            aplicarHistoricoMovimentacoesGestor(historicoMovimentacoesGestorGlobal);
+            return;
+        }
+
+        unsubscribeHistoricoMovimentacoesGestorUsuario = dbEscutarHistoricoBalancoDoUsuario(usuarioSelecionado, aplicarHistoricoMovimentacoesGestor);
+    }
+
     function montarCardsMovimentacoesGestor() {
         if (!isGestor) return '';
 
+        garantirMesMovimentacoesGestor();
         const input = document.getElementById('filtroMovimentacoesGestor');
         const termo = normalizarTexto(input?.value || filtroMovimentacoesGestor || '');
         const filtroUsuario = normalizarTexto(filtroMovimentacoesGestorUsuario);
         const filtroTipo = normalizarTexto(filtroMovimentacoesGestorTipo || 'todos');
+        const filtroMes = String(filtroMovimentacoesGestorMes || '').trim();
         const lista = historicoMovimentacoesGestor.filter(mov => {
+            if (filtroMes && obterAnoMesMovimentacaoGestor(mov) !== filtroMes) return false;
             if (filtroUsuario && normalizarTexto(mov?.responsavel) !== filtroUsuario) return false;
             if (filtroTipo && filtroTipo !== 'todos') {
                 const categoria = normalizarTexto(mov?.categoria || mov?.itemCategoria || '');
@@ -1590,11 +1680,6 @@
                         <span class="gestor-mov-nome">${escaparHtml(mov.itemNome || 'Item')}</span>
                         <span class="gestor-mov-qtd ${meta.classe}" style="color:${meta.cor};">${quantidade}</span>
                     </div>
-                    ${(mov.estoqueAntes != null && mov.estoqueDepois != null) ? `
-                    <div class="gestor-mov-linha">
-                        <span class="gestor-mov-obs">Saldo do estoque</span>
-                        <span class="gestor-mov-resp">${escaparHtml(mov.estoqueAntes)} &rarr; ${escaparHtml(mov.estoqueDepois)}</span>
-                    </div>` : ''}
                     <div class="gestor-mov-registro">
                         <span>${registradoPor && registradoPor !== responsavel ? `Registrado por: ${escaparHtml(registradoPor)}` : ''}</span>
                         <span class="gestor-mov-data">${dataFormatada}</span>
@@ -1604,11 +1689,25 @@
     }
 
     function obterUsuariosMovimentacoesGestor() {
-        return [...new Set(
+        const nomes = new Set(
             historicoMovimentacoesGestor
                 .map(mov => String(mov?.responsavel || '').trim())
                 .filter(Boolean)
-        )].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        );
+
+        try {
+            const cache = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
+            (Array.isArray(cache) ? cache : []).forEach(colab => {
+                const perfil = String(colab?.nivel_completo || '').trim();
+                const nome = String(colab?.nome || colab?.usuario || '').trim();
+                if (!nome) return;
+                if (perfil.includes('atendimento_1') || perfil.includes('atendimento_2')) {
+                    nomes.add(nome);
+                }
+            });
+        } catch (_) {}
+
+        return [...nomes].sort((a, b) => a.localeCompare(b, 'pt-BR'));
     }
 
     function obterTiposMovimentacoesGestor() {
@@ -2883,7 +2982,11 @@
         const fin        = somarFinanceiro(doMesFinanceiro);
         const finPeriodo = somarFinanceiro(filtradosFinanceiros);
         const produtosPosse = posseAtual
-            .filter(i => i.categoria !== 'maquina' && i.total !== 0)
+            .filter(i => i.categoria !== 'maquina' && i.categoria !== 'peca' && i.total !== 0)
+            .map(i => [i.nome, i.total, i.categoria, i.itemChave])
+            .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0], 'pt-BR'));
+        const pecasPosse = posseAtual
+            .filter(i => i.categoria === 'peca' && i.total !== 0)
             .map(i => [i.nome, i.total, i.categoria, i.itemChave])
             .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0], 'pt-BR'));
         const maquinasPosse = posseAtual
@@ -2892,6 +2995,7 @@
             .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]) || a[0].localeCompare(b[0], 'pt-BR'));
         const pixPosse      = somarPixEmPosse(pixEmPosse || [], todosAtendimentos);
         const maxProd       = Math.max(1, ...produtosPosse.map(([, qtd]) => Math.abs(qtd)));
+        const maxPecas      = Math.max(1, ...pecasPosse.map(([, qtd]) => Math.abs(qtd)));
         const maxMaqPosse   = Math.max(1, ...maquinasPosse.map(([, qtd]) => Math.abs(qtd)));
 
         // MÃ¡quinas apenas do perÃ­odo selecionado (para a seÃ§Ã£o "MÃ¡quinas Atendidas no PerÃ­odo")
@@ -2916,7 +3020,7 @@
             -->
             ${produtosPosse.length > 0 ? `
             <div class="secao">
-                <div class="secao-titulo">&#129371; Produtos em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
+                <div class="secao-titulo">&#129371; Produtos <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
                 <div class="lista-card">
                     ${produtosPosse.map(([nome, qtd, categoria, itemChave], i) => `
                         ${(() => {
@@ -2939,6 +3043,31 @@
                 </div>
             </div>` : ''}
 
+            ${pecasPosse.length > 0 ? `
+            <div class="secao">
+                <div class="secao-titulo">&#128295; Pe&ccedil;as <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
+                <div class="lista-card">
+                    ${pecasPosse.map(([nome, qtd, categoria, itemChave], i) => `
+                        ${(() => {
+                            const contestacao = obterContestacaoAbertaItem(itemChave, nome, categoria);
+                            const contestacaoHtml = montarTarjaContestacao(contestacao);
+                            return `
+                        <div class="lista-item" data-nome="${nome.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-qtd="${qtd}" data-categoria="${String(categoria || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" data-item-chave="${String(itemChave || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" onclick="abrirHistoricoProduto(this.dataset.nome, this.dataset.qtd, this.dataset.categoria, this.dataset.itemChave)" style="cursor:pointer;-webkit-tap-highlight-color:transparent;">
+                            <div class="item-nome-bloco">
+                                <div class="item-nome">${nome}</div>
+                                ${contestacaoHtml}
+                            </div>
+                            <div class="item-barra-wrap">
+                                <div class="item-barra-bg">
+                                    <div class="item-barra" style="width:${Math.round((Math.abs(qtd) / maxPecas) * 100)}%;background:${qtd < 0 ? 'linear-gradient(90deg,#b71c1c,#ef5350)' : '#0ea5e9'};box-shadow:${qtd < 0 ? '0 0 7px rgba(239,83,80,0.45)' : ''}"></div>
+                                </div>
+                            </div>
+                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.5);color:#ef9a9a;box-shadow:0 0 10px rgba(239,83,80,0.2);' : ''}">${qtd} <span style="font-size:9px;opacity:0.45;margin-left:3px;letter-spacing:-1px;">··</span></div>
+                        </div>`;
+                        })()}`).join('')}
+                </div>
+            </div>` : ''}
+
             <!--
               =====================================================================
               SEÃ‡ÃƒO: MÃQUINAS EM POSSE (total acumulado)
@@ -2953,7 +3082,7 @@
             -->
             ${maquinasPosse.length > 0 ? `
             <div class="secao">
-                <div class="secao-titulo">&#127920; M&aacute;quinas em Posse <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
+                <div class="secao-titulo">&#127920; M&aacute;quinas <span style="font-size:10px;font-weight:normal;color:rgba(255,235,59,0.55);text-transform:none;letter-spacing:0;">(total acumulado)</span></div>
                 <div class="lista-card">
                     ${maquinasPosse.map(([nome, qtd, categoria, itemChave], i) => `
                         ${(() => {
@@ -2979,7 +3108,7 @@
             ${pixPosse.length > 0 ? `
             <div class="secao">
                 <div class="pix-resumo-card">
-                    <div class="pix-resumo-texto">PIX EM POSSE</div>
+                    <div class="pix-resumo-texto">PIX</div>
                     <div class="pix-resumo-numeros">${formatarListaPixEmPosse(pixPosse)}</div>
                 </div>
             </div>` : ''}
@@ -3178,13 +3307,22 @@
                 <span class="gestor-mov-info">
                     <span class="gestor-mov-label">
                         Movimenta&ccedil;&otilde;es
-                        ${historicoMovimentacoesGestor.length > 0 ? `<span class="gestor-mov-badge">${historicoMovimentacoesGestor.length}</span>` : ''}
+                        ${obterTotalMovimentacoesGestorMes() > 0 ? `<span class="gestor-mov-badge">${obterTotalMovimentacoesGestorMes()}</span>` : ''}
                     </span>
                     <span class="gestor-mov-subtexto">${movimentacoesGestorAberto ? 'Toque para ocultar' : 'Toque para ver todas as movimenta&ccedil;&otilde;es'}</span>
                 </span>
                 <span class="gestor-mov-seta${movimentacoesGestorAberto ? ' girada' : ''}" id="setaMovimentacoesGestor">&#9660;</span>
             </div>
             <div class="gestor-mov-corpo${movimentacoesGestorAberto ? ' aberto' : ''}" id="corpoMovimentacoesGestor">
+                ${(() => {
+                    const mesesMov = garantirMesMovimentacoesGestor();
+                    return `
+                <select id="filtroMovimentacoesGestorMes" class="gestor-mov-mes-select" onchange="window.alterarMesMovimentacoesGestor(this.value)">
+                    ${mesesMov.length
+                        ? mesesMov.map(mes => `<option value="${escaparHtml(mes)}"${mes === filtroMovimentacoesGestorMes ? ' selected' : ''}>${escaparHtml(rotuloAnoMesMovimentacaoGestor(mes))}</option>`).join('')
+                        : '<option value="">Mês</option>'}
+                </select>`;
+                })()}
                 <div class="gestor-mov-filtros">
                     <div class="gestor-mov-filtro">
                         <label for="filtroMovimentacoesGestorUsuario">Usuário</label>
@@ -3323,11 +3461,24 @@
         const input = document.getElementById('filtroMovimentacoesGestor');
         const selectUsuario = document.getElementById('filtroMovimentacoesGestorUsuario');
         const selectTipo = document.getElementById('filtroMovimentacoesGestorTipo');
+        const selectMes = document.getElementById('filtroMovimentacoesGestorMes');
+        const usuarioAnterior = filtroMovimentacoesGestorUsuario;
         filtroMovimentacoesGestor = String(input?.value || '');
         filtroMovimentacoesGestorUsuario = String(selectUsuario?.value || '');
         filtroMovimentacoesGestorTipo = String(selectTipo?.value || 'maquina');
+        filtroMovimentacoesGestorMes = String(selectMes?.value || filtroMovimentacoesGestorMes || '');
+        if (filtroMovimentacoesGestorUsuario !== usuarioAnterior) {
+            atualizarFonteHistoricoMovimentacoesGestor();
+            return;
+        }
         const lista = document.getElementById('listaMovimentacoesGestor');
         if (lista) lista.innerHTML = montarCardsMovimentacoesGestor();
+    };
+
+    window.alterarMesMovimentacoesGestor = function(valor) {
+        filtroMovimentacoesGestorMes = String(valor || '');
+        window.filtrarMovimentacoesGestor();
+        renderizar();
     };
 
     window.abrirFoto = function(url) {
@@ -3465,8 +3616,10 @@
         });
 
         dbEscutarHistoricoBalanco((lista) => {
-            historicoMovimentacoesGestor = (Array.isArray(lista) ? lista : []).filter(ehMovimentoEstoqueHistoricoGestor);
-            renderizar();
+            historicoMovimentacoesGestorGlobal = Array.isArray(lista) ? lista : [];
+            if (!filtroMovimentacoesGestorUsuario) {
+                aplicarHistoricoMovimentacoesGestor(historicoMovimentacoesGestorGlobal);
+            }
         });
     }
 
