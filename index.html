@@ -159,6 +159,10 @@
         .botao-sub.rotas-bloqueadas .icone {
             color:#d8d8d8;
         }
+        .botao-sub.rotas-contestacao-alerta {
+            border-color:#f59e0b;
+            box-shadow:0 0 0 2px #f59e0b;
+        }
         .seta-gestao {
             position: absolute;
             right: 20px;
@@ -363,14 +367,16 @@
 </script>
 
 <script type="module">
-    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarResumoBalanco, dbExisteContestacaoAtendimentoDoUsuario } from './database.js';
+    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarResumoBalanco, dbExisteContestacaoAtendimentoDoUsuario, dbEscutarResumoContestacaoAtendimento } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
     import { sincronizarPendentes } from './offline-sync.js';
 
     let unsubscribeResumoBalanco = null;
+    let unsubscribeResumoContestacaoAtendimento = null;
     let statusBalancoPendenteIndex = false;
     let statusBalancoCarregadoIndex = false;
     let usuarioAtendimentoNivel2Index = false;
+    let contestacaoAtendimentoPendenteIndex = false;
     const CACHE_STATUS_BALANCO_PREFIX = 'cache_status_balanco_index_';
     const CACHE_STATUS_BALANCO_VALIDADE_MS = 20 * 60 * 60 * 1000;
 
@@ -416,6 +422,7 @@
         if (!btnRotas) return;
         const bloqueado = !navigator.onLine || statusBalancoPendenteIndex;
         btnRotas.classList.toggle('rotas-bloqueadas', bloqueado);
+        btnRotas.classList.toggle('rotas-contestacao-alerta', !bloqueado && contestacaoAtendimentoPendenteIndex);
         btnRotas.setAttribute('aria-disabled', bloqueado ? 'true' : 'false');
     }
 
@@ -469,6 +476,22 @@
             return;
         }
         unsubscribeResumoBalanco = dbEscutarResumoBalanco(nome, (resumo) => atualizarStatusBalancoIndex(resumo, nome));
+    }
+
+    function iniciarResumoContestacaoAtendimentoIndex(nomeUsuario) {
+        const nome = String(nomeUsuario || '').trim();
+        if (typeof unsubscribeResumoContestacaoAtendimento === 'function') unsubscribeResumoContestacaoAtendimento();
+        unsubscribeResumoContestacaoAtendimento = null;
+        contestacaoAtendimentoPendenteIndex = false;
+        atualizarEstadoBotaoRotas();
+        if (!nome) return;
+
+        unsubscribeResumoContestacaoAtendimento = dbEscutarResumoContestacaoAtendimento(nome, (resumo) => {
+            contestacaoAtendimentoPendenteIndex =
+                String(resumo?.statusContestacao || '').trim().toLowerCase() === 'pendente' ||
+                Number(resumo?.totalPendentes || 0) > 0;
+            atualizarEstadoBotaoRotas();
+        });
     }
 
     // â”€â”€ INDICADOR DE CONEXÃƒO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -793,6 +816,7 @@
         }
 
         iniciarStatusBalancoIndex(nomeNormalizado);
+        iniciarResumoContestacaoAtendimentoIndex(perfil.includes('atendimento_1') ? nomeNormalizado : '');
     }
 
     // Abre o menu imediatamente com dados do cache (se existir)

@@ -44,6 +44,58 @@ export const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const storage = getStorage(app);
 
+const CONTESTACAO_ATENDIMENTO_ROOT = 'contestacao_atendimento';
+
+function _normalizarChaveContestacaoAtendimentoUsuario(nomeUsuario) {
+    return String(nomeUsuario || '').trim();
+}
+
+async function _atualizarResumoContestacaoAtendimentoUsuario(nomeUsuario) {
+    const chaveUsuario = _normalizarChaveContestacaoAtendimentoUsuario(nomeUsuario);
+    if (!chaveUsuario) return;
+
+    const pendentesSnap = await get(ref(db, `${CONTESTACAO_ATENDIMENTO_ROOT}/${chaveUsuario}/pendentes`));
+    const totalPendentes = pendentesSnap.exists()
+        ? Object.keys(pendentesSnap.val() || {}).length
+        : 0;
+
+    await set(ref(db, `${CONTESTACAO_ATENDIMENTO_ROOT}/${chaveUsuario}/resumo`), {
+        statusContestacao: totalPendentes > 0 ? 'pendente' : 'ok',
+        totalPendentes,
+        atualizadoEm: new Date().toISOString()
+    });
+}
+
+async function _marcarContestacaoAtendimentoPendente(nomeUsuario, atendimentoId) {
+    const chaveUsuario = _normalizarChaveContestacaoAtendimentoUsuario(nomeUsuario);
+    const id = String(atendimentoId || '').trim();
+    if (!chaveUsuario || !id) return;
+
+    try {
+        await set(ref(db, `${CONTESTACAO_ATENDIMENTO_ROOT}/${chaveUsuario}/pendentes/${id}`), true);
+        await _atualizarResumoContestacaoAtendimentoUsuario(chaveUsuario);
+    } catch (error) {
+        console.error("ERRO AO MARCAR RESUMO DE CONTESTACAO DO ATENDIMENTO:", error);
+    }
+}
+
+async function _removerContestacaoAtendimentoPendente(nomeUsuario, atendimentoId) {
+    const chaveUsuario = _normalizarChaveContestacaoAtendimentoUsuario(nomeUsuario);
+    const id = String(atendimentoId || '').trim();
+    if (!chaveUsuario || !id) return;
+
+    try {
+        await remove(ref(db, `${CONTESTACAO_ATENDIMENTO_ROOT}/${chaveUsuario}/pendentes/${id}`));
+        await _atualizarResumoContestacaoAtendimentoUsuario(chaveUsuario);
+    } catch (error) {
+        console.error("ERRO AO REMOVER RESUMO DE CONTESTACAO DO ATENDIMENTO:", error);
+    }
+}
+
+function _obterAtendenteAtendimento(atendimento) {
+    return String(atendimento?.atendente || '').trim();
+}
+
 /* --- FUNÇÕES PARA CLIENTES --- */
 
 // FUNÇÃO: ESCUTAR CLIENTES (Em Tempo Real)
@@ -843,21 +895,33 @@ async function _sincronizarContadorAtualClientePorAtendimento(atendimento) {
 }
 
 export async function dbContestarAtendimento(id, nomeGestor, observacao = '') {
+    const snapAnterior = await get(ref(db, `atendimentos/${id}`));
+    const atendimentoAnterior = snapAnterior.exists() ? snapAnterior.val() : null;
+    const atendente = _obterAtendenteAtendimento(atendimentoAnterior);
+
     await update(ref(db, `atendimentos/${id}`), {
         contestado: true,
         contestadoAte: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         contestadoPor: nomeGestor,
         contestacaoObservacao: String(observacao || '').trim()
     });
+
+    await _marcarContestacaoAtendimentoPendente(atendente, id);
 }
 
 export async function dbRemoverContestacao(id) {
+    const snapAnterior = await get(ref(db, `atendimentos/${id}`));
+    const atendimentoAnterior = snapAnterior.exists() ? snapAnterior.val() : null;
+    const atendente = _obterAtendenteAtendimento(atendimentoAnterior);
+
     await update(ref(db, `atendimentos/${id}`), {
         contestado: null,
         contestadoAte: null,
         contestadoPor: null,
         contestacaoObservacao: null
     });
+
+    await _removerContestacaoAtendimentoPendente(atendente, id);
 }
 
 export async function dbSalvarAtendimento(atendimento, idExistente = null) {
@@ -882,6 +946,15 @@ export async function dbSalvarAtendimento(atendimento, idExistente = null) {
         }
         await _sincronizarDevolucaoClientePorAtendimentoSalvo(atendimentoAnterior, payloadAtendimento);
         await _sincronizarContadorAtualClientePorAtendimento(atendimento);
+        const atendenteAnterior = _obterAtendenteAtendimento(atendimentoAnterior);
+        const atendenteAtual = _obterAtendenteAtendimento(payloadAtendimento);
+        const idResumoContestacao = atendimentoId || idExistente;
+        if (atendimentoAnterior?.contestado && atendenteAnterior) {
+            await _removerContestacaoAtendimentoPendente(atendenteAnterior, idResumoContestacao);
+        }
+        if (payloadAtendimento?.contestado && atendenteAtual) {
+            await _marcarContestacaoAtendimentoPendente(atendenteAtual, idResumoContestacao);
+        }
         await _tentarRecalcularRemuneracoes();
         return atendimentoId || null;
     } catch (error) {
@@ -960,20 +1033,36 @@ export function dbEscutarAtendimentosDoUsuario(nomeUsuario, callback) {
 }
 
 export async function dbExisteContestacaoAtendimentoDoUsuario(nomeUsuario) {
-    const nomeNormalizado = String(nomeUsuario || '').trim();
-    if (!nomeNormalizado) return false;
+    const chaveUsuario = _normalizarChaveContestacaoAtendimentoUsuario(nomeUsuario);
+    if (!chaveUsuario) return false;
 
     try {
-        const snap = await get(ref(db, 'atendimentos'));
-        if (!snap.exists()) return false;
-        return Object.values(snap.val() || {}).some(atendimento =>
-            String(atendimento?.atendente || '').trim() === nomeNormalizado &&
-            !!atendimento?.contestado
-        );
+        const snap = await get(ref(db, `${CONTESTACAO_ATENDIMENTO_ROOT}/${chaveUsuario}/resumo/statusContestacao`));
+        return String(snap.val() || '').trim().toLowerCase() === 'pendente';
     } catch (error) {
         console.error("ERRO AO VERIFICAR CONTESTACAO DO USUARIO:", error);
         return false;
     }
+}
+
+export function dbEscutarResumoContestacaoAtendimento(nomeUsuario, callback) {
+    const chaveUsuario = _normalizarChaveContestacaoAtendimentoUsuario(nomeUsuario);
+    if (!chaveUsuario) {
+        callback({ statusContestacao: 'ok', totalPendentes: 0 });
+        return () => {};
+    }
+
+    return onValue(ref(db, `${CONTESTACAO_ATENDIMENTO_ROOT}/${chaveUsuario}/resumo`), (snap) => {
+        const resumo = snap.exists() ? (snap.val() || {}) : {};
+        callback({
+            statusContestacao: String(resumo?.statusContestacao || 'ok').trim().toLowerCase(),
+            totalPendentes: Number(resumo?.totalPendentes || 0),
+            atualizadoEm: resumo?.atualizadoEm || ''
+        });
+    }, (error) => {
+        console.error("ERRO AO ESCUTAR RESUMO DE CONTESTACAO DO ATENDIMENTO:", error);
+        callback({ statusContestacao: 'ok', totalPendentes: 0, erro: true });
+    });
 }
 
 export async function dbListarAtendimentos() {
@@ -1082,6 +1171,9 @@ export async function dbExcluirAtendimento(id) {
                 atendimento.firebaseUrl,
                 atendimento.atendente
             );
+        }
+        if (atendimento?.contestado) {
+            await _removerContestacaoAtendimentoPendente(_obterAtendenteAtendimento(atendimento), id);
         }
         await _tentarRecalcularRemuneracoes();
     } catch (error) {
