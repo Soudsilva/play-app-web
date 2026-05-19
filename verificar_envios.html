@@ -27,6 +27,112 @@
         .card-envio.contestado {
             border-left-color: #ff9800;
         }
+        .contestacao-chat {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #f59e0b;
+        }
+        .contestacao-chat-titulo {
+            color: #ffeb3b;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1.2;
+            margin-bottom: 8px;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .contestacao-msg {
+            background: #173b82;
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+        .contestacao-msg.usuario {
+            background: #14532d;
+        }
+        .contestacao-msg-meta {
+            color: #ffeb3b;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .contestacao-msg-texto {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+        }
+        .contestacao-resposta {
+            display: grid;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .contestacao-resposta textarea {
+            width: 100%;
+            min-height: 76px;
+            box-sizing: border-box;
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            color: #111827;
+            background: #ffffff;
+            resize: vertical;
+        }
+        .contestacao-acoes-resposta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .contestacao-ou {
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: bold;
+            flex: 0 0 auto;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .contestacao-acoes-resposta .btn-acao,
+        .contestacao-acoes-resposta .btn-responder-contestacao {
+            flex: 1;
+            min-width: 0;
+            height: 38px;
+            padding: 8px 8px;
+            border: 2px solid #ffffff;
+            box-sizing: border-box;
+            line-height: 1.1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .contestacao-acoes-resposta .btn-editar-envio {
+            font-size: 18px;
+        }
+        .btn-responder-contestacao {
+            width: 100%;
+            border-radius: 8px;
+            background: #0f766e;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 0 #064e3b;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .btn-responder-contestacao:disabled {
+            background: #4b5563;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
         
         /* CabeÃ§alho do Card */
         .envio-header { border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 10px; }
@@ -327,7 +433,6 @@
             cursor: pointer;
         }
         .btn-editar { background: #ff9800; }
-        .btn-excluir { background: #f44336; }
         .btn-acao:disabled {
             opacity: 0.45;
             cursor: not-allowed;
@@ -383,7 +488,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbExcluirAtendimento, dbReverterEncerramentoCliente, dbExcluirMovimentoFluxoCaixa, dbReverterConclusaoManutencao, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
+    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbEscutarHistoricoBalancoDoUsuario, dbResponderContestacaoAtendimento } from './database.js';
 
     // Pega quem estÃ¡ logado no celular no momento
     const usuarioLogado = localStorage.getItem('usuarioLogado');
@@ -436,6 +541,51 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    function obterMensagensContestacao(contestacaoObservacao) {
+        if (!contestacaoObservacao) return [];
+        if (typeof contestacaoObservacao === 'string') {
+            const texto = contestacaoObservacao.trim();
+            return texto ? [{ autor: 'Gestor', papel: 'gestor', texto, timestamp: '' }] : [];
+        }
+        const mensagens = contestacaoObservacao?.mensagens || {};
+        return Object.keys(mensagens)
+            .map((key) => ({ id: key, ...(mensagens[key] || {}) }))
+            .filter((msg) => String(msg.texto || '').trim())
+            .sort((a, b) => {
+                const dataA = new Date(a.timestamp || 0).getTime() || 0;
+                const dataB = new Date(b.timestamp || 0).getTime() || 0;
+                return dataA - dataB;
+            });
+    }
+
+    function montarHtmlConversaContestacao(envio) {
+        const mensagens = obterMensagensContestacao(envio?.contestacaoObservacao);
+        const htmlMensagens = mensagens.map((msg) => {
+            const papel = msg.papel === 'usuario' ? 'usuario' : 'gestor';
+            const autor = msg.autor || (papel === 'usuario' ? 'Usuário' : 'Gestor');
+            const data = formatarDataHora(msg.timestamp);
+            return `
+                <div class="contestacao-msg ${papel}">
+                    <div class="contestacao-msg-meta">${escaparHtml(autor)}${data ? ` - ${escaparHtml(data)}` : ''}</div>
+                    <div class="contestacao-msg-texto">${escaparHtml(msg.texto)}</div>
+                </div>`;
+        }).join('');
+
+        return `
+            <div class="contestacao-chat">
+                <div class="contestacao-chat-titulo">Conversa da contestação</div>
+                ${htmlMensagens}
+                <div class="contestacao-resposta">
+                    <textarea class="contestacao-resposta-texto" data-contestacao-resposta-id="${escaparHtml(envio.firebaseUrl)}" placeholder="Responder ao gestor..."></textarea>
+                    <div class="contestacao-acoes-resposta">
+                        <button class="btn-acao btn-editar btn-editar-envio" type="button">Editar</button>
+                        <span class="contestacao-ou">Ou</span>
+                        <button class="btn-responder-contestacao" type="button" data-contestacao-responder-id="${escaparHtml(envio.firebaseUrl)}">Enviar resposta</button>
+                    </div>
+                </div>
+            </div>`;
     }
 
     function montarHtmlThumbFoto(url, thumbUrl, legenda) {
@@ -1402,25 +1552,19 @@
             const estaContestado = !!envio.contestado;
             if (estaContestado) card.classList.add('contestado');
             const liberado = !ehMovimentoEstoque(envio) && podeAlterarEnvio(envio);
-            const contestacaoObservacao = String(envio.contestacaoObservacao || '').trim();
-            const htmlContestacaoObservacao = contestacaoObservacao
-                ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid #f59e0b;">
-                        <div style="color:#ffeb3b;font-size:14px;font-weight:bold;line-height:1.2;margin-bottom:4px;user-select:none;-webkit-user-select:none;">Situação:</div>
-                        <div style="color:#ffffff;font-size:16px;font-weight:bold;line-height:1.35;">${escaparHtml(contestacaoObservacao)}</div>
-                   </div>`
-                : '';
             const htmlAvisoContestacao = estaContestado ? `
                 <div style="padding:10px 12px;background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.5);border-radius:10px;color:#f59e0b;font-size:14px;font-weight:bold;margin-bottom:8px;text-align:center;user-select:none;-webkit-user-select:none;">
                     ⚠ O gestor contestou esse atendimento.
-                    ${htmlContestacaoObservacao}
+                    ${montarHtmlConversaContestacao(envio)}
                 </div>` : '';
             const htmlAcoes = liberado ? `
                 <div class="envio-acoes">
                     ${htmlAvisoContestacao}
-                    <div class="acoes-linha">
-                        <button class="btn-acao btn-editar btn-editar-envio">Editar</button>
-                        <button class="btn-acao btn-excluir btn-excluir-envio">Excluir</button>
-                    </div>
+                    ${estaContestado ? '' : `
+                        <div class="acoes-linha">
+                            <button class="btn-acao btn-editar btn-editar-envio">Editar</button>
+                        </div>
+                    `}
                 </div>
             ` : '';
 
@@ -1447,11 +1591,37 @@
             card.innerHTML = `${htmlHeader}${htmlManutencao}${htmlCadastroPix}${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}${htmlRodape}`;
             if (liberado) {
                 card.querySelector('.btn-editar-envio')?.addEventListener('click', () => window.editarEnvio(envio));
-                card.querySelector('.btn-excluir-envio')?.addEventListener('click', () => window.excluirEnvio(envio.firebaseUrl));
             }
             container.appendChild(card);
         });
     }
+
+    document.getElementById('listaEnvios').addEventListener('click', async (event) => {
+        const btn = event.target.closest('.btn-responder-contestacao');
+        if (!btn) return;
+
+        const id = btn.dataset.contestacaoResponderId;
+        const textarea = btn.closest('.card-envio')?.querySelector('.contestacao-resposta-texto');
+        const resposta = (textarea?.value || '').trim();
+
+        if (!resposta) {
+            await window.playAlert('Digite uma resposta para o gestor.');
+            textarea?.focus();
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Enviando...';
+        try {
+            await dbResponderContestacaoAtendimento(id, usuarioLogado, resposta);
+            if (textarea) textarea.value = '';
+            await window.playAlert('Resposta enviada.');
+        } catch (erro) {
+            await window.playAlert('Erro ao enviar resposta: ' + (erro.message || erro));
+            btn.disabled = false;
+            btn.textContent = 'Enviar resposta';
+        }
+    });
 
     dbEscutarHistoricoBalancoDoUsuario(usuarioLogado, (historico) => {
         mapaMovimentacoesPorAtendimento = {};
@@ -1510,42 +1680,6 @@
         window.location.href = `atendimento_nivel_1.html?edit=${encodeURIComponent(envio.firebaseUrl)}`;
     };
 
-    window.excluirEnvio = async function(id) {
-        const envio = atendimentosSalvos.find(item => item.firebaseUrl === id);
-        if (!envio) {
-            await window.playAlert("Envio não encontrado.");
-            return;
-        }
-
-        if (!podeAlterarEnvio(envio)) {
-            return;
-        }
-
-        const ehEncerramento = envio.manutencao?.pontoEncerrado === true;
-        const msg = ehEncerramento
-            ? "Excluir este envio? O encerramento do cliente e o lançamento no fluxo de caixa serão revertidos."
-            : "Excluir este envio? Esta ação não pode ser desfeita.";
-
-        if (await window.playConfirm(msg)) {
-            await dbExcluirAtendimento(id);
-
-            if (ehEncerramento) {
-                const clienteId = envio.cliente?.id || '';
-                const equipamentos = envio.manutencao?.equipamentosRetiradosDetalhes || [];
-                const manutencaoId = envio.manutencao?.id || '';
-
-                if (clienteId) {
-                    await dbReverterEncerramentoCliente(clienteId, equipamentos).catch(e => console.error(e));
-                }
-                if (envio.fluxoCaixaKey && envio.operadorFluxoCaixa) {
-                    await dbExcluirMovimentoFluxoCaixa(envio.operadorFluxoCaixa, envio.fluxoCaixaKey).catch(e => console.error(e));
-                }
-                if (manutencaoId && envio.manutencao?.servicoRealizado) {
-                    await dbReverterConclusaoManutencao(manutencaoId).catch(e => console.error(e));
-                }
-            }
-        }
-    };
 </script>
 </body>
 </html>

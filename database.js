@@ -898,15 +898,87 @@ export async function dbContestarAtendimento(id, nomeGestor, observacao = '') {
     const snapAnterior = await get(ref(db, `atendimentos/${id}`));
     const atendimentoAnterior = snapAnterior.exists() ? snapAnterior.val() : null;
     const atendente = _obterAtendenteAtendimento(atendimentoAnterior);
+    const conversaAnterior = atendimentoAnterior?.contestacaoObservacao;
+    const mensagens = {};
+
+    if (conversaAnterior && typeof conversaAnterior === 'object' && conversaAnterior.mensagens) {
+        Object.assign(mensagens, conversaAnterior.mensagens);
+    } else if (typeof conversaAnterior === 'string' && conversaAnterior.trim()) {
+        const mensagemOriginalKey = push(ref(db, `atendimentos/${id}/contestacaoObservacao/mensagens`)).key;
+        mensagens[mensagemOriginalKey] = {
+            autor: 'Gestor',
+            papel: 'gestor',
+            texto: conversaAnterior.trim(),
+            timestamp: new Date(0).toISOString()
+        };
+    }
+
+    const agora = new Date().toISOString();
+    const mensagemKey = push(ref(db, `atendimentos/${id}/contestacaoObservacao/mensagens`)).key;
+    mensagens[mensagemKey] = {
+        autor: nomeGestor || 'Gestor',
+        papel: 'gestor',
+        texto: String(observacao || '').trim(),
+        timestamp: agora
+    };
 
     await update(ref(db, `atendimentos/${id}`), {
         contestado: true,
         contestadoAte: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         contestadoPor: nomeGestor,
-        contestacaoObservacao: String(observacao || '').trim()
+        contestacaoObservacao: {
+            tipo: 'conversa_contestacao',
+            mensagens
+        }
     });
 
     await _marcarContestacaoAtendimentoPendente(atendente, id);
+}
+
+export async function dbResponderContestacaoAtendimento(id, nomeUsuario, resposta = '') {
+    const texto = String(resposta || '').trim();
+    if (!id) throw new Error("ID do atendimento é obrigatório.");
+    if (!texto) throw new Error("Digite a resposta.");
+
+    const snapAnterior = await get(ref(db, `atendimentos/${id}`));
+    const atendimentoAnterior = snapAnterior.exists() ? snapAnterior.val() : null;
+    const atendente = _obterAtendenteAtendimento(atendimentoAnterior) || nomeUsuario;
+    const conversaRef = ref(db, `atendimentos/${id}/contestacaoObservacao`);
+    const snapConversa = await get(conversaRef);
+    const conversaAtual = snapConversa.exists() ? snapConversa.val() : null;
+    const mensagens = {};
+
+    if (conversaAtual && typeof conversaAtual === 'object' && conversaAtual.mensagens) {
+        Object.assign(mensagens, conversaAtual.mensagens);
+    } else if (typeof conversaAtual === 'string' && conversaAtual.trim()) {
+        const mensagemOriginalKey = push(ref(db, `atendimentos/${id}/contestacaoObservacao/mensagens`)).key;
+        mensagens[mensagemOriginalKey] = {
+            autor: 'Gestor',
+            papel: 'gestor',
+            texto: conversaAtual.trim(),
+            timestamp: new Date(0).toISOString()
+        };
+    }
+
+    const respostaKey = push(ref(db, `atendimentos/${id}/contestacaoObservacao/mensagens`)).key;
+    mensagens[respostaKey] = {
+        autor: nomeUsuario || 'Usuário',
+        papel: 'usuario',
+        texto,
+        timestamp: new Date().toISOString()
+    };
+
+    await update(ref(db, `atendimentos/${id}`), {
+        contestado: null,
+        contestadoAte: null,
+        contestadoPor: null,
+        contestacaoObservacao: {
+            tipo: 'conversa_contestacao',
+            mensagens
+        }
+    });
+
+    await _removerContestacaoAtendimentoPendente(atendente, id);
 }
 
 export async function dbRemoverContestacao(id) {
@@ -936,6 +1008,14 @@ export async function dbSalvarAtendimento(atendimento, idExistente = null) {
         const payloadAtendimento = { ...(atendimento || {}) };
         const ehAtendimentoComum = !payloadAtendimento?.origemRegistro || payloadAtendimento.origemRegistro === 'atendimento';
         if (ehAtendimentoComum) delete payloadAtendimento.produtos;
+        const estaConfirmandoAtendimento = !!payloadAtendimento?.confirmacao;
+        const resolveuContestacaoPorEdicao = idExistente && atendimentoAnterior?.contestado && !estaConfirmandoAtendimento && !Object.prototype.hasOwnProperty.call(payloadAtendimento, 'contestado');
+        if (resolveuContestacaoPorEdicao) {
+            payloadAtendimento.contestado = null;
+            payloadAtendimento.contestadoAte = null;
+            payloadAtendimento.contestadoPor = null;
+            payloadAtendimento.contestacaoObservacao = atendimentoAnterior.contestacaoObservacao || null;
+        }
         if (idExistente) {
             await set(ref(db, `atendimentos/${idExistente}`), payloadAtendimento);
         } else {
@@ -952,7 +1032,7 @@ export async function dbSalvarAtendimento(atendimento, idExistente = null) {
         if (atendimentoAnterior?.contestado && atendenteAnterior) {
             await _removerContestacaoAtendimentoPendente(atendenteAnterior, idResumoContestacao);
         }
-        if (payloadAtendimento?.contestado && atendenteAtual) {
+        if (payloadAtendimento?.contestado && atendenteAtual && !resolveuContestacaoPorEdicao) {
             await _marcarContestacaoAtendimentoPendente(atendenteAtual, idResumoContestacao);
         }
         await _tentarRecalcularRemuneracoes();

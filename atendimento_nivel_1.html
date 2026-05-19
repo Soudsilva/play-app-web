@@ -473,9 +473,51 @@
             background: rgba(244,67,54,0.1);
             color: white;
         }
+        .carregando-edicao-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #042d86;
+            color: #ffffff;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .carregando-edicao-overlay.oculto { display: none; }
+        .carregando-edicao-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 22px;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .spinner-edicao {
+            width: 34px;
+            height: 34px;
+            border: 4px solid #7fa6ff;
+            border-top-color: #ffeb3b;
+            border-radius: 50%;
+            animation: girarSpinnerEdicao 0.85s linear infinite;
+        }
+        @keyframes girarSpinnerEdicao {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
+<div class="carregando-edicao-overlay oculto" id="carregandoEdicaoOverlay">
+    <div class="carregando-edicao-card">
+        <div class="spinner-edicao"></div>
+        <div>Carregando edição...</div>
+    </div>
+</div>
 
 <div class="app aguardando-cliente" id="appAtendimento">
     
@@ -668,6 +710,28 @@
 
 function obterIdAtendimentoEmEdicao() {
         return new URLSearchParams(window.location.search).get('edit') || "";
+    }
+
+    function mostrarCarregamentoEdicao() {
+        const overlay = document.getElementById('carregandoEdicaoOverlay');
+        if (overlay) overlay.classList.remove('oculto');
+    }
+
+    function ocultarCarregamentoEdicao() {
+        const overlay = document.getElementById('carregandoEdicaoOverlay');
+        if (overlay) overlay.classList.add('oculto');
+    }
+
+    function finalizarCarregamentoEdicaoSePronto() {
+        if (!obterIdAtendimentoEmEdicao()) return;
+        if (!rascunhoRestaurado) return;
+        const clienteSelecionado = document.getElementById('idClienteSelecionado')?.value;
+        if (!clienteSelecionado) return;
+        ocultarCarregamentoEdicao();
+    }
+
+    if (obterIdAtendimentoEmEdicao()) {
+        mostrarCarregamentoEdicao();
     }
 
     function obterDataAtendimentoEmEdicao() {
@@ -953,6 +1017,7 @@ function obterIdAtendimentoEmEdicao() {
             if (!rascunhoRestaurado && listaProdutos.length > 0) {
                 restaurarRascunho();
                 if (document.getElementById('idClienteSelecionado')?.value) rascunhoRestaurado = true;
+                finalizarCarregamentoEdicaoSePronto();
             }
         });
     }
@@ -1302,6 +1367,7 @@ function obterIdAtendimentoEmEdicao() {
         if (obterIdAtendimentoEmEdicao() && !rascunhoRestaurado && listaProdutos.length > 0) {
             restaurarRascunho();
             if (document.getElementById('idClienteSelecionado')?.value) rascunhoRestaurado = true;
+            finalizarCarregamentoEdicaoSePronto();
         }
         const clienteSelecionadoId = document.getElementById('idClienteSelecionado')?.value;
         if (!clienteSelecionadoId) return;
@@ -1330,6 +1396,7 @@ function obterIdAtendimentoEmEdicao() {
             restaurarRascunho();
             if (!obterIdAtendimentoEmEdicao() || document.getElementById('idClienteSelecionado')?.value) {
                 rascunhoRestaurado = true;
+                finalizarCarregamentoEdicaoSePronto();
             }
         }
         
@@ -2350,6 +2417,11 @@ function obterIdAtendimentoEmEdicao() {
                             texto.style.display = 'none';
                         }
                     });
+                }
+
+                if (atendimentoEmEdicaoId && document.getElementById('idClienteSelecionado')?.value) {
+                    rascunhoRestaurado = true;
+                    finalizarCarregamentoEdicaoSePronto();
                 }
                 
             } catch (e) {

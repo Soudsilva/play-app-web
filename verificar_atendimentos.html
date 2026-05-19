@@ -580,7 +580,19 @@
         }
         .btn-contestar:active { transform: scale(0.98); }
         .btn-contestar.aguardando { background: #b45309; border: 2px solid #f59e0b; }
-        .btn-contestar.contestado { background: #374151; color: #9ca3af; cursor: default; }
+        .btn-contestar.contestado {
+            background: #b91c1c;
+            color: #ffffff;
+            cursor: pointer;
+            min-width: 96px;
+        }
+        .btn-confirmar.aviso-contestacao {
+            background: #1f4f8f;
+            color: #ffffff;
+            cursor: default;
+            font-size: 18px;
+            opacity: 1;
+        }
 
         .contestacao-resumo {
             margin-bottom: 10px;
@@ -609,6 +621,32 @@
             color: #ffffff;
             font-size: 15px;
             font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+        .contestacao-msg {
+            background: #173b82;
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 8px;
+            text-align: left;
+        }
+        .contestacao-msg.usuario {
+            background: #14532d;
+        }
+        .contestacao-msg-meta {
+            color: #ffeb3b;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .contestacao-msg-texto {
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.35;
             overflow-wrap: anywhere;
         }
 
@@ -1221,6 +1259,7 @@
     </div>
 </div>
 
+<script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
@@ -1660,6 +1699,10 @@
 
         document.querySelectorAll('.btn-confirmar').forEach((btn) => {
             if (btn.dataset.confirmarId === atendimentoId) {
+                if (btn.classList.contains('aviso-contestacao')) {
+                    btn.disabled = true;
+                    return;
+                }
                 btn.disabled = !resumo.liberado;
             }
         });
@@ -1731,6 +1774,38 @@
             .replace(/'/g, '&#39;');
     }
 
+    function obterMensagensContestacao(contestacaoObservacao) {
+        if (!contestacaoObservacao) return [];
+        if (typeof contestacaoObservacao === 'string') {
+            const texto = contestacaoObservacao.trim();
+            return texto ? [{ autor: 'Gestor', papel: 'gestor', texto, timestamp: '' }] : [];
+        }
+        const mensagens = contestacaoObservacao?.mensagens || {};
+        return Object.keys(mensagens)
+            .map((key) => ({ id: key, ...(mensagens[key] || {}) }))
+            .filter((msg) => String(msg.texto || '').trim())
+            .sort((a, b) => {
+                const dataA = new Date(a.timestamp || 0).getTime() || 0;
+                const dataB = new Date(b.timestamp || 0).getTime() || 0;
+                return dataA - dataB;
+            });
+    }
+
+    function montarHtmlConversaContestacao(contestacaoObservacao) {
+        const mensagens = obterMensagensContestacao(contestacaoObservacao);
+        if (mensagens.length === 0) return '';
+        return mensagens.map((msg) => {
+            const papel = msg.papel === 'usuario' ? 'usuario' : 'gestor';
+            const autor = msg.autor || (papel === 'usuario' ? 'Usuário' : 'Gestor');
+            const data = fmtData(msg.timestamp);
+            return `
+                <div class="contestacao-msg ${papel}">
+                    <div class="contestacao-msg-meta">${escHTML(autor)}${data ? ` - ${escHTML(data)}` : ''}</div>
+                    <div class="contestacao-msg-texto">${escHTML(msg.texto)}</div>
+                </div>`;
+        }).join('');
+    }
+
     function fecharCampoContestacao(panel) {
         if (!panel) return;
         const id = panel.dataset.contestarId || '';
@@ -1760,10 +1835,20 @@
         const btnConfirmar = section.querySelector('.btn-confirmar');
         if (btnConfirmar) btnConfirmar.style.display = 'none';
 
+        const atendimento = todosAtendimentos.find(item => item.firebaseUrl === atendimentoId);
+        const conversaAnterior = montarHtmlConversaContestacao(atendimento?.contestacaoObservacao);
+        const htmlConversaAnterior = conversaAnterior
+            ? `<div class="contestacao-resumo">
+                    <span class="contestacao-resumo-titulo">Conversa anterior:</span>
+                    ${conversaAnterior}
+               </div>`
+            : '';
+
         const panel = document.createElement('div');
         panel.className = 'contestacao-box';
         panel.dataset.contestarId = atendimentoId;
         panel.innerHTML = `
+            ${htmlConversaAnterior}
             <textarea class="contestacao-observacao" rows="3" placeholder="Digite o motivo da contestacao..."></textarea>
             <div class="contestacao-acoes">
                 <button class="btn-fechar-contestacao" type="button" aria-label="Fechar contestacao">×</button>
@@ -1901,12 +1986,14 @@
         }
 
         if (!confirmado) {
-            const btnContestarLabel = jaContestado ? '⚠ Contestado' : '⚠ Contestar';
-            const contestacaoTexto = String(a.contestacaoObservacao || '').trim();
-            const contestacaoHTML = jaContestado && contestacaoTexto
+            const btnContestarLabel = jaContestado ? 'Remover' : '⚠ Contestar';
+            const btnConfirmarClasse = jaContestado ? 'btn-confirmar aviso-contestacao' : 'btn-confirmar';
+            const btnConfirmarTexto = jaContestado ? 'Contestação feita' : 'Confirmar';
+            const btnConfirmarDisabled = jaContestado || !resumoValidacao.liberado;
+            const contestacaoHTML = jaContestado
                 ? `<div class="contestacao-resumo">
-                    <span class="contestacao-resumo-titulo">Situação:</span>
-                    <span class="contestacao-resumo-texto">${escHTML(contestacaoTexto)}</span>
+                    <span class="contestacao-resumo-titulo">Conversa da contestação:</span>
+                    ${montarHtmlConversaContestacao(a.contestacaoObservacao)}
                    </div>`
                 : '';
             rodapeHTML = `<div class="section">
@@ -1914,8 +2001,8 @@
                 ${contestacaoHTML}
                 <div class="rodape-acoes">
                     <button class="btn-contestar${jaContestado ? ' contestado' : ''}" data-contestar-id="${escAttr(id)}">${btnContestarLabel}</button>
-                    <button class="btn-confirmar" data-confirmar-id="${escAttr(id)}" data-confirmar-nome="${escAttr(a.cliente?.nome || '')}" ${resumoValidacao.liberado ? '' : 'disabled'} style="flex:1">
-                        Confirmar
+                    <button class="${btnConfirmarClasse}" data-confirmar-id="${escAttr(id)}" data-confirmar-nome="${escAttr(a.cliente?.nome || '')}" ${btnConfirmarDisabled ? 'disabled' : ''} style="flex:1">
+                        ${btnConfirmarTexto}
                     </button>
                 </div>
                </div>`;
@@ -2033,18 +2120,21 @@
             if (!atend) return;
             const jaContestado = !!atend.contestado;
             if (jaContestado) {
-                if (!btnCont._pendente) {
-                    btnCont._pendente = true;
-                    btnCont.textContent = 'Remover?';
-                    btnCont._timer = setTimeout(() => {
-                        btnCont._pendente = false;
-                        btnCont.textContent = '⚠ Contestado';
-                    }, 3000);
-                } else {
-                    clearTimeout(btnCont._timer);
-                    btnCont._pendente = false;
-                    await dbRemoverContestacao(id);
-                    mostrarToast('Contestação removida.');
+                const confirmarRemocao = await window.playConfirm('Remover a contestação deste atendimento?', {
+                    primaryLabel: 'Remover',
+                    secondaryLabel: 'Cancelar'
+                });
+                if (confirmarRemocao) {
+                    btnCont.disabled = true;
+                    btnCont.textContent = 'Removendo...';
+                    try {
+                        await dbRemoverContestacao(id);
+                        mostrarToast('Contestação removida.');
+                    } catch (err) {
+                        btnCont.disabled = false;
+                        btnCont.textContent = 'Remover';
+                        alert('Erro ao remover contestação: ' + (err.message || err));
+                    }
                 }
             } else {
                 abrirCampoContestacao(btnCont, id);
@@ -2430,6 +2520,10 @@
             }
             const payload = { ...atendimento };
             delete payload.firebaseUrl;
+            delete payload.contestado;
+            delete payload.contestadoAte;
+            delete payload.contestadoPor;
+            delete payload.contestacaoObservacao;
 
             payload.confirmacao = {
                 confirmado_por: gestorLogado(),
