@@ -224,6 +224,37 @@ export function dbEscutarClientes(callback) {
     };
 }
 
+export async function dbListarClientesCadastradosPorUsuarioNoPeriodo(nomeUsuario, inicioIso, fimIso) {
+    const nome = String(nomeUsuario || '').trim();
+    if (!nome) return [];
+
+    const inicioMs = Date.parse(inicioIso || '');
+    const fimMs = Date.parse(fimIso || '');
+    const dentroDoPeriodo = (item) => {
+        const dataMs = Date.parse(item?.dataCadastro || item?.timestamp || item?.criado_em || '');
+        if (!Number.isFinite(dataMs)) return false;
+        if (Number.isFinite(inicioMs) && dataMs < inicioMs) return false;
+        if (Number.isFinite(fimMs) && dataMs >= fimMs) return false;
+        return true;
+    };
+
+    try {
+        const snapshot = await get(query(ref(db, 'clientes'), orderByChild('cadastradoPor'), equalTo(nome)));
+        if (!snapshot.exists()) return [];
+        const data = snapshot.val() || {};
+        return Object.keys(data)
+            .map(key => ({ firebaseUrl: key, ...data[key] }))
+            .filter(dentroDoPeriodo);
+    } catch (error) {
+        console.warn("FALHA NA BUSCA INDEXADA DE CLIENTES CADASTRADOS DO USUARIO. USANDO FALLBACK LOCAL:", error);
+        const todos = await _obterListaClientesAtualizada();
+        const nomeNorm = nome.toLowerCase();
+        return todos
+            .filter(item => String(item?.cadastradoPor || '').trim().toLowerCase() === nomeNorm)
+            .filter(dentroDoPeriodo);
+    }
+}
+
 async function _atualizarVersaoClientes() {
     try {
         const versao = Date.now();
@@ -1178,6 +1209,56 @@ export async function dbListarAtendimentosDoUsuario(nomeUsuario) {
         const todos = await dbListarAtendimentos();
         const nomeNorm = nome.toLowerCase();
         return todos.filter(item => String(item?.atendente || '').trim().toLowerCase() === nomeNorm);
+    }
+}
+
+export async function dbListarAtendimentosDoUsuarioNoPeriodo(nomeUsuario, inicioIso, fimIso) {
+    const nome = String(nomeUsuario || '').trim();
+    if (!nome) return [];
+
+    const inicioMs = Date.parse(inicioIso || '');
+    const fimMs = Date.parse(fimIso || '');
+
+    const dentroDoPeriodo = (item) => {
+        const dataMs = Date.parse(item?.data || item?.timestamp || item?.criado_em || '');
+        if (!Number.isFinite(dataMs)) return false;
+        if (Number.isFinite(inicioMs) && dataMs < inicioMs) return false;
+        if (Number.isFinite(fimMs) && dataMs >= fimMs) return false;
+        return true;
+    };
+
+    const lista = await dbListarAtendimentosDoUsuario(nome);
+    return lista.filter(dentroDoPeriodo);
+}
+
+export async function dbListarHistoricoEstoqueDoUsuarioNoPeriodo(nomeUsuario, inicioIso, fimIso) {
+    const nome = String(nomeUsuario || '').trim();
+    if (!nome) return [];
+
+    const inicioMs = Date.parse(inicioIso || '');
+    const fimMs = Date.parse(fimIso || '');
+    const dentroDoPeriodo = (item) => {
+        const dataMs = Date.parse(item?.data || item?.timestamp || item?.criado_em || '');
+        if (!Number.isFinite(dataMs)) return false;
+        if (Number.isFinite(inicioMs) && dataMs < inicioMs) return false;
+        if (Number.isFinite(fimMs) && dataMs >= fimMs) return false;
+        return true;
+    };
+
+    try {
+        const snapshot = await get(query(ref(db, 'historico_estoque'), orderByChild('responsavel'), equalTo(nome)));
+        if (!snapshot.exists()) return [];
+        const data = snapshot.val() || {};
+        return Object.keys(data)
+            .map(key => ({ firebaseUrl: key, ...data[key] }))
+            .filter(dentroDoPeriodo);
+    } catch (error) {
+        console.warn("FALHA NA BUSCA INDEXADA DO HISTORICO DE ESTOQUE DO USUARIO. USANDO FALLBACK LOCAL:", error);
+        const todos = await dbListarHistorico();
+        const nomeNorm = nome.toLowerCase();
+        return todos
+            .filter(item => String(item?.responsavel || '').trim().toLowerCase() === nomeNorm)
+            .filter(dentroDoPeriodo);
     }
 }
 
@@ -2818,6 +2899,52 @@ export function dbEscutarCadastrosPix(callback) {
     });
 }
 
+export async function dbListarCadastrosPixDoUsuarioNoPeriodo(nomeUsuario, inicioIso, fimIso) {
+    const nome = String(nomeUsuario || '').trim();
+    if (!nome) return [];
+
+    const inicioMs = Date.parse(inicioIso || '');
+    const fimMs = Date.parse(fimIso || '');
+    const dentroDoPeriodo = (item) => {
+        const datas = [item?.data, item?.data_retirada, item?.timestamp, item?.criado_em]
+            .map(valor => Date.parse(valor || ''))
+            .filter(Number.isFinite);
+        if (datas.length === 0) return false;
+        return datas.some(dataMs => {
+            if (Number.isFinite(inicioMs) && dataMs < inicioMs) return false;
+            if (Number.isFinite(fimMs) && dataMs >= fimMs) return false;
+            return true;
+        });
+    };
+
+    const porId = new Map();
+    const consultas = [
+        query(ref(db, 'cadastros_pix'), orderByChild('tecnico'), equalTo(nome)),
+        query(ref(db, 'cadastros_pix'), orderByChild('tecnico_retirada'), equalTo(nome))
+    ];
+
+    try {
+        const snapshots = await Promise.all(consultas.map(q => get(q)));
+        snapshots.forEach(snapshot => {
+            const data = snapshot.exists() ? (snapshot.val() || {}) : {};
+            Object.keys(data).forEach(key => porId.set(key, { firebaseUrl: key, ...data[key] }));
+        });
+        return [...porId.values()].filter(dentroDoPeriodo);
+    } catch (error) {
+        console.warn("FALHA NA BUSCA INDEXADA DE CADASTROS PIX DO USUARIO. USANDO FALLBACK LOCAL:", error);
+        const snapshot = await get(ref(db, 'cadastros_pix'));
+        const data = snapshot.exists() ? (snapshot.val() || {}) : {};
+        const nomeNorm = nome.toLowerCase();
+        return Object.keys(data)
+            .map(key => ({ firebaseUrl: key, ...data[key] }))
+            .filter(item => [
+                item?.tecnico,
+                item?.tecnico_retirada
+            ].some(valor => String(valor || '').trim().toLowerCase() === nomeNorm))
+            .filter(dentroDoPeriodo);
+    }
+}
+
 /* =============================================================================
    FUNÇÕES PARA POSSE ACUMULADA (PRODUTOS E MÁQUINAS)
    =============================================================================
@@ -3581,6 +3708,32 @@ export function dbEscutarHistoricoBalanco(callback) {
     });
 }
 
+export async function dbListarHistoricoBalancoDoUsuarioNoPeriodo(responsavel, inicioIso, fimIso) {
+    const chaveU = _normalizarChaveUsuario(responsavel);
+    if (!chaveU) return [];
+
+    const inicioMs = Date.parse(inicioIso || '');
+    const fimMs = Date.parse(fimIso || '');
+
+    try {
+        const snap = await get(ref(db, `movimentacao_balanco_historico/${chaveU}`));
+        if (!snap.exists()) return [];
+        return Object.entries(snap.val() || {})
+            .map(([id, v]) => ({ id, firebaseUrl: id, ...v }))
+            .filter(item => {
+                const dataMs = Date.parse(item?.timestamp || item?.data || item?.criado_em || '');
+                if (!Number.isFinite(dataMs)) return false;
+                if (Number.isFinite(inicioMs) && dataMs < inicioMs) return false;
+                if (Number.isFinite(fimMs) && dataMs >= fimMs) return false;
+                return true;
+            })
+            .sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+    } catch (error) {
+        console.error("ERRO AO LISTAR HISTORICO DO BALANCO DO USUARIO NO PERIODO:", error);
+        return [];
+    }
+}
+
 export function dbEscutarHistoricoBalancoCompleto(callback) {
     return onValue(ref(db, 'movimentacao_balanco_historico'), (snap) => {
         if (!snap.exists()) { callback([]); return; }
@@ -4194,6 +4347,25 @@ export async function dbListarManutencoes() {
         console.error("ERRO AO LISTAR MANUTENCOES:", error);
     }
     return [];
+}
+
+export async function dbListarManutencoesPorIds(ids = []) {
+    const unicos = [...new Set((Array.isArray(ids) ? ids : [])
+        .map(id => String(id || '').trim())
+        .filter(Boolean))];
+    if (unicos.length === 0) return [];
+
+    try {
+        const snapshots = await Promise.all(unicos.map(id => get(ref(db, `manutencoes/${id}`))));
+        return snapshots
+            .map((snapshot, index) => snapshot.exists()
+                ? ({ firebaseUrl: unicos[index], ...snapshot.val() })
+                : null)
+            .filter(Boolean);
+    } catch (error) {
+        console.error("ERRO AO LISTAR MANUTENCOES POR IDS:", error);
+        return [];
+    }
 }
 
 export function dbEscutarManutencoes(callback) {

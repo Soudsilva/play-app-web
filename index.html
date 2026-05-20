@@ -238,6 +238,10 @@
                     <span class="icone">&#128228;</span>
                     <span>Verificar Envios</span>
                 </div>
+                <div class="botao-sub" id="btnVerificacoesGerais" onclick="window.location.href='Verificacoes_Gerais.html'" style="display: none;">
+                    <span class="icone">&#128203;</span>
+                    <span>Verifica&ccedil;&otilde;es Gerais</span>
+                </div>
                 <div class="botao-sub" id="btnMediaVendas" onclick="abrirMediaVendas()" style="display: none;">
                     <span class="icone">&#128185;</span>
                     <span>Sa&uacute;de de Vendas</span>
@@ -642,6 +646,7 @@
             gestao: document.getElementById('btnGestao'),
             blocoGestao: document.getElementById('blocoGestao'),
             verificarEnvios: document.getElementById('btnVerificarEnvios'),
+            verificacoesGerais: document.getElementById('btnVerificacoesGerais'),
             mediaVendas: document.getElementById('btnMediaVendas'),
             balanco: document.getElementById('btnBalanco'),
             depositos: document.getElementById('btnDepositos'),
@@ -683,6 +688,7 @@
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'none';
             btns.blocoGestao.style.display = 'none';
+            btns.verificacoesGerais.style.display = 'none';
 
             btns.movimentacao.style.display = 'flex';
             btns.cadastroItens.style.display = 'none';
@@ -713,6 +719,7 @@
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'flex';
             btns.verificarEnvios.style.display = 'flex';
+            btns.verificacoesGerais.style.display = 'none';
             btns.mediaVendas.style.display = ehAtendimentoNivel2 ? 'flex' : 'none';
             btns.depositos.style.display = ehAtendimentoNivel2 ? 'none' : 'flex';
             btns.importarHistorico.style.display = 'none';
@@ -753,6 +760,7 @@
             btns.balanco.style.display = 'flex';
             btns.mediaVendas.style.display = 'flex';
             btns.verificarEnvios.style.display = 'none';
+            btns.verificacoesGerais.style.display = 'flex';
             btns.depositos.style.display = 'flex';
             btns.importarHistorico.style.display = 'flex';
 

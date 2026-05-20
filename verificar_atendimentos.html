@@ -1439,6 +1439,30 @@
         return normalizarUsuario(atendimento?.confirmacao?.confirmado_por) === normalizarUsuario(gestorLogado());
     }
 
+    function usuarioAtualEhGestaoNivel3() {
+        const nome = normalizarUsuario(gestorLogado());
+        if (!nome) return false;
+
+        try {
+            const cache = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
+            const lista = Array.isArray(cache) ? cache : Object.values(cache || {});
+            const usuario = lista.find(item => normalizarUsuario(item?.nome) === nome);
+            const perfil = String(usuario?.nivel_completo || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase();
+            return perfil.includes('gestao_3') || perfil.includes('gestao 3');
+        } catch (erro) {
+            console.warn('Nao foi possivel ler cache_colaboradores:', erro);
+            return false;
+        }
+    }
+
+    function podeCancelarConfirmacao(atendimento) {
+        return usuarioAtualEhGestaoNivel3()
+            || (confirmacaoDentroDoPrazo(atendimento) && usuarioPodeCancelarConfirmacao(atendimento));
+    }
+
     function listarChavesFotosAtendimento(atendimento) {
         const fotos = atendimento?.fotos || {};
         const chaves = [];
@@ -1960,7 +1984,7 @@
 
         /* -- RODAPÉ -- */
         const dentroDoPrazo = confirmado && confirmacaoDentroDoPrazo(a);
-        const podeCancelar = dentroDoPrazo && usuarioPodeCancelarConfirmacao(a);
+        const podeCancelar = confirmado && podeCancelarConfirmacao(a);
 
         let rodapeHTML = confirmado
             ? `<div class="section">
@@ -2573,7 +2597,7 @@
             if (!atendimento) throw new Error('Atendimento não encontrado.');
             const payload = { ...atendimento };
             delete payload.firebaseUrl;
-            if (!confirmacaoDentroDoPrazo(atendimento) || !usuarioPodeCancelarConfirmacao(atendimento)) {
+            if (!podeCancelarConfirmacao(atendimento)) {
                 throw new Error('VocÃª sÃ³ pode cancelar confirmaÃ§Ãµes feitas pelo seu prÃ³prio usuÃ¡rio dentro do prazo permitido.');
             }
             delete payload.confirmacao;

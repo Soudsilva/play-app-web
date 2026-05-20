@@ -1,0 +1,2019 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificações Gerais</title>
+    <style>
+        html, body { overflow-x: hidden; }
+        body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; }
+        .app { width:100%; max-width:390px; padding:15px; box-sizing:border-box; min-height: 100vh; padding-bottom: 50px; overflow-x: hidden; }
+        
+        .topo { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; position: relative; width: 100%; min-height: 40px; }
+        .titulo { font-size: 24px; font-weight: bold; text-align: center; user-select: none; -webkit-user-select: none; }
+        .btn-home { background: rgba(255, 255, 255, 0.1); padding: 8px; border-radius: 50%; cursor: pointer; display: flex; position: absolute; right: 0; }
+        .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
+
+        /* Card de cada Envio */
+        .card-envio {
+            background: rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-left: 4px solid #ffeb3b;
+            border-bottom: 2px solid #ffffff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .card-envio.contestado {
+            border-left-color: #ff9800;
+        }
+        .contestacao-chat {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #f59e0b;
+        }
+        .contestacao-chat-titulo {
+            color: #ffeb3b;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1.2;
+            margin-bottom: 8px;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .contestacao-msg {
+            background: #173b82;
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+        .contestacao-msg.usuario {
+            background: #14532d;
+        }
+        .contestacao-msg-meta {
+            color: #ffeb3b;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .contestacao-msg-texto {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+        }
+        .contestacao-resposta {
+            display: grid;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .contestacao-resposta textarea {
+            width: 100%;
+            min-height: 76px;
+            box-sizing: border-box;
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            color: #111827;
+            background: #ffffff;
+            resize: vertical;
+        }
+        .contestacao-acoes-resposta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .contestacao-ou {
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: bold;
+            flex: 0 0 auto;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .contestacao-acoes-resposta .btn-acao,
+        .contestacao-acoes-resposta .btn-responder-contestacao {
+            flex: 1;
+            min-width: 0;
+            height: 38px;
+            padding: 8px 8px;
+            border: 2px solid #ffffff;
+            box-sizing: border-box;
+            line-height: 1.1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .contestacao-acoes-resposta .btn-editar-envio {
+            font-size: 18px;
+        }
+        .btn-responder-contestacao {
+            width: 100%;
+            border-radius: 8px;
+            background: #0f766e;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 0 #064e3b;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .btn-responder-contestacao:disabled {
+            background: #4b5563;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        
+        /* CabeÃ§alho do Card */
+        .envio-header { border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 10px; }
+        .envio-data { font-size: 13px; color: #ffeb3b; font-weight: bold; user-select: none; -webkit-user-select: none; }
+        .envio-cliente { font-size: 20px; font-weight: bold; margin-top: 5px; color: white; user-select: none; -webkit-user-select: none; }
+
+        /* TÃ­tulos de SeÃ§Ã£o Interna */
+        .secao-titulo { 
+            font-size: 14px; font-weight: bold; color: #ffeb3b; margin: 15px 0 8px 0; 
+            text-transform: uppercase; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 3px; 
+            user-select: none; -webkit-user-select: none;
+        }
+        
+        /* Linhas de InformaÃ§Ã£o */
+        .info-linha {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 4px;
+        }
+        .info-linha span {
+            display: inline;
+            color: #cfd6e3;
+            user-select: none;
+            -webkit-user-select: none;
+            white-space: normal;
+            text-align: left;
+            margin-right: 4px;
+        }
+        .info-linha strong {
+            display: inline;
+            color: white;
+            font-size: 15px;
+            text-align: left;
+            line-height: 1.35;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .info-linha-bloco {
+            display: block;
+        }
+        .info-linha-bloco span,
+        .info-linha-bloco strong {
+            display: inline;
+        }
+        .info-linha-bloco span { margin-bottom: 0; white-space: normal; }
+        .info-linha-livre {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            column-gap: 10px;
+            align-items: center;
+        }
+        .info-linha-livre span {
+            display: block;
+            white-space: normal;
+            margin-right: 0;
+        }
+        .info-linha-livre strong {
+            display: block;
+            text-align: right;
+        }
+        .rotulo-cadastrou { color: #4caf50 !important; }
+        .rotulo-retirado { color: #f44336 !important; }
+        .item-estoque-nome { color: white !important; font-size: 18px !important; font-weight: bold; user-select: none; -webkit-user-select: none; }
+        .envio-rodape-estoque {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 12px; padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.25);
+            font-size: 13px; color: white; font-weight: bold;
+            user-select: none; -webkit-user-select: none;
+        }
+        .envio-rodape-estoque strong { color: #ffeb3b; }
+
+        /* Galeria de Fotos Interna */
+        .foto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
+        .foto-item { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 5px; text-align: center; }
+        .foto-botao {
+            display: block;
+            width: 100%;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            cursor: pointer;
+        }
+        .foto-item img { width: 100%; height: 100px; object-fit: cover; border-radius: 4px; margin-bottom: 5px; border: 1px solid rgba(255,255,255,0.2); }
+        .foto-legenda { font-size: 10px; color: #ccc; font-weight: bold; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .modal-foto {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            background: #06142e;
+        }
+        .modal-foto[hidden] { display: none; }
+        .modal-foto-topo {
+            min-height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 12px;
+            box-sizing: border-box;
+            background: #082462;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .modal-foto-topo > div:first-child {
+            width: 40px;
+            flex-shrink: 0;
+        }
+        .modal-foto-titulo {
+            min-width: 0;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .modal-foto-fechar {
+            width: 40px;
+            height: 40px;
+            border: 0;
+            border-radius: 50%;
+            background: #244f9f;
+            color: #ffffff;
+            font-size: 28px;
+            line-height: 1;
+            font-weight: normal;
+            cursor: pointer;
+            flex-shrink: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .modal-foto-corpo {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #06142e;
+        }
+        .modal-foto-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+        .modal-foto-img.visivel { display: block; }
+        .modal-foto-status {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .modal-foto-corpo .carregando-envios { margin-top: 0; }
+
+        .sem-envios { text-align: center; opacity: 0.6; margin-top: 50px; font-size: 16px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; box-sizing: border-box; width: 100%; overflow-wrap: anywhere;}
+        .carregando-envios {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 50px;
+            padding: 22px;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .carregando-envios[hidden] { display: none; }
+        .spinner-envios {
+            width: 34px;
+            height: 34px;
+            border: 4px solid #7fa6ff;
+            border-top-color: #ffeb3b;
+            border-radius: 50%;
+            animation: girarSpinnerEnvios 0.85s linear infinite;
+        }
+        @keyframes girarSpinnerEnvios {
+            to { transform: rotate(360deg); }
+        }
+        .grupo-data-label {
+            font-size: 12px; font-weight: bold; text-transform: uppercase;
+            letter-spacing: 1.5px; color: #aac4f5;
+            padding: 14px 2px 6px;
+            user-select: none; -webkit-user-select: none;
+        }
+
+        /* Barra de busca */
+        .barra-busca { position: sticky; top: 0; z-index: 100; background: #042d86; padding: 4px 0 10px; margin-bottom: 12px; overflow: hidden; }
+        .contestacoes-resumo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            padding: 11px 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #c0390b 0%, #e85d04 60%, #f48c06 100%);
+            box-shadow: 0 3px 10px rgba(232, 93, 4, 0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: bold;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+            transition: filter 0.15s, box-shadow 0.15s;
+        }
+        .contestacoes-resumo:active { filter: brightness(0.9); }
+        .contestacoes-resumo[hidden] { display: none; }
+        .contestacoes-resumo.ativo {
+            background: linear-gradient(135deg, #1a3a1a 0%, #2d6a2d 100%);
+            box-shadow: 0 3px 10px rgba(45, 106, 45, 0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        .contestacoes-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 26px;
+            height: 26px;
+            padding: 0 7px;
+            border-radius: 13px;
+            background: #ffffff;
+            color: #c0390b;
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0;
+            align-self: center;
+            margin-left: 8px;
+        }
+        .contestacoes-resumo.ativo .contestacoes-badge {
+            color: #2d6a2d;
+        }
+        .contestacoes-texto {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 2px;
+            flex: 1;
+        }
+        .contestacoes-texto-titulo {
+            font-size: 15px;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+        @keyframes neon-pulse {
+            0%, 100% {
+                color: #ffffff;
+                text-shadow: 0 0 8px #fff, 0 0 14px #ffe066;
+            }
+            50% {
+                color: rgba(255,255,255,0.55);
+                text-shadow: none;
+            }
+        }
+        .contestacoes-texto-sub {
+            font-size: 13px;
+            font-weight: normal;
+            line-height: 1.2;
+            animation: neon-pulse 1.8s ease-in-out infinite;
+        }
+        .busca-wrap { display: flex; align-items: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.22); border-radius: 14px; padding: 0 14px; gap: 10px; }
+        .busca-wrap:focus-within { border-color: rgba(255,235,59,0.6); background: rgba(255,255,255,0.13); }
+        .busca-icone { font-size: 17px; flex-shrink: 0; opacity: 0.7; }
+        .busca-input { flex: 1; background: transparent; border: none; outline: none; color: white; font-size: 16px; padding: 13px 0; }
+        .busca-input::placeholder { color: rgba(255,255,255,0.4); font-size: 15px; }
+        .busca-limpar { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 18px; cursor: pointer; padding: 0; line-height: 1; display: none; }
+        .busca-limpar.visivel { display: block; }
+        .filtros-gerais {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            width: 100%;
+            max-width: 100%;
+        }
+        .filtro-campo {
+            flex: 1 1 0;
+            width: 0;
+            min-width: 0;
+            display: grid;
+            gap: 0;
+        }
+        .filtro-mes {
+            flex: 0 0 45%;
+        }
+        .filtro-usuario {
+            flex: 1 1 0;
+        }
+        .filtro-campo label {
+            display: none;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .filtro-select {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            min-height: 42px;
+            border: 1px solid #ffffff;
+            border-radius: 10px;
+            background: #0b3a96;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: bold;
+            padding: 9px 10px;
+            outline: none;
+        }
+        .filtro-select:disabled {
+            background: #315184;
+            cursor: wait;
+        }
+        #selectMes {
+            text-align: center;
+            text-align-last: center;
+            font-size: 16px;
+            padding-left: 6px;
+            padding-right: 6px;
+        }
+        #selectUsuario {
+            font-size: 16px;
+        }
+        .filtro-status {
+            min-height: 18px;
+            margin-bottom: 8px;
+            color: #ffeb3b;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .envio-acoes { margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.2); }
+        .acoes-linha { display: flex; gap: 10px; }
+        .btn-acao {
+            flex: 1;
+            border: none;
+            border-radius: 10px;
+            padding: 11px 12px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-editar { background: #ff9800; }
+        .btn-excluir { background: #f44336; }
+        .btn-acao:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div class="topo">
+        <div class="titulo">Verificações Gerais</div>
+        <div class="btn-home" onclick="window.location.href='index.html'">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
+        </div>
+    </div>
+
+    <div class="barra-busca">
+        <div class="filtros-gerais">
+            <div class="filtro-campo filtro-mes">
+                <label for="selectMes">Mês</label>
+                <select class="filtro-select" id="selectMes"></select>
+            </div>
+            <div class="filtro-campo filtro-usuario">
+                <label for="selectUsuario">Usuário</label>
+                <select class="filtro-select" id="selectUsuario">
+                    <option value="">Carregando...</option>
+                </select>
+            </div>
+        </div>
+        <div class="filtro-status" id="filtroStatus"></div>
+        <div class="busca-wrap">
+            <span class="busca-icone">&#128269;</span>
+            <input class="busca-input" id="inputBusca" type="search" placeholder="Buscar cliente, produto..." autocomplete="off">
+            <button class="busca-limpar" id="btnLimparBusca" onclick="limparBusca()">&times;</button>
+        </div>
+    </div>
+
+    <div id="listaEnvios">
+        <p class="sem-envios">Selecione o mês e o usuário para carregar as movimentações.</p>
+    </div>
+</div>
+
+<div class="modal-foto" id="modalFotoEnvio" hidden>
+    <div class="modal-foto-topo">
+        <div></div>
+        <div class="modal-foto-titulo" id="modalFotoTitulo">Imagem</div>
+        <button class="modal-foto-fechar" id="btnFecharModalFoto" type="button" aria-label="Fechar imagem">&times;</button>
+    </div>
+    <div class="modal-foto-corpo">
+        <div class="carregando-envios" id="modalFotoCarregando">
+            <div class="spinner-envios"></div>
+            <div>Carregando imagem...</div>
+        </div>
+        <div class="modal-foto-status" id="modalFotoErro" hidden>N&atilde;o foi poss&iacute;vel carregar a imagem.</div>
+        <img class="modal-foto-img" id="modalFotoImg" alt="Imagem ampliada">
+    </div>
+</div>
+
+<script src="assets/js/play-dialogs.js"></script>
+<script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
+    import {
+        dbListarAtendimentosDoUsuarioNoPeriodo,
+        dbListarCadastrosPixDoUsuarioNoPeriodo,
+        dbListarClientesCadastradosPorUsuarioNoPeriodo,
+        dbListarColaboradores,
+        dbListarHistoricoBalancoDoUsuarioNoPeriodo,
+        dbListarHistoricoEstoqueDoUsuarioNoPeriodo,
+        dbListarManutencoesPorIds,
+        dbExcluirAtendimento,
+        dbReverterEncerramentoCliente,
+        dbExcluirMovimentoFluxoCaixa,
+        dbReverterConclusaoManutencao
+    } from './database.js';
+
+    // Pega quem estÃ¡ logado no celular no momento
+    const usuarioLogado = localStorage.getItem('usuarioLogado');
+    let atendimentosSalvos = [];
+    let cadastrosPixSalvos = [];
+    let historicoEstoqueSalvo = [];
+    let manutencoesSalvas = [];
+    let clientesSalvos = [];
+    let colaboradoresSalvos = [];
+    let colaboradoresCarregados = false;
+    let termoBusca = '';
+    let usuarioSelecionado = '';
+    let carregandoMovimentacoes = false;
+    let filtroContestacoesAtivo = false;
+    let mapaMovimentacoesPorAtendimento = {}; // { atendimentoRefId -> [{ nome, movimento, totalApos }] }
+    let dadosUsuarioCarregados = {
+        atendimentos: [],
+        cadastrosPix: [],
+        historicoEstoque: [],
+        historicoBalanco: [],
+        clientesCadastrados: []
+    };
+    const carregamentosEnvios = {
+        historicoBalanco: true,
+        colaboradores: true,
+        atendimentos: true,
+        cadastrosPix: true,
+        historicoEstoque: true,
+        manutencoes: true,
+        clientes: true
+    };
+
+    function todosEnviosCarregados() {
+        return !carregandoMovimentacoes;
+    }
+
+    function marcarEnviosCarregados(chave) {
+        carregamentosEnvios[chave] = true;
+        renderizarEnvios();
+    }
+
+    function renderizarCarregandoEnvios(container) {
+        container.innerHTML = `
+            <div class="carregando-envios">
+                <div class="spinner-envios"></div>
+                <div>Carregando movimentações...</div>
+            </div>
+        `;
+    }
+
+    function normalizarTexto(txt) {
+        return String(txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
+
+    function escaparHtml(valor) {
+        return String(valor ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function obterMensagensContestacao(contestacaoObservacao) {
+        if (!contestacaoObservacao) return [];
+        if (typeof contestacaoObservacao === 'string') {
+            const texto = contestacaoObservacao.trim();
+            return texto ? [{ autor: 'Gestor', papel: 'gestor', texto, timestamp: '' }] : [];
+        }
+        const mensagens = contestacaoObservacao?.mensagens || {};
+        return Object.keys(mensagens)
+            .map((key) => ({ id: key, ...(mensagens[key] || {}) }))
+            .filter((msg) => String(msg.texto || '').trim())
+            .sort((a, b) => {
+                const dataA = new Date(a.timestamp || 0).getTime() || 0;
+                const dataB = new Date(b.timestamp || 0).getTime() || 0;
+                return dataA - dataB;
+            });
+    }
+
+    function montarHtmlConversaContestacao(envio) {
+        const mensagens = obterMensagensContestacao(envio?.contestacaoObservacao);
+        const htmlMensagens = mensagens.map((msg) => {
+            const papel = msg.papel === 'usuario' ? 'usuario' : 'gestor';
+            const autor = msg.autor || (papel === 'usuario' ? 'Usuário' : 'Gestor');
+            const data = formatarDataHora(msg.timestamp);
+            return `
+                <div class="contestacao-msg ${papel}">
+                    <div class="contestacao-msg-meta">${escaparHtml(autor)}${data ? ` - ${escaparHtml(data)}` : ''}</div>
+                    <div class="contestacao-msg-texto">${escaparHtml(msg.texto)}</div>
+                </div>`;
+        }).join('');
+
+        return `
+            <div class="contestacao-chat">
+                <div class="contestacao-chat-titulo">Conversa da contestação</div>
+                ${htmlMensagens}
+            </div>`;
+    }
+
+    function montarHtmlThumbFoto(url, thumbUrl, legenda) {
+        const urlSeguro = escaparHtml(url || '');
+        const thumbSeguro = escaparHtml(thumbUrl || url || '');
+        const legendaSegura = escaparHtml(legenda || 'Imagem');
+        return `
+            <div class="foto-item">
+                <button class="foto-botao" type="button" data-foto-url="${urlSeguro}" data-foto-legenda="${legendaSegura}">
+                    <img src="${thumbSeguro}" loading="lazy" alt="${legendaSegura}">
+                </button>
+                <div class="foto-legenda">${legendaSegura}</div>
+            </div>
+        `;
+    }
+
+    let modalFotoAberto = false;
+    let modalFotoHistoricoAtivo = false;
+
+    function abrirModalFotoEnvio(url, legenda = 'Imagem') {
+        const modal = document.getElementById('modalFotoEnvio');
+        const img = document.getElementById('modalFotoImg');
+        const titulo = document.getElementById('modalFotoTitulo');
+        const carregando = document.getElementById('modalFotoCarregando');
+        const erro = document.getElementById('modalFotoErro');
+        if (!modal || !img || !url) return;
+
+        titulo.textContent = legenda || 'Imagem';
+        img.classList.remove('visivel');
+        img.removeAttribute('src');
+        erro.hidden = true;
+        carregando.hidden = false;
+        modal.hidden = false;
+        modalFotoAberto = true;
+
+        if (!modalFotoHistoricoAtivo) {
+            history.pushState({ modalFotoEnvio: true }, '', window.location.href);
+            modalFotoHistoricoAtivo = true;
+        }
+
+        img.onload = () => {
+            carregando.hidden = true;
+            erro.hidden = true;
+            img.classList.add('visivel');
+        };
+        img.onerror = () => {
+            carregando.hidden = true;
+            erro.hidden = false;
+            img.classList.remove('visivel');
+        };
+        img.src = url;
+    }
+
+    function fecharModalFotoEnvio(atualizarHistorico = true) {
+        const modal = document.getElementById('modalFotoEnvio');
+        const img = document.getElementById('modalFotoImg');
+        if (!modal || !modalFotoAberto) return;
+
+        if (atualizarHistorico && modalFotoHistoricoAtivo) {
+            history.back();
+            return;
+        }
+
+        modal.hidden = true;
+        modalFotoAberto = false;
+        modalFotoHistoricoAtivo = false;
+        img.classList.remove('visivel');
+        img.removeAttribute('src');
+    }
+
+    document.getElementById('listaEnvios').addEventListener('click', (event) => {
+        const botaoFoto = event.target.closest('.foto-botao');
+        if (!botaoFoto) return;
+        abrirModalFotoEnvio(botaoFoto.dataset.fotoUrl, botaoFoto.dataset.fotoLegenda);
+    });
+
+    document.getElementById('btnFecharModalFoto').addEventListener('click', () => {
+        fecharModalFotoEnvio(true);
+    });
+
+    window.addEventListener('popstate', () => {
+        if (modalFotoAberto) {
+            fecharModalFotoEnvio(false);
+        }
+    });
+
+    function formatarDataHora(valor) {
+        if (!valor) return '';
+        const data = new Date(valor);
+        if (Number.isNaN(data.getTime())) return '';
+        return data.toLocaleString('pt-BR');
+    }
+
+    window.limparBusca = function() {
+        document.getElementById('inputBusca').value = '';
+        termoBusca = '';
+        document.getElementById('btnLimparBusca').classList.remove('visivel');
+        renderizarEnvios();
+    };
+
+    document.getElementById('inputBusca').addEventListener('input', function() {
+        termoBusca = normalizarTexto(this.value);
+        document.getElementById('btnLimparBusca').classList.toggle('visivel', this.value.length > 0);
+        renderizarEnvios();
+    });
+
+    function formatarMoeda(valor) {
+        return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    function converterParaNumero(valor) {
+        if (typeof valor === 'number') return Number.isFinite(valor) ? valor : 0;
+        if (typeof valor !== 'string') return Number(valor || 0) || 0;
+
+        const texto = valor.trim();
+        if (!texto) return 0;
+
+        const normalizado = texto
+            .replace(/[^\d,.-]/g, '')
+            .replace(/\.(?=\d{3}(?:\D|$))/g, '')
+            .replace(',', '.');
+
+        return Number(normalizado) || 0;
+    }
+
+    function obterPerfilPorNome(nome) {
+        return colaboradoresSalvos.find(c => c.nome === nome)?.nivel_completo || "";
+    }
+
+    function obterNomeAutorEnvio(envio) {
+        return envio.enviadoPor || envio.autor || envio.responsavel || envio.atendente || "";
+    }
+
+    function obterPerfilAutorEnvio(envio) {
+        return envio.perfilAutor || envio.autorPerfil || envio.perfil || obterPerfilPorNome(obterNomeAutorEnvio(envio));
+    }
+
+    function pertenceAoUsuario(envio) {
+        const usuario = normalizarTexto(usuarioSelecionado);
+        if (!usuario) return false;
+
+        return [
+            envio?.atendente,
+            envio?.responsavel,
+            envio?.enviadoPor,
+            envio?.autor,
+            envio?.autorizadoPor
+        ].some(nome => normalizarTexto(nome) === usuario);
+    }
+
+    function obterManutencaoCompleta(envio) {
+        const manutencaoResumo = envio?.manutencao || {};
+        const manutencaoId = String(manutencaoResumo?.id || '').trim();
+        if (!manutencaoId) {
+            return manutencaoResumo;
+        }
+
+        const manutencaoBanco = manutencoesSalvas.find(item => item.firebaseUrl === manutencaoId);
+        if (!manutencaoBanco) {
+            return manutencaoResumo;
+        }
+
+        return {
+            ...manutencaoBanco,
+            ...manutencaoResumo,
+            equipamentosAdicionados: Array.isArray(manutencaoBanco.equipamentosAdicionados) && manutencaoBanco.equipamentosAdicionados.length > 0
+                ? manutencaoBanco.equipamentosAdicionados
+                : (Array.isArray(manutencaoResumo.equipamentosAdicionados) ? manutencaoResumo.equipamentosAdicionados : []),
+            equipamentosRetiradosDetalhes: Array.isArray(manutencaoBanco.equipamentosRetiradosDetalhes) && manutencaoBanco.equipamentosRetiradosDetalhes.length > 0
+                ? manutencaoBanco.equipamentosRetiradosDetalhes
+                : [],
+            equipamentosRetirados: Array.isArray(manutencaoBanco.equipamentosRetirados) && manutencaoBanco.equipamentosRetirados.length > 0
+                ? manutencaoBanco.equipamentosRetirados
+                : (Array.isArray(manutencaoResumo.equipamentosRetirados) ? manutencaoResumo.equipamentosRetirados : []),
+            observacoes: manutencaoBanco.observacoes || manutencaoResumo.observacoes || '',
+            valorEncerramento: manutencaoBanco.valorEncerramento || manutencaoResumo.valorEncerramento || '',
+            pontoEncerrado: manutencaoBanco.pontoEncerrado === true || manutencaoResumo.pontoEncerrado === true
+        };
+    }
+
+    function obterDataLocalYMD(isoStr) {
+        if (!isoStr) return '';
+        const d = new Date(isoStr);
+        if (Number.isNaN(d.getTime())) return '';
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function dataDentroMesSelecionado(valor) {
+        if (!valor || !selectMes?.value) return true;
+        const data = new Date(valor);
+        if (Number.isNaN(data.getTime())) return false;
+        const [ano, mes] = String(selectMes.value).split('-').map(Number);
+        return data.getFullYear() === ano && data.getMonth() === (mes - 1);
+    }
+
+    function obterTextoLocalCadastroPix(registro, clienteContexto = null) {
+        const identificacao = String(registro?.identificacao || registro?.cliente || '').trim();
+        const equipamento = String(registro?.equipamento || '').trim();
+        const clienteRegistro = extrairClienteDoCadastroPix(registro);
+        const numeroContexto = normalizarTexto(clienteContexto?.numero);
+        const nomeContexto = normalizarTexto(clienteContexto?.nome);
+        const mesmoCliente = Boolean(
+            (numeroContexto && normalizarTexto(clienteRegistro?.numero) === numeroContexto)
+            || (nomeContexto && normalizarTexto(clienteRegistro?.nome) === nomeContexto)
+        );
+
+        if (mesmoCliente) {
+            return equipamento || identificacao || '—';
+        }
+
+        return [identificacao, equipamento].filter(Boolean).join(' | ');
+    }
+
+    function cadastroPixPertenceAoEnvio(registro, envio) {
+        const clienteNome = normalizarTexto(envio?.cliente?.nome);
+        const clienteNumero = normalizarTexto(envio?.cliente?.numero);
+        const identificacao = normalizarTexto(registro?.identificacao);
+        const clienteRegistro = normalizarTexto(registro?.cliente);
+
+        if (clienteNumero && identificacao.includes(clienteNumero)) return true;
+        if (clienteNome && (clienteRegistro === clienteNome || identificacao.includes(clienteNome))) return true;
+        return false;
+    }
+
+    function obterEventosCadastroPixDoEnvio(envio) {
+        const usuario = normalizarTexto(usuarioSelecionado);
+        const dataEnvio = obterDataLocalYMD(envio?.data);
+        if (!usuario || !dataEnvio) return [];
+
+        const eventos = [];
+        cadastrosPixSalvos.forEach(registro => {
+            if (!cadastroPixPertenceAoEnvio(registro, envio)) return;
+
+            const numeroPix = String(registro?.numero_pix || '').trim();
+            const local = obterTextoLocalCadastroPix(registro, envio?.cliente || null);
+
+            if (normalizarTexto(registro?.tecnico) === usuario && obterDataLocalYMD(registro?.data) === dataEnvio) {
+                eventos.push({
+                    chave: `inst_${registro.firebaseUrl || ''}_${numeroPix}_${registro.data || ''}`,
+                    tipo: 'colocou',
+                    numeroPix,
+                    local,
+                    data: registro?.data || '',
+                    tecnico: String(registro?.tecnico || '').trim()
+                });
+            }
+
+            if (normalizarTexto(registro?.tecnico_retirada) === usuario && obterDataLocalYMD(registro?.data_retirada) === dataEnvio) {
+                eventos.push({
+                    chave: `ret_${registro.firebaseUrl || ''}_${numeroPix}_${registro.data_retirada || ''}`,
+                    tipo: 'retirou',
+                    numeroPix,
+                    local,
+                    data: registro?.data_retirada || '',
+                    tecnico: String(registro?.tecnico_retirada || '').trim()
+                });
+            }
+        });
+
+        const vistos = new Set();
+        return eventos
+            .filter(item => {
+                if (!item.chave || vistos.has(item.chave)) return false;
+                vistos.add(item.chave);
+                return true;
+            })
+            .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+    }
+
+    function extrairClienteDoCadastroPix(registro) {
+        const identificacao = String(registro?.identificacao || '').trim();
+        const clienteFallback = String(registro?.cliente || '').trim();
+        const match = identificacao.match(/^N\.\s*([^-]+)\s*-\s*(.+)$/i);
+        if (match) {
+            return {
+                numero: String(match[1] || '').trim(),
+                nome: String(match[2] || '').trim() || clienteFallback
+            };
+        }
+        return {
+            numero: '',
+            nome: clienteFallback || identificacao || 'Cliente Desconhecido'
+        };
+    }
+
+    function existeAtendimentoParaCadastroPix(registro, tipoEvento, dataEvento) {
+        const dataYmd = obterDataLocalYMD(dataEvento);
+        if (!dataYmd) return false;
+
+        return atendimentosSalvos.some(envio => {
+            if (!pertenceAoUsuario(envio)) return false;
+            if (obterDataLocalYMD(envio?.data) !== dataYmd) return false;
+            if (!cadastroPixPertenceAoEnvio(registro, envio)) return false;
+
+            const eventos = obterEventosCadastroPixDoEnvio(envio);
+            const numeroPix = String(registro?.numero_pix || '').trim();
+            return eventos.some(evento => evento.tipo === tipoEvento && evento.numeroPix === numeroPix && obterDataLocalYMD(evento.data) === dataYmd);
+        });
+    }
+
+    function obterCadastrosPixAvulsosDoUsuario() {
+        const usuario = normalizarTexto(usuarioSelecionado);
+        if (!usuario) return [];
+
+        const itens = [];
+        cadastrosPixSalvos.forEach(registro => {
+            const numeroPix = String(registro?.numero_pix || '').trim();
+            if (!numeroPix) return;
+
+            const tecnicoInstalacao = normalizarTexto(registro?.tecnico);
+            const tecnicoRetirada = normalizarTexto(registro?.tecnico_retirada);
+
+            if (tecnicoInstalacao === usuario && registro?.data && dataDentroMesSelecionado(registro.data) && !existeAtendimentoParaCadastroPix(registro, 'colocou', registro.data)) {
+                itens.push({
+                    tipoLinhaTempo: 'cadastro_pix',
+                    eventoTipo: 'colocou',
+                    data: registro.data,
+                    cadastroPix: registro,
+                    cliente: extrairClienteDoCadastroPix(registro)
+                });
+            }
+
+            if (tecnicoRetirada === usuario && registro?.data_retirada && dataDentroMesSelecionado(registro.data_retirada) && !existeAtendimentoParaCadastroPix(registro, 'retirou', registro.data_retirada)) {
+                itens.push({
+                    tipoLinhaTempo: 'cadastro_pix',
+                    eventoTipo: 'retirou',
+                    data: registro.data_retirada,
+                    cadastroPix: registro,
+                    cliente: extrairClienteDoCadastroPix(registro)
+                });
+            }
+        });
+
+        return itens.sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+    }
+
+    function montarHtmlCadastroPix(envio) {
+        const eventos = obterEventosCadastroPixDoEnvio(envio);
+        if (eventos.length === 0) return '';
+
+        let html = '';
+        eventos.forEach(evento => {
+            const rotulo = evento.tipo === 'retirou'
+                ? `Retirado Pix ${evento.numeroPix || '—'}:`
+                : `Cadastrou Pix ${evento.numeroPix || '—'}:`;
+            const detalhes = [evento.local, formatarDataHora(evento.data)].filter(Boolean).join(' | ');
+            const classeRotulo = evento.tipo === 'retirou' ? ' class="rotulo-retirado"' : ' class="rotulo-cadastrou"';
+            html += `<div class="info-linha"><span${classeRotulo}>${rotulo}</span><strong>${detalhes || '—'}</strong></div>`;
+        });
+
+        return html;
+    }
+
+    function montarHtmlCadastroPixAvulso(item) {
+        const registro = item?.cadastroPix || {};
+        const numeroPix = String(registro?.numero_pix || '').trim() || '—';
+        const local = obterTextoLocalCadastroPix(registro, item?.cliente || null);
+        const rotulo = item?.eventoTipo === 'retirou' ? `Retirado Pix ${numeroPix}:` : `Cadastrou Pix ${numeroPix}:`;
+        let html = '';
+        const classeRotulo = item?.eventoTipo === 'retirou' ? ' class="rotulo-retirado"' : ' class="rotulo-cadastrou"';
+        html += `<div class="info-linha"><span${classeRotulo}>${rotulo}</span><strong>${local || '—'}</strong></div>`;
+
+        if ((registro?.contador ?? '') !== '' && item?.eventoTipo === 'colocou') {
+            html += `<div class="info-linha"><span>Contador:</span><strong>${registro.contador}</strong></div>`;
+        }
+
+        return html;
+    }
+
+    function ehRegistroManutencao(envio) {
+        return envio?.origemRegistro === 'manutencao' || !!envio?.manutencao;
+    }
+
+    function ehRetiradaEstoque(envio) {
+        return envio?.origemRegistro === 'retirada_estoque';
+    }
+
+    function ehEntradaEstoque(envio) {
+        return envio?.origemRegistro === 'entrada_estoque';
+    }
+
+    function ehMovimentoEstoque(envio) {
+        return ehRetiradaEstoque(envio) || ehEntradaEstoque(envio) || envio?.tipoLinhaTempo === 'movimento_estoque';
+    }
+
+    function obterTituloItensMovimentoEstoque(envio) {
+        return normalizarTexto(envio?.itemCategoria) === 'maquina' ? 'Máquinas' : 'Produtos';
+    }
+
+    function obterCabecalhoMovimentoEstoque(envio) {
+        return ehEntradaEstoque(envio) ? '📥 Entrada de Estoque' : '📦 Retirada de Estoque';
+    }
+
+    function obterMovimentosEstoqueDoUsuario() {
+        return historicoEstoqueSalvo
+            .filter(item => {
+                if (!termoBusca) return true;
+                const campos = [
+                    item?.tipo === 'entrada' ? 'entrada de estoque' : 'retirada de estoque',
+                    item?.itemNome,
+                    item?.itemCategoria,
+                    item?.responsavel,
+                    item?.registradoPor,
+                    formatarDataHora(item?.data)
+                ];
+                return campos.some(c => normalizarTexto(c).includes(termoBusca));
+            })
+            .map(item => ({
+                tipoLinhaTempo: 'movimento_estoque',
+                firebaseUrl: item?.firebaseUrl ? `historico_${item.firebaseUrl}` : '',
+                data: item?.data || '',
+                atendente: item?.responsavel || '',
+                responsavel: item?.responsavel || '',
+                autorizadoPor: item?.registradoPor || '',
+                registradoPor: item?.registradoPor || '',
+                itemCategoria: item?.itemCategoria || '',
+                origemRegistro: item?.tipo === 'entrada' ? 'entrada_estoque' : 'retirada_estoque',
+                produtos: [{
+                    nome: item?.itemNome || 'Item sem nome',
+                    quantidade: Number(item?.qtd || 0)
+                }]
+            }))
+            .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+    }
+
+    function temFinanceiroNoEnvio(envio) {
+        const fin = envio?.financeiro || {};
+        return (
+            (Array.isArray(fin.pix) && fin.pix.length > 0)
+            || (fin.dinheiro ?? '') !== ''
+            || Number(fin.totalGeral || 0) !== 0
+            || Number(fin.comissaoValor || 0) !== 0
+            || Number(fin.saldoFinal || 0) !== 0
+            || Number(fin.saldoDepositar || 0) !== 0
+        );
+    }
+
+    function formatarStatusCadastroTexto(status) {
+        const valor = normalizarTexto(status);
+        if (!valor) return 'Aprovado';
+        if (valor === 'em_analise' || valor === 'em analise' || valor === 'analise') return 'Em análise';
+        if (valor === 'aprovado') return 'Aprovado';
+        return String(status || '').trim() || 'Aprovado';
+    }
+
+    function obterEquipamentosTextoLista(equipDetalhes, equipTexto = '') {
+        if (Array.isArray(equipDetalhes) && equipDetalhes.length > 0) {
+            return equipDetalhes.map(formatarDescricaoEquipamento).filter(Boolean).join(', ');
+        }
+        return String(equipTexto || '').trim();
+    }
+
+    function obterCadastrosClienteDoUsuario() {
+        const usuario = normalizarTexto(usuarioSelecionado);
+        if (!usuario) return [];
+
+        return clientesSalvos
+            .filter(item => normalizarTexto(item?.cadastradoPor) === usuario)
+            .filter(item => {
+                if (!termoBusca) return true;
+                const campos = [
+                    item?.numero,
+                    item?.nome,
+                    item?.cidade,
+                    item?.rota,
+                    item?.endereco,
+                    item?.statusCadastro,
+                    item?.aberto,
+                    item?.obs,
+                    obterEquipamentosTextoLista(item?.equipDetalhes, item?.equip),
+                    formatarDataHora(item?.dataCadastro)
+                ];
+                return campos.some(c => normalizarTexto(c).includes(termoBusca));
+            })
+            .map(item => ({
+                tipoLinhaTempo: 'cadastro_cliente',
+                data: item?.dataCadastro || '',
+                clienteCadastro: item,
+                cliente: {
+                    numero: item?.numero || '',
+                    nome: item?.nome || 'Cliente sem nome'
+                }
+            }))
+            .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+    }
+
+    function formatarDescricaoEquipamento(item, opcoes = {}) {
+        if (!item) return '';
+        if (typeof item === 'string') return item.trim();
+
+        const { modoRetirada = false } = opcoes;
+        const nome = String(item?.nome || '').trim();
+        const partes = [];
+        const qtd = String(item?.qtd ?? '').trim();
+        const pix = String(item?.pix ?? '').trim();
+        const contador = String(item?.contador ?? '').trim();
+        const tecnico = String(item?.tecnico ?? '').trim();
+        const contAntRetirada = String(item?.contador_anterior_retirada ?? '').trim();
+        const contAtualRetirada = String(item?.contador_atual_retirada ?? '').trim();
+        const valorRetirada = String(item?.valor_retirada ?? '').trim();
+        const percentualComissao = String(item?.percentual_comissao ?? '').trim();
+        const valorComissao = String(item?.valor_comissao ?? '').trim();
+        const valorLiquido = String(item?.valor_liquido ?? '').trim();
+
+        if (qtd && qtd !== '1') partes.push(`Qtd ${qtd}`);
+        if (tecnico) partes.push(`Técnico ${tecnico}`);
+        if (pix) partes.push(`Pix ${pix}`);
+        if (contador) partes.push(`Contador ${contador}`);
+        if (contAntRetirada || contAtualRetirada) {
+            partes.push(`Retirada ${contAntRetirada || '0'} -> ${contAtualRetirada || '0'}`);
+        }
+        if (valorRetirada) partes.push(`Valor ${formatarMoeda(converterParaNumero(valorRetirada))}`);
+        if (percentualComissao) partes.push(`Comissão ${percentualComissao}%`);
+        if (valorComissao) partes.push(`Comis. ${formatarMoeda(converterParaNumero(valorComissao))}`);
+        if (valorLiquido) partes.push(`Líquido ${formatarMoeda(converterParaNumero(valorLiquido))}`);
+
+        if (modoRetirada && pix) {
+            return nome ? `${nome} (Pix ${pix})` : `Pix ${pix}`;
+        }
+
+        if (!nome) return partes.join(' | ');
+        return partes.length > 0 ? `${nome} (${partes.join(' | ')})` : nome;
+    }
+
+    function montarHtmlManutencao(envio) {
+        const info = obterManutencaoCompleta(envio);
+        let linhas = '';
+        const equipamentosAdicionados = Array.isArray(info.equipamentosAdicionados) && info.equipamentosAdicionados.length > 0
+            ? info.equipamentosAdicionados
+            : (Array.isArray(info?.equipamentoAdicionado?.detalhes) ? info.equipamentoAdicionado.detalhes : []);
+        const equipamentosRetirados = Array.isArray(info.equipamentosRetiradosDetalhes) && info.equipamentosRetiradosDetalhes.length > 0
+            ? info.equipamentosRetiradosDetalhes
+            : (Array.isArray(info.equipamentosRetirados) ? info.equipamentosRetirados : []);
+
+        if (info.tipoServico) linhas += `<div class="info-linha"><span>Tipo:</span><strong>${info.tipoServico}</strong></div>`;
+        if (equipamentosAdicionados.length > 0) {
+            linhas += `<div class="info-linha"><span>Máquinas adicionadas:</span><strong>${equipamentosAdicionados.map(formatarDescricaoEquipamento).filter(Boolean).join(', ')}</strong></div>`;
+        }
+        if (equipamentosRetirados.length > 0) {
+            linhas += `<div class="info-linha"><span>Retirou:</span><strong>${equipamentosRetirados.map(item => formatarDescricaoEquipamento(item, { modoRetirada: true })).filter(Boolean).join(', ')}</strong></div>`;
+        }
+        if (info.pontoEncerrado) {
+            linhas += `<div class="info-linha"><span>Ponto:</span><strong>Encerrado em análise</strong></div>`;
+        }
+        if ((info.valorEncerramento ?? '') !== '') {
+            linhas += `<div class="info-linha"><span>Valor encerramento:</span><strong>${formatarMoeda(converterParaNumero(info.valorEncerramento))}</strong></div>`;
+        }
+        if (info.observacoes) {
+            linhas += `<div class="info-linha info-linha-bloco"><span>Observações:</span><strong>${info.observacoes}</strong></div>`;
+        }
+        return linhas ? `<div class="secao-titulo">Manutenção</div>${linhas}` : '';
+    }
+
+    function montarHtmlCadastroCliente(item) {
+        const info = item?.clienteCadastro || {};
+        const equipamentos = obterEquipamentosTextoLista(info?.equipDetalhes, info?.equip);
+        let html = `<div class="secao-titulo">Cadastro de Cliente</div>`;
+        html += `<div class="info-linha"><span>Status:</span><strong>${formatarStatusCadastroTexto(info?.statusCadastro)}</strong></div>`;
+        if (info?.cidade) html += `<div class="info-linha"><span>Cidade:</span><strong>${info.cidade}</strong></div>`;
+        if (info?.rota) html += `<div class="info-linha"><span>Rota:</span><strong>${info.rota}</strong></div>`;
+        if (info?.endereco) html += `<div class="info-linha info-linha-bloco"><span>Endereço:</span><strong>${info.endereco}</strong></div>`;
+        if (info?.aberto) html += `<div class="info-linha"><span>Dias aberto:</span><strong>${info.aberto}</strong></div>`;
+        if (equipamentos) html += `<div class="info-linha info-linha-bloco"><span>Equipamentos:</span><strong>${equipamentos}</strong></div>`;
+        if (info?.obs) html += `<div class="info-linha info-linha-bloco"><span>Observações:</span><strong>${info.obs}</strong></div>`;
+        return html;
+    }
+
+    function obterOrigemAtendimento(envio) {
+        if (ehRegistroManutencao(envio))  return { icone: '🔧', texto: 'Manutenção',      cor: '#90caf9' };
+        if (ehRetiradaEstoque(envio))     return { icone: '📤', texto: 'Saída Estoque',   cor: '#ffcc80' };
+        if (ehEntradaEstoque(envio))      return { icone: '📥', texto: 'Entrada Estoque', cor: '#a5d6a7' };
+        return { icone: '📋', texto: 'Atendimento', cor: '#ef9a9a' };
+    }
+
+    function idCurto(firebaseUrl) {
+        if (!firebaseUrl) return '—';
+        return firebaseUrl.replace(/^historico_/, '').slice(-8).toUpperCase();
+    }
+
+    function ehMesmoDiaAtual(dataIso) {
+        if (!dataIso) return false;
+        const dataEnvio = new Date(dataIso);
+        const agora = new Date();
+
+        return dataEnvio.getFullYear() === agora.getFullYear()
+            && dataEnvio.getMonth() === agora.getMonth()
+            && dataEnvio.getDate() === agora.getDate();
+    }
+
+    function podeAlterarEnvio(envio) {
+        if (!colaboradoresCarregados) {
+            return false;
+        }
+
+        if (envio.confirmacao) {
+            return false;
+        }
+
+        const nomeAutor = obterNomeAutorEnvio(envio);
+        const perfilAutor = obterPerfilAutorEnvio(envio);
+
+        if (perfilAutor.includes('estoque')) {
+            return false;
+        }
+        if (nomeAutor !== usuarioLogado) {
+            return false;
+        }
+
+        if (envio.contestado) {
+            return true;
+        }
+
+        return ehMesmoDiaAtual(envio.data);
+    }
+
+    function contestacaoRegistrada(envio) {
+        return !!envio?.contestado;
+    }
+
+    function atualizarResumoContestacoes() {
+        filtroContestacoesAtivo = false;
+    }
+
+    const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+    function dataLocalYMD(isoStr) {
+        return obterDataLocalYMD(isoStr);
+    }
+
+    function rotuloData(ymd) {
+        const hoje = new Date(); hoje.setHours(0,0,0,0);
+        const data = new Date(ymd + 'T00:00:00');
+        const diff = Math.round((hoje - data) / 86400000);
+        if (diff === 0) return 'Hoje';
+        if (diff === 1) return 'Ontem';
+        if (diff < 7) {
+            const nome = data.toLocaleDateString('pt-BR', { weekday: 'long' });
+            return nome.charAt(0).toUpperCase() + nome.slice(1);
+        }
+        const mes = MESES[data.getMonth()];
+        return data.getFullYear() === hoje.getFullYear() ? mes : `${mes} ${data.getFullYear()}`;
+    }
+
+    function renderizarEnvios() {
+        const container = document.getElementById('listaEnvios');
+        container.innerHTML = '';
+        atualizarResumoContestacoes();
+
+        if (!usuarioSelecionado || !selectMes?.value) {
+            container.innerHTML = '<p class="sem-envios">Selecione o mês e o usuário para carregar as movimentações.</p>';
+            return;
+        }
+
+        if (!todosEnviosCarregados()) {
+            renderizarCarregandoEnvios(container);
+            return;
+        }
+
+        const enviosAtendimento = atendimentosSalvos
+            .filter(a => {
+                if (!pertenceAoUsuario(a)) return false;
+                if (ehMovimentoEstoque(a)) return false;
+                if (filtroContestacoesAtivo && !contestacaoRegistrada(a)) return false;
+                if (!termoBusca) return true;
+                const fotos = a.fotos || {};
+                const manutencaoCompleta = ehRegistroManutencao(a) ? obterManutencaoCompleta(a) : {};
+                const eventosCadastroPix = obterEventosCadastroPixDoEnvio(a);
+                const maquinasAdicionadas = Array.isArray(manutencaoCompleta?.equipamentosAdicionados)
+                    ? manutencaoCompleta.equipamentosAdicionados.map(formatarDescricaoEquipamento)
+                    : [];
+                const maquinasRetiradas = Array.isArray(manutencaoCompleta?.equipamentosRetiradosDetalhes) && manutencaoCompleta.equipamentosRetiradosDetalhes.length > 0
+                    ? manutencaoCompleta.equipamentosRetiradosDetalhes.map(formatarDescricaoEquipamento)
+                    : (Array.isArray(manutencaoCompleta?.equipamentosRetirados)
+                        ? manutencaoCompleta.equipamentosRetirados.map(formatarDescricaoEquipamento)
+                        : []);
+                const campos = [
+                    obterNomeAutorEnvio(a),
+                    a.autorizadoPor,
+                    a.cliente?.nome,
+                    a.cliente?.numero,
+                    ...(a.produtos || []).map(p => p.nome),
+                    manutencaoCompleta?.tipoServico || '',
+                    ...maquinasAdicionadas,
+                    ...maquinasRetiradas,
+                    ...eventosCadastroPix.map(item => `pix ${item.numeroPix}`),
+                    ...eventosCadastroPix.map(item => item.local),
+                    manutencaoCompleta?.observacoes || '',
+                    manutencaoCompleta?.valorEncerramento || '',
+                    new Date(a.data).toLocaleString('pt-BR'),
+                    fotos.ficha ? 'ficha' : '',
+                    ...(fotos.maquinas || []).map(m => m.nome),
+                    ...(fotos.pix || []).map(p => `pix ${p.numero}`)
+                ];
+                return campos.some(c => normalizarTexto(c).includes(termoBusca));
+            });
+
+        const enviosCadastroPix = obterCadastrosPixAvulsosDoUsuario()
+            .filter(item => {
+                if (filtroContestacoesAtivo) return false;
+                if (!termoBusca) return true;
+                const registro = item?.cadastroPix || {};
+                const cliente = item?.cliente || {};
+                const campos = [
+                    cliente.numero,
+                    cliente.nome,
+                    registro.numero_pix,
+                    registro.equipamento,
+                    registro.identificacao,
+                    registro.cliente,
+                    item?.eventoTipo === 'retirou' ? 'retirou' : 'colocou',
+                    formatarDataHora(item?.data)
+                ];
+                return campos.some(c => normalizarTexto(c).includes(termoBusca));
+            });
+
+        const enviosEstoque = filtroContestacoesAtivo ? [] : obterMovimentosEstoqueDoUsuario();
+        const enviosCadastroCliente = filtroContestacoesAtivo ? [] : obterCadastrosClienteDoUsuario();
+
+        // Filtra sÃ³ os que foram enviados por ele e ordena da data mais recente (maior) para a mais velha (menor)
+        const meusEnvios = [
+            ...enviosAtendimento,
+            ...enviosCadastroPix,
+            ...enviosEstoque,
+            ...enviosCadastroCliente
+        ]
+            .sort((a, b) => new Date(b.data) - new Date(a.data));
+
+        if (meusEnvios.length === 0) {
+            container.innerHTML = termoBusca
+                ? `<p class="sem-envios">Nenhum envio encontrado para "<strong>${document.getElementById('inputBusca').value}</strong>".</p>`
+                : '<p class="sem-envios">Nenhuma movimentação encontrada para este usuário no mês selecionado.</p>';
+            return;
+        }
+
+        // Agrupa por data e insere rótulos
+        let ultimoGrupo = null;
+        meusEnvios.forEach(envio => {
+            const grupoKey = dataLocalYMD(envio.data);
+            if (grupoKey !== ultimoGrupo) {
+                ultimoGrupo = grupoKey;
+                const label = document.createElement('div');
+                label.className = 'grupo-data-label';
+                label.textContent = rotuloData(grupoKey);
+                container.appendChild(label);
+            }
+            const card = document.createElement('div');
+            card.className = 'card-envio';
+
+            if (envio?.tipoLinhaTempo === 'cadastro_pix') {
+                const clienteNome = envio?.cliente?.nome || 'Cliente Desconhecido';
+                const clienteNumero = envio?.cliente?.numero || 'S/N';
+                const dataFormatada = formatarDataHora(envio?.data);
+                const htmlHeader = `<div class="envio-header"><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>`;
+                const htmlCadastroPixAvulso = montarHtmlCadastroPixAvulso(envio);
+                const htmlRodape = `
+                    <div class="envio-rodape-estoque">
+                        <span>${dataFormatada}</span>
+                    </div>`;
+                card.innerHTML = `${htmlHeader}${htmlCadastroPixAvulso}${htmlRodape}`;
+                container.appendChild(card);
+                return;
+            }
+
+            if (envio?.tipoLinhaTempo === 'cadastro_cliente') {
+                const clienteNome = envio?.cliente?.nome || 'Cliente Desconhecido';
+                const clienteNumero = envio?.cliente?.numero || 'S/N';
+                const dataFormatada = formatarDataHora(envio?.data);
+                const info = envio?.clienteCadastro || {};
+                const htmlHeader = `<div class="envio-header"><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>`;
+                let htmlFotos = '';
+                const fotos = [];
+                if (info?.fotoFichaInstalacao) {
+                    fotos.push({ nome: 'Ficha', url: info.fotoFichaInstalacao, thumbUrl: info.fotoFichaInstalacaoThumb || info.fotoFichaInstalacao });
+                }
+                (Array.isArray(info?.fotosMaquinasInstalacao) ? info.fotosMaquinasInstalacao : []).forEach(foto => {
+                    if (!foto?.url) return;
+                    fotos.push({ nome: foto.nome || 'Máquina', url: foto.url, thumbUrl: foto.thumbUrl || foto.url });
+                });
+                if (fotos.length > 0) {
+                    htmlFotos = `<div class="secao-titulo">Imagens (Toque para ampliar)</div><div class="foto-grid">`;
+                    fotos.forEach(foto => {
+                        htmlFotos += montarHtmlThumbFoto(foto.url, foto.thumbUrl || foto.url, foto.nome);
+                    });
+                    htmlFotos += `</div>`;
+                }
+                const htmlRodape = `<div class="envio-rodape-estoque"><span>${dataFormatada}</span></div>`;
+                card.innerHTML = `${htmlHeader}${montarHtmlCadastroCliente(envio)}${htmlFotos}${htmlRodape}`;
+                container.appendChild(card);
+                return;
+            }
+
+            const dataFormatada = new Date(envio.data).toLocaleString('pt-BR');
+            const htmlManutencao = ehRegistroManutencao(envio) ? montarHtmlManutencao(envio) : '';
+            const htmlCadastroPix = montarHtmlCadastroPix(envio);
+
+            // Cabeçalho
+            const origemAtend = obterOrigemAtendimento(envio);
+            const idAtend = idCurto(envio.firebaseUrl);
+            let htmlHeader;
+            if (ehMovimentoEstoque(envio)) {
+                htmlHeader = `
+                    <div class="envio-header">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <span style="font-size:15px; font-weight:bold; color:${origemAtend.cor};user-select:none;-webkit-user-select:none;">${origemAtend.icone} ${origemAtend.texto}</span>
+                            <span style="font-size:11px; color:rgba(255,255,255,0.35); font-family:monospace; letter-spacing:0.5px;user-select:none;-webkit-user-select:none;">ID: ${idAtend}</span>
+                        </div>
+                        <div class="envio-cliente">${obterCabecalhoMovimentoEstoque(envio)}</div>
+                    </div>`;
+            } else {
+                const clienteNome = envio.cliente?.nome || 'Cliente Desconhecido';
+                const clienteNumero = envio.cliente?.numero || 'S/N';
+                htmlHeader = `
+                    <div class="envio-header">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <span style="font-size:15px; font-weight:bold; color:${origemAtend.cor};user-select:none;-webkit-user-select:none;">${origemAtend.icone} ${origemAtend.texto}</span>
+                            <span style="font-size:11px; color:rgba(255,255,255,0.35); font-family:monospace; letter-spacing:0.5px;user-select:none;-webkit-user-select:none;">ID: ${idAtend}</span>
+                        </div>
+                        <div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div>
+                    </div>`;
+            }
+
+            // --- 1. PRODUTOS ---
+            let htmlProdutos = '';
+            if (ehMovimentoEstoque(envio) && envio.produtos && envio.produtos.length > 0) {
+                htmlProdutos += `<div class="secao-titulo">${obterTituloItensMovimentoEstoque(envio)}</div>`;
+                envio.produtos.forEach(p => {
+                    htmlProdutos += `<div class="info-linha info-linha-livre"><span class="item-estoque-nome">${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
+                });
+            } else if (!ehMovimentoEstoque(envio) && !ehRegistroManutencao(envio)) {
+                const produtosAtend = mapaMovimentacoesPorAtendimento[envio.firebaseUrl] || [];
+                if (produtosAtend.length > 0) {
+                    htmlProdutos += `<div class="secao-titulo">Produtos</div>`;
+                    produtosAtend.forEach(p => {
+                        htmlProdutos += `
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                                <span style="color:white;font-size:15px;user-select:none;-webkit-user-select:none;">${p.nome}</span>
+                                <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+                                    <span style="background:rgba(255,235,59,0.15);border:1px solid rgba(255,235,59,0.4);color:#ffeb3b;border-radius:6px;padding:2px 10px;font-size:14px;font-weight:bold;user-select:none;-webkit-user-select:none;">${p.movimento} usados</span>
+                                    ${p.totalApos != null ? `<span style="font-size:13px;font-weight:bold;color:${p.totalApos < 0 ? '#f44336' : '#81c784'};user-select:none;-webkit-user-select:none;">total ${p.totalApos}</span>` : ''}
+                                </div>
+                            </div>`;
+                    });
+                }
+            }
+
+            // --- 2. FINANCEIRO ---
+            let htmlFin = '';
+            const fin = envio.financeiro || {};
+            if (!ehMovimentoEstoque(envio) && (!ehRegistroManutencao(envio) || temFinanceiroNoEnvio(envio))) {
+                const totalPix = Array.isArray(fin.pix)
+                    ? fin.pix.reduce((soma, pix) => soma + converterParaNumero(pix?.valor), 0)
+                    : 0;
+                const saldoDepositar = (fin.saldoDepositar != null)
+                    ? converterParaNumero(fin.saldoDepositar)
+                    : (((fin.dinheiro ?? '') !== '' || fin.comissaoValor != null)
+                        ? (converterParaNumero(fin.dinheiro) - converterParaNumero(fin.comissaoValor))
+                        : converterParaNumero(fin.saldoFinal));
+
+                htmlFin = `<div class="secao-titulo">Financeiro</div>`;
+                htmlFin += `
+                    <div style="background: rgba(255,255,255,0.04); border-left: 3px solid #4caf50; padding: 8px 10px; border-radius: 6px; margin-top: 10px; margin-bottom: 8px;">
+                        <div class="info-linha" style="margin: 0;">
+                            <span style="font-weight: 600; color: #ffffff;">Total geral:</span>
+                            <strong style="color: #ffffff; font-size: 18px;">${formatarMoeda(converterParaNumero(fin.totalGeral))}</strong>
+                        </div>
+                    </div>
+                `;
+
+                if (fin.pix && fin.pix.length > 0) {
+                    fin.pix.forEach(p => {
+                        htmlFin += `
+                            <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-bottom: 5px; font-size: 13px;">
+                                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; white-space:nowrap;">
+                                    <span>
+                                        <strong style="color: #ffeb3b;">&#128179; Pix ${p.numero}</strong>
+                                        &nbsp;|&nbsp; Cont: <strong>${p.contAnt}</strong> &rarr; <strong>${p.contAtual}</strong>
+                                    </span>
+                                    <span style="color:#64b5f6; font-weight:bold; font-size:15px;">${formatarMoeda(converterParaNumero(p.valor))}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+
+                if ((fin.dinheiro ?? '') !== '') {
+                    htmlFin += `
+                        <div class="info-linha"><span>Dinheiro em espécie:</span> <strong style="color:#4caf50;">${formatarMoeda(converterParaNumero(fin.dinheiro))}</strong></div>
+                    `;
+                }
+
+                if (totalPix > 0) {
+                    htmlFin += `
+                        <div class="info-linha"><span>Pix:</span> <strong style="color:#64b5f6;">${formatarMoeda(totalPix)}</strong></div>
+                    `;
+                }
+
+                htmlFin += `
+                    <div class="info-linha"><span>Comissão (${fin.comissaoPorcentagem || 0}%):</span> <strong style="color:#f44336;">- ${formatarMoeda(converterParaNumero(fin.comissaoValor))}</strong></div>
+                    <div class="info-linha"><span>Saldo depositar:</span> <strong style="color:#4caf50; font-size:18px;">${formatarMoeda(saldoDepositar)}</strong></div>
+                `;
+            }
+
+            // --- 3. FOTOS ---
+            let htmlFotos = `<div class="secao-titulo">Imagens (Toque para ampliar)</div><div class="foto-grid">`;
+            const fotos = envio.fotos || {};
+            const manutencaoCompleta = ehRegistroManutencao(envio) ? obterManutencaoCompleta(envio) : null;
+            
+            // [CORREÃ‡ÃƒO] Filtra links corrompidos
+            const ehImagemValida = (url) => url && (url.startsWith('data:') || url.includes('firebasestorage'));
+            let temFoto = false;
+            
+            if (fotos.ficha && ehImagemValida(fotos.ficha)) {
+                htmlFotos += montarHtmlThumbFoto(fotos.ficha, fotos.fichaThumb || fotos.ficha, 'FICHA');
+                temFoto = true;
+            }
+
+            if (fotos.maquinas && Array.isArray(fotos.maquinas)) {
+                fotos.maquinas.forEach(m => { if (ehImagemValida(m.url)) { htmlFotos += montarHtmlThumbFoto(m.url, m.thumbUrl || m.url, m.nome); temFoto = true; }});
+            }
+
+            if (fotos.pix && Array.isArray(fotos.pix)) {
+                fotos.pix.forEach(p => { if (ehImagemValida(p.url)) { htmlFotos += montarHtmlThumbFoto(p.url, p.thumbUrl || p.url, `PIX ${p.numero}`); temFoto = true; }});
+            }
+
+            if (Array.isArray(manutencaoCompleta?.equipamentosRetiradosDetalhes)) {
+                manutencaoCompleta.equipamentosRetiradosDetalhes.forEach(item => {
+                    if (!ehImagemValida(item?.foto_contador_retirada)) return;
+                    const legenda = item?.pix
+                        ? `RETIRADA PIX ${item.pix}`
+                        : (item?.nome ? `RETIRADA ${item.nome}` : 'RETIRADA');
+                    htmlFotos += montarHtmlThumbFoto(item.foto_contador_retirada, item.foto_contador_retirada_thumb || item.foto_contador_retirada, legenda);
+                    temFoto = true;
+                });
+            }
+            
+            htmlFotos += `</div>`;
+            if (!temFoto) {
+                htmlFotos = '';
+            }
+
+            const estaContestado = !!envio.contestado;
+            if (estaContestado) card.classList.add('contestado');
+            const htmlAvisoContestacao = estaContestado ? `
+                <div style="padding:10px 12px;background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.5);border-radius:10px;color:#f59e0b;font-size:14px;font-weight:bold;margin-bottom:8px;text-align:center;user-select:none;-webkit-user-select:none;">
+                    ⚠ O gestor contestou esse atendimento.
+                    ${montarHtmlConversaContestacao(envio)}
+                </div>` : '';
+            const podeExcluirAtendimento = envio?.firebaseUrl && !envio?.tipoLinhaTempo && !ehMovimentoEstoque(envio);
+            const htmlBotaoExcluir = podeExcluirAtendimento ? `
+                <div class="acoes-linha">
+                    <button class="btn-acao btn-excluir btn-excluir-envio" type="button" data-excluir-id="${escaparHtml(envio.firebaseUrl)}">Excluir</button>
+                </div>` : '';
+            const htmlAcoes = (htmlAvisoContestacao || htmlBotaoExcluir) ? `
+                <div class="envio-acoes">
+                    ${htmlAvisoContestacao}
+                    ${htmlBotaoExcluir}
+                </div>` : '';
+
+            const responsavelEstoque = ehMovimentoEstoque(envio) ? (envio.atendente || envio.responsavel || '') : '';
+            const autorEnvio = ehMovimentoEstoque(envio)
+                ? (envio.autorizadoPor || '')
+                : obterNomeAutorEnvio(envio);
+            const infoRodape = [];
+
+            if (ehMovimentoEstoque(envio)) {
+                if (autorEnvio && normalizarTexto(autorEnvio) !== normalizarTexto(usuarioSelecionado)) {
+                    infoRodape.push(`Registrado por: <strong>${autorEnvio}</strong>`);
+                }
+            } else if (autorEnvio && normalizarTexto(autorEnvio) !== normalizarTexto(usuarioSelecionado)) {
+                infoRodape.push(`Registrado por: <strong>${autorEnvio}</strong>`);
+            }
+
+            const htmlRodape = `
+                <div class="envio-rodape-estoque">
+                    <span>${dataFormatada}</span>
+                    ${infoRodape.length > 0 ? `<span>${infoRodape.join(' | ')}</span>` : ''}
+                </div>`;
+
+            card.innerHTML = `${htmlHeader}${htmlManutencao}${htmlCadastroPix}${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}${htmlRodape}`;
+            container.appendChild(card);
+        });
+    }
+
+    const selectMes = document.getElementById('selectMes');
+    const selectUsuario = document.getElementById('selectUsuario');
+    const filtroStatus = document.getElementById('filtroStatus');
+
+    function chaveMesDeData(valor) {
+        const data = new Date(valor || '');
+        if (Number.isNaN(data.getTime())) return '';
+        return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function labelMes(chaveMes) {
+        const [ano, mes] = String(chaveMes || '').split('-').map(Number);
+        if (!ano || !mes) return '';
+        return `${MESES[mes - 1]} ${ano}`;
+    }
+
+    function chaveMesAtual() {
+        const agora = new Date();
+        return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function limparMeses(mensagem = 'Mês', desabilitar = false) {
+        selectMes.innerHTML = `<option value="">${mensagem}</option>`;
+        selectMes.value = '';
+        selectMes.disabled = desabilitar;
+    }
+
+    function adicionarMes(conjunto, valor) {
+        const chave = chaveMesDeData(valor);
+        if (chave) conjunto.add(chave);
+    }
+
+    function popularMesesExistentes() {
+        const meses = new Set();
+
+        dadosUsuarioCarregados.atendimentos.forEach(item => adicionarMes(meses, item?.data || item?.timestamp || item?.criado_em));
+        dadosUsuarioCarregados.historicoEstoque.forEach(item => adicionarMes(meses, item?.data || item?.timestamp || item?.criado_em));
+        dadosUsuarioCarregados.historicoBalanco.forEach(item => adicionarMes(meses, item?.timestamp || item?.data || item?.criado_em));
+        dadosUsuarioCarregados.clientesCadastrados.forEach(item => adicionarMes(meses, item?.dataCadastro || item?.timestamp || item?.criado_em));
+        dadosUsuarioCarregados.cadastrosPix.forEach(item => {
+            adicionarMes(meses, item?.data);
+            adicionarMes(meses, item?.data_retirada);
+            adicionarMes(meses, item?.timestamp || item?.criado_em);
+        });
+
+        const ordenados = [...meses].sort().reverse();
+        if (ordenados.length === 0) {
+            limparMeses('Sem mês', true);
+            return;
+        }
+
+        selectMes.innerHTML = [
+            '<option value="">Selecione o mês</option>',
+            ...ordenados.map(chave => `<option value="${chave}">${labelMes(chave)}</option>`)
+        ].join('');
+        const atual = chaveMesAtual();
+        selectMes.value = ordenados.includes(atual) ? atual : '';
+        selectMes.disabled = false;
+    }
+
+    function obterColaboradoresCache() {
+        try {
+            const bruto = localStorage.getItem('cache_colaboradores');
+            if (!bruto) return [];
+            const parsed = JSON.parse(bruto);
+            if (Array.isArray(parsed)) return parsed;
+            if (Array.isArray(parsed?.dados)) return parsed.dados;
+            if (parsed && typeof parsed === 'object') return Object.values(parsed);
+        } catch (erro) {
+            console.warn('Nao foi possivel ler cache_colaboradores:', erro);
+        }
+        return [];
+    }
+
+    function ehUsuarioAtendimento(colab) {
+        const perfil = normalizarTexto([
+            colab?.nivel_completo,
+            colab?.perfil,
+            colab?.nivel,
+            colab?.cargo
+        ].filter(Boolean).join(' '));
+        return perfil.includes('atendimento');
+    }
+
+    function usuarioAtualEhGestor() {
+        const atual = colaboradoresSalvos.find(item => normalizarTexto(item?.nome) === normalizarTexto(usuarioLogado));
+        if (!atual) return true;
+        return normalizarTexto(atual?.nivel_completo || atual?.perfil || atual?.nivel || '').includes('gestao');
+    }
+
+    function ordenarColaboradores(lista) {
+        return [...(Array.isArray(lista) ? lista : [])]
+            .filter(item => String(item?.nome || '').trim())
+            .sort((a, b) => (Number(a?.ordem || 0) - Number(b?.ordem || 0)) || String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
+    }
+
+    async function carregarUsuarios() {
+        const cache = obterColaboradoresCache();
+        if (cache.length > 0) {
+            colaboradoresSalvos = ordenarColaboradores(cache);
+            popularUsuarios();
+        }
+
+        try {
+            const colaboradores = await dbListarColaboradores();
+            colaboradoresSalvos = ordenarColaboradores(colaboradores);
+            popularUsuarios();
+        } catch (erro) {
+            console.error('Erro ao carregar colaboradores:', erro);
+            if (colaboradoresSalvos.length === 0) {
+                selectUsuario.innerHTML = '<option value="">Erro ao carregar</option>';
+            }
+        }
+    }
+
+    function popularUsuarios() {
+        if (!usuarioAtualEhGestor()) {
+            filtroStatus.textContent = 'Acesso restrito à gestão.';
+            selectUsuario.innerHTML = '<option value="">Sem permissão</option>';
+            return;
+        }
+
+        const usuariosAtendimento = colaboradoresSalvos.filter(ehUsuarioAtendimento);
+        const usuarios = usuariosAtendimento.length > 0 ? usuariosAtendimento : colaboradoresSalvos;
+        const nomes = [...new Set(usuarios.map(item => String(item?.nome || '').trim()).filter(Boolean))];
+
+        if (nomes.length === 0) {
+            selectUsuario.innerHTML = '<option value="">Nenhum usuário</option>';
+            return;
+        }
+
+        selectUsuario.innerHTML = [
+            '<option value="">Selecione o usuário</option>',
+            ...nomes.map(nome => `<option value="${escaparHtml(nome)}">${escaparHtml(nome)}</option>`)
+        ]
+            .join('');
+
+        usuarioSelecionado = '';
+        selectUsuario.value = '';
+        renderizarEnvios();
+    }
+
+    function atualizarMapaMovimentacoesBalanco(historico) {
+        mapaMovimentacoesPorAtendimento = {};
+        historico.forEach(entry => {
+            const refId = String(entry.atendimentoRefId || entry.refId || '').trim();
+            if (!refId || String(entry.origemRegistro || '').trim() !== 'atendimento' || entry.cancelado || String(entry.tipo || '').trim() === 'cancelamento') return;
+            if (!mapaMovimentacoesPorAtendimento[refId]) mapaMovimentacoesPorAtendimento[refId] = [];
+            mapaMovimentacoesPorAtendimento[refId].push({
+                nome: entry.itemNome || '—',
+                itemChave: String(entry.itemChave || entry.refId || '').trim(),
+                categoria: String(entry.categoria || 'produtos').trim(),
+                movimento: Math.abs(Number(entry.movimento || 0)),
+                totalApos: entry.totalApos != null ? Number(entry.totalApos) : null
+            });
+        });
+    }
+
+    function itemNoMes(item, campos) {
+        if (!selectMes.value) return false;
+        return campos.some(campo => chaveMesDeData(item?.[campo]) === selectMes.value);
+    }
+
+    function aplicarFiltroMesCarregado() {
+        if (!usuarioSelecionado || !selectMes.value) {
+            atendimentosSalvos = [];
+            cadastrosPixSalvos = [];
+            historicoEstoqueSalvo = [];
+            clientesSalvos = [];
+            mapaMovimentacoesPorAtendimento = {};
+            filtroStatus.textContent = usuarioSelecionado
+                ? 'Selecione o mês para carregar as movimentações.'
+                : '';
+            renderizarEnvios();
+            return;
+        }
+
+        atendimentosSalvos = dadosUsuarioCarregados.atendimentos
+            .filter(item => itemNoMes(item, ['data', 'timestamp', 'criado_em']));
+        cadastrosPixSalvos = dadosUsuarioCarregados.cadastrosPix
+            .filter(item => itemNoMes(item, ['data', 'data_retirada', 'timestamp', 'criado_em']));
+        historicoEstoqueSalvo = dadosUsuarioCarregados.historicoEstoque
+            .filter(item => itemNoMes(item, ['data', 'timestamp', 'criado_em']));
+        clientesSalvos = dadosUsuarioCarregados.clientesCadastrados
+            .filter(item => itemNoMes(item, ['dataCadastro', 'timestamp', 'criado_em']));
+        atualizarMapaMovimentacoesBalanco(
+            dadosUsuarioCarregados.historicoBalanco
+                .filter(item => itemNoMes(item, ['timestamp', 'data', 'criado_em']))
+        );
+        filtroStatus.textContent = usuarioSelecionado && selectMes.value
+            ? `${usuarioSelecionado} - ${labelMes(selectMes.value)}`
+            : 'Nenhum mês encontrado para este usuário.';
+        renderizarEnvios();
+    }
+
+    function removerAtendimentoCarregado(id) {
+        dadosUsuarioCarregados.atendimentos = dadosUsuarioCarregados.atendimentos
+            .filter(item => item?.firebaseUrl !== id);
+        atendimentosSalvos = atendimentosSalvos
+            .filter(item => item?.firebaseUrl !== id);
+        Object.keys(mapaMovimentacoesPorAtendimento).forEach(refId => {
+            if (refId === id) delete mapaMovimentacoesPorAtendimento[refId];
+        });
+    }
+
+    async function excluirEnvioGestor(id, botao = null) {
+        const envio = atendimentosSalvos.find(item => item.firebaseUrl === id)
+            || dadosUsuarioCarregados.atendimentos.find(item => item.firebaseUrl === id);
+        if (!envio) {
+            await window.playAlert('Envio não encontrado.');
+            return;
+        }
+
+        const manutencaoCompleta = obterManutencaoCompleta(envio);
+        const ehEncerramento = envio.manutencao?.pontoEncerrado === true || manutencaoCompleta?.pontoEncerrado === true;
+        const msg = ehEncerramento
+            ? 'Excluir este envio? O encerramento do cliente e o lançamento no fluxo de caixa serão revertidos.'
+            : 'Excluir este envio? Esta ação não pode ser desfeita.';
+
+        if (!(await window.playConfirm(msg))) return;
+
+        const textoOriginal = botao?.textContent || 'Excluir';
+        if (botao) {
+            botao.disabled = true;
+            botao.textContent = 'Excluindo...';
+        }
+
+        try {
+            await dbExcluirAtendimento(id);
+
+            if (ehEncerramento) {
+                const clienteId = envio.cliente?.id || envio.cliente?.firebaseUrl || '';
+                const equipamentos = manutencaoCompleta?.equipamentosRetiradosDetalhes || envio.manutencao?.equipamentosRetiradosDetalhes || [];
+                const manutencaoId = envio.manutencao?.id || manutencaoCompleta?.firebaseUrl || '';
+
+                if (clienteId) {
+                    await dbReverterEncerramentoCliente(clienteId, equipamentos).catch(e => console.error(e));
+                }
+                if (envio.fluxoCaixaKey && envio.operadorFluxoCaixa) {
+                    await dbExcluirMovimentoFluxoCaixa(envio.operadorFluxoCaixa, envio.fluxoCaixaKey).catch(e => console.error(e));
+                }
+                if (manutencaoId && (envio.manutencao?.servicoRealizado || manutencaoCompleta?.servicoRealizado)) {
+                    await dbReverterConclusaoManutencao(manutencaoId).catch(e => console.error(e));
+                }
+            }
+
+            removerAtendimentoCarregado(id);
+            renderizarEnvios();
+            await window.playAlert('Envio excluído.');
+        } catch (erro) {
+            console.error('Erro ao excluir envio:', erro);
+            await window.playAlert('Erro ao excluir envio: ' + (erro.message || erro));
+            if (botao) {
+                botao.disabled = false;
+                botao.textContent = textoOriginal;
+            }
+        }
+    }
+
+    document.getElementById('listaEnvios').addEventListener('click', async (event) => {
+        const botaoExcluir = event.target.closest('.btn-excluir-envio');
+        if (!botaoExcluir) return;
+        await excluirEnvioGestor(botaoExcluir.dataset.excluirId, botaoExcluir);
+    });
+
+    async function carregarMesesDoUsuario() {
+        usuarioSelecionado = String(selectUsuario.value || '').trim();
+        if (!usuarioSelecionado) {
+            filtroStatus.textContent = '';
+            limparMeses();
+            dadosUsuarioCarregados = {
+                atendimentos: [],
+                cadastrosPix: [],
+                historicoEstoque: [],
+                historicoBalanco: [],
+                clientesCadastrados: []
+            };
+            atendimentosSalvos = [];
+            cadastrosPixSalvos = [];
+            historicoEstoqueSalvo = [];
+            manutencoesSalvas = [];
+            clientesSalvos = [];
+            mapaMovimentacoesPorAtendimento = {};
+            renderizarEnvios();
+            return;
+        }
+
+        carregandoMovimentacoes = true;
+        filtroStatus.textContent = 'Carregando meses...';
+        selectUsuario.disabled = true;
+        limparMeses('Carregando', true);
+        renderizarEnvios();
+
+        try {
+            const [
+                atendimentos,
+                cadastrosPix,
+                historicoEstoque,
+                historicoBalanco,
+                clientesCadastrados
+            ] = await Promise.all([
+                dbListarAtendimentosDoUsuarioNoPeriodo(usuarioSelecionado, '', ''),
+                dbListarCadastrosPixDoUsuarioNoPeriodo(usuarioSelecionado, '', ''),
+                dbListarHistoricoEstoqueDoUsuarioNoPeriodo(usuarioSelecionado, '', ''),
+                dbListarHistoricoBalancoDoUsuarioNoPeriodo(usuarioSelecionado, '', ''),
+                dbListarClientesCadastradosPorUsuarioNoPeriodo(usuarioSelecionado, '', '')
+            ]);
+
+            dadosUsuarioCarregados = {
+                atendimentos,
+                cadastrosPix,
+                historicoEstoque,
+                historicoBalanco,
+                clientesCadastrados
+            };
+
+            const manutencaoIds = dadosUsuarioCarregados.atendimentos
+                .map(item => String(item?.manutencao?.id || '').trim())
+                .filter(Boolean);
+            manutencoesSalvas = await dbListarManutencoesPorIds(manutencaoIds);
+            popularMesesExistentes();
+            filtroStatus.textContent = 'Selecione o mês para carregar as movimentações.';
+        } catch (erro) {
+            console.error('Erro ao carregar verificacoes gerais:', erro);
+            dadosUsuarioCarregados = {
+                atendimentos: [],
+                cadastrosPix: [],
+                historicoEstoque: [],
+                historicoBalanco: [],
+                clientesCadastrados: []
+            };
+            mapaMovimentacoesPorAtendimento = {};
+            limparMeses('Erro', true);
+            filtroStatus.textContent = 'Erro ao carregar dados.';
+        } finally {
+            carregandoMovimentacoes = false;
+            selectUsuario.disabled = false;
+            aplicarFiltroMesCarregado();
+        }
+    }
+
+    selectMes.addEventListener('change', aplicarFiltroMesCarregado);
+    selectMes.addEventListener('focus', () => {
+        if (!usuarioSelecionado) filtroStatus.textContent = 'Selecione o usuário primeiro.';
+    });
+    selectMes.addEventListener('pointerdown', () => {
+        if (!usuarioSelecionado) filtroStatus.textContent = 'Selecione o usuário primeiro.';
+    });
+    selectUsuario.addEventListener('change', carregarMesesDoUsuario);
+
+    limparMeses();
+    carregarUsuarios();
+
+</script>
+</body>
+</html>

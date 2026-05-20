@@ -282,9 +282,18 @@
             padding: 10px 12px;
             margin-bottom: 10px;
         }
+        .pix-servico-destaque.com-foto {
+            display: grid;
+            grid-template-columns: 92px minmax(0, 1fr);
+            gap: 10px;
+            align-items: center;
+        }
+        .pix-servico-destaque-texto {
+            min-width: 0;
+        }
         .pix-servico-destaque-titulo {
             color: #ffffff;
-            font-size: 21px;
+            font-size: 20px;
             font-weight: 700;
             line-height: 1.2;
             text-align: center;
@@ -294,6 +303,48 @@
             color: #ffffff;
             font-size: 17px;
             font-weight: 700;
+            text-align: center;
+        }
+        .pix-servico-destaque-responsavel {
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 8px;
+        }
+        .pix-servico-destaque-responsavel span {
+            color: #cbd5e1;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .pix-servico-destaque-foto {
+            position: relative;
+            width: 92px;
+            aspect-ratio: 1;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #475569;
+            background: #0f172a;
+            cursor: zoom-in;
+        }
+        .pix-servico-destaque-foto img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .pix-servico-destaque-foto .pix-servico-foto-label {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: 0;
+            padding: 4px 5px;
+            background: rgba(0,0,0,0.65);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.2;
             text-align: center;
         }
         .pix-servico-lista {
@@ -410,20 +461,38 @@
         .pix-servico-resumo-item.comissao strong { color: #fca5a5; }
         .pix-servico-resumo-item.contador strong { color: #86efac; }
         .pix-servico-foto-wrap {
+            position: relative;
             margin-top: 10px;
-            text-align: center;
+            width: 100%;
+            max-width: 140px;
+            height: 96px;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #475569;
+            background: #0f172a;
+            cursor: zoom-in;
         }
         .pix-servico-foto {
             display: block;
             width: 100%;
-            max-width: 140px;
-            height: 96px;
-            margin: 0 auto;
-            object-fit: contain;
-            border-radius: 12px;
-            border: 1px solid #475569;
-            background: #0f172a;
-            cursor: zoom-in;
+            height: 100%;
+            object-fit: cover;
+        }
+        .pix-servico-foto-label {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: 0;
+            padding: 4px 5px;
+            background: rgba(0,0,0,0.65);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.2;
+            text-align: center;
         }
         .pix-servico-acoes {
             width: 100%;
@@ -875,28 +944,48 @@
 
     function montarDestaquePixServico(itens) {
         const resumo = obterResumoDestaquePix(itens);
+        const responsavel = (Array.isArray(itens) ? itens : [])
+            .map(item => String(item?.por || '').trim())
+            .find(Boolean);
+        const itemFoto = (Array.isArray(itens) ? itens : [])
+            .find(item => item?.tipo === 'adicao' && String(item?.fotoThumbUrl || '').trim());
+        const fotoLabel = itemFoto
+            ? (String(itemFoto?.nome || '').trim() || 'Maquina instalada')
+            : '';
+        const fotoDestaque = itemFoto
+            ? `<div class="pix-servico-destaque-foto" onclick="window.verFoto('${escHtml(itemFoto.fotoFullUrl || itemFoto.fotoThumbUrl)}')">
+                   <img src="${escHtml(itemFoto.fotoThumbUrl)}" alt="${escHtml(fotoLabel)}" loading="lazy">
+                   <div class="pix-servico-foto-label">${escHtml(fotoLabel)}</div>
+               </div>`
+            : '';
         return `
-            <div class="pix-servico-destaque">
-                <div class="pix-servico-destaque-titulo">${escHtml(resumo.titulo)}</div>
-                <div class="pix-servico-destaque-info">${escHtml(resumo.info)}</div>
+            <div class="pix-servico-destaque${fotoDestaque ? ' com-foto' : ''}">
+                ${fotoDestaque}
+                <div class="pix-servico-destaque-texto">
+                    <div class="pix-servico-destaque-titulo">${escHtml(resumo.titulo)}</div>
+                    <div class="pix-servico-destaque-info">${escHtml(resumo.info)}</div>
+                    ${responsavel ? `<div class="pix-servico-destaque-responsavel"><span>Servi&ccedil;o feito por:</span> ${escHtml(responsavel)}</div>` : ''}
+                </div>
             </div>`;
     }
 
     function montarResumoPixItem(item) {
-        const fotoLabel = item.tipo === 'adicao' ? 'Foto da maquina' : 'Foto do contador';
+        const fotoLabel = item.tipo === 'adicao'
+            ? (String(item?.nome || '').trim() || 'Maquina instalada')
+            : 'Foto do contador';
         const fotoHtml = item.fotoThumbUrl
-            ? `<div class="pix-servico-foto-wrap">
-                   <div class="pix-servico-foto-label">${fotoLabel}</div>
+            ? `<div class="pix-servico-foto-wrap${item.tipo === 'adicao' ? ' foto-adicao' : ''}">
+                   <div class="pix-servico-foto-label">${escHtml(fotoLabel)}</div>
                    <img class="pix-servico-foto"
                         src="${escHtml(item.fotoThumbUrl)}"
                         data-full="${escHtml(item.fotoFullUrl || item.fotoThumbUrl)}"
-                        alt="${fotoLabel}"
+                        alt="${escHtml(fotoLabel)}"
                         onclick="window.verFoto(this.dataset.full)">
                </div>`
             : '';
 
         if (item.tipo === 'adicao') {
-            return fotoHtml;
+            return '';
         }
 
         if (item.tipo === 'retirada' && item.mostrarResumoRetirada) {
@@ -986,9 +1075,13 @@
     }
 
     function montarListaPixServico(itens) {
+        const itensVisiveis = (Array.isArray(itens) ? itens : [])
+            .filter(item => item?.tipo !== 'adicao');
+        if (itensVisiveis.length === 0) return '';
+
         return `
             <div class="pix-servico-lista">
-                ${itens.map(item => `
+                ${itensVisiveis.map(item => `
                     <div class="pix-servico-item">
                         <div class="pix-servico-equip">${escHtml(item.nome || 'Maquina nao informada')}</div>
                         <div class="pix-servico-meta" ${item.tipo === 'adicao' ? 'style="display:none;"' : ''}>
@@ -1062,9 +1155,31 @@
         return d.getFullYear() === _calAno && d.getMonth() === _calMes;
     }
 
-    function dentroDe2h(iso) {
+    function dentroDe3h(iso) {
         if (!iso) return false;
-        return (Date.now() - new Date(iso).getTime()) < 2 * 60 * 60 * 1000;
+        return (Date.now() - new Date(iso).getTime()) < 3 * 60 * 60 * 1000;
+    }
+
+    function usuarioAtualEhGestaoNivel3() {
+        const nome = normalizarTextoBusca(_nomeUsuario || localStorage.getItem('usuarioLogado') || '');
+        if (!nome) return false;
+
+        try {
+            const cache = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
+            const lista = Array.isArray(cache) ? cache : Object.values(cache || {});
+            const usuario = lista.find(item => normalizarTextoBusca(item?.nome) === nome);
+            const perfil = String(usuario?.nivel_completo || '')
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase();
+            return perfil.includes('gestao_3') || perfil.includes('gestao 3');
+        } catch (erro) {
+            console.warn('Nao foi possivel ler cache_colaboradores:', erro);
+            return false;
+        }
+    }
+
+    function podeDesfazerConfirmacaoServico(dataConfirmacao) {
+        return usuarioAtualEhGestaoNivel3() || dentroDe3h(dataConfirmacao);
     }
 
     function atualizarBadgesAbas() {
@@ -1209,7 +1324,7 @@
 
     function cardPixCadastro(ev) {
         const rodape = ev.confirmado
-            ? dentroDe2h(ev.dataConfirmacao)
+            ? podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
                 ? `<button class="btn-desfazer" onclick="window.desfazerNovoPonto('${ev.id}',this)">&#8617; Desfazer</button>`
                 : `<span class="confirmado-por">&#10003; Aprovado</span>`
             : `<button class="btn-gestor-confirmar" onclick="window.confirmarPixServico(this,'${ev.id}')">Confirmar</button>`;
@@ -1228,14 +1343,48 @@
             </div>`;
     }
 
+    function montarHtmlEnderecosServico(ev, opcoes = {}) {
+        const { modo = 'adicao' } = opcoes;
+        const cor = modo === 'retirada' ? '#f87171' : '#4ade80';
+        const bg = modo === 'retirada' ? 'rgba(248,113,113,0.07)' : 'rgba(74,222,128,0.07)';
+        const linkBg = modo === 'retirada' ? 'rgba(248,113,113,0.10)' : 'rgba(74,222,128,0.10)';
+        const linkBorder = modo === 'retirada' ? 'rgba(248,113,113,0.35)' : 'rgba(74,222,128,0.35)';
+
+        const endCadastroHtml = ev.enderecoCliente
+            ? `<div style="margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.06);border-left:3px solid rgba(255,255,255,0.35);">
+                   <div style="font-size:11px;font-weight:bold;letter-spacing:1px;color:rgba(255,255,255,0.6);text-transform:uppercase;margin-bottom:3px;">Endere&ccedil;o do Cadastro</div>
+                   <div style="font-size:15px;color:#ffffff;">${ev.enderecoCliente}</div>
+               </div>`
+            : '';
+
+        const endMaquinaHtml = ev.enderecoMaquina
+            ? `<div style="margin-top:6px;padding:8px 10px;border-radius:8px;background:${bg};border-left:3px solid ${cor};">
+                   <div style="font-size:11px;font-weight:bold;letter-spacing:1px;color:${cor};text-transform:uppercase;margin-bottom:3px;">Endere&ccedil;o Informado na Visita</div>
+                   <div style="font-size:15px;color:rgba(255,255,255,0.9);">${ev.enderecoMaquina}</div>
+               </div>`
+            : '';
+
+        const btnRotaHtml = (ev.enderecoCliente && ev.enderecoMaquina)
+            ? `<a href="https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(ev.enderecoCliente)}&destination=${encodeURIComponent(ev.enderecoMaquina)}&travelmode=driving"
+                  target="_blank" rel="noopener"
+                  style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;border-radius:999px;background:${linkBg};border:1px solid ${linkBorder};color:${cor};font-size:14px;font-weight:bold;text-decoration:none;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  Ver dist&acirc;ncia no Maps
+              </a>`
+            : '';
+
+        return { html: `${endCadastroHtml}${endMaquinaHtml}${btnRotaHtml}`, temEndereco: Boolean(endCadastroHtml || endMaquinaHtml) };
+    }
+
     function cardPixManutencao(ev, pendente) {
         const apenasRetirada = ev.pixItens.every(item => item.tipo === 'retirada');
         const apenasAdicao = ev.pixItens.every(item => item.tipo === 'adicao');
         const origemClasse = apenasRetirada ? 'retirada' : (apenasAdicao ? 'adicao' : '');
         const origemTexto = apenasRetirada ? 'Retirada' : (apenasAdicao ? 'Adicao' : 'Movimentacao');
+        const enderecosServico = montarHtmlEnderecosServico(ev, { modo: apenasRetirada ? 'retirada' : 'adicao' });
         const rodape = pendente
             ? `<button class="btn-ok" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`
-            : dentroDe2h(ev.dataConfirmacao)
+            : podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
                 ? `<button class="btn-desfazer" onclick="window.desfazerManutencao('${ev.id}',this)">&#8617; Desfazer</button>`
                 : `<span class="confirmado-por">&#10003; ${ev.confirmedBy} &nbsp;&middot;&nbsp; ${formatarData(ev.dataConfirmacao)}</span>`;
 
@@ -1245,6 +1394,7 @@
                 <div class="pix-servico-cliente">&#128205; ${montarIdentificacaoPix(ev.clienteNumero, ev.clienteNome)}</div>
                 ${montarDestaquePixServico(ev.pixItens)}
                 ${montarListaPixServico(ev.pixItens)}
+                ${enderecosServico.html}
                 <div class="card-rodape" style="margin-top:12px;">
                     <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
                     ${rodape}
@@ -1262,7 +1412,7 @@
 
         const rodape = pendente
             ? `<button class="btn-ok" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`
-            : dentroDe2h(ev.dataConfirmacao)
+            : podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
                 ? `<button class="btn-desfazer" onclick="window.desfazerManutencao('${ev.id}',this)">↩ Desfazer</button>`
                 : `<span class="confirmado-por">&#10003; ${ev.confirmedBy} &nbsp;&middot;&nbsp; ${formatarData(ev.dataConfirmacao)}</span>`;
 
@@ -1325,7 +1475,7 @@
 
         const rodape = pendente
             ? `<button class="btn-ok" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`
-            : dentroDe2h(ev.dataConfirmacao)
+            : podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
                 ? `<button class="btn-desfazer" onclick="window.desfazerManutencao('${ev.id}',this)">↩ Desfazer</button>`
                 : `<span class="confirmado-por">&#10003; ${ev.confirmedBy} &nbsp;&middot;&nbsp; ${formatarData(ev.dataConfirmacao)}</span>`;
 
@@ -1413,7 +1563,7 @@
             <div class="card-rodape" style="margin-top:12px;">
                 <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
                 ${ev.confirmado
-                    ? dentroDe2h(ev.dataConfirmacao)
+                    ? podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
                         ? `<button class="btn-desfazer" onclick="window.desfazerNovoPonto('${ev.id}',this)">↩ Desfazer</button>`
                         : `<span class="confirmado-por">&#10003; Aprovado</span>`
                     : `<div style="display:flex;gap:8px;">
@@ -1451,6 +1601,9 @@
         try {
             const manut = _manutencoes.find(m => m.firebaseUrl === id);
             if (!manut) throw new Error('Registro não encontrado.');
+            if (!podeDesfazerConfirmacaoServico(manut.dataConfirmacaoGestor)) {
+                throw new Error('Prazo para desfazer confirmacao encerrado.');
+            }
             const payload = { ...manut };
             delete payload.firebaseUrl;
             delete payload.confirmadoGestor;
@@ -1467,6 +1620,11 @@
         if (!id) return;
         if (btn) { btn.disabled = true; btn.textContent = '…'; }
         try {
+            const cliente = _clientes.find(c => c.firebaseUrl === id);
+            if (!cliente) throw new Error('Cliente nao encontrado.');
+            if (!podeDesfazerConfirmacaoServico(cliente.dataAprovacao)) {
+                throw new Error('Prazo para desfazer confirmacao encerrado.');
+            }
             await dbSalvarCliente({ statusCadastro: 'em_analise', dataAprovacao: null }, id);
         } catch (e) {
             console.error(e);
