@@ -18,6 +18,7 @@ const DEPOSITOS_RESUMO_ROOT = "firebase_functions_depositos";
 const LIMITE_BLOQUEIO_DEPOSITO = 5000;
 const MEDIA_VENDAS_ROOT = "Media_de_Vendas";
 const MEDIA_VENDAS_METADATA_PATH = "metadata/media_de_vendas_versao";
+const COBRANCAS_DATAVERSE_ROOT = "cobrancas_dataverse";
 
 function dataBrasiliaISOData(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -95,6 +96,49 @@ function diasDesdeBrasilia(valor, agora = new Date()) {
   const hoje = inicioDiaBrasiliaMs(agora);
   if (data == null || hoje == null) return null;
   return Math.max(0, Math.round((hoje - data) / 86400000));
+}
+
+function inicioDiaHistoricoDataverseMs(valor) {
+  const texto = String(valor || "").trim();
+  const isoData = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoData) return Date.parse(`${isoData[1]}-${isoData[2]}-${isoData[3]}T00:00:00-03:00`);
+
+  const dataBr = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dataBr) {
+    return Date.parse(`${dataBr[3]}-${dataBr[2].padStart(2, "0")}-${dataBr[1].padStart(2, "0")}T00:00:00-03:00`);
+  }
+
+  return inicioDiaBrasiliaMs(valor);
+}
+
+function diasEntreHistoricoDataverse(dataMaisRecente, dataMaisAntiga) {
+  const rec = inicioDiaHistoricoDataverseMs(dataMaisRecente);
+  const ant = inicioDiaHistoricoDataverseMs(dataMaisAntiga);
+  if (rec == null || ant == null) return 0;
+  return Math.max(0, Math.round((rec - ant) / 86400000));
+}
+
+function diasDesdeHistoricoDataverse(valor, agora = new Date()) {
+  const data = inicioDiaHistoricoDataverseMs(valor);
+  const hoje = inicioDiaBrasiliaMs(agora);
+  if (data == null || hoje == null) return null;
+  return Math.max(0, Math.round((hoje - data) / 86400000));
+}
+
+function dataHistoricoDataverseValida(valor) {
+  const texto = String(valor || "").trim();
+  return texto && inicioDiaHistoricoDataverseMs(texto) != null ? texto : "";
+}
+
+function numeroHistoricoDataverse(valor) {
+  if (typeof valor === "number") return Number.isFinite(valor) ? valor : 0;
+  const texto = String(valor || "").trim();
+  if (!texto) return 0;
+  const normalizado = texto.includes(",") || /^\d{1,3}(\.\d{3})+$/.test(texto) ?
+    texto.replace(/\./g, "").replace(",", ".") :
+    texto;
+  const n = Number(normalizado);
+  return Number.isFinite(n) ? n : 0;
 }
 
 function obterTotalCobrancaAtendimento(atendimento) {
@@ -520,6 +564,134 @@ exports.atualizarMediaDeVendasDiaria = onSchedule(
   },
   async () => {
     await recalcularTodasMediasDeVendas();
+  },
+);
+
+exports.completarMediaDeVendasComDataverse = onSchedule(
+  {
+    schedule: "30 0 * * *",
+    timeZone: "America/Sao_Paulo",
+  },
+  async () => {
+    const db = admin.database();
+    const agora = new Date();
+    const hoje = dataBrasiliaISOData(agora);
+    const atualizadoEm = agora.toISOString();
+    const [cobrancasSnap, mediaSnap, clientesSnap] = await Promise.all([
+      db.ref(COBRANCAS_DATAVERSE_ROOT).get(),
+      db.ref(MEDIA_VENDAS_ROOT).get(),
+      db.ref("clientes").get(),
+    ]);
+
+    if (!cobrancasSnap.exists()) {
+      logger.info("Sem cobrancas_dataverse para completar Media_de_Vendas.");
+      return;
+    }
+
+    const medias = mediaSnap.val() || {};
+    const clientes = clientesSnap.val() || {};
+    const clientesPorNumero = new Map();
+    Object.entries(clientes).forEach(([clienteId, cliente]) => {
+      const numeroKey = normalizarNumeroCliente(cliente?.numero);
+      if (!numeroKey) return;
+      clientesPorNumero.set(numeroKey, {clienteId, cliente});
+    });
+
+    const updates = {};
+    let analisados = 0;
+    let atualizados = 0;
+    let ignorados = 0;
+
+    Object.entries(cobrancasSnap.val() || {}).forEach(([chave, historico]) => {
+      if (!historico || typeof historico !== "object") {
+        ignorados += 1;
+        return;
+      }
+
+      const numeroKey = normalizarNumeroCliente(historico.numero || chave);
+      const saldo = numeroHistoricoDataverse(historico.saldo);
+      const ultimaDataverse = dataHistoricoDataverseValida(historico.ultimaVisita);
+      const penultimaDataverse = dataHistoricoDataverseValida(historico.penultimaVisita);
+
+      if (!numeroKey || saldo <= 0 || !ultimaDataverse || !penultimaDataverse) {
+        ignorados += 1;
+        return;
+      }
+
+      const intervaloDataverse = diasEntreHistoricoDataverse(ultimaDataverse, penultimaDataverse);
+      if (intervaloDataverse <= 0) {
+        ignorados += 1;
+        return;
+      }
+
+      analisados += 1;
+      const atual = medias[numeroKey] || {};
+      const clienteInfo = clientesPorNumero.get(numeroKey);
+      const clienteAtual = {
+        ...(atual.cliente || {}),
+        id: atual?.cliente?.id || clienteInfo?.clienteId || "",
+        numero: atual?.cliente?.numero ?? clienteInfo?.cliente?.numero ?? numeroKey,
+        nome: atual?.cliente?.nome || clienteInfo?.cliente?.nome || historico.cliente || "",
+        rota: atual?.cliente?.rota || clienteInfo?.cliente?.rota || atual.rota || "",
+      };
+
+      const proximo = {
+        ...atual,
+        cliente: clienteAtual,
+        rota: atual.rota || clienteAtual.rota || "",
+        hoje,
+        atualizadoEm,
+      };
+
+      const temUltima = Boolean(String(atual.ultimaCobrancaEm || "").trim());
+      const temPenultima = Boolean(String(atual.penultimaCobrancaEm || "").trim());
+
+      if (!temUltima) {
+        proximo.ultimaCobrancaEm = ultimaDataverse;
+        proximo.ultimaCobrancaValor = arredondar2(saldo);
+        proximo.penultimaCobrancaEm = penultimaDataverse;
+        proximo.penultimaCobrancaValor = numero(atual.penultimaCobrancaValor);
+        proximo.antepenultimaCobrancaEm = atual.antepenultimaCobrancaEm || "";
+        proximo.antepenultimaCobrancaValor = numero(atual.antepenultimaCobrancaValor);
+        proximo.mediaVendaPorDia = arredondar2(saldo / intervaloDataverse);
+        proximo.estimativaAtualDia = arredondar2(
+          proximo.mediaVendaPorDia * diasDesdeHistoricoDataverse(ultimaDataverse, agora),
+        );
+      } else if (!temPenultima) {
+        const ultimaAtual = String(atual.ultimaCobrancaEm || "").trim();
+        const intervaloAtual = diasEntreHistoricoDataverse(ultimaAtual, ultimaDataverse);
+        if (intervaloAtual <= 0) {
+          ignorados += 1;
+          return;
+        }
+
+        proximo.penultimaCobrancaEm = ultimaDataverse;
+        proximo.penultimaCobrancaValor = arredondar2(saldo);
+        proximo.antepenultimaCobrancaEm = atual.antepenultimaCobrancaEm || penultimaDataverse;
+        proximo.antepenultimaCobrancaValor = numero(atual.antepenultimaCobrancaValor);
+        proximo.mediaVendaPorDia = arredondar2(numero(atual.ultimaCobrancaValor) / intervaloAtual);
+        proximo.estimativaAtualDia = arredondar2(
+          proximo.mediaVendaPorDia * diasDesdeHistoricoDataverse(ultimaAtual, agora),
+        );
+      } else {
+        return;
+      }
+
+      updates[`${MEDIA_VENDAS_ROOT}/${numeroKey}`] = proximo;
+      atualizados += 1;
+    });
+
+    if (Object.keys(updates).length) {
+      updates[MEDIA_VENDAS_METADATA_PATH] = Date.now();
+      await db.ref().update(updates);
+    }
+
+    logger.info("Media_de_Vendas completada com cobrancas_dataverse.", {
+      analisados,
+      atualizados,
+      ignorados,
+      data: hoje,
+    });
   },
 );
 

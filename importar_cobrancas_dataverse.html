@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar Dataverse</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #0f2a66;
+            color: #ffffff;
+            font-family: Arial, Helvetica, sans-serif;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 440px;
+            padding: 16px 14px 56px;
+        }
+
+        .topo {
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 14px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .btn-voltar {
+            position: absolute;
+            left: 0;
+            width: 40px;
+            height: 40px;
+            border: 2px solid #d7dce3;
+            border-radius: 8px;
+            background: #264b8c;
+            color: #ffffff;
+            font-size: 25px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .titulo {
+            margin: 0;
+            padding: 0 48px;
+            color: #ffffff;
+            font-size: 21px;
+            font-weight: 700;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .aviso {
+            border: 2px solid #f4c542;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 14px;
+            color: #ffffff;
+            font-size: 15px;
+            line-height: 1.35;
+            text-align: center;
+            background: #173775;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .status {
+            min-height: 42px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #173775;
+            color: #ffffff;
+            font-size: 15px;
+            line-height: 1.35;
+            text-align: center;
+            margin-bottom: 14px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .rotulo {
+            display: block;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            text-align: center;
+            margin: 12px 0 8px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 210px;
+            resize: vertical;
+            border: 2px solid #d7dce3;
+            border-radius: 8px;
+            padding: 10px;
+            background: #ffffff;
+            color: #111827;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 15px;
+            line-height: 1.35;
+            outline: none;
+        }
+
+        .dica {
+            color: #ffffff;
+            font-size: 14px;
+            line-height: 1.4;
+            text-align: center;
+            margin: 8px 0 12px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .acoes {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        button {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .btn {
+            width: 100%;
+            min-height: 48px;
+            border: 2px solid #d7dce3;
+            border-radius: 8px;
+            background: #4467a8;
+            color: #ffffff;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .btn:disabled {
+            background: #5f6470;
+            color: #d8d8d8;
+            cursor: default;
+        }
+
+        .btn-principal {
+            background: #f4c542;
+            color: #10224d;
+            border-color: #f4c542;
+        }
+
+        .preview {
+            display: none;
+            margin-top: 16px;
+        }
+
+        .resumo {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .chip {
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            padding: 7px 5px;
+            color: #ffffff;
+            background: transparent;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .lista {
+            max-height: 320px;
+            overflow: auto;
+            border: 1px solid #d7dce3;
+            border-radius: 8px;
+            background: #ffffff;
+        }
+
+        .linha {
+            display: grid;
+            grid-template-columns: 54px 1fr 74px;
+            gap: 6px;
+            padding: 9px 8px;
+            border-bottom: 1px solid #d7dce3;
+            color: #111827;
+            font-size: 14px;
+            align-items: center;
+        }
+
+        .linha:last-child {
+            border-bottom: 0;
+        }
+
+        .linha strong {
+            color: #111827;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .linha span {
+            color: #111827;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .linha .erro {
+            color: #b91c1c;
+            font-weight: 700;
+            text-align: right;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .linha .ok {
+            color: #166534;
+            font-weight: 700;
+            text-align: right;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .log {
+            display: none;
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            background: #173775;
+            color: #ffffff;
+            font-size: 15px;
+            line-height: 1.4;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+    </style>
+</head>
+<body style="visibility: hidden;">
+    <div class="app">
+        <div class="topo">
+            <button class="btn-voltar" type="button" onclick="window.location.href='index.html'" aria-label="Voltar">&lsaquo;</button>
+            <h1 class="titulo">Importar Dataverse</h1>
+        </div>
+
+        <div class="aviso">
+            Tela temporária. Ela grava somente em <strong>cobrancas_dataverse</strong>.
+        </div>
+
+        <div class="status" id="status">Verificando acesso...</div>
+
+        <label class="rotulo" for="dadosDataverse">Dados copiados do Dataverse</label>
+        <textarea id="dadosDataverse" placeholder="Cole aqui as linhas copiadas do Dataverse.&#10;&#10;Exemplo:&#10;1	Peixe do vanor	118	30/04/2026	16/04/2026&#10;2	LC Pizzaria	1.142	21/04/2026	27/03/2026"></textarea>
+
+        <div class="dica">
+            Colunas esperadas: Núm, Clientes, Saldo, ÚltimaVisita, PenúltimaVisita.
+        </div>
+
+        <div class="acoes">
+            <button class="btn" type="button" id="btnAnalisar">Analisar dados</button>
+        </div>
+
+        <div class="preview" id="preview">
+            <div class="resumo">
+                <div class="chip" id="chipOk">0 válidos</div>
+                <div class="chip" id="chipErro">0 erros</div>
+                <div class="chip" id="chipTotal">0 linhas</div>
+            </div>
+            <div class="lista" id="listaPreview"></div>
+            <div class="acoes">
+                <button class="btn btn-principal" type="button" id="btnImportar">Importar para cobrancas_dataverse</button>
+            </div>
+        </div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <script src="assets/js/play-dialogs.js"></script>
+    <script type="module">
+        import { verificarAutenticacao } from './auth.js';
+        import { app } from './database.js';
+        import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const db = getDatabase(app);
+        const statusEl = document.getElementById('status');
+        const textarea = document.getElementById('dadosDataverse');
+        const btnAnalisar = document.getElementById('btnAnalisar');
+        const btnImportar = document.getElementById('btnImportar');
+        const preview = document.getElementById('preview');
+        const listaPreview = document.getElementById('listaPreview');
+        const logEl = document.getElementById('log');
+        const chipOk = document.getElementById('chipOk');
+        const chipErro = document.getElementById('chipErro');
+        const chipTotal = document.getElementById('chipTotal');
+
+        let clientesPorNumero = {};
+        let analisados = [];
+
+        verificarAutenticacao().then((usuario) => {
+            if (usuario) inicializar();
+        });
+
+        async function inicializar() {
+            try {
+                const snap = await get(ref(db, 'clientes'));
+                const data = snap.val() || {};
+                clientesPorNumero = {};
+                Object.values(data).forEach((cliente) => {
+                    const numero = normalizarNumero(cliente?.numero);
+                    if (numero) clientesPorNumero[numero] = cliente;
+                });
+                statusEl.textContent = `${Object.keys(clientesPorNumero).length} clientes carregados para conferência`;
+            } catch (erro) {
+                statusEl.textContent = `Não foi possível carregar clientes: ${erro.message}`;
+            } finally {
+                document.body.style.visibility = 'visible';
+            }
+        }
+
+        function normalizarNumero(valor) {
+            return String(valor ?? '').trim();
+        }
+
+        function escaparHtml(valor) {
+            return String(valor ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function parsearSaldo(valor) {
+            const texto = String(valor ?? '').trim();
+            if (!texto) return NaN;
+            const normalizado = texto.replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+            const numero = Number(normalizado);
+            return Number.isFinite(numero) ? numero : NaN;
+        }
+
+        function parsearData(valor) {
+            const texto = String(valor ?? '').trim();
+            const br = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (br) return `${br[3]}-${br[2].padStart(2, '0')}-${br[1].padStart(2, '0')}`;
+            const iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            return iso ? texto : '';
+        }
+
+        function ehCabecalho(colunas) {
+            const primeira = String(colunas[0] || '').trim().toLowerCase();
+            return primeira === 'núm' || primeira === 'num' || primeira === 'nº' || primeira === 'numero';
+        }
+
+        function analisarLinha(linha) {
+            const colunas = linha.split('\t').map((coluna) => coluna.trim());
+            if (colunas.length < 5 || ehCabecalho(colunas)) return null;
+
+            const numero = normalizarNumero(colunas[0]);
+            const cliente = String(colunas[1] || '').trim();
+            const saldo = parsearSaldo(colunas[2]);
+            const ultimaVisita = parsearData(colunas[3]);
+            const penultimaVisita = parsearData(colunas[4]);
+            const erros = [];
+
+            if (!numero) erros.push('número vazio');
+            if (!cliente) erros.push('cliente vazio');
+            if (!Number.isFinite(saldo) || saldo <= 0) erros.push('saldo inválido');
+            if (!ultimaVisita) erros.push('última visita inválida');
+            if (!penultimaVisita) erros.push('penúltima visita inválida');
+
+            return {
+                numero,
+                cliente,
+                saldo,
+                ultimaVisita,
+                penultimaVisita,
+                existeCliente: Boolean(clientesPorNumero[numero]),
+                erros
+            };
+        }
+
+        function analisarDados() {
+            const linhas = textarea.value.split('\n').map((linha) => linha.trim()).filter(Boolean);
+            analisados = linhas.map(analisarLinha).filter(Boolean);
+            renderizarPreview();
+        }
+
+        function renderizarPreview() {
+            const validos = analisados.filter((item) => item.erros.length === 0);
+            const erros = analisados.length - validos.length;
+            chipOk.textContent = `${validos.length} válidos`;
+            chipErro.textContent = `${erros} erros`;
+            chipTotal.textContent = `${analisados.length} linhas`;
+
+            listaPreview.innerHTML = analisados.map((item) => {
+                const status = item.erros.length
+                    ? `<span class="erro">${escaparHtml(item.erros[0])}</span>`
+                    : `<span class="ok">${item.existeCliente ? 'ok' : 'novo'}</span>`;
+                return `
+                    <div class="linha">
+                        <strong>${escaparHtml(item.numero)}</strong>
+                        <span>${escaparHtml(item.cliente)}<br>${escaparHtml(item.ultimaVisita)} / ${escaparHtml(item.penultimaVisita)}</span>
+                        ${status}
+                    </div>
+                `;
+            }).join('') || '<div class="linha"><span></span><span>Nenhuma linha reconhecida</span><span class="erro">vazio</span></div>';
+
+            btnImportar.disabled = validos.length === 0;
+            preview.style.display = 'block';
+            logEl.style.display = 'none';
+        }
+
+        async function importarDados() {
+            const validos = analisados.filter((item) => item.erros.length === 0);
+            if (!validos.length) {
+                if (window.playAlert) await window.playAlert('Nenhum registro válido para importar.');
+                return;
+            }
+
+            btnImportar.disabled = true;
+            btnImportar.textContent = 'Importando...';
+
+            const updates = {};
+            validos.forEach((item) => {
+                updates[`cobrancas_dataverse/${item.numero}`] = {
+                    numero: item.numero,
+                    cliente: item.cliente,
+                    saldo: item.saldo,
+                    ultimaVisita: item.ultimaVisita,
+                    penultimaVisita: item.penultimaVisita
+                };
+            });
+
+            try {
+                await update(ref(db), updates);
+                logEl.textContent = `${validos.length} registro${validos.length === 1 ? '' : 's'} importado${validos.length === 1 ? '' : 's'} em cobrancas_dataverse.`;
+                logEl.style.display = 'block';
+                if (window.playAlert) await window.playAlert('Importação concluída.');
+            } catch (erro) {
+                logEl.textContent = `Falha ao importar: ${erro.message}`;
+                logEl.style.display = 'block';
+                if (window.playAlert) await window.playAlert('Não foi possível importar os dados.');
+            } finally {
+                btnImportar.textContent = 'Importar para cobrancas_dataverse';
+                btnImportar.disabled = false;
+            }
+        }
+
+        btnAnalisar.addEventListener('click', analisarDados);
+        btnImportar.addEventListener('click', importarDados);
+    </script>
+</body>
+</html>

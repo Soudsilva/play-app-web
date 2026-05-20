@@ -1,4 +1,4 @@
-const CACHE = 'play-v6';
+const CACHE = 'play-v7';
 
 // Arquivos essenciais do próprio app
 const SHELL = [
@@ -9,6 +9,7 @@ const SHELL = [
     '/pedidos.html',
     '/verificar_envios.html',
     '/media_de_vendas.html',
+    '/importar_cobrancas_dataverse.html',
     '/auth.js',
     '/database.js',
     '/offline-sync.js',

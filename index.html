@@ -250,9 +250,9 @@
                     <span class="icone">&#127974;</span>
                     <span>Dep&oacute;sitos</span>
                 </div>
-                <div class="botao-sub" id="btnImportarHistorico" onclick="window.location.href='importar_historico.html'" style="display: none;">
+                <div class="botao-sub" id="btnImportarDataverse" onclick="window.location.href='importar_cobrancas_dataverse.html'" style="display: none;">
                     <span class="icone">&#128229;</span>
-                    <span>Importar Hist&oacute;rico</span>
+                    <span>Importar Dataverse</span>
                 </div>
                 <div class="botao-sub" id="btnRotas" onclick="abrirTela('rotas')">
                     <span class="icone">&#128640;</span>
@@ -650,7 +650,7 @@
             mediaVendas: document.getElementById('btnMediaVendas'),
             balanco: document.getElementById('btnBalanco'),
             depositos: document.getElementById('btnDepositos'),
-            importarHistorico: document.getElementById('btnImportarHistorico'),
+            importarDataverse: document.getElementById('btnImportarDataverse'),
             rotas: document.getElementById('btnRotas'),
             cadColab: document.getElementById('btnCadColaborador'),
             cadastroItens: document.getElementById('btnCadastroItens'),
@@ -722,7 +722,7 @@
             btns.verificacoesGerais.style.display = 'none';
             btns.mediaVendas.style.display = ehAtendimentoNivel2 ? 'flex' : 'none';
             btns.depositos.style.display = ehAtendimentoNivel2 ? 'none' : 'flex';
-            btns.importarHistorico.style.display = 'none';
+            btns.importarDataverse.style.display = 'none';
             
             // [ALTERADO] Rotas apenas para NÃ­vel 1
             if (perfil.includes('atendimento_1')) {
@@ -762,7 +762,7 @@
             btns.verificarEnvios.style.display = 'none';
             btns.verificacoesGerais.style.display = 'flex';
             btns.depositos.style.display = 'flex';
-            btns.importarHistorico.style.display = 'flex';
+            btns.importarDataverse.style.display = perfil.includes('gestao_3') ? 'flex' : 'none';
 
             btns.rotas.style.display = 'none';
             btns.verificarRotas.style.display = 'flex';
@@ -803,7 +803,7 @@
             btns.fluxoCaixa.style.display = 'none';
             btns.pix.style.display = 'none';
             btns.mediaVendas.style.display = 'none';
-            btns.importarHistorico.style.display = 'none';
+            btns.importarDataverse.style.display = 'none';
             btns.balanco.onclick = () => window.location.href = 'balanco.html?contestacao=1';
         }
 
