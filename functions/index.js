@@ -14,11 +14,13 @@ const RESUMO_BALANCO_ID = "resumo_balanco";
 const CINCO_DIAS_MS = 5 * 24 * 60 * 60 * 1000;
 const VALOR_MINIMO_ADIANTAR_ROTA = 2200;
 const DIAS_MINIMOS_ADIANTAR_ROTA = 60;
+const DIAS_MINIMOS_REPOR_SEM_VISITA = 70;
 const DEPOSITOS_RESUMO_ROOT = "firebase_functions_depositos";
 const LIMITE_BLOQUEIO_DEPOSITO = 5000;
 const MEDIA_VENDAS_ROOT = "Media_de_Vendas";
 const MEDIA_VENDAS_METADATA_PATH = "metadata/media_de_vendas_versao";
 const COBRANCAS_DATAVERSE_ROOT = "cobrancas_dataverse";
+const FOTO_PADRAO_MANUTENCAO = "assets/img/logo.png";
 
 function dataBrasiliaISOData(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -96,6 +98,91 @@ function diasDesdeBrasilia(valor, agora = new Date()) {
   const hoje = inicioDiaBrasiliaMs(agora);
   if (data == null || hoje == null) return null;
   return Math.max(0, Math.round((hoje - data) / 86400000));
+}
+
+function normalizarTextoBasico(valor) {
+  return String(valor || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function manutencaoMesmoCliente(manutencao, clienteId, clienteNumero) {
+  const id = String(clienteId || "").trim();
+  const numeroCliente = normalizarNumeroCliente(clienteNumero);
+  const idManutencao = String(
+    manutencao?.clienteId ||
+    manutencao?.clienteFirebaseUrl ||
+    "",
+  ).trim();
+  const numeroManutencao = normalizarNumeroCliente(manutencao?.clienteNumero);
+
+  return Boolean(
+    (id && idManutencao === id) ||
+    (numeroCliente && numeroManutencao === numeroCliente),
+  );
+}
+
+function manutencaoReporSemVisitaJaCriada(
+  manutencao,
+  clienteId,
+  clienteNumero,
+  ultimaCobrancaEm,
+) {
+  if (!manutencaoMesmoCliente(manutencao, clienteId, clienteNumero)) return false;
+  if (normalizarTextoBasico(manutencao?.tipoAcao) !== "repor") return false;
+
+  const status = normalizarTextoBasico(manutencao?.status || "pendente");
+  if (status !== "concluida" && status !== "concluido") return true;
+
+  const observacoes = normalizarTextoBasico(manutencao?.observacoes);
+  const pareceAutomatica =
+    observacoes.includes("sem visita") &&
+    observacoes.includes("abastecer maquinas");
+  if (!pareceAutomatica) return false;
+
+  const dataRegistroMs = timestampValido(manutencao?.dataRegistro);
+  const ultimaCobrancaMs = timestampValido(ultimaCobrancaEm);
+  return dataRegistroMs != null &&
+    ultimaCobrancaMs != null &&
+    dataRegistroMs >= ultimaCobrancaMs;
+}
+
+function obterTextoEquipamentosCliente(cliente) {
+  const equipTexto = String(cliente?.equip || "").trim();
+  if (equipTexto) {
+    return equipTexto
+      .replace(/\s*\[Pix:\s*[^\]]+\]/gi, "")
+      .replace(/\s+/g, " ")
+      .replace(/\s+,/g, ",")
+      .trim();
+  }
+
+  if (!Array.isArray(cliente?.equipDetalhes)) return "";
+
+  return cliente.equipDetalhes
+    .map((item) => {
+      const nome = String(item?.nome || "").trim();
+      if (!nome) return "";
+      const qtd = String(item?.qtd || item?.quantidade || "").trim();
+      return qtd ? `${nome} (${qtd})` : nome;
+    })
+    .filter(Boolean)
+    .join(", ");
+}
+
+function obterFotoFichaCliente(cliente) {
+  const foto =
+    String(cliente?.fotoFichaInstalacao || "").trim() ||
+    String(cliente?.fotosInstalacao?.ficha || "").trim() ||
+    FOTO_PADRAO_MANUTENCAO;
+  const thumb =
+    String(cliente?.fotoFichaInstalacaoThumb || "").trim() ||
+    String(cliente?.fotosInstalacao?.fichaThumb || "").trim() ||
+    foto;
+
+  return {foto, thumb};
 }
 
 function inicioDiaHistoricoDataverseMs(valor) {
@@ -935,6 +1022,170 @@ exports.adianta_rota = onSchedule(
       totalMarcadas,
       valorMinimo: VALOR_MINIMO_ADIANTAR_ROTA,
       diasMinimos: DIAS_MINIMOS_ADIANTAR_ROTA,
+      data: dataBrasiliaISOData(agora),
+    });
+  },
+);
+
+exports.cadastrarManutencoesReposicaoSemVisita = onSchedule(
+  {
+    schedule: "50 0 * * *",
+    timeZone: "America/Sao_Paulo",
+  },
+  async () => {
+    const db = admin.database();
+    const agora = new Date();
+    const agoraIso = agora.toISOString();
+    const [mediaSnap, clientesSnap, manutencoesSnap] = await Promise.all([
+      db.ref(MEDIA_VENDAS_ROOT).get(),
+      db.ref("clientes").get(),
+      db.ref("manutencoes").get(),
+    ]);
+
+    if (!mediaSnap.exists() || !clientesSnap.exists()) {
+      logger.info("Reposicao sem visita sem dados suficientes para processar.");
+      return;
+    }
+
+    const clientesPorId = new Map();
+    const clientesPorNumero = new Map();
+    Object.entries(clientesSnap.val() || {}).forEach(([clienteId, cliente]) => {
+      const clienteComId = {firebaseUrl: clienteId, ...(cliente || {})};
+      clientesPorId.set(clienteId, clienteComId);
+
+      const numeroKey = normalizarNumeroCliente(cliente?.numero);
+      if (numeroKey) clientesPorNumero.set(numeroKey, clienteComId);
+    });
+
+    const manutencoes = Object.values(manutencoesSnap.val() || {});
+    const updates = {};
+    let analisados = 0;
+    let criados = 0;
+    let concluidosPorVisita = 0;
+    let ignoradosPorDuplicidade = 0;
+    let ignoradosSemCliente = 0;
+    let ignoradosEncerrados = 0;
+
+    Object.entries(manutencoesSnap.val() || {}).forEach(([manutencaoId, manutencao]) => {
+      const status = normalizarTextoBasico(manutencao?.status || "pendente");
+      if (status === "concluida" || status === "concluido") return;
+      if (normalizarTextoBasico(manutencao?.tipoAcao) !== "repor") return;
+
+      const clienteNumero = normalizarNumeroCliente(manutencao?.clienteNumero);
+      const clienteId = String(
+        manutencao?.clienteId ||
+        manutencao?.clienteFirebaseUrl ||
+        "",
+      ).trim();
+
+      let mediaCliente = clienteNumero ?
+        (mediaSnap.val() || {})[clienteNumero] :
+        null;
+
+      if (!mediaCliente && clienteId) {
+        mediaCliente = Object.values(mediaSnap.val() || {}).find((media) =>
+          String(media?.cliente?.id || "").trim() === clienteId,
+        );
+      }
+
+      const diasDesdeVisita = diasDesdeBrasilia(
+        mediaCliente?.ultimaCobrancaEm || "",
+        agora,
+      );
+      if (diasDesdeVisita == null || diasDesdeVisita >= 2) return;
+
+      updates[`manutencoes/${manutencaoId}/status`] = "concluida";
+      updates[`manutencoes/${manutencaoId}/dataConclusao`] = agoraIso;
+      concluidosPorVisita += 1;
+    });
+
+    Object.entries(mediaSnap.val() || {}).forEach(([mediaKey, media]) => {
+      if (!media || typeof media !== "object") return;
+
+      const ultimaCobrancaEm = media.ultimaCobrancaEm || "";
+      const diasSemVisita = diasDesdeBrasilia(ultimaCobrancaEm, agora);
+      if (diasSemVisita == null ||
+        diasSemVisita <= DIAS_MINIMOS_REPOR_SEM_VISITA) {
+        return;
+      }
+
+      analisados += 1;
+
+      const clienteId = String(media?.cliente?.id || "").trim();
+      const numeroKey = normalizarNumeroCliente(
+        media?.cliente?.numero || mediaKey,
+      );
+      const cliente =
+        (clienteId && clientesPorId.get(clienteId)) ||
+        (numeroKey && clientesPorNumero.get(numeroKey)) ||
+        null;
+
+      if (!cliente) {
+        ignoradosSemCliente += 1;
+        return;
+      }
+
+      if (cliente.encerrado === true) {
+        ignoradosEncerrados += 1;
+        return;
+      }
+
+      const clienteDbId = String(cliente.firebaseUrl || clienteId || "").trim();
+      const clienteNumero = normalizarNumeroCliente(cliente.numero || numeroKey);
+      const jaExiste = manutencoes.some((manutencao) =>
+        manutencaoReporSemVisitaJaCriada(
+          manutencao,
+          clienteDbId,
+          clienteNumero,
+          ultimaCobrancaEm,
+        ),
+      );
+
+      if (jaExiste) {
+        ignoradosPorDuplicidade += 1;
+        return;
+      }
+
+      const equipamentos = obterTextoEquipamentosCliente(cliente);
+      const listaMaquinas = equipamentos || "maquinas do ponto";
+      const {foto, thumb} = obterFotoFichaCliente(cliente);
+      const novaRef = db.ref("manutencoes").push();
+
+      updates[`manutencoes/${novaRef.key}`] = {
+        clienteId: clienteDbId,
+        clienteNumero: cliente.numero || clienteNumero,
+        clienteNome: cliente.nome || media?.cliente?.nome || "",
+        clienteCidade: cliente.cidade || "",
+        clienteRota: cliente.rota || media?.cliente?.rota || media.rota || "",
+        clienteEndereco: cliente.endereco || "",
+        clienteEquip: cliente.equip || equipamentos,
+        tipoAcao: "Repor",
+        observacoes:
+          `Cliente ha ${diasSemVisita} dias sem visita. ` +
+          `Levar material para abastecer maquinas: ${listaMaquinas}. ` +
+          "Se as vendas forem fracas, retirar e encerrar esse ponto.",
+        fotoSolicitacao: foto,
+        fotoSolicitacaoThumb: thumb,
+        fotosClienteReferencia: [],
+        status: "pendente",
+        cadastradoPor: "Autom\u00e1tico",
+        dataRegistro: agoraIso,
+      };
+      criados += 1;
+    });
+
+    if (Object.keys(updates).length) {
+      await db.ref().update(updates);
+    }
+
+    logger.info("Reposicao sem visita concluida.", {
+      analisados,
+      criados,
+      concluidosPorVisita,
+      ignoradosPorDuplicidade,
+      ignoradosSemCliente,
+      ignoradosEncerrados,
+      diasMinimos: DIAS_MINIMOS_REPOR_SEM_VISITA,
       data: dataBrasiliaISOData(agora),
     });
   },

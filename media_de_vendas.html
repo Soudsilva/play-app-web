@@ -431,6 +431,7 @@
     let modoBusca = '';
     let termoMaquina = '';
     let modoOrdenacao = 'numero_menor';
+    let usuarioGestao = false;
     let nomesMaquinasEstoque = [];
     let cardExpandidoId = '';
     let atendimentosCachePromise = null;
@@ -800,6 +801,25 @@
         return String(perfil || '').includes('gestao') || String(perfil || '').includes('atendimento_2');
     }
 
+    function atualizarOpcoesOrdenacaoPorPerfil() {
+        const valorAtual = modoOrdenacao || elOrdenacao.value || 'numero_menor';
+        const valorPermitido = usuarioGestao
+            ? valorAtual
+            : (valorAtual === 'ultimo_atendimento_maior' ? 'numero_menor' : valorAtual);
+
+        elOrdenacao.innerHTML = `
+            <option value="valor_menor">- &#128181;</option>
+            <option value="valor_maior">+ &#128181;</option>
+            ${usuarioGestao ? '<option value="ultimo_atendimento_maior">+ dias</option>' : ''}
+        `;
+
+        elOrdenacao.value = valorPermitido;
+        if (elOrdenacao.value !== valorPermitido) {
+            elOrdenacao.selectedIndex = -1;
+        }
+        modoOrdenacao = valorPermitido;
+    }
+
     function ordenarLista(lista) {
         return [...lista].sort((a, b) => {
             const clienteA = obterClienteFonte(a);
@@ -811,6 +831,18 @@
 
             const ea = calcularEstimativaHistorica(a)?.estimativa ?? -1;
             const eb = calcularEstimativaHistorica(b)?.estimativa ?? -1;
+
+            if (modoOrdenacao === 'ultimo_atendimento_maior') {
+                const diasA = calcularEstimativaHistorica(a)?.dias;
+                const diasB = calcularEstimativaHistorica(b)?.dias;
+                const aTemDias = typeof diasA === 'number' && Number.isFinite(diasA);
+                const bTemDias = typeof diasB === 'number' && Number.isFinite(diasB);
+
+                if (aTemDias && bTemDias && diasA !== diasB) return diasB - diasA;
+                if (aTemDias && !bTemDias) return -1;
+                if (!aTemDias && bTemDias) return 1;
+                if (eb !== ea) return eb - ea;
+            }
 
             if (modoOrdenacao === 'numero_menor') {
                 if (aEhNumero && bEhNumero && numeroA !== numeroB) return numeroA - numeroB;
@@ -1047,6 +1079,7 @@
 
     dbEscutarColaboradores((lista) => {
         colaboradores = lista || [];
+        usuarioGestao = String(perfilPorNome(nomeLogado) || '').includes('gestao');
         autorizado = checarAutorizacao();
         if (!nomeLogado) {
             window.playAlert('Nenhum usu\u00e1rio logado. Volte ao Menu Inicial e selecione seu nome.').then(() => {
@@ -1060,6 +1093,8 @@
             });
             return;
         }
+        atualizarOpcoesOrdenacaoPorPerfil();
+        render();
     });
 
     dbEscutarMediaDeVendas((lista) => {
