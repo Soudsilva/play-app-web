@@ -100,31 +100,101 @@
         }
 
         .resumo-grid {
+            position: relative;
+            z-index: 50;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             margin-bottom: 16px;
             background: rgba(255,255,255,0.08);
             border: 1px solid rgba(255,255,255,0.14);
             border-radius: 18px;
-            padding: 10px 14px;
+            padding: 10px 10px;
             backdrop-filter: blur(8px);
+            overflow: visible;
         }
 
-        .resumo-pendentes {
+        .modo-lista-toggle {
+            position: relative;
             display: flex;
             align-items: center;
-            gap: 8px;
             flex-shrink: 0;
+            margin-left: -2px;
+        }
+
+        .modo-lista-btn {
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,235,59,0.14);
+            color: #ffffff;
+            border-radius: 10px;
+            padding: 6px 7px;
+            min-height: 34px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
             white-space: nowrap;
         }
 
-        .resumo-label {
+        .modo-lista-btn:active {
+            transform: scale(0.98);
+        }
+
+        .modo-lista-texto {
             font-size: 13px;
             text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: #ffffff;
+            letter-spacing: 0.5px;
             font-weight: bold;
+        }
+
+        .modo-lista-seta {
+            color: #ffeb3b;
+            font-size: 10px;
+            line-height: 1;
+            transition: transform 0.18s ease;
+        }
+
+        .modo-lista-toggle.aberto .modo-lista-seta {
+            transform: rotate(180deg);
+        }
+
+        .modo-lista-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            z-index: 100;
+            display: none;
+            width: 158px;
+            padding: 6px;
+            border-radius: 14px;
+            background: #173776;
+            border: 1px solid rgba(255,255,255,0.20);
+            box-shadow: 0 16px 34px rgba(0,0,0,0.32);
+        }
+
+        .modo-lista-toggle.aberto .modo-lista-menu {
+            display: grid;
+            gap: 5px;
+        }
+
+        .modo-lista-opcao {
+            border: 0;
+            border-radius: 10px;
+            background: transparent;
+            color: #ffffff;
+            padding: 10px 9px;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .modo-lista-opcao.ativo {
+            background: rgba(255,235,59,0.18);
+            color: #ffeb3b;
         }
 
         .resumo-valor {
@@ -147,11 +217,12 @@
             align-items: center;
             flex: 1;
             min-width: 0;
+            margin-left: -6px;
         }
 
         .search-wrap svg {
             position: absolute;
-            left: 10px;
+            left: 0;
             width: 15px;
             height: 15px;
             stroke: rgba(255,255,255,0.45);
@@ -166,7 +237,7 @@
             width: 100%;
             background: transparent;
             border: none;
-            padding: 6px 28px 6px 30px;
+            padding: 6px 28px 6px 18px;
             color: white;
             font-size: 16px;
             outline: none;
@@ -231,6 +302,7 @@
             overflow: hidden;
             background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%);
             border: 1px solid rgba(255,255,255,0.18);
+            border-bottom: 2px solid #ffffff;
             border-radius: 20px;
             padding: 16px 16px 14px 18px;
             box-shadow: 0 18px 38px rgba(0,0,0,0.2);
@@ -253,7 +325,7 @@
         }
 
         .card-manutencao.urgencia-alta::before {
-            background: #ff5252;
+            background: #ff7043;
         }
 
         .card-selecao {
@@ -402,6 +474,26 @@
 
         .linha-solicitado b {
             color: #ff9800;
+        }
+
+        .linha-conclusao {
+            display: grid;
+            gap: 5px;
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(76,175,80,0.12);
+            border: 1px solid rgba(76,175,80,0.30);
+            font-size: 14px;
+            color: #ffffff;
+        }
+
+        .linha-conclusao b {
+            color: #81c784;
+        }
+
+        .card-manutencao.concluida::before {
+            background: #4caf50;
         }
 
         .bloco-acao {
@@ -686,7 +778,32 @@
 
         @media (max-width: 390px) {
             .resumo-grid {
-                grid-template-columns: 1fr;
+                gap: 6px;
+                padding-left: 8px;
+                padding-right: 10px;
+            }
+
+            .modo-lista-toggle {
+                margin-left: -3px;
+            }
+
+            .search-wrap {
+                margin-left: -5px;
+            }
+
+            .modo-lista-btn {
+                padding-left: 6px;
+                padding-right: 6px;
+                gap: 3px;
+            }
+
+            .modo-lista-texto {
+                font-size: 13px;
+                letter-spacing: 0.2px;
+            }
+
+            .resumo-valor {
+                font-size: 24px;
             }
         }
     </style>
@@ -705,9 +822,16 @@
     </div>
 
     <div id="resumoGrid" class="resumo-grid" style="display:none;">
-        <div class="resumo-pendentes">
-            <span class="resumo-label">Pendentes</span>
-            <span id="resumoPendentes" class="resumo-valor">0</span>
+        <div class="modo-lista-toggle" id="modoListaToggle">
+            <button type="button" class="modo-lista-btn" id="btnModoLista" aria-label="Escolher lista" aria-expanded="false">
+                <span class="modo-lista-texto" id="modoListaTexto">Pendentes</span>
+                <span id="resumoPendentes" class="resumo-valor">0</span>
+                <span class="modo-lista-seta">&#9660;</span>
+            </button>
+            <div class="modo-lista-menu" id="modoListaMenu">
+                <button type="button" class="modo-lista-opcao ativo" data-modo="pendentes">Pendentes</button>
+                <button type="button" class="modo-lista-opcao" data-modo="concluidas">Conclu&iacute;das</button>
+            </div>
         </div>
         <div class="resumo-divider"></div>
         <div class="search-wrap">
@@ -773,6 +897,8 @@
     let manutencoes = [];
     let atendimentos = [];
     let manutencoesPendentesEnriquecidas = [];
+    let manutencoesConcluidasEnriquecidas = [];
+    let modoListaManutencoes = "pendentes";
     let termoPesquisa = "";
     let filtroMinhasSelecoes = false;
     let manutencaoPendenteAjuste = "";
@@ -836,6 +962,11 @@
             item.tipoAcao,
             item.observacoes,
             item.aberto,
+            item.finalizadoPor,
+            item.confirmadoPor,
+            item.confirmedBy,
+            item.concluidoPor,
+            item.dataConclusao ? formatarDataHora(item.dataConclusao) : '',
             formatarEquipamentosPontoNovo(item)
         ].join(" "));
         return palavras.every(p => haystack.includes(p));
@@ -918,6 +1049,38 @@
         const data = parseData(valorData);
         if (!data) return "Data nao informada";
         return data.toLocaleDateString('pt-BR');
+    }
+
+    function formatarDataHora(valorData) {
+        const data = parseData(valorData);
+        if (!data) return "Data nao informada";
+        return data.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function statusManutencaoConcluido(manutencao) {
+        const status = String(manutencao?.status || "pendente").toLowerCase();
+        return status === 'concluida' || status === 'concluido';
+    }
+
+    function obterResponsavelConclusao(manutencao) {
+        return String(
+            manutencao?.finalizadoPor ||
+            manutencao?.concluidoPor ||
+            manutencao?.confirmadoPor ||
+            manutencao?.confirmedBy ||
+            manutencao?.selecionadoPor ||
+            ''
+        ).trim() || "Nao informado";
+    }
+
+    function obterDataConclusao(manutencao) {
+        return manutencao?.dataConclusao || manutencao?.dataConfirmacaoGestor || "";
     }
 
     function obterClasseUrgencia(dias) {
@@ -1027,7 +1190,7 @@
             });
     }
 
-    function obterManutencoesPendentesEnriquecidas() {
+    function obterManutencoesEnriquecidas(concluidas = false) {
         const clientesPorId = new Map(clientes.filter(c => c?.firebaseUrl).map(c => [c.firebaseUrl, c]));
         const clientesPorNumero = new Map(
             clientes
@@ -1054,8 +1217,7 @@
 
         return manutencoes
             .filter(manutencao => {
-                const status = String(manutencao?.status || "pendente").toLowerCase();
-                return status !== 'concluida' && status !== 'concluido';
+                return statusManutencaoConcluido(manutencao) === concluidas;
             })
             .map(manutencao => {
                 const cliente = (manutencao?.clienteId && clientesPorId.get(manutencao.clienteId))
@@ -1080,26 +1242,43 @@
                     diasEmAberto,
                     classeUrgencia: obterClasseUrgencia(diasEmAberto),
                     dataFormatada: formatarData(manutencao?.dataRegistro),
-                    ultimaVisita: montarUltimaVisita(atendimento)
+                    ultimaVisita: montarUltimaVisita(atendimento),
+                    concluidoPor: obterResponsavelConclusao(manutencao),
+                    dataConclusaoFormatada: formatarDataHora(obterDataConclusao(manutencao))
                 };
             })
             .sort((a, b) => {
-                const dataA = parseData(a?.dataRegistro)?.getTime() || 0;
-                const dataB = parseData(b?.dataRegistro)?.getTime() || 0;
-                return dataA - dataB;
+                const dataA = parseData(concluidas ? obterDataConclusao(a) : a?.dataRegistro)?.getTime() || 0;
+                const dataB = parseData(concluidas ? obterDataConclusao(b) : b?.dataRegistro)?.getTime() || 0;
+                return concluidas ? dataB - dataA : dataA - dataB;
             });
+    }
+
+    function obterManutencoesPendentesEnriquecidas() {
+        return obterManutencoesEnriquecidas(false);
+    }
+
+    function obterManutencoesConcluidasEnriquecidas() {
+        return obterManutencoesEnriquecidas(true);
     }
 
     function renderizarResumo(lista) {
         const resumoGrid = document.getElementById('resumoGrid');
         const pendentesEl = document.getElementById('resumoPendentes');
+        const textoModo = document.getElementById('modoListaTexto');
+        const opcoesModo = document.querySelectorAll('.modo-lista-opcao');
 
         resumoGrid.style.display = 'flex';
         pendentesEl.textContent = String(lista.length);
+        textoModo.textContent = modoListaManutencoes === 'concluidas' ? 'Concluidas' : 'Pendentes';
+        opcoesModo.forEach(opcao => {
+            opcao.classList.toggle('ativo', opcao.dataset.modo === modoListaManutencoes);
+        });
     }
 
     function atualizarCacheManutencoesPendentes() {
         manutencoesPendentesEnriquecidas = obterManutencoesPendentesEnriquecidas();
+        manutencoesConcluidasEnriquecidas = obterManutencoesConcluidasEnriquecidas();
     }
 
     function obterCardPorId(id) {
@@ -1358,7 +1537,8 @@
     }
 
     function renderizarLista() {
-        const lista = manutencoesPendentesEnriquecidas;
+        const exibindoConcluidas = modoListaManutencoes === 'concluidas';
+        const lista = exibindoConcluidas ? manutencoesConcluidasEnriquecidas : manutencoesPendentesEnriquecidas;
         const estado = document.getElementById('estadoLista');
         const container = document.getElementById('listaManutencoes');
 
@@ -1366,13 +1546,21 @@
 
         container.innerHTML = "";
 
+        if (exibindoConcluidas) {
+            document.getElementById('barraFlutuante').classList.remove('visivel');
+            filtroMinhasSelecoes = false;
+            atualizarEspacoDaBarra(false);
+        }
+
         if (lista.length === 0) {
             document.getElementById('barraFlutuante').classList.remove('visivel');
             atualizarEspacoDaBarra(false);
             manutencaoPendenteAjuste = "";
-            renderizarResumo([]);
+            renderizarResumo(manutencoesPendentesEnriquecidas);
             estado.style.display = 'block';
-            estado.textContent = "Nenhuma manutencao pendente no momento.";
+            estado.textContent = exibindoConcluidas
+                ? "Nenhuma manutencao concluida no momento."
+                : "Nenhuma manutencao pendente no momento.";
             return;
         }
 
@@ -1386,7 +1574,7 @@
         const btnCont = document.getElementById('btnSelecoesCont');
         const btnNavegarSub = document.getElementById('btnNavegarSub');
 
-        if (minhasSelecoes.length > 0) {
+        if (!exibindoConcluidas && minhasSelecoes.length > 0) {
             btnCont.textContent = `${minhasSelecoes.length} ${minhasSelecoes.length === 1 ? 'selecionado' : 'selecionados'}`;
             const enderecos = minhasSelecoes.filter(i => i.clienteEndereco || i.clienteCidade);
             btnNavegarSub.textContent = `${enderecos.length} ${enderecos.length === 1 ? 'parada' : 'paradas'}`;
@@ -1402,7 +1590,7 @@
             ? lista.filter(item => itemBatePesquisa(item, termoPesquisa))
             : lista;
 
-        if (filtroMinhasSelecoes) {
+        if (!exibindoConcluidas && filtroMinhasSelecoes) {
             listaFiltrada = listaFiltrada.filter(item => item.selecionadoPor === usuarioLogado);
         }
 
@@ -1413,7 +1601,7 @@
             const userObj = cache.find(c => c.nome === usuarioLogado);
             const perfil = userObj?.nivel_completo || '';
             isEstoque = perfil.includes('estoque') && !perfil.includes('gestao');
-            if (isEstoque) {
+            if (!exibindoConcluidas && isEstoque) {
                 listaFiltrada = listaFiltrada.filter(item => {
                     const tipo = String(item.tipoAcao || '').toLowerCase();
                     return tipo.includes('adicionar') || tipo.includes('ponto novo');
@@ -1421,18 +1609,20 @@
             }
         } catch (_) {}
 
-        renderizarResumo(listaFiltrada);
+        renderizarResumo(manutencoesPendentesEnriquecidas);
 
         if (listaFiltrada.length === 0) {
             estado.style.display = 'block';
-            estado.textContent = termoPesquisa ? "Nenhum resultado encontrado." : "Nenhuma manutencao pendente no momento.";
+            estado.textContent = termoPesquisa
+                ? "Nenhum resultado encontrado."
+                : (exibindoConcluidas ? "Nenhuma manutencao concluida no momento." : "Nenhuma manutencao pendente no momento.");
             return;
         }
 
         const _fragment = document.createDocumentFragment();
         listaFiltrada.forEach(item => {
             const card = document.createElement('div');
-            card.className = `card-manutencao urgencia-${item.classeUrgencia}`;
+            card.className = `card-manutencao urgencia-${item.classeUrgencia}${exibindoConcluidas ? ' concluida' : ''}`;
             card.dataset.manutencaoId = item.firebaseUrl || "";
             const detalhesPontoNovo = montarDetalhesPontoNovo(item);
             const estaSelecionado = !!item.selecionadoPor;
@@ -1441,7 +1631,7 @@
                 : 'Marcar que farei este serviço';
 
             card.innerHTML = `
-                ${!isEstoque ? `
+                ${!exibindoConcluidas && !isEstoque ? `
                 <label class="card-selecao${estaSelecionado ? ' selecionado' : ''}">
                     <input type="checkbox" ${estaSelecionado ? 'checked' : ''} onchange="alternarSelecao('${escaparHtml(item.firebaseUrl)}', this.checked, this)">
                     <span class="card-selecao-texto">${selecaoLabel}</span>
@@ -1454,7 +1644,7 @@
                             <div><b>Rota:</b> ${escaparHtml(item.clienteRota)}</div>
                             <div><b>Cidade:</b> ${escaparHtml(item.clienteCidade)}</div>
                         </div>
-                        ${!isEstoque ? `
+                        ${!exibindoConcluidas && !isEstoque ? `
                         <div class="icones-acao">
                             <div class="icone-btn-wrap" onclick="abrirLocalizacao('${escaparHtml(item.clienteEndereco || item.clienteCidade)}')">
                                 <div class="icone-btn">
@@ -1473,6 +1663,11 @@
                         </div>` : ''}
                     </div>
                     <div class="linha-solicitado"><b>Solicitado:</b> ${escaparHtml(item.solicitante)} &nbsp;&nbsp; solicitação feita há ${escaparHtml(formatarDiasEmAberto(item.diasEmAberto).toLowerCase())}</div>
+                    ${exibindoConcluidas ? `
+                    <div class="linha-conclusao">
+                        <div><b>Conclu&iacute;do por:</b> ${escaparHtml(item.concluidoPor || "Nao informado")}</div>
+                        <div><b>Conclu&iacute;do em:</b> ${escaparHtml(item.dataConclusaoFormatada || "Data nao informada")}</div>
+                    </div>` : ''}
                 </div>
 
                 <div class="bloco-acao">
@@ -1488,7 +1683,7 @@
                     ${detalhesPontoNovo}
                 </div>
 
-                ${!isEstoque && item.ultimaVisita ? `
+                ${!exibindoConcluidas && !isEstoque && item.ultimaVisita ? `
                     <div class="ultima-visita">
                         Visita: <b>${escaparHtml(item.ultimaVisita.atendente)}</b> ${escaparHtml(item.ultimaVisita.dataFormatada)}${item.ultimaVisita.dias !== null ? ` &nbsp;Dias: <b>${item.ultimaVisita.dias}</b>` : ''}
                     </div>
@@ -1532,6 +1727,34 @@
         inputPesquisa.focus();
         renderizarLista();
     });
+
+    const modoListaToggle = document.getElementById('modoListaToggle');
+    const btnModoLista = document.getElementById('btnModoLista');
+
+    function fecharMenuModoLista() {
+        modoListaToggle.classList.remove('aberto');
+        btnModoLista.setAttribute('aria-expanded', 'false');
+    }
+
+    btnModoLista.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const aberto = modoListaToggle.classList.toggle('aberto');
+        btnModoLista.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+    });
+
+    document.querySelectorAll('.modo-lista-opcao').forEach(opcao => {
+        opcao.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const novoModo = opcao.dataset.modo || 'pendentes';
+            fecharMenuModoLista();
+            if (modoListaManutencoes === novoModo) return;
+            modoListaManutencoes = novoModo;
+            renderizarLista();
+            if (novoModo === 'concluidas') window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+
+    document.addEventListener('click', fecharMenuModoLista);
 
     dbEscutarClientes((lista) => {
         clientes = lista;

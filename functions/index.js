@@ -1096,6 +1096,7 @@ exports.cadastrarManutencoesReposicaoSemVisita = onSchedule(
 
       updates[`manutencoes/${manutencaoId}/status`] = "concluida";
       updates[`manutencoes/${manutencaoId}/dataConclusao`] = agoraIso;
+      updates[`manutencoes/${manutencaoId}/finalizadoPor`] = "Autom\u00e1tico";
       concluidosPorVisita += 1;
     });
 
