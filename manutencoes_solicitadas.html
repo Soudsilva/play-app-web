@@ -118,17 +118,19 @@
             position: relative;
             display: flex;
             align-items: center;
+            align-self: stretch;
             flex-shrink: 0;
-            margin-left: -2px;
+            margin: -6px 0 -6px -4px;
         }
 
         .modo-lista-btn {
             border: 1px solid rgba(255,255,255,0.18);
             background: rgba(255,235,59,0.14);
             color: #ffffff;
-            border-radius: 10px;
-            padding: 6px 7px;
-            min-height: 34px;
+            border-radius: 12px;
+            padding: 0 8px;
+            min-height: 46px;
+            height: 100%;
             font-size: 13px;
             font-weight: bold;
             cursor: pointer;
@@ -144,7 +146,7 @@
         }
 
         .modo-lista-texto {
-            font-size: 13px;
+            font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: bold;
@@ -784,7 +786,7 @@
             }
 
             .modo-lista-toggle {
-                margin-left: -3px;
+                margin: -6px 0 -6px -4px;
             }
 
             .search-wrap {
@@ -798,7 +800,7 @@
             }
 
             .modo-lista-texto {
-                font-size: 13px;
+                font-size: 14px;
                 letter-spacing: 0.2px;
             }
 
@@ -1270,6 +1272,7 @@
 
         resumoGrid.style.display = 'flex';
         pendentesEl.textContent = String(lista.length);
+        pendentesEl.style.display = modoListaManutencoes === 'concluidas' ? 'none' : '';
         textoModo.textContent = modoListaManutencoes === 'concluidas' ? 'Concluidas' : 'Pendentes';
         opcoesModo.forEach(opcao => {
             opcao.classList.toggle('ativo', opcao.dataset.modo === modoListaManutencoes);
