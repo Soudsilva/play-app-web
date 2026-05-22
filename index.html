@@ -566,6 +566,19 @@
         return percentual > 0;
     }
 
+    function ordenarMenuGestao() {
+        const menu = document.querySelector('.menu');
+        const atendimento = document.getElementById('btnAtendimento');
+        const servico = document.getElementById('btnServico');
+        const balanco = document.getElementById('btnBalanco');
+        const gestao = document.getElementById('blocoGestao');
+        if (!menu || !atendimento || !servico || !balanco || !gestao) return;
+
+        [atendimento, servico, balanco, gestao].reverse().forEach(item => {
+            menu.insertBefore(item, menu.firstElementChild);
+        });
+    }
+
     window.abrirTela = async function(tela){
         if (tela === 'manutencao') {
             if (await balancoBloqueiaAcessoIndex()) return;
@@ -821,6 +834,10 @@
         const taxaRepresentante = parseFloat(String(usuario?.representanteComissao || '').replace(/%/g, '').replace(',', '.').trim()) || 0;
         if (taxaRepresentante > 0) {
             btns.representante.style.display = 'flex';
+        }
+
+        if (perfil.includes('gestao')) {
+            ordenarMenuGestao();
         }
 
         iniciarStatusBalancoIndex(nomeNormalizado);

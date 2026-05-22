@@ -4336,6 +4336,15 @@ export function dbEscutarResumoDepositos(nomeUsuario, callback) {
     });
 }
 
+export function dbEscutarTodosResumosDepositos(callback) {
+    return onValue(ref(db, 'firebase_functions_depositos'), (snapshot) => {
+        callback(snapshot.val() || {});
+    }, (error) => {
+        console.error("ERRO AO ESCUTAR TODOS OS RESUMOS DEPOSITOS:", error);
+        callback({ erro: true, mensagem: error?.message || 'Permissao negada ao ler resumos de depositos.' });
+    });
+}
+
 export async function dbListarManutencoes() {
     try {
         const snapshot = await get(ref(db, 'manutencoes'));

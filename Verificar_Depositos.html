@@ -20,6 +20,16 @@
             max-width: 600px;
             margin: 0 auto;
             padding-bottom: 80px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .app input,
+        .app textarea {
+            user-select: text;
+            -webkit-user-select: text;
+            -webkit-touch-callout: default;
         }
 
         /* â”€â”€ HEADER â”€â”€ */
@@ -161,6 +171,197 @@
         }
 
         .filter-input::placeholder { color: rgba(255,255,255,0.4); }
+
+        .resumo-gestao3 {
+            display: none;
+            padding: 12px 16px 4px;
+        }
+
+        .resumo-gestao3.visivel {
+            display: block;
+        }
+
+        .resumo-shell {
+            border: 1px solid #ffffff;
+            border-radius: 14px;
+            background: #123d94;
+            overflow: hidden;
+        }
+
+        .resumo-topo {
+            border-bottom: 1px solid #ffffff;
+        }
+
+        .resumo-toggle {
+            width: 100%;
+            min-width: 0;
+            border: none;
+            padding: 12px;
+            background: transparent;
+            color: #ffffff;
+            cursor: pointer;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            text-align: center;
+        }
+
+        .resumo-total {
+            min-width: 0;
+            border: 1px solid #ffffff;
+            border-radius: 10px;
+            padding: 10px 8px;
+            background: transparent;
+            text-align: center;
+        }
+
+        .resumo-seta {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #ffffff;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .resumo-gestao3.aberto .resumo-seta {
+            transform: rotate(180deg);
+        }
+
+        .resumo-label,
+        .resumo-card-label,
+        .resumo-status,
+        .resumo-meta,
+        .resumo-vazio {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .resumo-label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+
+        .resumo-total-valor {
+            font-size: 28px;
+            line-height: 1.05;
+            font-weight: bold;
+            color: #ffeb3b;
+            white-space: nowrap;
+        }
+
+        .resumo-lista {
+            display: none;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            padding: 10px;
+        }
+
+        .resumo-gestao3.aberto .resumo-lista {
+            display: grid;
+        }
+
+        .resumo-card {
+            border: 1px solid #ffffff;
+            border-radius: 12px;
+            background: #173f91;
+            padding: 10px;
+        }
+
+        .resumo-card-linha {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .resumo-nome {
+            font-size: 17px;
+            font-weight: bold;
+            color: #ffffff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .resumo-valor {
+            font-size: 21px;
+            font-weight: bold;
+            color: #ffeb3b;
+            white-space: nowrap;
+        }
+
+        .resumo-valor.ok {
+            color: #a5d6a7;
+        }
+
+        .resumo-card-label {
+            font-size: 13px;
+            color: #cfd6e3;
+            margin-top: 2px;
+        }
+
+        .resumo-barra {
+            height: 8px;
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            margin-top: 8px;
+            overflow: hidden;
+            background: #0b2f79;
+        }
+
+        .resumo-barra-fill {
+            height: 100%;
+            min-width: 0;
+            background: #ffeb3b;
+        }
+
+        .resumo-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 6px;
+            font-size: 13px;
+            color: #ffffff;
+        }
+
+        .resumo-status {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ffffff;
+            border-radius: 999px;
+            padding: 3px 9px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #ffffff;
+            background: transparent;
+            white-space: nowrap;
+        }
+
+        .resumo-vazio {
+            padding: 16px;
+            text-align: center;
+            font-size: 15px;
+            color: #ffffff;
+            line-height: 1.35;
+        }
+        @media (max-width: 420px) {
+            .resumo-total-valor {
+                font-size: 25px;
+            }
+        }
 
         /* â”€â”€ RÃ“TULO DE DIA â”€â”€ */
         .rotulo-dia {
@@ -654,6 +855,8 @@
         </div>
     </div>
 
+    <div id="resumoGestao3Depositos" class="resumo-gestao3"></div>
+
     <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• LISTA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
     <div class="content">
 
@@ -906,14 +1109,18 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
-    import { dbConfirmarDeposito, dbDesfazerConfirmacaoDeposito, dbEscutarTodosDepositos } from './database.js';
+    import { dbConfirmarDeposito, dbDesfazerConfirmacaoDeposito, dbEscutarTodosDepositos, dbEscutarTodosResumosDepositos } from './database.js';
     import { verificarAutenticacao } from './auth.js';
 
     const content = document.querySelector('.content');
+    const resumoGestao3Depositos = document.getElementById('resumoGestao3Depositos');
     const badges = document.querySelectorAll('.badge');
     const campoBusca = document.querySelector('.filter-input');
     const tabs = document.querySelectorAll('.tab');
     let depositos = [];
+    let resumosDepositos = {};
+    let pararEscutaResumosDepositos = null;
+    let resumoGestao3Aberto = false;
     let busca = '';
     let abaAtiva = 'pendentes';
     const usuarioLogado = String(localStorage.getItem('usuarioLogado') || localStorage.getItem('usuario_selecionado') || '').trim();
@@ -997,6 +1204,122 @@
 
     function numeroValor(valor) {
         return Number(valor || 0);
+    }
+
+    function moedaInteira(valor) {
+        return `R$ ${Math.round(Number(valor || 0)).toLocaleString('pt-BR')}`;
+    }
+
+    function normalizarChaveUsuario(nomeUsuario) {
+        return String(nomeUsuario || '').trim().replace(/[.#$/[\]]/g, '_');
+    }
+
+    function listarColaboradoresCache() {
+        try {
+            const lista = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
+            return Array.isArray(lista) ? lista : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function colaboradoresAtendimentoNivel1() {
+        return listarColaboradoresCache()
+            .filter(c => String(c?.nivel_completo || '').toLowerCase().includes('atendimento_1'))
+            .filter(c => String(c?.nome || '').trim())
+            .map(c => ({
+                nome: String(c.nome || '').trim(),
+                chave: normalizarChaveUsuario(c.nome)
+            }));
+    }
+
+    function obterResumoUsuario(chave) {
+        const item = resumosDepositos?.[chave] || null;
+        return item?.resumo || null;
+    }
+
+    function renderizarResumoGestao3() {
+        if (!resumoGestao3Depositos) return;
+        if (!usuarioLogadoEhGestorNivel3()) {
+            resumoGestao3Depositos.classList.remove('visivel');
+            resumoGestao3Depositos.classList.remove('aberto');
+            resumoGestao3Depositos.innerHTML = '';
+            return;
+        }
+
+        if (resumosDepositos?.erro) {
+            resumoGestao3Depositos.classList.add('visivel');
+            resumoGestao3Depositos.innerHTML = `
+                <div class="resumo-shell">
+                    <div class="resumo-vazio">${escaparHtml(resumosDepositos.mensagem || 'Não foi possível ler os resumos de depósitos.')}</div>
+                </div>`;
+            return;
+        }
+
+        const atendentes = colaboradoresAtendimentoNivel1();
+        if (!atendentes.length) {
+            resumoGestao3Depositos.classList.add('visivel');
+            resumoGestao3Depositos.innerHTML = `
+                <div class="resumo-shell">
+                    <div class="resumo-vazio">Nenhum usuário Atendimento nível 1 encontrado no cache local.</div>
+                </div>`;
+            return;
+        }
+
+        const linhas = atendentes.map(usuario => {
+            const resumo = obterResumoUsuario(usuario.chave) || {};
+            const falta = Math.max(0, Number(resumo.faltaDepositarTotal || 0));
+            const limite = Number(resumo.limiteBloqueio || 5000);
+            const atualizadoEm = resumo.atualizadoEm ? formatarDataHora(new Date(resumo.atualizadoEm)) : null;
+            return {
+                ...usuario,
+                falta,
+                limite: limite > 0 ? limite : 5000,
+                status: String(resumo.statusDeposito || '').trim().toLowerCase(),
+                atualizadoLabel: atualizadoEm?.data ? `${atualizadoEm.data} ${atualizadoEm.hora}` : ''
+            };
+        }).sort((a, b) => b.falta - a.falta || a.nome.localeCompare(b.nome, 'pt-BR'));
+
+        const totalAberto = linhas.reduce((s, item) => s + item.falta, 0);
+        const linhasPendentes = linhas.filter(item => item.falta > 0);
+
+        const cards = linhasPendentes.map(item => {
+            const pct = Math.max(4, Math.min(100, Math.round((item.falta / item.limite) * 100)));
+            const status = item.status === 'bloqueado' ? 'Limite atingido' : 'Pendente';
+            const atualizado = item.atualizadoLabel ? `Atualizado ${item.atualizadoLabel}` : 'Aguardando resumo';
+            return `
+                <div class="resumo-card">
+                    <div class="resumo-card-linha">
+                        <div>
+                            <div class="resumo-nome">${escaparHtml(item.nome)}</div>
+                            <div class="resumo-card-label">${escaparHtml(atualizado)}</div>
+                        </div>
+                        <div class="resumo-valor">${moedaInteira(item.falta)}</div>
+                    </div>
+                    <div class="resumo-barra" aria-hidden="true">
+                        <div class="resumo-barra-fill" style="width:${pct}%;"></div>
+                    </div>
+                    <div class="resumo-meta">
+                        <span class="resumo-status">${escaparHtml(status)}</span>
+                    </div>
+                </div>`;
+        }).join('');
+
+        resumoGestao3Depositos.classList.add('visivel');
+        resumoGestao3Depositos.classList.toggle('aberto', resumoGestao3Aberto);
+        resumoGestao3Depositos.innerHTML = `
+            <div class="resumo-shell">
+                <div class="resumo-topo">
+                    <button class="resumo-toggle" type="button" aria-expanded="${resumoGestao3Aberto ? 'true' : 'false'}">
+                        <span class="resumo-total">
+                            <span class="resumo-label">Total a depositar</span>
+                            <span class="resumo-total-valor">${moedaInteira(totalAberto)}</span>
+                        </span>
+                        <span class="resumo-seta">▼</span>
+                    </button>
+                </div>
+                <div class="resumo-lista">${cards || '<div class="resumo-vazio">Todos os atendentes nível 1 estão em dia.</div>'}</div>
+            </div>`;
     }
 
     function parseValorDigitado(valor) {
@@ -1371,6 +1694,14 @@
         });
     });
 
+    resumoGestao3Depositos?.addEventListener('click', (event) => {
+        const btn = event.target.closest('.resumo-toggle');
+        if (!btn) return;
+        resumoGestao3Aberto = !resumoGestao3Aberto;
+        resumoGestao3Depositos.classList.toggle('aberto', resumoGestao3Aberto);
+        btn.setAttribute('aria-expanded', resumoGestao3Aberto ? 'true' : 'false');
+    });
+
     content.innerHTML = `
         <div class="empty-state">
             <div class="empty-icon">&#129534;</div>
@@ -1378,6 +1709,14 @@
         </div>`;
 
     await verificarAutenticacao();
+
+    renderizarResumoGestao3();
+    if (usuarioLogadoEhGestorNivel3()) {
+        pararEscutaResumosDepositos = dbEscutarTodosResumosDepositos((resumos) => {
+            resumosDepositos = resumos || {};
+            renderizarResumoGestao3();
+        });
+    }
 
     dbEscutarTodosDepositos((lista) => {
         if (lista?.erro) {
@@ -1394,6 +1733,10 @@
         }
         depositos = Array.isArray(lista) ? lista : [];
         renderizar();
+    });
+
+    window.addEventListener('beforeunload', () => {
+        if (typeof pararEscutaResumosDepositos === 'function') pararEscutaResumosDepositos();
     });
 </script>
 

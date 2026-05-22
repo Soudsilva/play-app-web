@@ -561,10 +561,19 @@
         }
         .contest-header:active { background: #152f70; }
         .contest-header.aberta { border-radius: 22px 22px 0 0; border-bottom-color: rgba(255,255,255,0.2); }
-        .contest-titulo { color: #fff; font-size: 20px; font-weight: bold; }
+        .contest-titulo {
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
         .contest-badge {
-            position: absolute;
-            right: 50px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             background: #ffeb3b;
             color: #0b2256;
             font-size: 12px;
@@ -791,6 +800,134 @@
             margin-bottom:20px;
         }
         .gestor-mov-corpo.aberto { display:block; }
+        .gestor-cobr-corpo {
+            display:none;
+            background:rgba(8,22,65,0.75);
+            border:3px solid #d7dce3;
+            border-top:none;
+            border-radius:0 0 22px 22px;
+            padding:12px;
+            margin-bottom:20px;
+        }
+        .gestor-cobr-corpo.aberto { display:block; }
+        .gestor-cobr-resumo {
+            border:1px solid #ffffff;
+            border-radius:14px;
+            padding:12px 10px;
+            text-align:center;
+            margin-bottom:10px;
+            background:#173d8f;
+        }
+        .gestor-cobr-label {
+            font-size:13px;
+            font-weight:bold;
+            color:#ffffff;
+            text-align:center;
+            user-select:none;
+            -webkit-user-select:none;
+        }
+        .gestor-cobr-total {
+            font-size:28px;
+            line-height:1.1;
+            font-weight:bold;
+            color:#ffeb3b;
+            text-align:center;
+            margin-top:3px;
+        }
+        .gestor-cobr-mes {
+            font-size:13px;
+            color:#d7e3ff;
+            text-align:center;
+            margin-top:2px;
+            user-select:none;
+            -webkit-user-select:none;
+        }
+        .gestor-cobr-nav {
+            display:grid;
+            grid-template-columns:44px minmax(0,1fr) 44px;
+            align-items:center;
+            gap:6px;
+            margin-bottom:10px;
+        }
+        .gestor-cobr-mes-btn,
+        .gestor-cobr-mes-centro {
+            height:42px;
+            box-sizing:border-box;
+            border-radius:10px;
+            border:1.5px solid #7fa6ff;
+            background:#244d9b;
+            color:#ffffff;
+            font-weight:700;
+            text-align:center;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            user-select:none;
+            -webkit-user-select:none;
+            -webkit-tap-highlight-color:transparent;
+        }
+        .gestor-cobr-mes-centro { font-size:15px; }
+        .gestor-cobr-mes-btn {
+            font-size:24px;
+            cursor:pointer;
+            padding:0;
+        }
+        .gestor-cobr-mes-btn:active { background:#1b3f85; }
+        .gestor-cobr-mes-btn:disabled {
+            color:#7fa6ff;
+            border-color:#3d63b8;
+            cursor:default;
+        }
+        .gestor-cobr-lista {
+            display:grid;
+            grid-template-columns:1fr;
+            gap:8px;
+        }
+        .gestor-cobr-card {
+            border:1px solid #ffffff;
+            border-radius:12px;
+            background:#1a3d8f;
+            padding:10px;
+        }
+        .gestor-cobr-linha {
+            display:grid;
+            grid-template-columns:minmax(0,1fr) auto;
+            gap:10px;
+            align-items:center;
+        }
+        .gestor-cobr-nome {
+            font-size:17px;
+            font-weight:bold;
+            color:#ffffff;
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+        }
+        .gestor-cobr-valor {
+            font-size:21px;
+            font-weight:bold;
+            color:#ffeb3b;
+            white-space:nowrap;
+        }
+        .gestor-cobr-barra {
+            height:7px;
+            border:1px solid #ffffff;
+            border-radius:8px;
+            overflow:hidden;
+            background:#0b2f79;
+            margin-top:8px;
+        }
+        .gestor-cobr-fill {
+            height:100%;
+            background:#ffeb3b;
+        }
+        .gestor-cobr-vazio {
+            padding:22px 12px;
+            text-align:center;
+            color:#d7e3ff;
+            font-size:15px;
+            font-weight:bold;
+        }
         .gestor-mov-busca {
             width:100%;
             height:44px;
@@ -1423,7 +1560,10 @@
         dbSalvarHistoricoBalanco,
         dbEscutarUltimosPorItem,
         dbEscutarHistoricoBalanco,
-        dbEscutarHistoricoBalancoDoUsuario
+        dbEscutarHistoricoBalancoDoUsuario,
+        dbEscutarRemuneracaoMensal,
+        dbEscutarMesesRemuneracao,
+        dbListarRemuneracaoMensal
     } from './database.js';
 
     const usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
@@ -1435,6 +1575,15 @@
     let pixEmPosse = [];
     let contestacoesBalanco = [];
     let contestacoesGestor = [];
+    let listaColaboradores = [];
+    let cobrancasMensaisGestor = [];
+    let cobrancasMensaisGestorAberto = false;
+    let mesCobrancasMensaisGestor = '';
+    let filtroMesCobrancasMensaisGestor = '';
+    let mesesCobrancasMensaisGestor = [];
+    let mesesCobrancasMensaisGestorPendentes = new Set();
+    let unsubscribeCobrancasMensaisGestor = null;
+    let unsubscribeMesesCobrancasMensaisGestor = null;
     const contestacoesAprovadasEmAtualizacao = new Set();
     let datasComAtendimento = new Set();
     let comissaoUsuario = 0; // % de comissÃ£o do colaborador logado (calculado por mÃªs)
@@ -1442,6 +1591,7 @@
     let isTecnico = false;
     let isGestor  = false;
     let isGestao1 = false;
+    let isGestao3 = false;
     let contestacoesAberto = false;
     let movimentacoesGestorAberto = false;
     let filtroMovimentacoesGestor = '';
@@ -1605,6 +1755,121 @@
         return historicoMovimentacoesGestor
             .filter(mov => obterAnoMesMovimentacaoGestor(mov) === filtroMovimentacoesGestorMes)
             .length;
+    }
+
+    function obterMesAtualCobrancasMensaisGestor() {
+        if (filtroMesCobrancasMensaisGestor) return filtroMesCobrancasMensaisGestor;
+        if (dataDe && /^\d{4}-\d{2}/.test(dataDe)) return dataDe.slice(0, 7);
+        const agora = new Date();
+        return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function rotuloMesAnoCobrancasGestor(mesAno) {
+        const [ano, mes] = String(mesAno || '').split('-').map(Number);
+        if (!ano || !mes) return 'Mês atual';
+        return `${MESES[mes - 1]} ${ano}`;
+    }
+
+    function obterAtendentesNivel1() {
+        return (Array.isArray(listaColaboradores) ? listaColaboradores : [])
+            .filter(c => String(c?.nivel_completo || '').toLowerCase().includes('atendimento_1'))
+            .filter(c => String(c?.nome || '').trim());
+    }
+
+    function obterBaseMensalAtendente(nome) {
+        const chave = String(nome || '').trim().replace(/[.#$/[\]]/g, '_');
+        const nomeNorm = normalizarTexto(nome);
+        const registro = cobrancasMensaisGestor.find(item =>
+            String(item?.usuarioKey || '').trim() === chave
+            || normalizarTexto(item?.nome) === nomeNorm
+        );
+        return Number(registro?.perfis?.comissao_producao?.base || 0);
+    }
+
+    function mesTemCobrancaAtendimentoNivel1(registrosMes = []) {
+        const atendentes = obterAtendentesNivel1();
+        return atendentes.some(colab => {
+            const chave = String(colab?.nome || '').trim().replace(/[.#$/[\]]/g, '_');
+            const nomeNorm = normalizarTexto(colab?.nome);
+            const registro = (Array.isArray(registrosMes) ? registrosMes : []).find(item =>
+                String(item?.usuarioKey || '').trim() === chave
+                || normalizarTexto(item?.nome) === nomeNorm
+            );
+            return Number(registro?.perfis?.comissao_producao?.base || 0) > 0;
+        });
+    }
+
+    function montarCardsCobrancasMensaisGestor() {
+        if (!isGestao3) return '';
+
+        const linhas = obterAtendentesNivel1()
+            .map(colab => ({
+                nome: String(colab?.nome || '').trim(),
+                valor: obterBaseMensalAtendente(colab?.nome)
+            }))
+            .filter(item => item.valor > 0)
+            .sort((a, b) => b.valor - a.valor || a.nome.localeCompare(b.nome, 'pt-BR'));
+
+        const total = linhas.reduce((soma, item) => soma + item.valor, 0);
+        const max = Math.max(1, ...linhas.map(item => item.valor));
+        const mesAtual = obterMesAtualCobrancasMensaisGestor();
+        const mesLabel = rotuloMesAnoCobrancasGestor(mesAtual);
+        const meses = mesesCobrancasMensaisGestor.filter(mes => mesesCobrancasMensaisGestorPendentes.has(mes));
+        const mesesVisiveis = meses.length ? meses : (linhas.length > 0 ? [mesAtual] : []);
+        const indiceMes = mesesVisiveis.indexOf(mesAtual);
+        const temAnterior = indiceMes >= 0 && indiceMes < mesesVisiveis.length - 1;
+        const temProximo = indiceMes > 0;
+        const seletorMes = `
+            <div class="gestor-cobr-nav">
+                <button class="gestor-cobr-mes-btn" type="button" ${temAnterior ? '' : 'disabled'} onclick="event.stopPropagation(); window.navegarMesCobrancasMensaisGestor(1)">&#8249;</button>
+                <div class="gestor-cobr-mes-centro">${escaparHtml(mesLabel)}</div>
+                <button class="gestor-cobr-mes-btn" type="button" ${temProximo ? '' : 'disabled'} onclick="event.stopPropagation(); window.navegarMesCobrancasMensaisGestor(-1)">&#8250;</button>
+            </div>`;
+
+        if (linhas.length === 0) {
+            return `
+                <div class="gestor-cobr-vazio">Nenhuma cobrança mensal encontrada para Atendimento nível 1.</div>`;
+        }
+
+        return `
+            ${seletorMes}
+            <div class="gestor-cobr-resumo">
+                <div class="gestor-cobr-label">Total líquido mensal</div>
+                <div class="gestor-cobr-total">${moeda(total)}</div>
+                <div class="gestor-cobr-mes">${escaparHtml(mesLabel)}</div>
+            </div>
+            <div class="gestor-cobr-lista">
+                ${linhas.map(item => `
+                <div class="gestor-cobr-card">
+                    <div class="gestor-cobr-linha">
+                        <div>
+                            <div class="gestor-cobr-nome">${escaparHtml(item.nome)}</div>
+                        </div>
+                        <div class="gestor-cobr-valor">${moeda(item.valor)}</div>
+                    </div>
+                    <div class="gestor-cobr-barra" aria-hidden="true">
+                        <div class="gestor-cobr-fill" style="width:${Math.max(4, Math.round(item.valor / max * 100))}%;"></div>
+                    </div>
+                </div>`).join('')}
+            </div>`;
+    }
+
+    function atualizarFonteCobrancasMensaisGestor() {
+        if (!isGestao3) return;
+        const mesAno = obterMesAtualCobrancasMensaisGestor();
+        if (mesCobrancasMensaisGestor === mesAno && unsubscribeCobrancasMensaisGestor) return;
+
+        if (unsubscribeCobrancasMensaisGestor) {
+            unsubscribeCobrancasMensaisGestor();
+            unsubscribeCobrancasMensaisGestor = null;
+        }
+
+        mesCobrancasMensaisGestor = mesAno;
+        cobrancasMensaisGestor = [];
+        unsubscribeCobrancasMensaisGestor = dbEscutarRemuneracaoMensal(mesAno, (lista) => {
+            cobrancasMensaisGestor = Array.isArray(lista) ? lista : [];
+            renderizar();
+        });
     }
 
     function aplicarHistoricoMovimentacoesGestor(lista) {
@@ -2970,6 +3235,7 @@
     // ── Render principal ────────────────────────────────────────────────────
     function renderizar() {
         _pararLoadingBalanco();
+        atualizarFonteCobrancasMensaisGestor();
         const filtrados  = filtrarPorDatas(todosAtendimentos, dataDe, dataAte || dataDe);
         const doMes      = filtrarMesCompleto(todosAtendimentos, dataDe);
         const filtradosFinanceirosBase = filtrarPorDatas(todosAtendimentosFinanceiro, dataDe, dataAte || dataDe);
@@ -3301,6 +3567,18 @@
 
             </div>`}
 
+            ${isGestao3 ? `
+            <div id="tituloCobrancasMensaisGestor" class="gestor-mov-header${cobrancasMensaisGestorAberto ? ' aberto' : ''}" onclick="window.toggleCobrancasMensaisGestor()">
+                <span class="gestor-mov-icone">&#128176;</span>
+                <span class="gestor-mov-info">
+                    <span class="gestor-mov-label">Cobran&ccedil;as Mensais</span>
+                </span>
+                <span class="gestor-mov-seta${cobrancasMensaisGestorAberto ? ' girada' : ''}" id="setaCobrancasMensaisGestor">&#9660;</span>
+            </div>
+            <div class="gestor-cobr-corpo${cobrancasMensaisGestorAberto ? ' aberto' : ''}" id="corpoCobrancasMensaisGestor">
+                ${montarCardsCobrancasMensaisGestor()}
+            </div>` : ''}
+
             ${isGestor ? `
             <div id="tituloMovimentacoesGestor" class="gestor-mov-header${movimentacoesGestorAberto ? ' aberto' : ''}" onclick="window.toggleMovimentacoesGestor()">
                 <span class="gestor-mov-icone">&#128230;</span>
@@ -3348,8 +3626,10 @@
             ${isGestor ? `
             <div id="tituloContestacoes" class="contest-header" onclick="window.toggleContestacoes()">
                 <span style="position:absolute;left:20px;font-size:20px;">&#128373;</span>
-                <span class="contest-titulo">Contesta&ccedil;&atilde;o</span>
-                <span class="contest-badge" id="contestBadge">${obterContestacoesGestorEmAnalise().length}</span>
+                <span class="contest-titulo">
+                    Contesta&ccedil;&atilde;o
+                    <span class="contest-badge" id="contestBadge">${obterContestacoesGestorEmAnalise().length}</span>
+                </span>
                 <span class="contest-seta" id="setaContestacoes">&#9660;</span>
             </div>
             <div class="contest-corpo${contestacoesAberto ? ' aberto' : ''}" id="corpoContestacoes">
@@ -3436,6 +3716,17 @@
         if (movimentacoesGestorAberto) window.filtrarMovimentacoesGestor();
     };
 
+    window.toggleCobrancasMensaisGestor = function() {
+        const header = document.getElementById('tituloCobrancasMensaisGestor');
+        const corpo  = document.getElementById('corpoCobrancasMensaisGestor');
+        const seta   = document.getElementById('setaCobrancasMensaisGestor');
+        if (!header || !corpo || !seta) return;
+        cobrancasMensaisGestorAberto = !corpo.classList.contains('aberto');
+        corpo.classList.toggle('aberto', cobrancasMensaisGestorAberto);
+        header.classList.toggle('aberto', cobrancasMensaisGestorAberto);
+        seta.classList.toggle('girada', cobrancasMensaisGestorAberto);
+    };
+
     window.toggleFichaDia = function(chave) {
         const corpo = document.getElementById('ficha-dia-' + chave);
         const seta  = document.getElementById('seta-dia-' + chave);
@@ -3481,6 +3772,22 @@
         renderizar();
     };
 
+    window.alterarMesCobrancasMensaisGestor = function(valor) {
+        filtroMesCobrancasMensaisGestor = String(valor || '');
+        atualizarFonteCobrancasMensaisGestor();
+        renderizar();
+    };
+
+    window.navegarMesCobrancasMensaisGestor = function(delta) {
+        const meses = mesesCobrancasMensaisGestor.filter(mes => mesesCobrancasMensaisGestorPendentes.has(mes));
+        if (!meses.length) return;
+        const atual = obterMesAtualCobrancasMensaisGestor();
+        const idx = Math.max(0, meses.indexOf(atual));
+        const prox = Math.max(0, Math.min(meses.length - 1, idx + Number(delta || 0)));
+        if (meses[prox] === atual) return;
+        window.alterarMesCobrancasMensaisGestor(meses[prox]);
+    };
+
     window.abrirFoto = function(url) {
         document.getElementById('lbImg').src = url;
         document.getElementById('lbOverlay').classList.add('aberto');
@@ -3498,6 +3805,15 @@
         }
     });
 
+    window.addEventListener('beforeunload', () => {
+        if (typeof unsubscribeCobrancasMensaisGestor === 'function') {
+            unsubscribeCobrancasMensaisGestor();
+        }
+        if (typeof unsubscribeMesesCobrancasMensaisGestor === 'function') {
+            unsubscribeMesesCobrancasMensaisGestor();
+        }
+    });
+
     // â”€â”€ InicializaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // posseAcumulada: dados de produtos/mÃ¡quinas de atendimentos jÃ¡ excluÃ­dos.
     // Sem isso, ao excluir atendimentos antigos o balanÃ§o de material ficaria errado.
@@ -3510,11 +3826,13 @@
     ]);
     todosDepositos = depositos;
     pixEmPosse = pixPosseInicial;
+    listaColaboradores = Array.isArray(colaboradores) ? colaboradores : [];
     colaboradorObj  = colaboradores.find(c => String(c?.nome || '').trim() === usuarioLogado) || null;
     isTecnico = (colaboradorObj?.nivel_completo || '').startsWith('atendimento') &&
                 String(colaboradorObj?.cargo || '').trim().toLowerCase() === 'técnico';
     isGestor  = (colaboradorObj?.nivel_completo || '').includes('gestao');
     isGestao1 = (colaboradorObj?.nivel_completo || '').includes('gestao_1');
+    isGestao3 = (colaboradorObj?.nivel_completo || '').includes('gestao_3');
     usaComissaoGlobal = parsePercentualColaborador(colaboradorObj?.comissaoGlobal) > 0;
 
     // Mapa para cruzar cliente do atendimento â†’ rota atual
@@ -3620,6 +3938,29 @@
             if (!filtroMovimentacoesGestorUsuario) {
                 aplicarHistoricoMovimentacoesGestor(historicoMovimentacoesGestorGlobal);
             }
+        });
+    }
+
+    if (isGestao3) {
+        unsubscribeMesesCobrancasMensaisGestor = dbEscutarMesesRemuneracao((meses) => {
+            mesesCobrancasMensaisGestor = (Array.isArray(meses) ? meses : [])
+                .filter(mes => /^\d{4}-\d{2}$/.test(String(mes || '')))
+                .sort((a, b) => b.localeCompare(a));
+            Promise.all(mesesCobrancasMensaisGestor.map(async (mes) => {
+                const registros = await dbListarRemuneracaoMensal(mes);
+                return [mes, mesTemCobrancaAtendimentoNivel1(registros)];
+            })).then(resultados => {
+                mesesCobrancasMensaisGestorPendentes = new Set(resultados.filter(([, tem]) => tem).map(([mes]) => mes));
+                const mesesValidos = mesesCobrancasMensaisGestor.filter(mes => mesesCobrancasMensaisGestorPendentes.has(mes));
+                if (!mesesValidos.includes(filtroMesCobrancasMensaisGestor)) {
+                    const mesTela = dataDe && /^\d{4}-\d{2}/.test(dataDe) ? dataDe.slice(0, 7) : '';
+                    filtroMesCobrancasMensaisGestor = mesesValidos.includes(mesTela)
+                        ? mesTela
+                        : (mesesValidos[0] || '');
+                }
+                atualizarFonteCobrancasMensaisGestor();
+                renderizar();
+            });
         });
     }
 
