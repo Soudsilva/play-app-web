@@ -842,6 +842,32 @@
             user-select:none;
             -webkit-user-select:none;
         }
+        .gestor-cobr-projecao {
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:8px;
+            margin-top:10px;
+        }
+        .gestor-cobr-proj-item {
+            border:1px solid #ffffff;
+            border-radius:10px;
+            padding:8px 6px;
+            background:#1a3d8f;
+            text-align:center;
+        }
+        .gestor-cobr-proj-label {
+            font-size:13px;
+            font-weight:bold;
+            color:#d7e3ff;
+            user-select:none;
+            -webkit-user-select:none;
+        }
+        .gestor-cobr-proj-valor {
+            font-size:18px;
+            font-weight:bold;
+            color:#ffeb3b;
+            margin-top:2px;
+        }
         .gestor-cobr-nav {
             display:grid;
             grid-template-columns:44px minmax(0,1fr) 44px;
@@ -1770,6 +1796,24 @@
         return `${MESES[mes - 1]} ${ano}`;
     }
 
+    function obterMetricasCobrancasMensais(total, mesAno) {
+        const [ano, mes] = String(mesAno || '').split('-').map(Number);
+        if (!ano || !mes) return { media: 0, estimativa: 0, mesAtual: false };
+
+        const hojeLocal = new Date();
+        const anoAtual = hojeLocal.getFullYear();
+        const mesAtual = hojeLocal.getMonth() + 1;
+        const ehMesAtual = ano === anoAtual && mes === mesAtual;
+        const diasNoMes = new Date(ano, mes, 0).getDate();
+        const diasBase = ehMesAtual ? Math.max(1, hojeLocal.getDate()) : diasNoMes;
+        const media = Number(total || 0) / diasBase;
+        return {
+            media,
+            estimativa: ehMesAtual ? media * diasNoMes : 0,
+            mesAtual: ehMesAtual
+        };
+    }
+
     function obterAtendentesNivel1() {
         return (Array.isArray(listaColaboradores) ? listaColaboradores : [])
             .filter(c => String(c?.nivel_completo || '').toLowerCase().includes('atendimento_1'))
@@ -1814,6 +1858,7 @@
         const max = Math.max(1, ...linhas.map(item => item.valor));
         const mesAtual = obterMesAtualCobrancasMensaisGestor();
         const mesLabel = rotuloMesAnoCobrancasGestor(mesAtual);
+        const metricas = obterMetricasCobrancasMensais(total, mesAtual);
         const meses = mesesCobrancasMensaisGestor.filter(mes => mesesCobrancasMensaisGestorPendentes.has(mes));
         const mesesVisiveis = meses.length ? meses : (linhas.length > 0 ? [mesAtual] : []);
         const indiceMes = mesesVisiveis.indexOf(mesAtual);
@@ -1837,6 +1882,21 @@
                 <div class="gestor-cobr-label">Total líquido mensal</div>
                 <div class="gestor-cobr-total">${moeda(total)}</div>
                 <div class="gestor-cobr-mes">${escaparHtml(mesLabel)}</div>
+                <div class="gestor-cobr-projecao">
+                    <div class="gestor-cobr-proj-item">
+                        <div class="gestor-cobr-proj-label">${metricas.mesAtual ? 'Média por dia' : 'Média diária'}</div>
+                        <div class="gestor-cobr-proj-valor">${moeda(metricas.media)}</div>
+                    </div>
+                    ${metricas.mesAtual ? `
+                    <div class="gestor-cobr-proj-item">
+                        <div class="gestor-cobr-proj-label">Estimativa mês</div>
+                        <div class="gestor-cobr-proj-valor">${moeda(metricas.estimativa)}</div>
+                    </div>` : `
+                    <div class="gestor-cobr-proj-item">
+                        <div class="gestor-cobr-proj-label">Mês fechado</div>
+                        <div class="gestor-cobr-proj-valor">${moeda(total)}</div>
+                    </div>`}
+                </div>
             </div>
             <div class="gestor-cobr-lista">
                 ${linhas.map(item => `
