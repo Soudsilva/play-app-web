@@ -36,6 +36,7 @@
             align-items: center;
             gap: 12px;
             margin-bottom: 6px;
+            position: relative;
         }
         .btn-voltar {
             background: rgba(255,255,255,0.1);
@@ -46,7 +47,15 @@
             cursor: pointer; flex-shrink: 0;
         }
         .btn-voltar:active { background: rgba(255,255,255,0.2); transform: scale(0.92); }
-        .topo-titulo { font-size: 22px; font-weight: bold; }
+        .topo-titulo {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            white-space: nowrap;
+        }
         .btn-home {
             margin-left: auto;
             background: rgba(255,255,255,0.1);
@@ -167,19 +176,19 @@
         .linha-produto {
             display: flex;
             gap: 10px;
-            margin-top: 10px;
+            margin-top: 6px;
             animation: surgir 0.25s ease;
         }
-        .col-prod { flex: 2; }
-        .col-qtd { flex: 1; }
+        .col-prod { flex: 2; min-width: 0; }
+        .col-qtd { flex: 1; min-width: 0; }
 
         .linha-equipamento-novo {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
             align-items: center;
-            padding: 12px;
-            border-radius: 16px;
+            padding: 8px;
+            border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.18);
             background: rgba(255,255,255,0.07);
         }
@@ -188,21 +197,30 @@
             gap: 8px;
             width: 100%;
             align-items: center;
+            flex-wrap: wrap;
         }
         .lista-equipamentos-adicionados {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            margin-top: 12px;
+            gap: 8px;
+            margin-top: 6px;
         }
         .linha-equipamento-novo .campo-texto {
             margin: 0;
             min-width: 0;
         }
-        .equip-maquina { flex: 2.8 1 0; }
-        .equip-qtd { flex: 0.8 1 0; text-align: center; }
-        .equip-pix { flex: 0.8 1 0; text-align: center; }
-        .equip-cont { flex: 1 1 0; text-align: center; }
+        .equip-maquina { flex: 2 1 0; }
+        .equip-qtd { flex: 1 1 0; text-align: center; }
+        .equip-pix { flex: 1 1 0; text-align: center; }
+        .equip-cont { flex: 1.2 1 0; text-align: center; }
+        .linha-equipamento-principal .equip-maquina {
+            flex: 0 0 100%;
+        }
+        .linha-equipamento-principal .equip-qtd,
+        .linha-equipamento-principal .equip-pix,
+        .linha-equipamento-principal .equip-cont {
+            flex: 1 1 0;
+        }
         .equip-retirada-loja {
             display: flex;
             width: 100%;
@@ -210,7 +228,7 @@
             justify-content: center;
             gap: 8px;
             margin: 0;
-            padding: 8px 10px;
+            padding: 6px 10px;
             border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.28);
             background: transparent;
@@ -279,6 +297,12 @@
             margin-bottom: 10px;
             text-transform: uppercase;
         }
+        #wrapFotosEquipamentosAdicionados .titulo-sub-foto {
+            color: #69e88d;
+        }
+        #wrapFotosEquipamentosRetirados .titulo-sub-foto {
+            color: #ff5a36;
+        }
 
         /* ── INPUTS ── */
         .campo-wrap { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
@@ -297,7 +321,7 @@
             background: rgba(255,255,255,0.08);
             border: 1px solid rgba(255,255,255,0.2);
             border-radius: 10px;
-            padding: 12px 14px;
+            padding: 10px 12px;
             font-size: 15px;
             color: white;
             outline: none;
@@ -439,7 +463,7 @@
         }
         .btn-abrir-maps:active { background: rgba(255,255,255,0.18); }
         .dica-endereco {
-            margin-top: 6px;
+            margin-bottom: 6px;
             font-size: 13px;
             color: #b0bbd4;
             text-align: center;
@@ -453,24 +477,33 @@
             padding-top: 0;
         }
         .card-fluxo {
-            margin-top: 16px;
-            padding: 16px;
-            border-radius: 16px;
-            border-top: none;
+            margin-top: 12px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.04);
         }
         .card-incluir {
-            background: rgba(76,175,80,0.08);
-            border: 1px solid rgba(76,175,80,0.28);
+            background: transparent;
+            border-left: none;
+            border-right: none;
+            border-bottom: none;
+        }
+        #subAdicionar.card-incluir {
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.04);
         }
         .card-retirar {
-            background: rgba(255,82,82,0.08);
-            border: 1px solid rgba(255,82,82,0.24);
+            background: transparent;
+            border-left: none;
+            border-right: none;
+            border-bottom: none;
         }
         .card-fluxo-cabeca {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            margin-bottom: 12px;
+            gap: 6px;
+            margin-bottom: 8px;
         }
         .card-fluxo-chip {
             display: inline-flex;
@@ -499,27 +532,125 @@
             color: #fff;
         }
         .card-incluir .card-fluxo-titulo {
-            font-size: 26px;
-            color: #b9f6ca;
+            font-size: 20px;
+            color: #69e88d;
             text-align: center;
         }
         .card-retirar .card-fluxo-titulo {
-            font-size: 26px;
-            color: #ffab91;
+            font-size: 20px;
+            color: #ff5a36;
             text-align: center;
         }
         .card-fluxo-apoio {
             font-size: 13px;
-            color: #cfd6e3;
+            color: #ffffff;
+            text-align: center;
         }
         .card-fluxo-apoio-retirada {
-            font-size: 17px;
+            font-size: 15px;
             font-weight: bold;
-            color: #ff7043;
+            color: #ffab91;
             text-align: center;
         }
 
         /* ── BOTÃO FINALIZAR ── */
+        .fluxo-bloco {
+            margin-top: 0;
+            padding: 0 0 6px;
+            border-top: none;
+            border-radius: 0;
+            background: transparent;
+        }
+        .fluxo-bloco-titulo {
+            margin-bottom: 6px;
+            text-align: center;
+            font-size: 17px;
+            font-weight: bold;
+            color: #b9f6ca;
+        }
+        .fluxo-bloco-ajuda {
+            margin-top: 0;
+            margin-bottom: 12px;
+            text-align: center;
+            font-size: 13px;
+            color: #ffffff;
+        }
+        .fluxo-bloco .campo-wrap {
+            margin-top: 0;
+        }
+        #hostProdutosObrigatorios {
+            margin-top: 10px;
+        }
+        #hostProdutosObrigatorios:empty {
+            margin-top: 0;
+        }
+        #hostProdutosObrigatorios #subProdutos {
+            margin-top: 0;
+            padding: 10px 16px;
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+        }
+        #hostProdutosObrigatorios #subProdutos::before {
+            content: "Produtos usados";
+            display: block;
+            margin-bottom: 8px;
+            text-align: center;
+            font-size: 15px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        #wrapFotosEquipamentosAdicionados,
+        #wrapFotosEquipamentosRetirados {
+            margin-top: 12px;
+            padding: 10px 16px;
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+        }
+        #wrapFotosEquipamentosAdicionados .campo-label,
+        #wrapFotosEquipamentosRetirados .campo-label {
+            display: block;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 17px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        #wrapFotosEquipamentosAdicionados .lista-fotos-equipamentos,
+        #wrapFotosEquipamentosRetirados .lista-fotos-equipamentos {
+            margin-top: 8px;
+        }
+        #wrapFotosEquipamentosAdicionados .sub-card-foto,
+        #wrapFotosEquipamentosRetirados .sub-card-foto {
+            padding: 0;
+            border: none;
+            background: transparent;
+        }
+        #secaoMaquinas .card-fluxo {
+            padding-top: 6px;
+            padding-bottom: 8px;
+        }
+        #secaoMaquinas .card-fluxo-cabeca {
+            margin-bottom: 4px;
+        }
+        #secaoMaquinas .campo-wrap {
+            margin-top: 8px;
+        }
+        #secaoMaquinas #hostProdutosObrigatorios {
+            margin-top: 6px;
+        }
+        #secaoMaquinas #hostProdutosObrigatorios #subProdutos,
+        #secaoMaquinas #wrapFotosEquipamentosAdicionados,
+        #secaoMaquinas #wrapFotosEquipamentosRetirados {
+            margin-top: 8px;
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+        #secaoMaquinas .area-foto {
+            margin-top: 8px;
+            padding: 14px;
+        }
         .btn-finalizar {
             width: 100%;
             padding: 16px;
@@ -891,7 +1022,7 @@
             </div>
 
             <div class="wrap-endereco-maquina" id="wrapEnderecoMaquina">
-                <div class="campo-label" style="margin-bottom:8px;">Endereço do local:</div>
+                <div class="dica-endereco">Abra o Maps, copie o endereço e cole aqui</div>
                 <div class="row-endereco-maquina">
                     <div class="input-endereco-wrap">
                         <input type="text" id="campoEnderecoMaquina" class="campo-texto"
@@ -909,7 +1040,6 @@
                         </svg>
                     </a>
                 </div>
-                <div class="dica-endereco">Abra o Maps, copie o endereço e cole aqui</div>
             </div>
         </div>
 
@@ -917,28 +1047,31 @@
         <div class="sub-secao card-fluxo card-incluir" id="subAdicionar">
             <div class="card-fluxo-cabeca">
                 <div class="card-fluxo-titulo">Incluir máquinas</div>
-                <div class="card-fluxo-apoio">Preencha as máquinas instaladas</div>
             </div>
-            <div class="campo-wrap">
-                <div id="containerEquipamentosAdicionados" class="lista-equipamentos-adicionados"></div>
+            <div class="fluxo-bloco">
+                <div class="campo-wrap">
+                    <div id="containerEquipamentosAdicionados" class="lista-equipamentos-adicionados"></div>
+                </div>
             </div>
-            <div id="hostProdutosObrigatorios"></div>
-            <div class="campo-wrap" id="wrapFotosEquipamentosAdicionados" style="display:none;">
-                <label class="campo-label">Fotos das máquinas instaladas:</label>
-                <div id="containerFotosEquipamentosAdicionados" class="lista-fotos-equipamentos"></div>
-            </div>
+        </div>
+
+        <div id="hostProdutosObrigatorios"></div>
+        <div class="campo-wrap" id="wrapFotosEquipamentosAdicionados" style="display:none;">
+            <div id="containerFotosEquipamentosAdicionados" class="lista-fotos-equipamentos"></div>
         </div>
 
         <!-- Sub: retirar equipamento -->
         <div class="sub-secao card-fluxo card-retirar" id="subRetirar">
             <div class="card-fluxo-cabeca">
                 <div class="card-fluxo-titulo">Retirou</div>
-                <div class="card-fluxo-apoio card-fluxo-apoio-retirada">Selecione o que saiu do ponto</div>
             </div>
             <div class="equipamentos-lista" id="listaEquipamentosSelecionar"></div>
             <div class="campo-wrap" id="campoEquipLivreWrap" style="display:none">
                 <label class="campo-label">Descreva o equipamento retirado:</label>
-                <input type="text" id="campoEquipLivre" class="campo-texto" placeholder="Nome do equipamento..." autocomplete="off">
+                <input type="text" id="campoEquipLivre" class="campo-texto" placeholder="Nome do equipamento..." autocomplete="off" oninput="renderizarFotosEquipamentosRetirados()">
+            </div>
+            <div class="campo-wrap" id="wrapFotosEquipamentosRetirados" style="display:none;">
+                <div id="containerFotosEquipamentosRetirados" class="lista-fotos-equipamentos"></div>
             </div>
 
             <div class="sub-secao" id="subPixEncerramento">
@@ -980,7 +1113,7 @@
             <div class="sub-secao" id="subProdutos">
                 <div class="mensagem-produtos" id="mensagemProdutosManutencao">Informe os produtos</div>
                 <div class="campo-wrap">
-                    <label class="campo-label" id="labelProdutosManutencao">Selecione os produtos e informe as quantidades:</label>
+                    <label class="campo-label" id="labelProdutosManutencao" style="display:none;">Selecione os produtos e informe as quantidades:</label>
                     <div id="containerProdutosManutencao"></div>
                 </div>
             </div>
@@ -1094,6 +1227,130 @@ function obterEquipamentosRetiradosSelecionados() {
 function obterPixRetiradosSelecionados() {
     return obterEquipamentosRetiradosSelecionados().filter(item => String(item?.pix || '').trim());
 }
+
+function obterSlotsFotosEquipamentosRetirados() {
+    if (!respostas.acoesMaquinas.retirou) return [];
+
+    if (equipamentosDoCliente.length > 0) {
+        return obterEquipamentosRetiradosSelecionados()
+            .map(item => ({
+                slotKey: `ret_${item.indice}`,
+                nomeExibicao: String(item?.nome || 'Maquina').trim() || 'Maquina'
+            }))
+            .filter(item => item.nomeExibicao);
+    }
+
+    const livre = String(document.getElementById('campoEquipLivre')?.value || '').trim();
+    return livre ? [{ slotKey: 'ret_livre', nomeExibicao: livre }] : [];
+}
+
+function capturarPreviewsFotosEquipamentosRetirados() {
+    const previews = {};
+    document.querySelectorAll('#containerFotosEquipamentosRetirados .input-foto-equip-retirado').forEach((input) => {
+        const slotKey = input.dataset.slotKey || '';
+        if (!slotKey) return;
+        const img = document.getElementById(`imgPreviewEquipRetirado_${slotKey}`);
+        if (img && img.style.display === 'block' && img.src) {
+            previews[slotKey] = img.src;
+        }
+    });
+    return previews;
+}
+
+function renderizarFotosEquipamentosRetirados() {
+    const wrap = document.getElementById('wrapFotosEquipamentosRetirados');
+    const container = document.getElementById('containerFotosEquipamentosRetirados');
+    if (!wrap || !container) return;
+
+    const previewsExistentes = capturarPreviewsFotosEquipamentosRetirados();
+    const slots = obterSlotsFotosEquipamentosRetirados();
+
+    container.innerHTML = '';
+    wrap.style.display = slots.length > 0 ? 'flex' : 'none';
+    if (slots.length === 0) return;
+
+    slots.forEach((slot) => {
+        const slotKeySeguro = String(slot.slotKey).replace(/[^a-zA-Z0-9_-]/g, '_');
+        const nomeTexto = String(slot.nomeExibicao);
+        const nomeSeguro = nomeTexto
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        const card = document.createElement('div');
+        card.className = 'sub-card-foto';
+        card.innerHTML = `
+            <div class="titulo-sub-foto">Foto: ${nomeSeguro.toUpperCase()}</div>
+            <div class="area-foto" onclick="abrirSeletorFoto('inputFotoEquipRetirado_${slotKeySeguro}')">
+                <span id="textoFotoEquipRetirado_${slotKeySeguro}" style="font-size:14px;">Toque para adicionar</span>
+                <img id="imgPreviewEquipRetirado_${slotKeySeguro}" class="preview-img" alt="Foto retirada de ${nomeSeguro}">
+                <input type="file" id="inputFotoEquipRetirado_${slotKeySeguro}" class="input-foto-equip-retirado" data-slot-key="${slotKeySeguro}" data-nome-exibicao="${nomeSeguro}" accept="image/*" style="display:none;" onchange="mostrarPreviewFotoManutencao(this, 'imgPreviewEquipRetirado_${slotKeySeguro}', 'textoFotoEquipRetirado_${slotKeySeguro}')">
+            </div>
+        `;
+        container.appendChild(card);
+
+        const preview = previewsExistentes[slot.slotKey] || previewsExistentes[slotKeySeguro];
+        if (preview) {
+            const img = document.getElementById(`imgPreviewEquipRetirado_${slotKeySeguro}`);
+            const texto = document.getElementById(`textoFotoEquipRetirado_${slotKeySeguro}`);
+            if (img) {
+                img.src = preview;
+                img.style.display = 'block';
+            }
+            if (texto) texto.style.display = 'none';
+        }
+    });
+}
+
+async function coletarFotosEquipamentosRetiradosParaSalvar() {
+    const inputs = Array.from(document.querySelectorAll('#containerFotosEquipamentosRetirados .input-foto-equip-retirado'));
+    if (inputs.length === 0) {
+        throw new Error('Adicione as fotos das maquinas retiradas.');
+    }
+
+    const faltando = [];
+    const fotos = [];
+
+    for (const input of inputs) {
+        const slotKey = input.dataset.slotKey || '';
+        const nomeExibicao = input.dataset.nomeExibicao || 'Maquina retirada';
+        const img = document.getElementById(`imgPreviewEquipRetirado_${slotKey}`);
+
+        if (!(img && img.style.display === 'block' && img.src)) {
+            faltando.push(nomeExibicao);
+            continue;
+        }
+
+        let url = '';
+        let thumbUrl = '';
+        if (img.src.startsWith('data:')) {
+            const fotoSalva = await storageSalvarFotoComThumb(img.src, 'manutencoes');
+            url = fotoSalva.url;
+            thumbUrl = fotoSalva.thumbUrl;
+        } else if (img.src.startsWith('http')) {
+            url = img.src;
+            thumbUrl = img.src;
+        }
+
+        if (url) {
+            fotos.push({
+                slotKey,
+                nomeExibicao: `RETIRADA: ${nomeExibicao}`,
+                url,
+                thumbUrl
+            });
+        }
+    }
+
+    if (faltando.length > 0) {
+        throw new Error(`Adicione todas as fotos das maquinas retiradas: ${faltando.join(', ')}.`);
+    }
+
+    return fotos;
+}
+
+window.renderizarFotosEquipamentosRetirados = renderizarFotosEquipamentosRetirados;
 
 function obterChavePixEncerramento(item) {
     const rowId = String(item?.rowId || '').trim();
@@ -2071,7 +2328,7 @@ function renderizarFotosEquipamentosAdicionados() {
         card.innerHTML = `
             <div class="titulo-sub-foto">Foto: ${String(slot.nomeExibicao).toUpperCase()}</div>
             <div class="area-foto" onclick="abrirSeletorFoto('inputFotoEquipAdicionado_${slot.slotKey}')">
-                <span id="textoFotoEquipAdicionado_${slot.slotKey}" style="font-size:14px; opacity:0.8;">Toque para adicionar</span>
+                <span id="textoFotoEquipAdicionado_${slot.slotKey}" style="font-size:14px;">Toque para adicionar</span>
                 <img id="imgPreviewEquipAdicionado_${slot.slotKey}" class="preview-img" alt="Foto de ${slot.nomeExibicao}">
                 <input type="file" id="inputFotoEquipAdicionado_${slot.slotKey}" class="input-foto-equip-adicionado" data-slot-key="${slot.slotKey}" data-linha-index="${slot.linhaIndexValida}" data-nome-base="${String(slot.nomeBase).replace(/"/g, '&quot;')}" data-nome-exibicao="${String(slot.nomeExibicao).replace(/"/g, '&quot;')}" accept="image/*" style="display:none;" onchange="mostrarPreviewFotoManutencao(this, 'imgPreviewEquipAdicionado_${slot.slotKey}', 'textoFotoEquipAdicionado_${slot.slotKey}')">
             </div>
@@ -2271,6 +2528,7 @@ function renderizarEquipamentosSelecionar(equipamentos) {
                 limparEstadoEncerramento();
             }
             renderizarPixEncerramento();
+            renderizarFotosEquipamentosRetirados();
             sincronizarEtapaProdutosAposMaquinas();
             atualizarBotaoFinalizar();
             registrarNovoEstadoHistorico();
@@ -2398,12 +2656,8 @@ window.adicionarLinhaProdutoManutencao = function(inputAnterior = null, valorPro
     const linha = document.createElement('div');
     linha.className = 'linha-produto';
     linha.innerHTML = `
-        <div class="col-prod">
-            <select class="campo-texto input-prod" onchange="atualizarOpcoesProdutosManutencao()"></select>
-        </div>
-        <div class="col-qtd">
-            <input type="text" inputmode="numeric" class="campo-texto input-qtd" placeholder="Qtd" oninput="this.value = this.value.replace(/[^0-9]/g, ''); adicionarLinhaProdutoManutencao(this)">
-        </div>
+        <select class="campo-texto input-prod col-prod" onchange="atualizarOpcoesProdutosManutencao()"></select>
+        <input type="text" inputmode="numeric" class="campo-texto input-qtd col-qtd" placeholder="Qtd" oninput="this.value = this.value.replace(/[^0-9]/g, ''); adicionarLinhaProdutoManutencao(this)">
     `;
 
     container.appendChild(linha);
@@ -2490,6 +2744,24 @@ function precisaResponderEncerramento() {
         && indicesEquipamentosRetirados.size === equipamentosDoCliente.length;
 }
 
+function sincronizarEncerramentoAposRetirada() {
+    const gradeEnc = document.querySelector('#subEncerramento .grade-opcoes');
+    if (precisaResponderEncerramento()) {
+        if (gradeEnc) gradeEnc.style.display = respostas.encerramentoRespondido ? 'none' : 'flex';
+        mostrarSubSecao('subEncerramento');
+        if (respostas.encerramentoRespondido && respostas.pontoEncerrado) {
+            mostrarSubSecao('subValorEncerramento');
+        } else if (!respostas.pontoEncerrado) {
+            document.getElementById('subValorEncerramento')?.classList.remove('visivel');
+        }
+        return;
+    }
+
+    if (respostas.acoesMaquinas.retirou === true && fluxoEncerramentoPermitido()) {
+        limparEstadoEncerramento();
+    }
+}
+
 function encerramentoEstaPendente() {
     return precisaResponderEncerramento() && respostas.encerramentoRespondido !== true;
 }
@@ -2567,7 +2839,7 @@ function sincronizarSecaoProdutosUI() {
 function sincronizarEtapaProdutosAposMaquinas() {
     sincronizarSecaoProdutosUI();
 
-    if (!temAcaoMaquinaSelecionada() || pontoEncerradoPulaProdutos()) {
+    if (!temAcaoMaquinaSelecionada() || pontoEncerradoPulaProdutos() || encerramentoEstaPendente()) {
         document.getElementById('subProdutos')?.classList.remove('visivel');
         return;
     }
@@ -2617,6 +2889,9 @@ function sincronizarAcoesMaquinaUI() {
         if (respostas.acoesMaquinas.adicionou) {
             renderizarSelectMaquinaNova();
             sincronizarCamposEquipamentoAdicionado();
+        } else {
+            document.getElementById('wrapFotosEquipamentosAdicionados').style.display = 'none';
+            document.getElementById('containerFotosEquipamentosAdicionados').innerHTML = '';
         }
     }
 
@@ -2627,9 +2902,13 @@ function sincronizarAcoesMaquinaUI() {
                 limparEstadoEncerramento();
             }
             renderizarEquipamentosSelecionar(equipamentosDoCliente);
+            renderizarFotosEquipamentosRetirados();
             renderizarPixEncerramento();
+            sincronizarEncerramentoAposRetirada();
         } else {
             limparEstadoEncerramento();
+            document.getElementById('wrapFotosEquipamentosRetirados').style.display = 'none';
+            document.getElementById('containerFotosEquipamentosRetirados').innerHTML = '';
             document.getElementById('subPixEncerramento').classList.remove('visivel');
             document.getElementById('listaPixEncerramento').innerHTML = '';
         }
@@ -2839,6 +3118,7 @@ window.limparEnderecoMaquina = function() {
 })();
 
 window.toggleAcaoMaquina = function(tipo) {
+    const adicionouAntes = respostas.acoesMaquinas.adicionou === true;
     respostas.acoesMaquinas[tipo] = !respostas.acoesMaquinas[tipo];
     sincronizarAcoesMaquinaUI();
 
@@ -2849,6 +3129,12 @@ window.toggleAcaoMaquina = function(tipo) {
         respostas.teveProdutos = null;
         document.getElementById('subProdutos')?.classList.remove('visivel');
     } else {
+        if (tipo === 'adicionou' && adicionouAntes && respostas.acoesMaquinas.adicionou !== true && respostas.acoesMaquinas.retirou === true) {
+            respostas.teveProdutos = null;
+            document.getElementById('subProdutos')?.classList.remove('visivel');
+            document.getElementById('secaoProdutos')?.classList.remove('respondida');
+            sincronizarEncerramentoAposRetirada();
+        }
         sincronizarEtapaProdutosAposMaquinas();
     }
 
@@ -2933,7 +3219,7 @@ window.responderProdutos = function(teve) {
         atualizarBotaoFinalizar();
     } else {
         document.getElementById('subProdutos')?.classList.remove('visivel');
-        document.getElementById('labelProdutosManutencao').style.display = '';
+        document.getElementById('labelProdutosManutencao').style.display = 'none';
         document.getElementById('mensagemProdutosManutencao').style.display = 'none';
         marcarSecaoRespondida('secaoProdutos', 'Sem reposição ✔️');
         atualizarBotaoFinalizar();
@@ -3063,6 +3349,7 @@ window.finalizarRegistro = async function() {
                 }
 
                 camposExtras.equipamentosRetirados = equipamentosRetirados;
+                camposExtras.fotosEquipamentosRetirados = await coletarFotosEquipamentosRetiradosParaSalvar();
                 const pixEncerramento = await coletarDadosPixEncerramentoParaSalvar();
                 if (pixEncerramento.length > 0) {
                     const mapaPixEncerramento = new Map(
@@ -3150,7 +3437,10 @@ window.finalizarRegistro = async function() {
             const fotosHistorico = {
                 ficha: '',
                 fichaThumb: '',
-                maquinas: (camposExtras.fotosEquipamentosAdicionados || []).map(item => ({
+                maquinas: [
+                    ...(camposExtras.fotosEquipamentosAdicionados || []),
+                    ...(camposExtras.fotosEquipamentosRetirados || [])
+                ].map(item => ({
                     nome: item.nomeExibicao || item.nomeBase || 'Máquina',
                     url: item.url || '',
                     thumbUrl: item.thumbUrl || item.url || ''
