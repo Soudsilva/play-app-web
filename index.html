@@ -120,6 +120,42 @@
             color:#d8d8d8;
         }
 
+        /* Botão Contratos & Acordos — exclusivo gestão nível 3 */
+        .botao-contrato {
+            background: linear-gradient(135deg, #1a1040 0%, #2d1b6e 50%, #1a1040 100%);
+            border: 2px solid #6d28d9;
+            border-radius: 45px;
+            padding: 10px;
+            min-height: 35px;
+            cursor: pointer;
+            transition: 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+            box-shadow: 0 0 14px rgba(109, 40, 217, 0.35);
+        }
+        .botao-contrato .icone {
+            position: absolute;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 25px;
+        }
+        .botao-contrato span:last-child {
+            color: #e2d4ff;
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            width: 100%;
+            letter-spacing: 0.3px;
+        }
+        .botao-contrato:hover { background: linear-gradient(135deg, #251455 0%, #3d2490 50%, #251455 100%); }
+        .botao-contrato:active { transform: translateY(2px); transition: 0.05s; }
+
         /* Submenu Gestão */
         .submenu {
             display: none;
@@ -317,6 +353,11 @@
         <div class="botao" id="btnRepresentante" onclick="window.location.href='representante.html'" style="display: none;">
             <span class="icone">&#128372;</span>
             <span>Representante</span>
+        </div>
+
+        <div class="botao-contrato" id="btnContrato" onclick="window.location.href='contrato.html'" style="display: none;">
+            <span class="icone">📑</span>
+            <span>Contratos & Acordos</span>
         </div>
 
     </div>
@@ -675,7 +716,8 @@
             fluxoCaixa: document.getElementById('btnFluxoCaixa'),
             pagamentosGestor: document.getElementById('btnPagamentosGestor'),
             representante: document.getElementById('btnRepresentante'),
-            verificarRotas: document.getElementById('btnVerificarRotas')
+            verificarRotas: document.getElementById('btnVerificarRotas'),
+            contrato: document.getElementById('btnContrato')
         };
 
         // Por padrÃ£o, garante que o bloco de GestÃ£o nÃ£o vai deixar "espaÃ§o vazio" no menu.
@@ -806,6 +848,7 @@
         if (perfil.includes('gestao_3')) {
             btns.pagamentosGestor.style.display = 'flex';
             btns.fluxoCaixa.style.display = 'none';
+            btns.contrato.style.display = 'flex';
         }
 
         // GESTOR NÍVEL 1: restrições sobre o perfil gestão

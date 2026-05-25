@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contratos & Acordos — Play</title>
+    <meta name="theme-color" content="#0f2a66">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0a1628;
+            color: #e8edf5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 600px;
+            padding-bottom: 90px;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            background: #0f2a66;
+            padding: 18px 20px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 2px solid #1a3d8a;
+        }
+        .header-icon { font-size: 26px; }
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.2;
+        }
+        .header p {
+            font-size: 13px;
+            color: #8ba4d4;
+            margin-top: 2px;
+        }
+
+        /* ── NAV BOTÕES ── */
+        .nav {
+            display: flex;
+            overflow-x: auto;
+            gap: 8px;
+            padding: 14px 16px;
+            scrollbar-width: none;
+            background: #0d1f4a;
+            border-bottom: 1px solid #1a3d8a;
+        }
+        .nav::-webkit-scrollbar { display: none; }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 10px 14px;
+            background: #162650;
+            border: 1.5px solid #1e3670;
+            border-radius: 12px;
+            color: #8ba4d4;
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 72px;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .nav-btn .nav-icon { font-size: 22px; }
+        .nav-btn:hover { background: #1e3a7a; color: #cfe0ff; }
+        .nav-btn.active {
+            background: #1c4fd6;
+            border-color: #3d70f5;
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(61, 112, 245, 0.4);
+        }
+
+        /* ── SEÇÕES ── */
+        .section { display: none; padding: 18px 16px; }
+        .section.active { display: block; }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+        .section-sub {
+            font-size: 14px;
+            color: #7a96c8;
+            margin-bottom: 18px;
+        }
+
+        /* ── CARD BASE ── */
+        .card {
+            background: #111e3a;
+            border: 1px solid #1e3670;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .card-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .card-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .card-date {
+            font-size: 12px;
+            color: #5a7ab0;
+            margin-top: 2px;
+        }
+
+        .tag {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 20px;
+        }
+        .tag-ativo { background: #0d3320; color: #4ade80; border: 1px solid #166534; }
+        .tag-pendente { background: #3a2200; color: #fbbf24; border: 1px solid #854d0e; }
+        .tag-revisao { background: #1e1035; color: #c084fc; border: 1px solid #6b21a8; }
+
+        .card-body {
+            font-size: 15px;
+            color: #c8d8f0;
+            line-height: 1.7;
+        }
+        .card-body strong { color: #ffffff; }
+
+        .divider {
+            border: none;
+            border-top: 1px solid #1a2f5a;
+            margin: 12px 0;
+        }
+
+        /* ── SEÇÃO 1: ACORDO SÓCIOS ── */
+        .acordo-icon { background: #0d2d5e; }
+
+        /* ── SEÇÃO 2: COLABORADORES ── */
+        .colab-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .colab-info { flex: 1; }
+        .colab-nome {
+            font-size: 17px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .colab-cargo {
+            font-size: 14px;
+            color: #7a96c8;
+            margin-top: 2px;
+        }
+        .colab-rem {
+            font-size: 15px;
+            font-weight: 700;
+            color: #4ade80;
+            text-align: right;
+        }
+        .colab-rem-label {
+            font-size: 12px;
+            color: #5a7ab0;
+            text-align: right;
+        }
+        .colab-detalhe {
+            margin-top: 12px;
+            background: #0d1a36;
+            border-radius: 10px;
+            padding: 12px;
+        }
+        .detalhe-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #1a2f5a;
+            font-size: 14px;
+        }
+        .detalhe-row:last-child { border-bottom: none; }
+        .detalhe-row .label { color: #7a96c8; }
+        .detalhe-row .valor { color: #ffffff; font-weight: 700; }
+
+        /* ── SEÇÃO 3: REGRAS ── */
+        .regra-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #1a2f5a;
+        }
+        .regra-item:last-child { border-bottom: none; }
+        .regra-num {
+            width: 30px;
+            height: 30px;
+            background: #1c4fd6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 700;
+            color: #ffffff;
+            flex-shrink: 0;
+        }
+        .regra-texto {
+            font-size: 15px;
+            color: #c8d8f0;
+            line-height: 1.6;
+            padding-top: 4px;
+        }
+        .regra-texto strong { color: #ffffff; display: block; margin-bottom: 2px; }
+
+        /* ── SEÇÃO 4: METAS ── */
+        .meta-prazo {
+            font-size: 13px;
+            color: #7a96c8;
+            margin-bottom: 8px;
+        }
+        .meta-prazo span {
+            color: #fbbf24;
+            font-weight: 700;
+        }
+        .progress-wrap {
+            background: #0a1628;
+            border-radius: 20px;
+            height: 10px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            border-radius: 20px;
+            transition: width 0.5s;
+        }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #7a96c8;
+            margin-top: 4px;
+        }
+        .progress-label strong { color: #ffffff; }
+
+        /* ── SEÇÃO 5: DOCUMENTOS ── */
+        .doc-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid #1a2f5a;
+        }
+        .doc-item:last-child { border-bottom: none; }
+        .doc-icon-wrap {
+            width: 44px;
+            height: 44px;
+            background: #0d2d5e;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+        .doc-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .doc-meta {
+            font-size: 13px;
+            color: #5a7ab0;
+            margin-top: 2px;
+        }
+        .doc-action {
+            margin-left: auto;
+            background: #162650;
+            border: 1px solid #1e3670;
+            color: #8ba4d4;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        /* ── BOTTOM NAV FIXO ── */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 600px;
+            background: #0d1f4a;
+            border-top: 1px solid #1a3d8a;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            gap: 6px;
+            z-index: 200;
+        }
+        .bottom-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            padding: 8px 4px;
+            background: none;
+            border: none;
+            color: #5a7ab0;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bottom-btn .icon { font-size: 20px; }
+        .bottom-btn.active { color: #3d70f5; background: #111e3a; }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-icon">📑</div>
+        <div>
+            <h1>Contratos & Acordos</h1>
+            <p>Play Diversões — Gestão Interna</p>
+        </div>
+    </div>
+
+    <!-- NAV BOTÕES -->
+    <nav class="nav">
+        <button class="nav-btn active" onclick="showSection('socios', this)">
+            <span class="nav-icon">🤝</span> Sócios
+        </button>
+        <button class="nav-btn" onclick="showSection('colaboradores', this)">
+            <span class="nav-icon">👥</span> Equipe
+        </button>
+        <button class="nav-btn" onclick="showSection('regras', this)">
+            <span class="nav-icon">📋</span> Regras
+        </button>
+        <button class="nav-btn" onclick="showSection('metas', this)">
+            <span class="nav-icon">🎯</span> Metas
+        </button>
+        <button class="nav-btn" onclick="showSection('documentos', this)">
+            <span class="nav-icon">📄</span> Docs
+        </button>
+    </nav>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- SEÇÃO 1 — ACORDO ENTRE SÓCIOS       -->
+    <!-- ═══════════════════════════════════ -->
+    <div id="socios" class="section active">
+        <div class="section-title">Acordo entre Sócios</div>
+        <div class="section-sub">Termos e combinados firmados entre os sócios da Play Diversões</div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon acordo-icon">⚖️</div>
+                <div>
+                    <div class="card-title">Divisão Societária</div>
+                    <div class="card-date">Definido em Jan 2025 · <span class="tag tag-ativo">Ativo</span></div>
+                </div>
+            </div>
+            <div class="card-body">
+                <strong>Participação:</strong> Anderson <strong>60%</strong> · João <strong>40%</strong> sobre o lucro líquido mensal após dedução de todas as despesas operacionais.
+                <hr class="divider">
+                <strong>Retiradas:</strong> Realizadas todo dia 5 do mês seguinte, mediante saldo positivo em caixa.
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon acordo-icon">🏗️</div>
+                <div>
+                    <div class="card-title">Responsabilidades</div>
+                    <div class="card-date">Definido em Jan 2025 · <span class="tag tag-ativo">Ativo</span></div>
+                </div>
+            </div>
+            <div class="card-body">
+                <strong>Sócio A — Operacional:</strong> Gestão de rotas, atendimentos, manutenções e logística diária das máquinas.
+                <hr class="divider">
+                <strong>Sócio B — Administrativo:</strong> Financeiro, relacionamento com clientes, contratos e expansão.
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon acordo-icon">🔒</div>
+                <div>
+                    <div class="card-title">Decisões Estratégicas</div>
+                    <div class="card-date">Definido em Fev 2025 · <span class="tag tag-ativo">Ativo</span></div>
+                </div>
+            </div>
+            <div class="card-body">
+                Qualquer decisão que envolva investimento acima de <strong>R$ 1.000,00</strong> ou alteração de contrato com cliente deve ser aprovada por <strong>ambos os sócios</strong>.
+                <hr class="divider">
+                Novas contratações e demissões seguem a mesma regra de aprovação conjunta.
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon acordo-icon">🚪</div>
+                <div>
+                    <div class="card-title">Saída de Sócio</div>
+                    <div class="card-date">Definido em Fev 2025 · <span class="tag tag-revisao">Em Revisão</span></div>
+                </div>
+            </div>
+            <div class="card-body">
+                Em caso de saída, o sócio tem direito à sua participação avaliada com base no patrimônio líquido da empresa no mês da saída, com prazo de pagamento de até <strong>12 meses</strong>.
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- SEÇÃO 2 — COLABORADORES              -->
+    <!-- ═══════════════════════════════════ -->
+    <div id="colaboradores" class="section">
+        <div class="section-title">Equipe & Remuneração</div>
+        <div class="section-sub">Contratos e formas de pagamento de cada colaborador</div>
+
+        <!-- Colaborador 1 -->
+        <div class="card">
+            <div class="colab-card">
+                <div class="avatar" style="background:#0d3320; color:#4ade80;">JC</div>
+                <div class="colab-info">
+                    <div class="colab-nome">João Carlos</div>
+                    <div class="colab-cargo">Técnico de Manutenção · CLT</div>
+                </div>
+                <div>
+                    <div class="colab-rem">R$ 1.800</div>
+                    <div class="colab-rem-label">mensal fixo</div>
+                </div>
+            </div>
+            <div class="colab-detalhe">
+                <div class="detalhe-row"><span class="label">Admissão</span><span class="valor">03/03/2025</span></div>
+                <div class="detalhe-row"><span class="label">Pagamento</span><span class="valor">Todo dia 5</span></div>
+                <div class="detalhe-row"><span class="label">Benefícios</span><span class="valor">VT + VR</span></div>
+                <div class="detalhe-row"><span class="label">Comissão</span><span class="valor">Sem comissão</span></div>
+            </div>
+        </div>
+
+        <!-- Colaborador 2 -->
+        <div class="card">
+            <div class="colab-card">
+                <div class="avatar" style="background:#2d0d5e; color:#c084fc;">MF</div>
+                <div class="colab-info">
+                    <div class="colab-nome">Marcos Felipe</div>
+                    <div class="colab-cargo">Operador de Rota · PJ</div>
+                </div>
+                <div>
+                    <div class="colab-rem" style="color: #ce93d8;">R$ 1.400</div>
+                    <div class="colab-rem-label">mensal fixo</div>
+                </div>
+            </div>
+            <div class="colab-detalhe">
+                <div class="detalhe-row"><span class="label">Início</span><span class="valor">10/01/2025</span></div>
+                <div class="detalhe-row"><span class="label">Pagamento</span><span class="valor">Todo dia 5</span></div>
+                <div class="detalhe-row"><span class="label">Tipo</span><span class="valor">Nota Fiscal</span></div>
+                <div class="detalhe-row"><span class="label">Combustível</span><span class="valor">Incluído</span></div>
+            </div>
+        </div>
+
+        <!-- Colaborador 3 -->
+        <div class="card">
+            <div class="colab-card">
+                <div class="avatar" style="background:#2d1a00; color:#fbbf24;">RS</div>
+                <div class="colab-info">
+                    <div class="colab-nome">Roberto Silva</div>
+                    <div class="colab-cargo">Atendente · Comissionado</div>
+                </div>
+                <div>
+                    <div class="colab-rem" style="color: #fbbf24;">Variável</div>
+                    <div class="colab-rem-label">por comissão</div>
+                </div>
+            </div>
+            <div class="colab-detalhe">
+                <div class="detalhe-row"><span class="label">Início</span><span class="valor">15/02/2025</span></div>
+                <div class="detalhe-row"><span class="label">Comissão</span><span class="valor">8% das vendas</span></div>
+                <div class="detalhe-row"><span class="label">Pagamento</span><span class="valor">Quinzenal</span></div>
+                <div class="detalhe-row"><span class="label">Mínimo</span><span class="valor">R$ 900/mês</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- SEÇÃO 3 — REGRAS DA EMPRESA         -->
+    <!-- ═══════════════════════════════════ -->
+    <div id="regras" class="section">
+        <div class="section-title">Regras da Empresa</div>
+        <div class="section-sub">Normas internas combinadas entre os sócios</div>
+
+        <div class="card">
+            <div class="regra-item">
+                <div class="regra-num">1</div>
+                <div class="regra-texto">
+                    <strong>Registro obrigatório de atendimento</strong>
+                    Todo atendimento em máquina deve ser registrado no app antes de sair do local. Sem exceções.
+                </div>
+            </div>
+            <div class="regra-item">
+                <div class="regra-num">2</div>
+                <div class="regra-texto">
+                    <strong>Pagamentos apenas via Pix</strong>
+                    Nenhum pagamento de cliente deve ser aceito em dinheiro vivo. Todo recebimento deve gerar registro no sistema.
+                </div>
+            </div>
+            <div class="regra-item">
+                <div class="regra-num">3</div>
+                <div class="regra-texto">
+                    <strong>Retirada de sócios somente com saldo positivo</strong>
+                    Não é permitido retirar lucro se o caixa do mês ainda estiver negativo ou em aberto.
+                </div>
+            </div>
+            <div class="regra-item">
+                <div class="regra-num">4</div>
+                <div class="regra-texto">
+                    <strong>Manutenção preventiva mensal</strong>
+                    Cada máquina deve receber revisão completa uma vez por mês, independente de chamado.
+                </div>
+            </div>
+            <div class="regra-item">
+                <div class="regra-num">5</div>
+                <div class="regra-texto">
+                    <strong>Comunicação de problemas em até 2h</strong>
+                    Qualquer falha em máquina comunicada por cliente deve ter resposta registrada em até 2 horas úteis.
+                </div>
+            </div>
+            <div class="regra-item">
+                <div class="regra-num">6</div>
+                <div class="regra-texto">
+                    <strong>Estoque mínimo sempre abastecido</strong>
+                    O estoque de produto não pode ficar abaixo de 30% sem que um pedido de reposição já esteja feito.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- SEÇÃO 4 — METAS                     -->
+    <!-- ═══════════════════════════════════ -->
+    <div id="metas" class="section">
+        <div class="section-title">Metas</div>
+        <div class="section-sub">Objetivos da empresa por período</div>
+
+        <!-- Meta 1 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background:#0d2d5e;">📈</div>
+                <div>
+                    <div class="card-title">Faturamento Mensal</div>
+                    <div class="card-date">Meta para Maio/2025</div>
+                </div>
+            </div>
+            <div class="meta-prazo">Prazo: <span>31/05/2025</span></div>
+            <div class="progress-wrap">
+                <div class="progress-bar" style="width: 72%; background: linear-gradient(90deg, #1c4fd6, #3d70f5);"></div>
+            </div>
+            <div class="progress-label">
+                <span>R$ 14.400 de R$ 20.000</span>
+                <strong>72%</strong>
+            </div>
+        </div>
+
+        <!-- Meta 2 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background:#0d3320;">🏪</div>
+                <div>
+                    <div class="card-title">Novos Pontos de Máquina</div>
+                    <div class="card-date">Meta para 2025</div>
+                </div>
+            </div>
+            <div class="meta-prazo">Prazo: <span>31/12/2025</span></div>
+            <div class="progress-wrap">
+                <div class="progress-bar" style="width: 40%; background: linear-gradient(90deg, #166534, #4ade80);"></div>
+            </div>
+            <div class="progress-label">
+                <span>4 de 10 pontos</span>
+                <strong>40%</strong>
+            </div>
+        </div>
+
+        <!-- Meta 3 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background:#2d0d5e;">⭐</div>
+                <div>
+                    <div class="card-title">Satisfação de Clientes</div>
+                    <div class="card-date">Avaliação contínua 2025</div>
+                </div>
+            </div>
+            <div class="meta-prazo">Prazo: <span>Contínuo</span></div>
+            <div class="progress-wrap">
+                <div class="progress-bar" style="width: 88%; background: linear-gradient(90deg, #6b21a8, #c084fc);"></div>
+            </div>
+            <div class="progress-label">
+                <span>88% de aprovação</span>
+                <strong>Meta: 90%</strong>
+            </div>
+        </div>
+
+        <!-- Meta 4 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon" style="background:#2d1a00;">💰</div>
+                <div>
+                    <div class="card-title">Reserva de Emergência</div>
+                    <div class="card-date">Meta financeira</div>
+                </div>
+            </div>
+            <div class="meta-prazo">Prazo: <span>30/06/2025</span></div>
+            <div class="progress-wrap">
+                <div class="progress-bar" style="width: 55%; background: linear-gradient(90deg, #854d0e, #fbbf24);"></div>
+            </div>
+            <div class="progress-label">
+                <span>R$ 5.500 de R$ 10.000</span>
+                <strong>55%</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- SEÇÃO 5 — DOCUMENTOS                -->
+    <!-- ═══════════════════════════════════ -->
+    <div id="documentos" class="section">
+        <div class="section-title">Documentos & Contratos</div>
+        <div class="section-sub">Arquivos e contratos importantes da empresa</div>
+
+        <div class="card">
+            <div class="doc-item">
+                <div class="doc-icon-wrap">📑</div>
+                <div>
+                    <div class="doc-name">Contrato Social</div>
+                    <div class="doc-meta">PDF · Atualizado em Jan 2025</div>
+                </div>
+                <button class="doc-action">Ver</button>
+            </div>
+            <div class="doc-item">
+                <div class="doc-icon-wrap">🤝</div>
+                <div>
+                    <div class="doc-name">Acordo de Sócios</div>
+                    <div class="doc-meta">PDF · Assinado em Fev 2025</div>
+                </div>
+                <button class="doc-action">Ver</button>
+            </div>
+            <div class="doc-item">
+                <div class="doc-icon-wrap">👤</div>
+                <div>
+                    <div class="doc-name">Contrato João Carlos</div>
+                    <div class="doc-meta">PDF · CLT · Mar 2025</div>
+                </div>
+                <button class="doc-action">Ver</button>
+            </div>
+            <div class="doc-item">
+                <div class="doc-icon-wrap">📋</div>
+                <div>
+                    <div class="doc-name">Modelo Contrato Ponto</div>
+                    <div class="doc-meta">DOCX · Versão 2.1</div>
+                </div>
+                <button class="doc-action">Ver</button>
+            </div>
+            <div class="doc-item">
+                <div class="doc-icon-wrap">🏛️</div>
+                <div>
+                    <div class="doc-name">CNPJ & Alvará</div>
+                    <div class="doc-meta">PDF · Vencimento: Dez 2025</div>
+                </div>
+                <button class="doc-action">Ver</button>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /app -->
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+    <button class="bottom-btn active" onclick="showSection('socios', null, 0)">
+        <span class="icon">🤝</span> Sócios
+    </button>
+    <button class="bottom-btn" onclick="showSection('colaboradores', null, 1)">
+        <span class="icon">👥</span> Equipe
+    </button>
+    <button class="bottom-btn" onclick="showSection('regras', null, 2)">
+        <span class="icon">📋</span> Regras
+    </button>
+    <button class="bottom-btn" onclick="showSection('metas', null, 3)">
+        <span class="icon">🎯</span> Metas
+    </button>
+    <button class="bottom-btn" onclick="showSection('documentos', null, 4)">
+        <span class="icon">📄</span> Docs
+    </button>
+</div>
+
+<script>
+    const sections = ['socios', 'colaboradores', 'regras', 'metas', 'documentos'];
+    const navBtns = document.querySelectorAll('.nav-btn');
+    const bottomBtns = document.querySelectorAll('.bottom-btn');
+
+    function showSection(id, navBtn, bottomIdx) {
+        sections.forEach(s => {
+            document.getElementById(s).classList.remove('active');
+        });
+        document.getElementById(id).classList.add('active');
+
+        navBtns.forEach(b => b.classList.remove('active'));
+        bottomBtns.forEach(b => b.classList.remove('active'));
+
+        const idx = sections.indexOf(id);
+        if (navBtns[idx]) navBtns[idx].classList.add('active');
+        if (bottomBtns[idx]) bottomBtns[idx].classList.add('active');
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
+
+</body>
+</html>
