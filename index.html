@@ -120,7 +120,7 @@
             color:#d8d8d8;
         }
 
-        /* Botão Contratos & Acordos — exclusivo gestão nível 3 */
+        /* Botão Contratos & Acordos — exclusivo cargo Sócio */
         .botao-contrato {
             background: linear-gradient(135deg, #1a1040 0%, #2d1b6e 50%, #1a1040 100%);
             border: 2px solid #6d28d9;
@@ -412,9 +412,9 @@
 </script>
 
 <script type="module">
-    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, dbEscutarResumoBalanco, dbExisteContestacaoAtendimentoDoUsuario, dbEscutarResumoContestacaoAtendimento } from './database.js';
+    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFotoComThumb, dbEscutarResumoBalanco, dbExisteContestacaoAtendimentoDoUsuario, dbEscutarResumoContestacaoAtendimento, dbAtualizarFotoAtendimentoPendente } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
-    import { sincronizarPendentes } from './offline-sync.js';
+    import { sincronizarPendentes, sincronizarFotosPendentes } from './offline-sync.js';
 
     let unsubscribeResumoBalanco = null;
     let unsubscribeResumoContestacaoAtendimento = null;
@@ -545,20 +545,25 @@
         pillOffline.style.display = navigator.onLine ? 'none' : 'block';
         atualizarEstadoBotaoRotas();
     }
+    async function sincronizarEnviosPendentesIndex() {
+        const n = await sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico);
+        const fotos = await sincronizarFotosPendentes(storageSalvarFotoComThumb, dbAtualizarFotoAtendimentoPendente);
+        return { atendimentos: n, fotos: Number(fotos?.ok || 0) };
+    }
     atualizarConexao();
     window.addEventListener('offline', atualizarConexao);
     window.addEventListener('online', async () => {
         atualizarConexao();
         try {
-            const n = await sincronizarPendentes(storageSalvarFoto, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico);
-            if (n > 0) await window.playAlert(`Sucesso: ${n} atendimento${n > 1 ? 's' : ''} enviado${n > 1 ? 's' : ''} com sucesso!`);
+            const r = await sincronizarEnviosPendentesIndex();
+            if (r.atendimentos > 0) await window.playAlert(`Sucesso: ${r.atendimentos} atendimento${r.atendimentos > 1 ? 's' : ''} enviado${r.atendimentos > 1 ? 's' : ''} com sucesso!`);
         } catch(e) { console.warn('Sync ao reconectar falhou:', e); }
     });
 
     // Sincroniza pendentes que ficaram da sessÃ£o anterior
     if (navigator.onLine) {
-        sincronizarPendentes(storageSalvarFoto, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico).then(async n => {
-            if (n > 0) await window.playAlert(`Sucesso: ${n} atendimento${n > 1 ? 's' : ''} pendente${n > 1 ? 's' : ''} enviado${n > 1 ? 's' : ''} com sucesso!`);
+        sincronizarEnviosPendentesIndex().then(async r => {
+            if (r.atendimentos > 0) await window.playAlert(`Sucesso: ${r.atendimentos} atendimento${r.atendimentos > 1 ? 's' : ''} pendente${r.atendimentos > 1 ? 's' : ''} enviado${r.atendimentos > 1 ? 's' : ''} com sucesso!`);
         }).catch(() => {});
     }
 
@@ -600,6 +605,14 @@
     function perfilEhGestor(perfil) {
         const valor = String(perfil || '').toLowerCase();
         return valor.includes('gestao') || valor.includes('gestor');
+    }
+
+    function normalizarTextoIndex(valor) {
+        return String(valor || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
     }
 
     function usuarioTemComissaoGlobal(usuario) {
@@ -690,6 +703,7 @@
         const nomeNormalizado = String(nomeUsuario || '').trim();
         const usuario = listaColaboradores.find(c => String(c?.nome || '').trim() === nomeNormalizado);
         const perfil = usuario ? (usuario.nivel_completo || "") : "";
+        const usuarioEhSocio = normalizarTextoIndex(usuario?.cargo) === 'socio';
         usuarioAtendimentoNivel2Index = perfil.includes('atendimento_2');
         atualizarEstadoBotaoManutencao();
         // Mapeamento de todos os botÃµes para facilitar o controle
@@ -848,7 +862,6 @@
         if (perfil.includes('gestao_3')) {
             btns.pagamentosGestor.style.display = 'flex';
             btns.fluxoCaixa.style.display = 'none';
-            btns.contrato.style.display = 'flex';
         }
 
         // GESTOR NÍVEL 1: restrições sobre o perfil gestão
@@ -878,6 +891,8 @@
         if (taxaRepresentante > 0) {
             btns.representante.style.display = 'flex';
         }
+
+        btns.contrato.style.display = usuarioEhSocio ? 'flex' : 'none';
 
         if (perfil.includes('gestao')) {
             ordenarMenuGestao();

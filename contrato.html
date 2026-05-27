@@ -19,7 +19,6 @@
             display: flex;
             justify-content: center;
         }
-
         .app {
             width: 100%;
             max-width: 600px;
@@ -31,81 +30,50 @@
             background: #0f2a66;
             padding: 18px 20px 14px;
             display: flex;
+            flex-direction: row;
             align-items: center;
+            justify-content: center;
             gap: 12px;
             position: sticky;
             top: 0;
             z-index: 100;
             border-bottom: 2px solid #1a3d8a;
+            text-align: center;
         }
-        .header-icon { font-size: 26px; }
-        .header h1 {
-            font-size: 20px;
-            font-weight: 700;
-            color: #ffffff;
-            line-height: 1.2;
-        }
-        .header p {
-            font-size: 13px;
-            color: #8ba4d4;
-            margin-top: 2px;
-        }
-
-        /* ── NAV BOTÕES ── */
-        .nav {
-            display: flex;
-            overflow-x: auto;
-            gap: 8px;
-            padding: 14px 16px;
-            scrollbar-width: none;
-            background: #0d1f4a;
-            border-bottom: 1px solid #1a3d8a;
-        }
-        .nav::-webkit-scrollbar { display: none; }
-
-        .nav-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            padding: 10px 14px;
-            background: #162650;
-            border: 1.5px solid #1e3670;
-            border-radius: 12px;
-            color: #8ba4d4;
-            font-size: 12px;
-            font-weight: 700;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: all 0.2s;
-            min-width: 72px;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .nav-btn .nav-icon { font-size: 22px; }
-        .nav-btn:hover { background: #1e3a7a; color: #cfe0ff; }
-        .nav-btn.active {
-            background: #1c4fd6;
-            border-color: #3d70f5;
-            color: #ffffff;
-            box-shadow: 0 0 12px rgba(61, 112, 245, 0.4);
-        }
+        .header-icon { font-size: 26px; flex-shrink: 0; }
+        .header h1 { font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.2; }
+        .header p { font-size: 13px; color: #8ba4d4; margin-top: 2px; }
 
         /* ── SEÇÕES ── */
         .section { display: none; padding: 18px 16px; }
         .section.active { display: block; }
+        .section-title { font-size: 18px; font-weight: 700; color: #ffffff; margin-bottom: 4px; text-align: center; }
+        .section-sub { font-size: 14px; color: #7a96c8; margin-bottom: 18px; text-align: center; }
 
-        .section-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 4px;
-        }
-        .section-sub {
-            font-size: 14px;
-            color: #7a96c8;
+        /* ── AÇÕES DA SEÇÃO (PDF / WHATSAPP) ── */
+        .section-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
             margin-bottom: 18px;
         }
+        .btn-acao {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 16px;
+            border-radius: 22px;
+            border: none;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: 0.15s;
+        }
+        .btn-pdf { background: #162650; border: 1.5px solid #2a4a8a; color: #8ba4d4; }
+        .btn-pdf:active { background: #1e3a7a; }
+        .btn-wpp { background: #0d2d18; border: 1.5px solid #166534; color: #4ade80; }
+        .btn-wpp:active { background: #144d28; }
 
         /* ── CARD BASE ── */
         .card {
@@ -122,244 +90,282 @@
             margin-bottom: 12px;
         }
         .card-icon {
-            width: 38px;
-            height: 38px;
+            width: 38px; height: 38px;
             border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
         }
-        .card-title {
-            font-size: 17px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-        .card-date {
-            font-size: 12px;
-            color: #5a7ab0;
-            margin-top: 2px;
-        }
+        .card-title { font-size: 17px; font-weight: 700; color: #ffffff; }
+        .card-date { font-size: 12px; color: #5a7ab0; margin-top: 2px; }
+        .card-body { font-size: 15px; color: #c8d8f0; line-height: 1.7; }
+        .card-body strong { color: #ffffff; }
+        .divider { border: none; border-top: 1px solid #1a2f5a; margin: 12px 0; }
+        .acordo-icon { background: #0d2d5e; }
 
         .tag {
-            display: inline-block;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 3px 9px;
-            border-radius: 20px;
+            display: inline-block; font-size: 11px; font-weight: 700;
+            padding: 3px 9px; border-radius: 20px;
         }
-        .tag-ativo { background: #0d3320; color: #4ade80; border: 1px solid #166534; }
+        .tag-ativo  { background: #0d3320; color: #4ade80; border: 1px solid #166534; }
         .tag-pendente { background: #3a2200; color: #fbbf24; border: 1px solid #854d0e; }
         .tag-revisao { background: #1e1035; color: #c084fc; border: 1px solid #6b21a8; }
 
-        .card-body {
+        /* ── BOTÃO EDITAR ── */
+        .btn-editar {
+            margin-left: auto;
+            background: #162650;
+            border: 1px solid #2a4a8a;
+            color: #8ba4d4;
+            border-radius: 8px;
+            padding: 6px 10px;
             font-size: 15px;
-            color: #c8d8f0;
-            line-height: 1.7;
-        }
-        .card-body strong { color: #ffffff; }
-
-        .divider {
-            border: none;
-            border-top: 1px solid #1a2f5a;
-            margin: 12px 0;
-        }
-
-        /* ── SEÇÃO 1: ACORDO SÓCIOS ── */
-        .acordo-icon { background: #0d2d5e; }
-
-        /* ── SEÇÃO 2: COLABORADORES ── */
-        .colab-card {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .avatar {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            font-weight: 700;
+            cursor: pointer;
             flex-shrink: 0;
+            -webkit-tap-highlight-color: transparent;
+            transition: 0.15s;
+        }
+        .btn-editar:active { background: #1e3a7a; }
+
+        /* ── CARREGANDO ── */
+        .loading { text-align: center; color: #5a7ab0; font-size: 15px; padding: 30px 0; }
+
+        /* ── PENDENTES ── */
+        .pendentes-titulo {
+            font-size: 15px; font-weight: 700; color: #c084fc;
+            margin-bottom: 10px; padding: 10px 14px;
+            background: #1e1035; border-radius: 10px;
+            border: 1px solid #6b21a8;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .card-pendente { border-color: #6b21a8; background: #130d24; }
+
+        .diff-wrap {
+            margin: 12px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .diff-bloco {
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+        .diff-antes { background: #1a0a0a; border: 1px solid #5a1a1a; }
+        .diff-depois { background: #0a1a0a; border: 1px solid #1a5a1a; }
+        .diff-label {
+            font-size: 11px; font-weight: 700; letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .diff-antes .diff-label { color: #f87171; }
+        .diff-depois .diff-label { color: #4ade80; }
+        .diff-item { font-size: 14px; color: #c8d8f0; margin-bottom: 6px; }
+        .diff-item:last-child { margin-bottom: 0; }
+        .diff-item strong { color: #ffffff; display: block; font-size: 13px; margin-bottom: 2px; }
+
+        .votos-wrap {
+            display: flex; gap: 8px; margin: 10px 0;
+        }
+        .voto-chip {
+            flex: 1; text-align: center; padding: 7px 6px;
+            border-radius: 8px; font-size: 13px; font-weight: 700;
+        }
+        .voto-aguarda { background: #1a1a2e; color: #5a7ab0; border: 1px solid #2a3a6a; }
+        .voto-sim     { background: #0d3320; color: #4ade80; border: 1px solid #166534; }
+        .voto-nao     { background: #3a0d0d; color: #f87171; border: 1px solid #6a1a1a; }
+
+        .acoes-pendente { display: flex; gap: 8px; margin-top: 12px; }
+        .btn-concordar {
+            flex: 1; padding: 11px; border-radius: 10px; border: none;
+            background: #0d3320; color: #4ade80; border: 1.5px solid #166534;
+            font-size: 15px; font-weight: 700; cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-concordar:active { background: #144d28; }
+        .btn-negar {
+            flex: 1; padding: 11px; border-radius: 10px; border: none;
+            background: #3a0d0d; color: #f87171; border: 1.5px solid #6a1a1a;
+            font-size: 15px; font-weight: 700; cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-negar:active { background: #5a1414; }
+        .voto-registrado {
+            margin-top: 10px; padding: 10px;
+            border-radius: 8px; font-size: 14px; text-align: center; font-weight: 700;
+            background: #0d1628; color: #7a96c8; border: 1px solid #1e3670;
+        }
+
+        /* ── MODAL DE EDIÇÃO ── */
+        .modal-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 500;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .modal-overlay.aberto { display: flex; }
+        .modal-box {
+            background: #111e3a;
+            border: 1px solid #2a4a8a;
+            border-radius: 20px 20px 0 0;
+            padding: 20px 18px 32px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-titulo {
+            font-size: 18px; font-weight: 700; color: #ffffff;
+            margin-bottom: 4px;
+        }
+        .modal-sub {
+            font-size: 13px; color: #5a7ab0;
+            margin-bottom: 18px;
+        }
+        .modal-campo { margin-bottom: 16px; }
+        .modal-campo label {
+            display: block; font-size: 13px; font-weight: 700;
+            color: #8ba4d4; margin-bottom: 6px;
+        }
+        .modal-campo textarea {
+            width: 100%; padding: 10px 12px;
+            background: #0d1628; border: 1.5px solid #2a4a8a;
+            border-radius: 10px; color: #e8edf5;
+            font-size: 15px; font-family: Arial, Helvetica, sans-serif;
+            resize: vertical; min-height: 72px; line-height: 1.5;
+        }
+        .modal-campo textarea:focus { outline: none; border-color: #3d70f5; }
+        .modal-btns { display: flex; gap: 10px; margin-top: 6px; }
+        .btn-modal-cancelar {
+            flex: 1; padding: 12px; border-radius: 12px;
+            background: #162650; border: 1px solid #2a4a8a;
+            color: #8ba4d4; font-size: 15px; font-weight: 700; cursor: pointer;
+        }
+        .btn-modal-propor {
+            flex: 2; padding: 12px; border-radius: 12px;
+            background: #1c4fd6; border: none;
+            color: #ffffff; font-size: 15px; font-weight: 700; cursor: pointer;
+        }
+        .btn-modal-propor:active { background: #1640b0; }
+
+        /* ── COLABORADORES ── */
+        .colab-card { display: flex; align-items: center; gap: 14px; }
+        .avatar {
+            width: 52px; height: 52px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; font-weight: 700; flex-shrink: 0;
         }
         .colab-info { flex: 1; }
-        .colab-nome {
-            font-size: 17px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-        .colab-cargo {
-            font-size: 14px;
-            color: #7a96c8;
-            margin-top: 2px;
-        }
-        .colab-rem {
-            font-size: 15px;
-            font-weight: 700;
-            color: #4ade80;
-            text-align: right;
-        }
-        .colab-rem-label {
-            font-size: 12px;
-            color: #5a7ab0;
-            text-align: right;
-        }
-        .colab-detalhe {
-            margin-top: 12px;
-            background: #0d1a36;
-            border-radius: 10px;
-            padding: 12px;
-        }
+        .colab-nome { font-size: 17px; font-weight: 700; color: #ffffff; }
+        .colab-cargo { font-size: 14px; color: #7a96c8; margin-top: 2px; }
+        .colab-rem { font-size: 15px; font-weight: 700; color: #4ade80; text-align: right; }
+        .colab-rem-label { font-size: 12px; color: #5a7ab0; text-align: right; }
+        .colab-detalhe { margin-top: 12px; background: #0d1a36; border-radius: 10px; padding: 12px; }
         .detalhe-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px solid #1a2f5a;
-            font-size: 14px;
+            display: flex; justify-content: space-between;
+            padding: 5px 0; border-bottom: 1px solid #1a2f5a; font-size: 14px;
         }
         .detalhe-row:last-child { border-bottom: none; }
         .detalhe-row .label { color: #7a96c8; }
         .detalhe-row .valor { color: #ffffff; font-weight: 700; }
 
-        /* ── SEÇÃO 3: REGRAS ── */
-        .regra-item {
-            display: flex;
-            gap: 12px;
-            padding: 12px 0;
-            border-bottom: 1px solid #1a2f5a;
-        }
+        /* ── REGRAS ── */
+        .regra-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #1a2f5a; }
         .regra-item:last-child { border-bottom: none; }
         .regra-num {
-            width: 30px;
-            height: 30px;
-            background: #1c4fd6;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-            font-weight: 700;
-            color: #ffffff;
-            flex-shrink: 0;
+            width: 30px; height: 30px; background: #1c4fd6; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; font-weight: 700; color: #ffffff; flex-shrink: 0;
         }
-        .regra-texto {
-            font-size: 15px;
-            color: #c8d8f0;
-            line-height: 1.6;
-            padding-top: 4px;
-        }
+        .regra-texto { font-size: 15px; color: #c8d8f0; line-height: 1.6; padding-top: 4px; }
         .regra-texto strong { color: #ffffff; display: block; margin-bottom: 2px; }
 
-        /* ── SEÇÃO 4: METAS ── */
-        .meta-prazo {
-            font-size: 13px;
-            color: #7a96c8;
-            margin-bottom: 8px;
-        }
-        .meta-prazo span {
-            color: #fbbf24;
-            font-weight: 700;
-        }
-        .progress-wrap {
-            background: #0a1628;
-            border-radius: 20px;
-            height: 10px;
-            overflow: hidden;
-            margin: 8px 0;
-        }
-        .progress-bar {
-            height: 100%;
-            border-radius: 20px;
-            transition: width 0.5s;
-        }
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-            color: #7a96c8;
-            margin-top: 4px;
-        }
+        /* ── METAS ── */
+        .meta-prazo { font-size: 13px; color: #7a96c8; margin-bottom: 8px; }
+        .meta-prazo span { color: #fbbf24; font-weight: 700; }
+        .progress-wrap { background: #0a1628; border-radius: 20px; height: 10px; overflow: hidden; margin: 8px 0; }
+        .progress-bar { height: 100%; border-radius: 20px; }
+        .progress-label { display: flex; justify-content: space-between; font-size: 13px; color: #7a96c8; margin-top: 4px; }
         .progress-label strong { color: #ffffff; }
 
-        /* ── SEÇÃO 5: DOCUMENTOS ── */
-        .doc-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 12px 0;
-            border-bottom: 1px solid #1a2f5a;
-        }
+        /* ── DOCUMENTOS ── */
+        .doc-item { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #1a2f5a; }
         .doc-item:last-child { border-bottom: none; }
         .doc-icon-wrap {
-            width: 44px;
-            height: 44px;
-            background: #0d2d5e;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            flex-shrink: 0;
+            width: 44px; height: 44px; background: #0d2d5e; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
         }
-        .doc-name {
-            font-size: 16px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-        .doc-meta {
-            font-size: 13px;
-            color: #5a7ab0;
-            margin-top: 2px;
-        }
+        .doc-name { font-size: 16px; font-weight: 700; color: #ffffff; }
+        .doc-meta { font-size: 13px; color: #5a7ab0; margin-top: 2px; }
         .doc-action {
-            margin-left: auto;
-            background: #162650;
-            border: 1px solid #1e3670;
-            color: #8ba4d4;
-            border-radius: 8px;
-            padding: 6px 12px;
-            font-size: 13px;
-            cursor: pointer;
+            margin-left: auto; background: #162650;
+            border: 1px solid #1e3670; color: #8ba4d4;
+            border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer;
         }
 
-        /* ── BOTTOM NAV FIXO ── */
+        /* ── BOTTOM BAR ── */
         .bottom-bar {
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            max-width: 600px;
-            background: #0d1f4a;
-            border-top: 1px solid #1a3d8a;
-            padding: 10px 16px;
-            display: flex;
-            justify-content: space-between;
-            gap: 6px;
-            z-index: 200;
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 600px;
+            background: #0d1f4a; border-top: 1px solid #1a3d8a;
+            padding: 10px 16px; display: flex; justify-content: space-between; gap: 6px; z-index: 200;
         }
         .bottom-btn {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3px;
-            padding: 8px 4px;
-            background: none;
-            border: none;
-            color: #5a7ab0;
-            font-size: 11px;
-            cursor: pointer;
-            border-radius: 10px;
-            transition: all 0.2s;
+            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+            padding: 8px 4px; background: none; border: none;
+            color: #5a7ab0; font-size: 11px; cursor: pointer;
+            border-radius: 10px; transition: all 0.2s;
             -webkit-tap-highlight-color: transparent;
         }
         .bottom-btn .icon { font-size: 20px; }
         .bottom-btn.active { color: #3d70f5; background: #111e3a; }
+
+        /* ══════════════════════════════════
+           IMPRESSÃO — formato Gov.br
+           ══════════════════════════════════ */
+        @media print {
+            * { box-sizing: border-box; }
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-family: 'Times New Roman', Times, serif;
+                font-size: 12pt;
+                display: block;
+            }
+            .app { max-width: 100%; padding: 0; }
+            .header, .bottom-bar, .section-actions,
+            .btn-editar, .acoes-pendente, .modal-overlay,
+            #colaboradores, #regras, #metas, #documentos,
+            #secaoPendentes { display: none !important; }
+
+            #socios { display: block !important; padding: 0; }
+            .section-title, .section-sub { display: none; }
+
+            #print-header { display: block !important; }
+            #print-footer { display: block !important; }
+
+            .card {
+                background: #ffffff !important;
+                border: 1px solid #cccccc !important;
+                border-radius: 0 !important;
+                padding: 12px 0 !important;
+                margin-bottom: 0 !important;
+                page-break-inside: avoid;
+            }
+            .card + .card { border-top: none !important; }
+            .card-header { margin-bottom: 8px; }
+            .card-icon { display: none; }
+            .card-title {
+                font-size: 13pt !important; font-weight: bold !important;
+                color: #000000 !important;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .card-date { display: none; }
+            .tag { display: none; }
+            .card-body { font-size: 11pt !important; color: #000000 !important; line-height: 1.8 !important; }
+            .card-body strong { color: #000000 !important; }
+            .divider { border-top: 1px solid #cccccc !important; margin: 8px 0 !important; }
+        }
     </style>
 </head>
 <body>
@@ -374,99 +380,64 @@
         </div>
     </div>
 
-    <!-- NAV BOTÕES -->
-    <nav class="nav">
-        <button class="nav-btn active" onclick="showSection('socios', this)">
-            <span class="nav-icon">🤝</span> Sócios
-        </button>
-        <button class="nav-btn" onclick="showSection('colaboradores', this)">
-            <span class="nav-icon">👥</span> Equipe
-        </button>
-        <button class="nav-btn" onclick="showSection('regras', this)">
-            <span class="nav-icon">📋</span> Regras
-        </button>
-        <button class="nav-btn" onclick="showSection('metas', this)">
-            <span class="nav-icon">🎯</span> Metas
-        </button>
-        <button class="nav-btn" onclick="showSection('documentos', this)">
-            <span class="nav-icon">📄</span> Docs
-        </button>
-    </nav>
-
-    <!-- ═══════════════════════════════════ -->
-    <!-- SEÇÃO 1 — ACORDO ENTRE SÓCIOS       -->
-    <!-- ═══════════════════════════════════ -->
-    <div id="socios" class="section active">
-        <div class="section-title">Acordo entre Sócios</div>
-        <div class="section-sub">Termos e combinados firmados entre os sócios da Play Diversões</div>
-
-        <div class="card">
-            <div class="card-header">
-                <div class="card-icon acordo-icon">⚖️</div>
-                <div>
-                    <div class="card-title">Divisão Societária</div>
-                    <div class="card-date">Definido em Jan 2025 · <span class="tag tag-ativo">Ativo</span></div>
-                </div>
-            </div>
-            <div class="card-body">
-                <strong>Participação:</strong> Anderson <strong>60%</strong> · João <strong>40%</strong> sobre o lucro líquido mensal após dedução de todas as despesas operacionais.
-                <hr class="divider">
-                <strong>Retiradas:</strong> Realizadas todo dia 5 do mês seguinte, mediante saldo positivo em caixa.
-            </div>
+    <!-- CABEÇALHO DE IMPRESSÃO (oculto na tela) -->
+    <div id="print-header" style="display:none; padding: 0 0 20px 0; border-bottom: 2px solid #000; margin-bottom: 20px;">
+        <div style="text-align:center;">
+            <div style="font-size:16pt; font-weight:bold; letter-spacing:1px;">PLAY DIVERSÕES</div>
+            <div style="font-size:11pt; margin-top:4px;">ACORDO ENTRE SÓCIOS</div>
+            <div id="print-data" style="font-size:10pt; margin-top:8px; color:#444;"></div>
         </div>
-
-        <div class="card">
-            <div class="card-header">
-                <div class="card-icon acordo-icon">🏗️</div>
-                <div>
-                    <div class="card-title">Responsabilidades</div>
-                    <div class="card-date">Definido em Jan 2025 · <span class="tag tag-ativo">Ativo</span></div>
-                </div>
-            </div>
-            <div class="card-body">
-                <strong>Sócio A — Operacional:</strong> Gestão de rotas, atendimentos, manutenções e logística diária das máquinas.
-                <hr class="divider">
-                <strong>Sócio B — Administrativo:</strong> Financeiro, relacionamento com clientes, contratos e expansão.
-            </div>
+        <div style="margin-top:16px; font-size:11pt; line-height:2;">
+            <div><strong>SÓCIO A:</strong> <span id="print-socio-a"></span></div>
+            <div><strong>SÓCIO B:</strong> <span id="print-socio-b"></span></div>
         </div>
-
-        <div class="card">
-            <div class="card-header">
-                <div class="card-icon acordo-icon">🔒</div>
-                <div>
-                    <div class="card-title">Decisões Estratégicas</div>
-                    <div class="card-date">Definido em Fev 2025 · <span class="tag tag-ativo">Ativo</span></div>
-                </div>
-            </div>
-            <div class="card-body">
-                Qualquer decisão que envolva investimento acima de <strong>R$ 1.000,00</strong> ou alteração de contrato com cliente deve ser aprovada por <strong>ambos os sócios</strong>.
-                <hr class="divider">
-                Novas contratações e demissões seguem a mesma regra de aprovação conjunta.
-            </div>
+        <div style="margin-top:10px; font-size:10pt; color:#555;">
+            As partes acima celebram o presente Acordo entre Sócios, comprometendo-se a cumprir
+            integralmente as cláusulas descritas neste documento.
         </div>
+    </div>
 
-        <div class="card">
-            <div class="card-header">
-                <div class="card-icon acordo-icon">🚪</div>
-                <div>
-                    <div class="card-title">Saída de Sócio</div>
-                    <div class="card-date">Definido em Fev 2025 · <span class="tag tag-revisao">Em Revisão</span></div>
-                </div>
-            </div>
-            <div class="card-body">
-                Em caso de saída, o sócio tem direito à sua participação avaliada com base no patrimônio líquido da empresa no mês da saída, com prazo de pagamento de até <strong>12 meses</strong>.
+    <!-- MODAL DE EDIÇÃO -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box">
+            <div class="modal-titulo" id="modalTitulo">Editar Cláusula</div>
+            <div class="modal-sub">A alteração ficará em revisão até que os dois sócios concordem.</div>
+            <div id="modalCampos"></div>
+            <div class="modal-btns">
+                <button class="btn-modal-cancelar" onclick="fecharModal()">Cancelar</button>
+                <button class="btn-modal-propor" onclick="submeterAlteracao()">Propor Alteração</button>
             </div>
         </div>
     </div>
 
     <!-- ═══════════════════════════════════ -->
-    <!-- SEÇÃO 2 — COLABORADORES              -->
+    <!-- SEÇÃO 1 — SÓCIOS (Firebase)         -->
+    <!-- ═══════════════════════════════════ -->
+    <div id="socios" class="section active">
+        <div class="section-title">Acordo entre Sócios</div>
+        <div class="section-sub">Termos e combinados firmados entre os sócios da Play Diversões</div>
+
+        <div class="section-actions">
+            <button class="btn-acao btn-pdf" onclick="gerarPDF()">📄 Gerar PDF</button>
+            <button class="btn-acao btn-wpp" onclick="compartilharWhatsApp()">💬 Compartilhar</button>
+        </div>
+
+        <!-- Pendentes -->
+        <div id="secaoPendentes"></div>
+
+        <!-- Cláusulas ativas -->
+        <div id="secaoAtivos">
+            <div class="loading">Carregando acordos...</div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- SEÇÃO 2 — COLABORADORES (estático)  -->
     <!-- ═══════════════════════════════════ -->
     <div id="colaboradores" class="section">
         <div class="section-title">Equipe & Remuneração</div>
         <div class="section-sub">Contratos e formas de pagamento de cada colaborador</div>
 
-        <!-- Colaborador 1 -->
         <div class="card">
             <div class="colab-card">
                 <div class="avatar" style="background:#0d3320; color:#4ade80;">JC</div>
@@ -487,7 +458,6 @@
             </div>
         </div>
 
-        <!-- Colaborador 2 -->
         <div class="card">
             <div class="colab-card">
                 <div class="avatar" style="background:#2d0d5e; color:#c084fc;">MF</div>
@@ -508,7 +478,6 @@
             </div>
         </div>
 
-        <!-- Colaborador 3 -->
         <div class="card">
             <div class="colab-card">
                 <div class="avatar" style="background:#2d1a00; color:#fbbf24;">RS</div>
@@ -531,190 +500,132 @@
     </div>
 
     <!-- ═══════════════════════════════════ -->
-    <!-- SEÇÃO 3 — REGRAS DA EMPRESA         -->
+    <!-- SEÇÃO 3 — REGRAS (estático)         -->
     <!-- ═══════════════════════════════════ -->
     <div id="regras" class="section">
         <div class="section-title">Regras da Empresa</div>
         <div class="section-sub">Normas internas combinadas entre os sócios</div>
-
         <div class="card">
             <div class="regra-item">
                 <div class="regra-num">1</div>
-                <div class="regra-texto">
-                    <strong>Registro obrigatório de atendimento</strong>
-                    Todo atendimento em máquina deve ser registrado no app antes de sair do local. Sem exceções.
-                </div>
+                <div class="regra-texto"><strong>Registro obrigatório de atendimento</strong>Todo atendimento em máquina deve ser registrado no app antes de sair do local. Sem exceções.</div>
             </div>
             <div class="regra-item">
                 <div class="regra-num">2</div>
-                <div class="regra-texto">
-                    <strong>Pagamentos apenas via Pix</strong>
-                    Nenhum pagamento de cliente deve ser aceito em dinheiro vivo. Todo recebimento deve gerar registro no sistema.
-                </div>
+                <div class="regra-texto"><strong>Pagamentos apenas via Pix</strong>Nenhum pagamento de cliente deve ser aceito em dinheiro vivo. Todo recebimento deve gerar registro no sistema.</div>
             </div>
             <div class="regra-item">
                 <div class="regra-num">3</div>
-                <div class="regra-texto">
-                    <strong>Retirada de sócios somente com saldo positivo</strong>
-                    Não é permitido retirar lucro se o caixa do mês ainda estiver negativo ou em aberto.
-                </div>
+                <div class="regra-texto"><strong>Retirada de sócios somente com saldo positivo</strong>Não é permitido retirar lucro se o caixa do mês ainda estiver negativo ou em aberto.</div>
             </div>
             <div class="regra-item">
                 <div class="regra-num">4</div>
-                <div class="regra-texto">
-                    <strong>Manutenção preventiva mensal</strong>
-                    Cada máquina deve receber revisão completa uma vez por mês, independente de chamado.
-                </div>
+                <div class="regra-texto"><strong>Manutenção preventiva mensal</strong>Cada máquina deve receber revisão completa uma vez por mês, independente de chamado.</div>
             </div>
             <div class="regra-item">
                 <div class="regra-num">5</div>
-                <div class="regra-texto">
-                    <strong>Comunicação de problemas em até 2h</strong>
-                    Qualquer falha em máquina comunicada por cliente deve ter resposta registrada em até 2 horas úteis.
-                </div>
+                <div class="regra-texto"><strong>Comunicação de problemas em até 2h</strong>Qualquer falha em máquina comunicada por cliente deve ter resposta registrada em até 2 horas úteis.</div>
             </div>
             <div class="regra-item">
                 <div class="regra-num">6</div>
-                <div class="regra-texto">
-                    <strong>Estoque mínimo sempre abastecido</strong>
-                    O estoque de produto não pode ficar abaixo de 30% sem que um pedido de reposição já esteja feito.
-                </div>
+                <div class="regra-texto"><strong>Estoque mínimo sempre abastecido</strong>O estoque de produto não pode ficar abaixo de 30% sem que um pedido de reposição já esteja feito.</div>
             </div>
         </div>
     </div>
 
     <!-- ═══════════════════════════════════ -->
-    <!-- SEÇÃO 4 — METAS                     -->
+    <!-- SEÇÃO 4 — METAS (estático)          -->
     <!-- ═══════════════════════════════════ -->
     <div id="metas" class="section">
         <div class="section-title">Metas</div>
         <div class="section-sub">Objetivos da empresa por período</div>
-
-        <!-- Meta 1 -->
         <div class="card">
             <div class="card-header">
                 <div class="card-icon" style="background:#0d2d5e;">📈</div>
-                <div>
-                    <div class="card-title">Faturamento Mensal</div>
-                    <div class="card-date">Meta para Maio/2025</div>
-                </div>
+                <div><div class="card-title">Faturamento Mensal</div><div class="card-date">Meta para Maio/2025</div></div>
             </div>
             <div class="meta-prazo">Prazo: <span>31/05/2025</span></div>
-            <div class="progress-wrap">
-                <div class="progress-bar" style="width: 72%; background: linear-gradient(90deg, #1c4fd6, #3d70f5);"></div>
-            </div>
-            <div class="progress-label">
-                <span>R$ 14.400 de R$ 20.000</span>
-                <strong>72%</strong>
-            </div>
+            <div class="progress-wrap"><div class="progress-bar" style="width:72%;background:linear-gradient(90deg,#1c4fd6,#3d70f5);"></div></div>
+            <div class="progress-label"><span>R$ 14.400 de R$ 20.000</span><strong>72%</strong></div>
         </div>
-
-        <!-- Meta 2 -->
         <div class="card">
             <div class="card-header">
                 <div class="card-icon" style="background:#0d3320;">🏪</div>
-                <div>
-                    <div class="card-title">Novos Pontos de Máquina</div>
-                    <div class="card-date">Meta para 2025</div>
-                </div>
+                <div><div class="card-title">Novos Pontos de Máquina</div><div class="card-date">Meta para 2025</div></div>
             </div>
             <div class="meta-prazo">Prazo: <span>31/12/2025</span></div>
-            <div class="progress-wrap">
-                <div class="progress-bar" style="width: 40%; background: linear-gradient(90deg, #166534, #4ade80);"></div>
-            </div>
-            <div class="progress-label">
-                <span>4 de 10 pontos</span>
-                <strong>40%</strong>
-            </div>
+            <div class="progress-wrap"><div class="progress-bar" style="width:40%;background:linear-gradient(90deg,#166534,#4ade80);"></div></div>
+            <div class="progress-label"><span>4 de 10 pontos</span><strong>40%</strong></div>
         </div>
-
-        <!-- Meta 3 -->
         <div class="card">
             <div class="card-header">
                 <div class="card-icon" style="background:#2d0d5e;">⭐</div>
-                <div>
-                    <div class="card-title">Satisfação de Clientes</div>
-                    <div class="card-date">Avaliação contínua 2025</div>
-                </div>
+                <div><div class="card-title">Satisfação de Clientes</div><div class="card-date">Avaliação contínua 2025</div></div>
             </div>
             <div class="meta-prazo">Prazo: <span>Contínuo</span></div>
-            <div class="progress-wrap">
-                <div class="progress-bar" style="width: 88%; background: linear-gradient(90deg, #6b21a8, #c084fc);"></div>
-            </div>
-            <div class="progress-label">
-                <span>88% de aprovação</span>
-                <strong>Meta: 90%</strong>
-            </div>
+            <div class="progress-wrap"><div class="progress-bar" style="width:88%;background:linear-gradient(90deg,#6b21a8,#c084fc);"></div></div>
+            <div class="progress-label"><span>88% de aprovação</span><strong>Meta: 90%</strong></div>
         </div>
-
-        <!-- Meta 4 -->
         <div class="card">
             <div class="card-header">
                 <div class="card-icon" style="background:#2d1a00;">💰</div>
-                <div>
-                    <div class="card-title">Reserva de Emergência</div>
-                    <div class="card-date">Meta financeira</div>
-                </div>
+                <div><div class="card-title">Reserva de Emergência</div><div class="card-date">Meta financeira</div></div>
             </div>
             <div class="meta-prazo">Prazo: <span>30/06/2025</span></div>
-            <div class="progress-wrap">
-                <div class="progress-bar" style="width: 55%; background: linear-gradient(90deg, #854d0e, #fbbf24);"></div>
-            </div>
-            <div class="progress-label">
-                <span>R$ 5.500 de R$ 10.000</span>
-                <strong>55%</strong>
-            </div>
+            <div class="progress-wrap"><div class="progress-bar" style="width:55%;background:linear-gradient(90deg,#854d0e,#fbbf24);"></div></div>
+            <div class="progress-label"><span>R$ 5.500 de R$ 10.000</span><strong>55%</strong></div>
         </div>
     </div>
 
     <!-- ═══════════════════════════════════ -->
-    <!-- SEÇÃO 5 — DOCUMENTOS                -->
+    <!-- SEÇÃO 5 — DOCUMENTOS (estático)     -->
     <!-- ═══════════════════════════════════ -->
     <div id="documentos" class="section">
         <div class="section-title">Documentos & Contratos</div>
         <div class="section-sub">Arquivos e contratos importantes da empresa</div>
-
         <div class="card">
             <div class="doc-item">
                 <div class="doc-icon-wrap">📑</div>
-                <div>
-                    <div class="doc-name">Contrato Social</div>
-                    <div class="doc-meta">PDF · Atualizado em Jan 2025</div>
-                </div>
+                <div><div class="doc-name">Contrato Social</div><div class="doc-meta">PDF · Atualizado em Jan 2025</div></div>
                 <button class="doc-action">Ver</button>
             </div>
             <div class="doc-item">
                 <div class="doc-icon-wrap">🤝</div>
-                <div>
-                    <div class="doc-name">Acordo de Sócios</div>
-                    <div class="doc-meta">PDF · Assinado em Fev 2025</div>
-                </div>
+                <div><div class="doc-name">Acordo de Sócios</div><div class="doc-meta">PDF · Assinado em Fev 2025</div></div>
                 <button class="doc-action">Ver</button>
             </div>
             <div class="doc-item">
                 <div class="doc-icon-wrap">👤</div>
-                <div>
-                    <div class="doc-name">Contrato João Carlos</div>
-                    <div class="doc-meta">PDF · CLT · Mar 2025</div>
-                </div>
+                <div><div class="doc-name">Contrato João Carlos</div><div class="doc-meta">PDF · CLT · Mar 2025</div></div>
                 <button class="doc-action">Ver</button>
             </div>
             <div class="doc-item">
                 <div class="doc-icon-wrap">📋</div>
-                <div>
-                    <div class="doc-name">Modelo Contrato Ponto</div>
-                    <div class="doc-meta">DOCX · Versão 2.1</div>
-                </div>
+                <div><div class="doc-name">Modelo Contrato Ponto</div><div class="doc-meta">DOCX · Versão 2.1</div></div>
                 <button class="doc-action">Ver</button>
             </div>
             <div class="doc-item">
                 <div class="doc-icon-wrap">🏛️</div>
-                <div>
-                    <div class="doc-name">CNPJ & Alvará</div>
-                    <div class="doc-meta">PDF · Vencimento: Dez 2025</div>
-                </div>
+                <div><div class="doc-name">CNPJ & Alvará</div><div class="doc-meta">PDF · Vencimento: Dez 2025</div></div>
                 <button class="doc-action">Ver</button>
             </div>
+        </div>
+    </div>
+
+    <!-- RODAPÉ IMPRESSÃO (oculto na tela) -->
+    <div id="print-footer" style="display:none; margin-top:40px; border-top:1px solid #000; padding-top:20px;">
+        <div style="display:flex; justify-content:space-between; gap:40px; margin-top:30px;">
+            <div style="flex:1; text-align:center;">
+                <div style="border-top:1px solid #000; padding-top:8px; font-size:11pt;" id="print-ass-a"></div>
+                <div style="font-size:10pt; color:#444;">Sócio A</div>
+            </div>
+            <div style="flex:1; text-align:center;">
+                <div style="border-top:1px solid #000; padding-top:8px; font-size:11pt;" id="print-ass-b"></div>
+                <div style="font-size:10pt; color:#444;">Sócio B</div>
+            </div>
+        </div>
+        <div style="text-align:center; margin-top:24px; font-size:9pt; color:#666;">
+            Documento gerado para autenticação via <strong>assinatura.gov.br</strong>
         </div>
     </div>
 
@@ -722,43 +633,361 @@
 
 <!-- BOTTOM BAR -->
 <div class="bottom-bar">
-    <button class="bottom-btn active" onclick="showSection('socios', null, 0)">
+    <button class="bottom-btn active" onclick="showSection('socios',0)">
         <span class="icon">🤝</span> Sócios
     </button>
-    <button class="bottom-btn" onclick="showSection('colaboradores', null, 1)">
+    <button class="bottom-btn" onclick="showSection('colaboradores',1)">
         <span class="icon">👥</span> Equipe
     </button>
-    <button class="bottom-btn" onclick="showSection('regras', null, 2)">
+    <button class="bottom-btn" onclick="showSection('regras',2)">
         <span class="icon">📋</span> Regras
     </button>
-    <button class="bottom-btn" onclick="showSection('metas', null, 3)">
+    <button class="bottom-btn" onclick="showSection('metas',3)">
         <span class="icon">🎯</span> Metas
     </button>
-    <button class="bottom-btn" onclick="showSection('documentos', null, 4)">
+    <button class="bottom-btn" onclick="showSection('documentos',4)">
         <span class="icon">📄</span> Docs
     </button>
 </div>
 
+<script src="assets/js/play-dialogs.js"></script>
+
+<!-- ── SCRIPTS ── -->
 <script>
-    const sections = ['socios', 'colaboradores', 'regras', 'metas', 'documentos'];
-    const navBtns = document.querySelectorAll('.nav-btn');
-    const bottomBtns = document.querySelectorAll('.bottom-btn');
+    const _sections = ['socios','colaboradores','regras','metas','documentos'];
+    const _bottomBtns = document.querySelectorAll('.bottom-btn');
 
-    function showSection(id, navBtn, bottomIdx) {
-        sections.forEach(s => {
-            document.getElementById(s).classList.remove('active');
-        });
+    function showSection(id, idx) {
+        _sections.forEach(s => document.getElementById(s).classList.remove('active'));
         document.getElementById(id).classList.add('active');
-
-        navBtns.forEach(b => b.classList.remove('active'));
-        bottomBtns.forEach(b => b.classList.remove('active'));
-
-        const idx = sections.indexOf(id);
-        if (navBtns[idx]) navBtns[idx].classList.add('active');
-        if (bottomBtns[idx]) bottomBtns[idx].classList.add('active');
-
+        _bottomBtns.forEach(b => b.classList.remove('active'));
+        if (_bottomBtns[idx]) _bottomBtns[idx].classList.add('active');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    function fecharModal() {
+        document.getElementById('modalOverlay').classList.remove('aberto');
+        const btn = document.querySelector('.btn-modal-propor');
+        if (btn) { btn.textContent = 'Propor Alteração'; btn.disabled = false; }
+    }
+
+    function gerarPDF() {
+        const data = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+        document.getElementById('print-data').textContent = data;
+        document.getElementById('print-socio-a').textContent = 'Anderson — 60%';
+        document.getElementById('print-socio-b').textContent = 'João — 40%';
+        document.getElementById('print-ass-a').textContent = 'Anderson';
+        document.getElementById('print-ass-b').textContent = 'João';
+        window.print();
+    }
+
+    function compartilharWhatsApp() {
+        if (window._compartilharTexto) {
+            window._compartilharTexto();
+        }
+    }
+</script>
+
+<script type="module">
+    import {
+        dbEscutarColaboradores,
+        dbEscutarContratosSocios,
+        dbInicializarContratosSociosSeNecessario,
+        dbProporAlteracaoContrato,
+        dbResponderAlteracaoContrato
+    } from './database.js';
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
+
+    /* ── DADOS PADRÃO — corpo em HTML para preservar formatação original ── */
+    const CLAUSULAS_INICIAIS = {
+        divisao: {
+            titulo: 'Divisão Societária',
+            icone: '⚖️',
+            data_definicao: 'Jan 2025',
+            corpo: '<strong>Participação:</strong> Anderson <strong>60%</strong> · João <strong>40%</strong> sobre o lucro líquido mensal após dedução de todas as despesas operacionais.<hr class="divider"><strong>Retiradas:</strong> Realizadas todo dia 5 do mês seguinte, mediante saldo positivo em caixa.'
+        },
+        responsabilidades: {
+            titulo: 'Responsabilidades',
+            icone: '🏗️',
+            data_definicao: 'Jan 2025',
+            corpo: '<strong>Sócio A — Operacional:</strong> Gestão de rotas, atendimentos, manutenções e logística diária das máquinas.<hr class="divider"><strong>Sócio B — Administrativo:</strong> Financeiro, relacionamento com clientes, contratos e expansão.'
+        },
+        decisoes: {
+            titulo: 'Decisões Estratégicas',
+            icone: '🔒',
+            data_definicao: 'Fev 2025',
+            corpo: 'Qualquer decisão que envolva investimento acima de <strong>R$ 1.000,00</strong> ou alteração de contrato com cliente deve ser aprovada por <strong>ambos os sócios</strong>.<hr class="divider">Novas contratações e demissões seguem a mesma regra de aprovação conjunta.'
+        },
+        saida: {
+            titulo: 'Saída de Sócio',
+            icone: '🚪',
+            data_definicao: 'Fev 2025',
+            corpo: 'Em caso de saída, o sócio tem direito à sua participação avaliada com base no patrimônio líquido da empresa no mês da saída, com prazo de pagamento de até <strong>12 meses</strong>.'
+        }
+    };
+
+    const ORDEM_CLAUSULAS = ['divisao', 'responsabilidades', 'decisoes', 'saida'];
+
+    /* ── ESTADO ── */
+    let _estado = {};
+    let _clausulaEditando = null;
+
+    /* ── IDENTIFICAR SÓCIOS ── */
+    function normalizarTexto(valor) {
+        return String(valor || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
+    }
+
+    function gerarIdAprovador(nome) {
+        return normalizarTexto(nome)
+            .replace(/[.#$/[\]]/g, '')
+            .replace(/\s+/g, '_');
+    }
+
+    function obterColaboradoresCache() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
+            if (Array.isArray(parsed)) return parsed;
+            if (Array.isArray(parsed?.dados)) return parsed.dados;
+            if (parsed && typeof parsed === 'object') return Object.values(parsed);
+        } catch (erro) {
+            console.warn('Nao foi possivel ler cache_colaboradores:', erro);
+        }
+        return [];
+    }
+
+    function obterSociosAprovadores() {
+        return obterColaboradoresCache()
+            .filter(c => normalizarTexto(c?.cargo) === 'socio')
+            .map(c => {
+                const nome = String(c?.nome || '').trim();
+                return { id: gerarIdAprovador(nome), nome };
+            })
+            .filter(item => item.id && item.nome);
+    }
+
+    function obterAprovadorLogado() {
+        const nome = String(localStorage.getItem('usuarioLogado') || '').trim();
+        return { id: gerarIdAprovador(nome), nome };
+    }
+
+    /* ── UTILITÁRIOS ── */
+    function formatarData(iso) {
+        if (!iso) return '';
+        try { return new Date(iso).toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' }); }
+        catch { return iso; }
+    }
+
+    function corpoParaTexto(corpo) {
+        return (corpo || '')
+            .replace(/<hr[^>]*>/gi, '\n\n')
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<[^>]+>/g, '')
+            .trim();
+    }
+
+    function textoParaCorpo(texto) {
+        return texto.split(/\n\n+/)
+            .map((p, i) => {
+                const bloco = p.trim().replace(/\n/g, '<br>');
+                return i === 0 ? bloco : `<hr class="divider">${bloco}`;
+            })
+            .join('');
+    }
+
+    function renderVotoChip(voto, nome) {
+        if (voto === true)  return `<div class="voto-chip voto-sim">✓ ${nome} concordou</div>`;
+        if (voto === false) return `<div class="voto-chip voto-nao">✕ ${nome} negou</div>`;
+        return `<div class="voto-chip voto-aguarda">⏳ ${nome} aguardando</div>`;
+    }
+
+    /* ── RENDERIZAR CLÁUSULAS ATIVAS ── */
+    function renderizarAtivos(socios, pendentes = {}) {
+        const container = document.getElementById('secaoAtivos');
+        const clausulasEmRevisao = new Set(
+            Object.values(pendentes || {})
+                .map(p => p?.clausulaId)
+                .filter(Boolean)
+        );
+        container.innerHTML = ORDEM_CLAUSULAS.filter(id => !clausulasEmRevisao.has(id)).map(id => {
+            const c = socios[id] || CLAUSULAS_INICIAIS[id];
+            const atualizado = c.atualizadoEm ? ` · Atualizado ${formatarData(c.atualizadoEm)}` : '';
+            return `
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon acordo-icon">${c.icone}</div>
+                    <div style="flex:1">
+                        <div class="card-title">${c.titulo}</div>
+                        <div class="card-date">Definido em ${c.data_definicao}${atualizado} · <span class="tag tag-ativo">Ativo</span></div>
+                    </div>
+                    <button class="btn-editar" onclick="window._abrirEdicao('${id}')" title="Editar">✏️</button>
+                </div>
+                <div class="card-body">${c.corpo}</div>
+            </div>`;
+        }).join('');
+    }
+
+    /* ── RENDERIZAR PENDENTES ── */
+    function renderizarPendentes(pendentes) {
+        const container = document.getElementById('secaoPendentes');
+        const entries = Object.entries(pendentes || {});
+        if (entries.length === 0) { container.innerHTML = ''; return; }
+        const sociosAprovadores = obterSociosAprovadores();
+        const aprovadorLogado = obterAprovadorLogado();
+        const aprovadorLogadoAtivo = sociosAprovadores.some(s => s.id === aprovadorLogado.id);
+
+        const cards = entries.map(([pid, p]) => {
+            const apr = p.aprovacoes || {};
+            const pendenteFormatoNovo = Array.isArray(p.aprovadores) && p.aprovadores.length;
+            const aprovadores = pendenteFormatoNovo
+                ? p.aprovadores
+                : sociosAprovadores;
+            const meuVoto = apr[aprovadorLogado.id];
+            const quemProps = p.proposto_por === aprovadorLogado.id ? 'Você' : (p.proposto_por_nome || 'Outro sócio');
+            const votosHtml = aprovadores
+                .map(socio => renderVotoChip(apr[socio.id], socio.nome))
+                .join('');
+
+            const antesTexto = corpoParaTexto(p.valor_antigo?.corpo)
+                .split('\n').filter(l => l.trim())
+                .map(l => `<div class="diff-item">${l}</div>`).join('');
+            const depoisTexto = corpoParaTexto(p.valor_novo?.corpo)
+                .split('\n').filter(l => l.trim())
+                .map(l => `<div class="diff-item">${l}</div>`).join('');
+
+            const botoesOuStatus = !pendenteFormatoNovo
+                ? `<div class="voto-registrado">Proposta em formato antigo. Apague e crie novamente.</div>`
+                : !aprovadorLogadoAtivo
+                ? `<div class="voto-registrado">Somente usuários com cargo Sócio podem responder</div>`
+                : (meuVoto === null || meuVoto === undefined)
+                ? `<div class="acoes-pendente">
+                       <button class="btn-concordar" onclick="window._responder('${pid}', true)">✓ Concordar</button>
+                       <button class="btn-negar" onclick="window._responder('${pid}', false)">✕ Negar</button>
+                   </div>`
+                : `<div class="voto-registrado">${meuVoto ? '✓ Você concordou' : '✕ Você negou'}</div>`;
+
+            return `
+            <div class="card card-pendente">
+                <div class="card-header">
+                    <div class="card-icon" style="background:#2a1060;">⏳</div>
+                    <div style="flex:1">
+                        <div class="card-title" style="font-size:14px; color:#c084fc;">Proposta de alteração</div>
+                        <div class="card-date" style="font-size:13px; color:#e8edf5; font-weight:700;">${p.titulo || 'Cláusula'}</div>
+                        <div class="card-date">Por ${quemProps} · ${formatarData(p.data)}</div>
+                    </div>
+                    <span class="tag tag-revisao">Em Revisão</span>
+                </div>
+                <div class="diff-wrap">
+                    <div class="diff-bloco diff-antes"><div class="diff-label">ANTES</div>${antesTexto}</div>
+                    <div class="diff-bloco diff-depois"><div class="diff-label">DEPOIS</div>${depoisTexto}</div>
+                </div>
+                <div class="votos-wrap">
+                    ${votosHtml}
+                </div>
+                ${botoesOuStatus}
+            </div>`;
+        }).join('');
+
+        container.innerHTML = `<div class="pendentes-titulo">⏳ Alterações em Revisão</div>${cards}`;
+    }
+
+    /* ── ABRIR MODAL ── */
+    window._abrirEdicao = function(clausulaId) {
+        const socios = _estado.ativos?.socios || {};
+        const c = socios[clausulaId] || CLAUSULAS_INICIAIS[clausulaId];
+        _clausulaEditando = { id: clausulaId, clausula: c };
+
+        document.getElementById('modalTitulo').textContent = `Editar: ${c.titulo}`;
+        document.getElementById('modalCampos').innerHTML = `
+            <div class="modal-campo">
+                <label>Conteúdo</label>
+                <textarea id="corpoedit" rows="6">${corpoParaTexto(c.corpo)}</textarea>
+            </div>
+            <div style="font-size:12px;color:#5a7ab0;margin-bottom:8px;">
+                Separe os itens com uma linha em branco para criar divisórias.
+            </div>`;
+        document.getElementById('modalOverlay').classList.add('aberto');
+    };
+
+    /* ── SUBMETER ALTERAÇÃO ── */
+    window.submeterAlteracao = async function() {
+        if (!_clausulaEditando) return;
+        const { id, clausula } = _clausulaEditando;
+        const textoNovo = document.getElementById('corpoedit')?.value.trim() || '';
+        const textoAtual = corpoParaTexto(clausula.corpo);
+        if (textoNovo === textoAtual) { fecharModal(); return; }
+        const sociosAprovadores = obterSociosAprovadores();
+        const aprovadorLogado = obterAprovadorLogado();
+        const aprovacoes = Object.fromEntries(sociosAprovadores.map(socio => [socio.id, null]));
+        if (sociosAprovadores.length === 0) {
+            alert('Cadastre pelo menos um usuário com cargo Sócio antes de propor alteração.');
+            return;
+        }
+
+        const btn = document.querySelector('.btn-modal-propor');
+        btn.textContent = 'Enviando...';
+        btn.disabled = true;
+        try {
+            await dbProporAlteracaoContrato({
+                clausulaId: id,
+                titulo: clausula.titulo,
+                proposto_por: aprovadorLogado.id,
+                proposto_por_nome: aprovadorLogado.nome,
+                aprovadores: sociosAprovadores,
+                aprovacoes,
+                valor_antigo: { corpo: clausula.corpo },
+                valor_novo: { ...clausula, corpo: textoParaCorpo(textoNovo) }
+            });
+            fecharModal();
+        } catch(e) {
+            console.error(e);
+            btn.textContent = 'Erro — tente novamente';
+            btn.disabled = false;
+        }
+    };
+
+    /* ── RESPONDER PENDENTE ── */
+    window._responder = async function(pendingId, decisao) {
+        try {
+            await dbResponderAlteracaoContrato(pendingId, obterAprovadorLogado().id, decisao);
+        } catch(e) { console.error(e); }
+    };
+
+    /* ── WHATSAPP ── */
+    window._compartilharTexto = function() {
+        const socios = _estado.ativos?.socios || {};
+        let texto = `📋 *ACORDO ENTRE SÓCIOS — PLAY DIVERSÕES*\nData: ${new Date().toLocaleDateString('pt-BR')}\n\n`;
+        ORDEM_CLAUSULAS.forEach(id => {
+            const c = socios[id] || CLAUSULAS_INICIAIS[id];
+            texto += `${c.icone} *${c.titulo}*\n${corpoParaTexto(c.corpo)}\n\n`;
+        });
+        texto += `_Gerado pelo app Play Diversões_`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+    };
+
+    /* ── INICIALIZAR ── */
+    // Renderiza os padrões imediatamente para a tela não ficar em branco
+    renderizarAtivos({});
+    renderizarPendentes({});
+
+    // Inicializa o nó no Firebase se ainda não existe (não bloqueia)
+    dbInicializarContratosSociosSeNecessario(CLAUSULAS_INICIAIS).catch(e => console.warn('Init contrato:', e));
+
+    dbEscutarColaboradores(lista => {
+        localStorage.setItem('cache_colaboradores', JSON.stringify(lista || []));
+        renderizarPendentes(_estado.pendentes || {});
+    });
+
+    // Escuta mudanças em tempo real
+    dbEscutarContratosSocios(dados => {
+        _estado = dados;
+        renderizarAtivos(dados.ativos?.socios || {}, dados.pendentes || {});
+        renderizarPendentes(dados.pendentes || {});
+    });
 </script>
 
 </body>

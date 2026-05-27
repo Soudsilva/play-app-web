@@ -686,8 +686,8 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbVerificarELiberarRota, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
-    import { enfileirarAtendimento } from './offline-sync.js';
+    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFotoComThumb, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbVerificarELiberarRota, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
+    import { enfileirarAtendimento, salvarFotosPendentesUpload } from './offline-sync.js';
 
     let listaClientes = [];
     let listaClientesBruta = [];
@@ -2044,10 +2044,30 @@ function obterIdAtendimentoEmEdicao() {
 
             // --- 2. Upload de Fotos ---
             const fotos = { ficha: null, maquinas: [], pix: [] };
+            const fotosPendentesUpload = [];
+            const gerarFotoLocalId = () => `foto_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+            const criarFotoPendenteUpload = ({ tipo, indice = null, nome = '', numero = '', base64 = '' }) => {
+                const id = gerarFotoLocalId();
+                const pendencia = {
+                    id,
+                    tipo,
+                    indice,
+                    nome,
+                    numero,
+                    base64,
+                    pasta: 'atendimentos',
+                    clienteNumero,
+                    clienteNome,
+                    atendente,
+                    criadoEm: new Date().toISOString()
+                };
+                fotosPendentesUpload.push(pendencia);
+                return id;
+            };
 
             // Foto da Ficha
+            const imgFicha = document.getElementById('imgPreviewFicha');
             try {
-                const imgFicha = document.getElementById('imgPreviewFicha');
                 if (imgFicha.style.display === 'block' && imgFicha.src && imgFicha.src.startsWith('data:')) {
                     const r = await storageSalvarFotoComThumb(imgFicha.src);
                     fotos.ficha = r.url;
@@ -2056,7 +2076,16 @@ function obterIdAtendimentoEmEdicao() {
                     fotos.ficha = imgFicha.src;
                     fotos.fichaThumb = imgFicha.src;
                 }
-            } catch(e) { console.warn("Falha no upload da ficha. Salvando sem ela.", e); }
+            } catch(e) {
+                console.warn("Falha no upload da ficha. Salvando como pendente.", e);
+                if (imgFicha?.src?.startsWith('data:')) {
+                    const fotoLocalId = criarFotoPendenteUpload({ tipo: 'ficha', nome: 'Ficha', base64: imgFicha.src });
+                    fotos.ficha = null;
+                    fotos.fichaThumb = null;
+                    fotos.fichaPendente = true;
+                    fotos.fichaLocalId = fotoLocalId;
+                }
+            }
 
             // Fotos das Máquinas
             const fotosMaquinasInputs = document.querySelectorAll('.input-foto-maquina');
@@ -2075,8 +2104,25 @@ function obterIdAtendimentoEmEdicao() {
                         } else if (img.src.startsWith('http') && !img.src.includes('.html')) {
                             url = img.src; thumbUrl = img.src;
                         }
-                    } catch(e) { console.warn("Falha ao salvar foto da maquina", e); }
-                    if (url) { fotos.maquinas.push({ nome: nomeMaquina, url, thumbUrl }); }
+                    } catch(e) { console.warn("Falha ao salvar foto da maquina. Salvando como pendente.", e); }
+                    if (url) {
+                        fotos.maquinas.push({ nome: nomeMaquina, url, thumbUrl });
+                    } else if (img.src.startsWith('data:')) {
+                        const indiceFoto = fotos.maquinas.length;
+                        const fotoLocalId = criarFotoPendenteUpload({
+                            tipo: 'maquina',
+                            indice: indiceFoto,
+                            nome: nomeMaquina,
+                            base64: img.src
+                        });
+                        fotos.maquinas.push({
+                            nome: nomeMaquina,
+                            url: null,
+                            thumbUrl: null,
+                            uploadPendente: true,
+                            fotoLocalId
+                        });
+                    }
                 }
             }
 
@@ -2097,8 +2143,26 @@ function obterIdAtendimentoEmEdicao() {
                         } else if (img.src.startsWith('http') && !img.src.includes('.html')) {
                             url = img.src; thumbUrl = img.src;
                         }
-                    } catch(e) { console.warn("Falha ao salvar foto do pix", e); }
-                    if (url) { fotos.pix.push({ numero: numeroPix, url, thumbUrl }); }
+                    } catch(e) { console.warn("Falha ao salvar foto do pix. Salvando como pendente.", e); }
+                    if (url) {
+                        fotos.pix.push({ numero: numeroPix, url, thumbUrl });
+                    } else if (img.src.startsWith('data:')) {
+                        const indiceFoto = fotos.pix.length;
+                        const fotoLocalId = criarFotoPendenteUpload({
+                            tipo: 'pix',
+                            indice: indiceFoto,
+                            numero: numeroPix,
+                            nome: `Pix ${numeroPix}`,
+                            base64: img.src
+                        });
+                        fotos.pix.push({
+                            numero: numeroPix,
+                            url: null,
+                            thumbUrl: null,
+                            uploadPendente: true,
+                            fotoLocalId
+                        });
+                    }
                 }
             }
 
@@ -2132,6 +2196,10 @@ function obterIdAtendimentoEmEdicao() {
                     return isNaN(v) ? null : v;
                 })()
             };
+            dadosAtendimento.fotosPendentes = fotosPendentesUpload.length > 0;
+            if (fotosPendentesUpload.length > 0) {
+                dadosAtendimento.fotosPendentesAtualizadoEm = new Date().toISOString();
+            }
 
             if (atendimentoEmEdicaoId && atendimentoOriginal?._teste) {
                 dadosAtendimento._teste = true;
@@ -2157,6 +2225,13 @@ function obterIdAtendimentoEmEdicao() {
                 await enfileirarAtendimento(dadosAtendimento);
             } else {
                 const atendimentoSalvoId = await dbSalvarAtendimento(dadosAtendimento, atendimentoEmEdicaoId || null);
+                if (fotosPendentesUpload.length > 0) {
+                    const idParaFotos = atendimentoSalvoId || atendimentoEmEdicaoId || null;
+                    await salvarFotosPendentesUpload(fotosPendentesUpload.map(foto => ({
+                        ...foto,
+                        atendimentoId: idParaFotos
+                    })));
+                }
                 await dbSincronizarProdutosAtendimentoNoHistorico(atendimentoSalvoId || atendimentoEmEdicaoId || null, dadosAtendimento);
                 try {
                     const numeroRota = String(dadosAtendimento?.cliente?.rota || '').trim();

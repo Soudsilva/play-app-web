@@ -222,6 +222,37 @@
         }
         .foto-item img { width: 100%; height: 100px; object-fit: cover; border-radius: 4px; margin-bottom: 5px; border: 1px solid rgba(255,255,255,0.2); }
         .foto-legenda { font-size: 10px; color: #ccc; font-weight: bold; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .foto-pendente-item {
+            background: #5f4b00;
+            border: 2px solid #ffeb3b;
+            border-radius: 8px;
+            padding: 8px 5px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .foto-pendente-tarja {
+            background: #ffeb3b;
+            color: #10224d;
+            border-radius: 6px;
+            padding: 6px 7px;
+            font-size: 13px;
+            font-weight: bold;
+            line-height: 1.15;
+            margin-bottom: 7px;
+        }
+        .foto-pendente-nome {
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: bold;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+        }
         .modal-foto {
             position: fixed;
             inset: 0;
@@ -437,6 +468,65 @@
             opacity: 0.45;
             cursor: not-allowed;
         }
+        .pendencias-envio {
+            display: none;
+            border: 2px solid #ffeb3b;
+            border-radius: 8px;
+            background: #173775;
+            padding: 10px;
+            margin: 0 0 14px;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .pendencias-envio.visivel { display: block; }
+        .pendencias-titulo {
+            color: #ffeb3b;
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+        .pendencias-texto {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1.35;
+            margin-bottom: 9px;
+        }
+        .pendencias-lista {
+            display: grid;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .pendencias-item {
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            padding: 7px 8px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1.25;
+            overflow-wrap: anywhere;
+        }
+        .btn-reenviar-pendentes {
+            width: 100%;
+            min-height: 44px;
+            border: 2px solid #ffeb3b;
+            border-radius: 8px;
+            background: #ffeb3b;
+            color: #10224d;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .btn-reenviar-pendentes:disabled {
+            background: #6b7280;
+            border-color: #ffffff;
+            color: #ffffff;
+            cursor: not-allowed;
+        }
 
 
     </style>
@@ -459,6 +549,8 @@
             <button class="busca-limpar" id="btnLimparBusca" onclick="limparBusca()">&times;</button>
         </div>
     </div>
+
+    <div class="pendencias-envio" id="pendenciasEnvio"></div>
 
     <div id="listaEnvios">
         <div class="carregando-envios">
@@ -488,7 +580,8 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbEscutarHistoricoBalancoDoUsuario, dbResponderContestacaoAtendimento } from './database.js';
+    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbEscutarHistoricoBalancoDoUsuario, dbResponderContestacaoAtendimento, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFotoComThumb, dbAtualizarFotoAtendimentoPendente } from './database.js';
+    import { listarPendentes, listarFotosPendentesUpload, sincronizarPendentes, sincronizarFotosPendentes } from './offline-sync.js';
 
     // Pega quem estÃ¡ logado no celular no momento
     const usuarioLogado = localStorage.getItem('usuarioLogado');
@@ -502,6 +595,9 @@
     let termoBusca = '';
     let filtroContestacoesAtivo = new URLSearchParams(window.location.search).get('contestacao') === '1';
     let mapaMovimentacoesPorAtendimento = {}; // { atendimentoRefId -> [{ nome, movimento, totalApos }] }
+    let atendimentosPendentesLocais = [];
+    let fotosPendentesLocais = [];
+    let reenviandoPendencias = false;
     const carregamentosEnvios = {
         historicoBalanco: false,
         colaboradores: false,
@@ -528,6 +624,84 @@
                 <div>Carregando movimentações...</div>
             </div>
         `;
+    }
+
+    function descreverAtendimentoPendenteLocal(item) {
+        const d = item?.dados || {};
+        const numero = d?.cliente?.numero || 'S/N';
+        const nome = d?.cliente?.nome || 'Cliente sem nome';
+        return `Atendimento pendente: Nº ${numero} - ${nome}`;
+    }
+
+    function descreverFotoPendenteLocal(item) {
+        const numero = item?.clienteNumero || '';
+        const nomeCliente = item?.clienteNome || '';
+        const nomeFoto = item?.nome || (item?.tipo === 'ficha' ? 'Ficha' : 'Foto');
+        const cliente = [numero ? `Nº ${numero}` : '', nomeCliente].filter(Boolean).join(' - ');
+        return `Foto pendente: ${nomeFoto}${cliente ? ` (${cliente})` : ''}`;
+    }
+
+    async function carregarPendenciasLocais() {
+        const [atendimentos, fotos] = await Promise.all([
+            listarPendentes(),
+            listarFotosPendentesUpload()
+        ]);
+        atendimentosPendentesLocais = atendimentos || [];
+        fotosPendentesLocais = fotos || [];
+        renderizarPendenciasLocais();
+    }
+
+    function renderizarPendenciasLocais(mensagem = '') {
+        const box = document.getElementById('pendenciasEnvio');
+        if (!box) return;
+        const total = atendimentosPendentesLocais.length + fotosPendentesLocais.length;
+        if (total === 0 && !mensagem) {
+            box.classList.remove('visivel');
+            box.innerHTML = '';
+            return;
+        }
+
+        const itens = [
+            ...atendimentosPendentesLocais.map(descreverAtendimentoPendenteLocal),
+            ...fotosPendentesLocais.map(descreverFotoPendenteLocal)
+        ].slice(0, 5);
+        const restante = total > itens.length ? `<div class="pendencias-item">Mais ${total - itens.length} pendência${total - itens.length === 1 ? '' : 's'}.</div>` : '';
+        const texto = mensagem || `${total} pendência${total === 1 ? '' : 's'} salva${total === 1 ? '' : 's'} neste aparelho.`;
+        box.innerHTML = `
+            <div class="pendencias-titulo">Pendências de envio</div>
+            <div class="pendencias-texto">${escaparHtml(texto)}</div>
+            ${itens.length ? `<div class="pendencias-lista">${itens.map(item => `<div class="pendencias-item">${escaparHtml(item)}</div>`).join('')}${restante}</div>` : ''}
+            <button class="btn-reenviar-pendentes" id="btnReenviarPendentes" type="button" ${reenviandoPendencias ? 'disabled' : ''}>${reenviandoPendencias ? 'Reenviando...' : 'Reenviar pendentes'}</button>
+        `;
+        box.classList.add('visivel');
+        box.querySelector('#btnReenviarPendentes')?.addEventListener('click', reenviarPendenciasLocais);
+    }
+
+    async function reenviarPendenciasLocais() {
+        if (reenviandoPendencias) return;
+        if (!navigator.onLine) {
+            renderizarPendenciasLocais('Sem internet. As pendências continuam salvas neste aparelho.');
+            return;
+        }
+        reenviandoPendencias = true;
+        renderizarPendenciasLocais('Reenviando pendências, uma por vez...');
+        try {
+            const enviadosAtendimentos = await sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico);
+            const enviadosFotos = await sincronizarFotosPendentes(storageSalvarFotoComThumb, dbAtualizarFotoAtendimentoPendente);
+            await carregarPendenciasLocais();
+            const totalEnviado = Number(enviadosAtendimentos || 0) + Number(enviadosFotos?.ok || 0);
+            if (totalEnviado > 0) {
+                renderizarPendenciasLocais(`${totalEnviado} pendência${totalEnviado === 1 ? '' : 's'} enviada${totalEnviado === 1 ? '' : 's'}.`);
+                await carregarPendenciasLocais();
+            }
+        } catch (erro) {
+            console.warn('Falha ao reenviar pendências:', erro);
+            await carregarPendenciasLocais();
+            renderizarPendenciasLocais('Não foi possível concluir agora. As pendências continuam salvas neste aparelho.');
+        } finally {
+            reenviandoPendencias = false;
+            await carregarPendenciasLocais();
+        }
     }
 
     function normalizarTexto(txt) {
@@ -598,6 +772,16 @@
                     <img src="${thumbSeguro}" loading="lazy" alt="${legendaSegura}">
                 </button>
                 <div class="foto-legenda">${legendaSegura}</div>
+            </div>
+        `;
+    }
+
+    function montarHtmlFotoPendente(legenda) {
+        const legendaSegura = escaparHtml(legenda || 'Foto');
+        return `
+            <div class="foto-pendente-item">
+                <div class="foto-pendente-tarja">Foto pendente</div>
+                <div class="foto-pendente-nome">${legendaSegura}</div>
             </div>
         `;
     }
@@ -1523,14 +1707,33 @@
             if (fotos.ficha && ehImagemValida(fotos.ficha)) {
                 htmlFotos += montarHtmlThumbFoto(fotos.ficha, fotos.fichaThumb || fotos.ficha, 'FICHA');
                 temFoto = true;
+            } else if (fotos.fichaPendente) {
+                htmlFotos += montarHtmlFotoPendente('FICHA');
+                temFoto = true;
             }
 
             if (fotos.maquinas && Array.isArray(fotos.maquinas)) {
-                fotos.maquinas.forEach(m => { if (ehImagemValida(m.url)) { htmlFotos += montarHtmlThumbFoto(m.url, m.thumbUrl || m.url, m.nome); temFoto = true; }});
+                fotos.maquinas.forEach(m => {
+                    if (ehImagemValida(m.url)) {
+                        htmlFotos += montarHtmlThumbFoto(m.url, m.thumbUrl || m.url, m.nome);
+                        temFoto = true;
+                    } else if (m?.uploadPendente) {
+                        htmlFotos += montarHtmlFotoPendente(m?.nome || 'Máquina');
+                        temFoto = true;
+                    }
+                });
             }
 
             if (fotos.pix && Array.isArray(fotos.pix)) {
-                fotos.pix.forEach(p => { if (ehImagemValida(p.url)) { htmlFotos += montarHtmlThumbFoto(p.url, p.thumbUrl || p.url, `PIX ${p.numero}`); temFoto = true; }});
+                fotos.pix.forEach(p => {
+                    if (ehImagemValida(p.url)) {
+                        htmlFotos += montarHtmlThumbFoto(p.url, p.thumbUrl || p.url, `PIX ${p.numero}`);
+                        temFoto = true;
+                    } else if (p?.uploadPendente) {
+                        htmlFotos += montarHtmlFotoPendente(`PIX ${p?.numero || ''}`);
+                        temFoto = true;
+                    }
+                });
             }
 
             if (Array.isArray(manutencaoCompleta?.equipamentosRetiradosDetalhes)) {
@@ -1669,6 +1872,11 @@
     dbEscutarClientes((clientes) => {
         clientesSalvos = clientes;
         marcarEnviosCarregados('clientes');
+    });
+
+    carregarPendenciasLocais().catch(() => {});
+    window.addEventListener('online', () => {
+        reenviarPendenciasLocais().catch(() => {});
     });
 
     window.editarEnvio = function(envio) {

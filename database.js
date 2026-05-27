@@ -1074,6 +1074,71 @@ export async function dbSalvarAtendimento(atendimento, idExistente = null) {
     }
 }
 
+function _existeFotoPendenteAtendimento(fotos = {}) {
+    if (fotos?.fichaPendente) return true;
+    if ((Array.isArray(fotos?.maquinas) ? fotos.maquinas : []).some(item => item?.uploadPendente)) return true;
+    if ((Array.isArray(fotos?.pix) ? fotos.pix : []).some(item => item?.uploadPendente)) return true;
+    return false;
+}
+
+export async function dbAtualizarFotoAtendimentoPendente(fotoPendente, url, thumbUrl) {
+    const atendimentoId = String(fotoPendente?.atendimentoId || '').trim();
+    const tipo = String(fotoPendente?.tipo || '').trim();
+    const indice = Number(fotoPendente?.indice);
+    const fotoUrl = String(url || '').trim();
+    const fotoThumb = String(thumbUrl || url || '').trim();
+    if (!atendimentoId || !fotoUrl) throw new Error('Foto pendente sem atendimento ou URL.');
+
+    const snap = await get(ref(db, `atendimentos/${atendimentoId}`));
+    if (!snap.exists()) {
+        throw new Error('Atendimento da foto pendente nao encontrado.');
+    }
+
+    const atendimento = snap.val() || {};
+    const fotos = atendimento.fotos || {};
+    const updates = {};
+
+    if (tipo === 'ficha') {
+        fotos.ficha = fotoUrl;
+        fotos.fichaThumb = fotoThumb;
+        fotos.fichaPendente = false;
+        fotos.fichaLocalId = null;
+        updates[`atendimentos/${atendimentoId}/fotos/ficha`] = fotoUrl;
+        updates[`atendimentos/${atendimentoId}/fotos/fichaThumb`] = fotoThumb;
+        updates[`atendimentos/${atendimentoId}/fotos/fichaPendente`] = false;
+        updates[`atendimentos/${atendimentoId}/fotos/fichaLocalId`] = null;
+    } else if (tipo === 'maquina' && Number.isInteger(indice) && indice >= 0) {
+        if (!Array.isArray(fotos.maquinas)) fotos.maquinas = [];
+        fotos.maquinas[indice] = { ...(fotos.maquinas[indice] || {}) };
+        fotos.maquinas[indice].url = fotoUrl;
+        fotos.maquinas[indice].thumbUrl = fotoThumb;
+        fotos.maquinas[indice].uploadPendente = false;
+        fotos.maquinas[indice].fotoLocalId = null;
+        updates[`atendimentos/${atendimentoId}/fotos/maquinas/${indice}/url`] = fotoUrl;
+        updates[`atendimentos/${atendimentoId}/fotos/maquinas/${indice}/thumbUrl`] = fotoThumb;
+        updates[`atendimentos/${atendimentoId}/fotos/maquinas/${indice}/uploadPendente`] = false;
+        updates[`atendimentos/${atendimentoId}/fotos/maquinas/${indice}/fotoLocalId`] = null;
+    } else if (tipo === 'pix' && Number.isInteger(indice) && indice >= 0) {
+        if (!Array.isArray(fotos.pix)) fotos.pix = [];
+        fotos.pix[indice] = { ...(fotos.pix[indice] || {}) };
+        fotos.pix[indice].url = fotoUrl;
+        fotos.pix[indice].thumbUrl = fotoThumb;
+        fotos.pix[indice].uploadPendente = false;
+        fotos.pix[indice].fotoLocalId = null;
+        updates[`atendimentos/${atendimentoId}/fotos/pix/${indice}/url`] = fotoUrl;
+        updates[`atendimentos/${atendimentoId}/fotos/pix/${indice}/thumbUrl`] = fotoThumb;
+        updates[`atendimentos/${atendimentoId}/fotos/pix/${indice}/uploadPendente`] = false;
+        updates[`atendimentos/${atendimentoId}/fotos/pix/${indice}/fotoLocalId`] = null;
+    } else {
+        throw new Error('Tipo de foto pendente invalido.');
+    }
+
+    const aindaTemPendente = _existeFotoPendenteAtendimento(fotos);
+    updates[`atendimentos/${atendimentoId}/fotosPendentes`] = aindaTemPendente;
+    updates[`atendimentos/${atendimentoId}/fotosPendentesAtualizadoEm`] = new Date().toISOString();
+    await update(ref(db), updates);
+}
+
 export async function dbListarAtendimentosRecentes(limite = 800) {
     try {
         const n = Math.max(1, Math.min(Number(limite) || 800, 5000));
@@ -4862,3 +4927,58 @@ export async function dbLimparSelecoes(numerosRota) {
     await update(ref(db, '/'), updates);
 }
 
+/* ════════════════════════════════════════════════════════
+   CONTRATOS & SOCIEDADE
+   Nó: contratos_sociedade/
+     ativos/socios/{clausulaId}  → cláusulas vigentes
+     pendentes/{pushId}          → alterações aguardando aprovação dos dois sócios
+   ════════════════════════════════════════════════════════ */
+const CONTRATOS_ROOT = 'contratos_sociedade';
+
+export function dbEscutarContratosSocios(callback) {
+    const r = ref(db, CONTRATOS_ROOT);
+    return onValue(r, snap => callback(snap.val() || {}));
+}
+
+export async function dbInicializarContratosSociosSeNecessario(dadosIniciais) {
+    const snap = await get(ref(db, `${CONTRATOS_ROOT}/ativos/socios`));
+    if (!snap.exists()) {
+        await set(ref(db, `${CONTRATOS_ROOT}/ativos/socios`), dadosIniciais);
+    }
+}
+
+export async function dbProporAlteracaoContrato(alteracao) {
+    const novoRef = push(ref(db, `${CONTRATOS_ROOT}/pendentes`));
+    await set(novoRef, {
+        ...alteracao,
+        data: new Date().toISOString()
+    });
+    return novoRef.key;
+}
+
+export async function dbResponderAlteracaoContrato(pendingId, socio, decisao) {
+    const pendRef = ref(db, `${CONTRATOS_ROOT}/pendentes/${pendingId}`);
+
+    // Lê o estado ANTES de atualizar para calcular a resolução sem depender de get pós-update
+    const snap = await get(pendRef);
+    if (!snap.exists()) return;
+    const p = snap.val();
+
+    const aprovadores = Array.isArray(p.aprovadores) ? p.aprovadores : [];
+    const aprovadorIds = aprovadores.map(item => String(item?.id || '').trim()).filter(Boolean);
+    const aprovacoesAtualizadas = { ...(p.aprovacoes || {}), [socio]: decisao };
+
+    // Grava o voto
+    await update(ref(db, `${CONTRATOS_ROOT}/pendentes/${pendingId}/aprovacoes`), { [socio]: decisao });
+
+    // Resolve com base no estado calculado
+    if (aprovadorIds.length > 0 && aprovadorIds.every(id => aprovacoesAtualizadas[id] === true)) {
+        await set(ref(db, `${CONTRATOS_ROOT}/ativos/socios/${p.clausulaId}`), {
+            ...p.valor_novo,
+            atualizadoEm: new Date().toISOString()
+        });
+        await remove(pendRef);
+    } else if (aprovadorIds.some(id => aprovacoesAtualizadas[id] === false)) {
+        await remove(pendRef);
+    }
+}
