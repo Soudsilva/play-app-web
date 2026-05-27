@@ -615,6 +615,7 @@
     function marcarEnviosCarregados(chave) {
         carregamentosEnvios[chave] = true;
         renderizarEnvios();
+        renderizarPendenciasLocais();
     }
 
     function renderizarCarregandoEnvios(container) {
@@ -641,6 +642,58 @@
         return `Foto pendente: ${nomeFoto}${cliente ? ` (${cliente})` : ''}`;
     }
 
+    function obterFotosPendentesFirebaseDoEnvio(envio) {
+        const fotos = envio?.fotos || {};
+        const pendentes = [];
+        const clienteNumero = envio?.cliente?.numero || '';
+        const clienteNome = envio?.cliente?.nome || '';
+
+        if (fotos.fichaPendente) {
+            pendentes.push({
+                atendimentoId: envio?.firebaseUrl || '',
+                fotoLocalId: fotos.fichaLocalId || '',
+                nome: 'Ficha',
+                clienteNumero,
+                clienteNome
+            });
+        }
+
+        (Array.isArray(fotos.maquinas) ? fotos.maquinas : []).forEach((foto) => {
+            if (!foto?.uploadPendente) return;
+            pendentes.push({
+                atendimentoId: envio?.firebaseUrl || '',
+                fotoLocalId: foto?.fotoLocalId || '',
+                nome: foto?.nome || 'Máquina',
+                clienteNumero,
+                clienteNome
+            });
+        });
+
+        (Array.isArray(fotos.pix) ? fotos.pix : []).forEach((foto) => {
+            if (!foto?.uploadPendente) return;
+            pendentes.push({
+                atendimentoId: envio?.firebaseUrl || '',
+                fotoLocalId: foto?.fotoLocalId || '',
+                nome: `Pix ${foto?.numero || ''}`.trim(),
+                clienteNumero,
+                clienteNome
+            });
+        });
+
+        return pendentes;
+    }
+
+    function obterFotosPendentesFirebaseDoUsuario() {
+        return atendimentosSalvos
+            .filter(pertenceAoUsuario)
+            .flatMap(obterFotosPendentesFirebaseDoEnvio);
+    }
+
+    function contarFotosPendentesComArquivoLocal(fotosFirebasePendentes) {
+        const idsLocais = new Set(fotosPendentesLocais.map(item => String(item?.id || '').trim()).filter(Boolean));
+        return fotosFirebasePendentes.filter(item => idsLocais.has(String(item?.fotoLocalId || '').trim())).length;
+    }
+
     async function carregarPendenciasLocais() {
         const [atendimentos, fotos] = await Promise.all([
             listarPendentes(),
@@ -651,27 +704,45 @@
         renderizarPendenciasLocais();
     }
 
+    async function tentarReenviarPendenciasSeOnline() {
+        await carregarPendenciasLocais();
+        if (!navigator.onLine || reenviandoPendencias) return;
+        if (atendimentosPendentesLocais.length === 0 && fotosPendentesLocais.length === 0) return;
+        await reenviarPendenciasLocais();
+    }
+
     function renderizarPendenciasLocais(mensagem = '') {
         const box = document.getElementById('pendenciasEnvio');
         if (!box) return;
-        const total = atendimentosPendentesLocais.length + fotosPendentesLocais.length;
+        const fotosFirebasePendentes = obterFotosPendentesFirebaseDoUsuario();
+        const fotosComArquivoLocal = contarFotosPendentesComArquivoLocal(fotosFirebasePendentes);
+        const fotosSemArquivoLocal = Math.max(fotosFirebasePendentes.length - fotosComArquivoLocal, 0);
+        const total = atendimentosPendentesLocais.length + fotosPendentesLocais.length + fotosSemArquivoLocal;
         if (total === 0 && !mensagem) {
             box.classList.remove('visivel');
             box.innerHTML = '';
             return;
         }
 
+        const fotosFirebaseSemArquivo = fotosFirebasePendentes
+            .filter(item => !fotosPendentesLocais.some(local => String(local?.id || '').trim() === String(item?.fotoLocalId || '').trim()))
+            .map(item => {
+                const cliente = [item?.clienteNumero ? `Nº ${item.clienteNumero}` : '', item?.clienteNome || ''].filter(Boolean).join(' - ');
+                return `Foto pendente sem arquivo neste aparelho: ${item?.nome || 'Foto'}${cliente ? ` (${cliente})` : ''}`;
+            });
         const itens = [
             ...atendimentosPendentesLocais.map(descreverAtendimentoPendenteLocal),
-            ...fotosPendentesLocais.map(descreverFotoPendenteLocal)
+            ...fotosPendentesLocais.map(descreverFotoPendenteLocal),
+            ...fotosFirebaseSemArquivo
         ].slice(0, 5);
         const restante = total > itens.length ? `<div class="pendencias-item">Mais ${total - itens.length} pendência${total - itens.length === 1 ? '' : 's'}.</div>` : '';
         const texto = mensagem || `${total} pendência${total === 1 ? '' : 's'} salva${total === 1 ? '' : 's'} neste aparelho.`;
+        const podeReenviar = atendimentosPendentesLocais.length > 0 || fotosPendentesLocais.length > 0;
         box.innerHTML = `
             <div class="pendencias-titulo">Pendências de envio</div>
             <div class="pendencias-texto">${escaparHtml(texto)}</div>
             ${itens.length ? `<div class="pendencias-lista">${itens.map(item => `<div class="pendencias-item">${escaparHtml(item)}</div>`).join('')}${restante}</div>` : ''}
-            <button class="btn-reenviar-pendentes" id="btnReenviarPendentes" type="button" ${reenviandoPendencias ? 'disabled' : ''}>${reenviandoPendencias ? 'Reenviando...' : 'Reenviar pendentes'}</button>
+            <button class="btn-reenviar-pendentes" id="btnReenviarPendentes" type="button" ${reenviandoPendencias || !podeReenviar ? 'disabled' : ''}>${reenviandoPendencias ? 'Reenviando...' : 'Reenviar pendentes'}</button>
         `;
         box.classList.add('visivel');
         box.querySelector('#btnReenviarPendentes')?.addEventListener('click', reenviarPendenciasLocais);
@@ -1874,7 +1945,7 @@
         marcarEnviosCarregados('clientes');
     });
 
-    carregarPendenciasLocais().catch(() => {});
+    tentarReenviarPendenciasSeOnline().catch(() => {});
     window.addEventListener('online', () => {
         reenviarPendenciasLocais().catch(() => {});
     });
