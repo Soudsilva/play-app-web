@@ -728,27 +728,36 @@ function obterNumeroCliente(cliente) {
     return String(clientesPorIdMap[chave]?.numero || '').trim();
 }
 
-function formatarTempoRestante(ms) {
-    if (!(ms > 0)) return 'agora';
+function obterDataBrasilia(timestamp) {
+    if (!(timestamp > 0)) return null;
 
-    const dias = Math.max(1, Math.ceil(ms / 86400000));
-    return dias === 1 ? 'amanhã' : `${dias} dias`;
-}
-
-function formatarDataHoraLiberacao(timestamp) {
-    if (!(timestamp > 0)) return '';
-    return new Date(timestamp).toLocaleString('pt-BR', {
-        day: '2-digit',
+    const partes = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric',
         month: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+        day: '2-digit'
+    }).formatToParts(new Date(timestamp));
+
+    const get = (type) => partes.find((parte) => parte.type === type)?.value;
+    const ano = get('year');
+    const mes = get('month');
+    const dia = get('day');
+
+    if (!ano || !mes || !dia) return null;
+    return new Date(`${ano}-${mes}-${dia}T00:00:00-03:00`);
 }
 
-function formatarTextoLiberacaoAutomatica(quando) {
-    return quando === 'amanhã'
-        ? 'Rota será liberada automaticamente amanhã'
-        : `Rota será liberada automaticamente em ${quando}`;
+function formatarDiaSemanaLiberacao(timestamp) {
+    const dataLiberacao = obterDataBrasilia(timestamp);
+    if (!dataLiberacao) return '';
+
+    const diaAnterior = new Date(dataLiberacao.getTime() - 86400000);
+    const diaSemana = new Intl.DateTimeFormat('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        weekday: 'long'
+    }).format(diaAnterior);
+
+    return `Libera no fim do dia de ${diaSemana}`;
 }
 
 function obterTextoLiberacaoRota(status) {
@@ -758,13 +767,13 @@ function obterTextoLiberacaoRota(status) {
 
     if (!status?.liberarEmMs || status.liberarAgora) return '';
 
-    const quando = formatarTempoRestante(status.tempoRestanteMs);
+    const textoLiberacao = formatarDiaSemanaLiberacao(status.liberarEmMs);
     if (status.motivo === 'aguardando_ultima_justificativa') {
-        return formatarTextoLiberacaoAutomatica(quando);
+        return textoLiberacao;
     }
 
     if (status.motivo === 'aguardando_prazo_maximo') {
-        return formatarTextoLiberacaoAutomatica(quando);
+        return textoLiberacao;
     }
 
     return '';
