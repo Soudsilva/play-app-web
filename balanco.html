@@ -1168,9 +1168,20 @@
         .hist-item.neg  { border-left-color:#ef9a9a; }
         .hist-item.contestacao { border-left-color:#ffeb3b; }
         .hist-item.aprovacao {
-            border-left-color:#86efac;
-            border-color:rgba(134,239,172,0.25);
-            box-shadow:0 0 12px rgba(20,83,45,0.4);
+            border-left-color:#4ade80;
+            border-left-width:4px;
+            border-top: 1.5px solid rgba(74,222,128,0.5);
+            border-right: 1.5px solid rgba(74,222,128,0.18);
+            border-bottom: 1.5px solid rgba(74,222,128,0.18);
+            background: linear-gradient(135deg, rgba(74,222,128,0.10) 0%, rgba(15,42,102,0) 60%);
+            box-shadow: 0 0 18px rgba(74,222,128,0.18), 0 4px 14px rgba(0,0,0,0.28);
+        }
+        .hist-item.aprovacao .hist-topo-linha {
+            background: none;
+            border-radius:8px;
+            padding:5px 65px 6px 0px;
+            margin:0 0 8px 0;
+            border-bottom:none;
         }
 
         /* Título: fluxo normal, cresce com o texto */
@@ -1194,7 +1205,8 @@
 
         /* Aprovação ("Valor conferido"): valor flutua no canto superior direito */
         .hist-item.aprovacao .hist-info-linha {
-            position:absolute; top:12px; right:14px;
+            position:absolute; top:17px; right:22px;
+            transform:none;
             margin:0; padding:0; border:none;
         }
         .hist-item.aprovacao .hist-info-linha .hist-info-label { display:none; }
@@ -1218,6 +1230,13 @@
         .hist-item.aprovacao .hist-info-valor.quantidade { color:#86efac; }
         .hist-item.aprovacao .hist-info-valor.total { color:#86efac; font-size:17px; font-weight:700; }
         .hist-info-valor.total { font-size:14px; font-weight:500; color:#ffffff; }
+        .hist-info-valor.total.negativo,
+        .hist-item.aprovacao .hist-info-valor.total.negativo,
+        .contest-val-sistema.negativo,
+        .hist-resumo-gestor-sistema.negativo,
+        .hist-resumo-gestor-info.negativo {
+            color:#ef9a9a;
+        }
 
         /* Rodapé do card — sem border-top própria (a última info-linha já tem border-bottom) */
         .hist-rodape {
@@ -1678,6 +1697,13 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    function formatarQuantidadeVisual(valor, { mostrarSinalPositivo = false } = {}) {
+        const numero = Number(valor);
+        if (!Number.isFinite(numero)) return '—';
+        const absoluto = Math.abs(numero);
+        return `${mostrarSinalPositivo && numero > 0 ? '+' : ''}${absoluto}`;
     }
 
     function formatarDataHoraCurta(valor) {
@@ -2553,8 +2579,7 @@
 
     function formatarDiferencaContestacao(contestacao) {
         const diferenca = Number(contestacao?.diferenca || 0);
-        const sinal = diferenca > 0 ? '+' : '';
-        return `${sinal}${diferenca}`;
+        return formatarQuantidadeVisual(diferenca, { mostrarSinalPositivo: true });
     }
 
     function contestacaoEstaEmAnalise(contestacao) {
@@ -2592,16 +2617,18 @@
             const diferenca = Number(c?.diferenca);
             const responsavel = escaparHtml(c?.registradoPor || c?.responsavel || c?.usuarioKey || '');
             const dataHora = formatarDataHoraCurta(c?.timestamp);
-            const sistemaStr = Number.isFinite(valorSistema) ? valorSistema : 0;
-            const contestaStr = Number.isFinite(valorContestado) ? valorContestado : 0;
-            const diferencaStr = Number.isFinite(diferenca) ? `${diferenca > 0 ? '+' : ''}${diferenca}` : '0';
+            const sistemaStr = Number.isFinite(valorSistema) ? formatarQuantidadeVisual(valorSistema) : '0';
+            const contestaStr = Number.isFinite(valorContestado) ? formatarQuantidadeVisual(valorContestado) : '0';
+            const diferencaStr = Number.isFinite(diferenca)
+                ? formatarQuantidadeVisual(diferenca, { mostrarSinalPositivo: true })
+                : '0';
 
             return `
                     <div class="contest-card" data-contestacao-id="${contestacaoId}" data-usuario-key="${usuarioKey}" onclick="abrirHistoricoContestacaoGestor(this.dataset.contestacaoId, this.dataset.usuarioKey)">
                         <div class="contest-card-topo">
                             <span class="contest-card-produto">${itemNome}</span>
                             <div class="contest-card-valores">
-                                <span class="contest-val-sistema">${sistemaStr}</span>
+                                <span class="contest-val-sistema${valorSistema < 0 ? ' negativo' : ''}">${sistemaStr}</span>
                                 <span class="contest-val-seta">&#8594;</span>
                                 <span class="contest-val-novo">Informou ter: ${contestaStr}</span>
                             </div>
@@ -2668,6 +2695,24 @@
         return item ? Number(item.total || 0) : null;
     }
 
+    function formatarDescricaoHistoricoBalanco(entrada) {
+        const tipo = String(entrada?.tipo || '').trim();
+        const descricao = String(entrada?.descricao || '').trim();
+        const rotulosManutencao = {
+            manutencao: 'Reposição',
+            manutencao_adicao: 'Adicionou',
+            manutencao_retirada: 'Retirou'
+        };
+        const rotulo = rotulosManutencao[tipo];
+        if (!rotulo) return descricao || HIST_LABELS[tipo] || tipo;
+
+        const prefixoServico = 'Serviço realizado - ';
+        const cliente = descricao.toLowerCase().startsWith(prefixoServico.toLowerCase())
+            ? descricao.slice(prefixoServico.length).trim()
+            : '';
+        return cliente ? `${rotulo} - ${cliente}` : rotulo;
+    }
+
     function renderizarHistoricoAberto() {
         if (!historicoAbertoContexto) return;
         const lista = document.getElementById('histLista');
@@ -2678,7 +2723,7 @@
         if (totalAtualAberto !== null) {
             const totalEl = document.getElementById('histTotalAtual');
             if (totalEl) {
-                totalEl.textContent = `Total atual: ${totalAtualAberto}`;
+                totalEl.textContent = `Total atual: ${formatarQuantidadeVisual(totalAtualAberto)}`;
                 totalEl.classList.toggle('negativo', totalAtualAberto < 0);
             }
             if (contestacaoContexto) contestacaoContexto.quantidadeAtual = totalAtualAberto;
@@ -2706,8 +2751,8 @@
             const movimentacao = Number(e.movimento ?? 0);
             const quantidade = tipoLinha === 'movimento' ? movimentacao : Number(e.quantidade || 0);
             const pos   = quantidade > 0;
-            const desc  = e.descricao || HIST_LABELS[e.tipo] || e.tipo;
-            const sinal = quantidade > 0 ? '+' : (quantidade < 0 ? '-' : '');
+            const desc  = formatarDescricaoHistoricoBalanco(e);
+            const quantidadeStr = formatarQuantidadeVisual(quantidade, { mostrarSinalPositivo: true });
 
             const d = new Date(e.timestamp || '');
             const dataStr = isNaN(d) ? '' : d.toLocaleDateString('pt-BR');
@@ -2725,7 +2770,9 @@
                 grupoHtml = `<div class="hist-data-grupo">${dataStr}</div>`;
             }
 
-            const totalStr = e.totalApos != null ? String(e.totalApos) : '—';
+            const totalNumeroLinha = e.totalApos != null ? Number(e.totalApos) : null;
+            const totalStr = totalNumeroLinha != null ? formatarQuantidadeVisual(totalNumeroLinha) : '—';
+            const totalClasse = totalNumeroLinha != null && totalNumeroLinha < 0 ? ' negativo' : '';
             const classeLinha = tipoLinha === 'contestacao'
                 ? 'contestacao'
                 : (tipoLinha === 'aprovacao' ? 'aprovacao' : (pos ? 'pos' : 'neg'));
@@ -2733,20 +2780,21 @@
             return `${grupoHtml}
             <div class="hist-item ${classeLinha}">
                 <div class="hist-topo-linha">
-                    <span class="hist-desc">${desc}</span>
+                    ${tipoLinha === 'aprovacao' ? `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.45);border-radius:20px;padding:2px 10px 2px 7px;font-size:13px;font-weight:700;color:#86efac;letter-spacing:0.3px;margin-right:8px;white-space:nowrap;">✔ Conferido</span>` : ''}
+                    ${tipoLinha === 'aprovacao' ? '' : `<span class="hist-desc">${desc}</span>`}
                 </div>
                 ${tipoLinha === 'aprovacao' ? `
                 <div class="hist-info-linha">
                     <span class="hist-info-label">Valor conferido:</span>
-                    <span class="hist-info-valor total">${e.valorConferido ?? totalStr}</span>
+                    <span class="hist-info-valor total${e.valorConferido != null && Number(e.valorConferido) < 0 ? ' negativo' : totalClasse}">${e.valorConferido != null ? formatarQuantidadeVisual(e.valorConferido) : totalStr}</span>
                 </div>` : `
                 <div class="hist-info-linha">
                     <span class="hist-info-label">Quantidade:</span>
-                    <span class="hist-info-valor quantidade">${sinal}${Math.abs(quantidade)}</span>
+                    <span class="hist-info-valor quantidade">${quantidadeStr}</span>
                 </div>
                 <div class="hist-info-linha">
                     <span class="hist-info-label">Total:</span>
-                    <span class="hist-info-valor total">${totalStr}</span>
+                    <span class="hist-info-valor total${totalClasse}">${totalStr}</span>
                 </div>`}
                 ${e.detalheTotal ? `<div class="hist-info-linha">
                     <span class="hist-info-label">${e.detalheTotal}</span>
@@ -2948,15 +2996,17 @@
         const sistema = Number(c?.quantidadeAtual ?? contestacaoContexto?.quantidadeAtual ?? 0);
         const informado = Number(c?.quantidadeInformada ?? 0);
         const diferenca = Number(c?.diferenca ?? (informado - sistema));
-        const sistemaStr = Number.isFinite(sistema) ? sistema : 0;
-        const informadoStr = Number.isFinite(informado) ? informado : 0;
-        const diferencaStr = Number.isFinite(diferenca) ? `${diferenca > 0 ? '+' : ''}${diferenca}` : '0';
+        const sistemaStr = Number.isFinite(sistema) ? formatarQuantidadeVisual(sistema) : '0';
+        const informadoStr = Number.isFinite(informado) ? formatarQuantidadeVisual(informado) : '0';
+        const diferencaStr = Number.isFinite(diferenca)
+            ? formatarQuantidadeVisual(diferenca, { mostrarSinalPositivo: true })
+            : '0';
         resumo.innerHTML = `
             <div class="hist-resumo-gestor-topo">
                 <span class="hist-resumo-gestor-nome">${nome}</span>
-                <span class="hist-resumo-gestor-sistema">Sistema: ${sistemaStr}</span>
+                <span class="hist-resumo-gestor-sistema${sistema < 0 ? ' negativo' : ''}">Sistema: ${sistemaStr}</span>
                 <span class="contest-val-seta">&#8594;</span>
-                <span class="hist-resumo-gestor-info">Informou ter: ${informadoStr}</span>
+                <span class="hist-resumo-gestor-info${informado < 0 ? ' negativo' : ''}">Informou ter: ${informadoStr}</span>
                 <span class="contest-card-diferenca">Diferença: ${diferencaStr}</span>
             </div>
             <div class="hist-resumo-gestor-baixo"></div>`;
@@ -2970,7 +3020,7 @@
         const totalNumero = Number(totalAtual || 0);
 
         titulo.textContent  = nomeProduto;
-        totalEl.textContent = `Total atual: ${totalNumero}`;
+        totalEl.textContent = `Total atual: ${formatarQuantidadeVisual(totalNumero)}`;
         totalEl.classList.toggle('negativo', totalNumero < 0);
         lista.innerHTML     = '<div class="hist-loading">Carregando...</div>';
         contestacaoContexto = {
@@ -3016,7 +3066,7 @@
         const totalNumero = Number(contestacao.quantidadeAtual || 0);
 
         titulo.textContent = nomeProduto || 'Histórico';
-        totalEl.textContent = `Total atual: ${totalNumero}`;
+        totalEl.textContent = `Total atual: ${formatarQuantidadeVisual(totalNumero)}`;
         totalEl.classList.toggle('negativo', totalNumero < 0);
         lista.innerHTML = '<div class="hist-loading">Carregando...</div>';
         contestacaoContexto = {
@@ -3140,8 +3190,7 @@
         }
 
         const diferenca = informado - atual;
-        const sinal = diferenca > 0 ? '+' : '';
-        resumo.textContent = `Diferença: ${sinal}${diferenca}`;
+        resumo.textContent = `Diferença: ${formatarQuantidadeVisual(diferenca, { mostrarSinalPositivo: true })}`;
     };
 
     window.salvarContestacaoBalanco = async function() {

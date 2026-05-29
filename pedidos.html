@@ -10,9 +10,6 @@
         .topo,
         .titulo,
         .btn-home,
-        .contador-total,
-        .filtros,
-        .chip-filtro,
         .card-accent,
         .badges-col,
         .badge-cat,
@@ -46,7 +43,7 @@
         .app {
             width: 100%;
             max-width: 440px;
-            padding: 18px 18px 200px;
+            padding: 15px 18px 200px;
         }
 
         /* ── TOPO ── */
@@ -55,11 +52,14 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            padding: 10px 54px 4px;
-            margin-bottom: 6px;
+            padding: 6px 64px 4px 32px;
+            margin-bottom: 14px;
         }
         .titulo-wrap { text-align: center; }
-        .titulo { font-size: 28px; font-weight: bold; letter-spacing: 0.3px; }
+        .titulo { font-size: 28px; font-weight: bold; letter-spacing: 0.3px; white-space: nowrap; color: #ffffff; }
+        .titulo-tipo.produtos { color: #4caf50; }
+        .titulo-tipo.peca { color: #ff9800; }
+        .titulo-tipo.maquina { color: #9c27b0; }
         .subtitulo {
             font-size: 14px;
             letter-spacing: 2px;
@@ -79,53 +79,6 @@
         .btn-home:active { background: rgba(255,255,255,0.28); transform: translateY(-50%) scale(0.92); }
         .btn-home img { width: 22px; height: 22px; filter: brightness(0) invert(1); }
 
-        /* ── CONTADOR TOTAL ── */
-        .contador-total {
-            text-align: center;
-            margin: 10px 0 18px;
-        }
-        .contador-total span {
-            background: rgba(255,235,59,0.15);
-            border: 1px solid rgba(255,235,59,0.5);
-            color: #ffeb3b;
-            font-weight: bold;
-            padding: 5px 16px;
-            border-radius: 999px;
-            font-size: 15px;
-        }
-
-        /* ── FILTROS ── */
-        .filtros {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 18px;
-            overflow-x: auto;
-            padding-bottom: 2px;
-            scrollbar-width: none;
-        }
-        .filtros::-webkit-scrollbar { display: none; }
-
-        .chip-filtro {
-            flex-shrink: 0;
-            padding: 9px 18px;
-            border-radius: 999px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            border: 1.5px solid rgba(255,255,255,0.25);
-            background: rgba(255,255,255,0.07);
-            color: #b8cce8;
-            transition: 0.15s;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        .chip-filtro.ativo {
-            background: rgba(255,235,59,0.18);
-            border-color: #ffeb3b;
-            color: #ffeb3b;
-        }
-        .chip-filtro:active { transform: scale(0.95); }
-
         /* ── CARDS ── */
         .card-pedido {
             background: linear-gradient(160deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.05) 100%);
@@ -138,6 +91,10 @@
             transition: transform 0.15s;
         }
         .card-pedido:active { transform: scale(0.985); }
+        .card-pedido.destacar-salvo {
+            border-color: #ffeb3b;
+            box-shadow: 0 0 0 2px #ffeb3b, 0 10px 28px rgba(0,0,0,0.22);
+        }
 
         /* Barra de urgência no topo do card */
         .card-accent {
@@ -147,7 +104,6 @@
         .accent-produtos  { background: linear-gradient(90deg, #4caf50, #81c784); }
         .accent-peca      { background: linear-gradient(90deg, #ff9800, #ffb74d); }
         .accent-maquina   { background: linear-gradient(90deg, #9c27b0, #ce93d8); }
-        .accent-materiais { background: linear-gradient(90deg, #00acc1, #4dd0e1); }
 
         /* Urgência sobrescreve a cor */
         .urgencia-alta  .card-accent { background: linear-gradient(90deg, #f44336, #ef9a9a) !important; }
@@ -192,7 +148,6 @@
         .badge-produtos { background: rgba(76,175,80,0.25);  border: 1.5px solid #4caf50; color: #c8e6c9; }
         .badge-peca     { background: rgba(255,152,0,0.25);  border: 1.5px solid #ff9800; color: #ffe0b2; }
         .badge-maquina  { background: rgba(156,39,176,0.25); border: 1.5px solid #9c27b0; color: #e1bee7; }
-        .badge-materiais{ background: rgba(0,172,193,0.22); border: 1.5px solid #00acc1; color: #b2ebf2; }
 
         .badge-tempo {
             font-size: 13px;
@@ -232,7 +187,10 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            flex: 1;
+        }
+        .card-rodape .badge-tempo {
+            margin-left: auto;
+            flex-shrink: 0;
         }
 
         .btn-acao {
@@ -331,11 +289,6 @@
             border-color: rgba(156,39,176,0.55);
             color: #dfb1ea;
         }
-        .form-fixo-categoria.materiais {
-            background: rgba(0,172,193,0.18);
-            border-color: rgba(0,172,193,0.55);
-            color: #b2ebf2;
-        }
 
         .input-glass {
             width: 100%;
@@ -363,6 +316,9 @@
         .chips-cat {
             display: flex;
             gap: 6px;
+            position: relative;
+            overflow: visible;
+            padding-top: 6px;
         }
         .chip-cat {
             flex: 1;
@@ -383,10 +339,36 @@
         }
         .chip-cat .chip-icon { font-size: 18px; line-height: 1; }
         .chip-cat .chip-label { font-size: 11px; font-weight: bold; color: #ffffff; }
-        .chip-cat.selecionado-produtos { border-color: #4caf50; background: rgba(76,175,80,0.2);  color: #a5d6a7; }
-        .chip-cat.selecionado-peca     { border-color: #ff9800; background: rgba(255,152,0,0.2);  color: #ffcc80; }
-        .chip-cat.selecionado-maquina  { border-color: #9c27b0; background: rgba(156,39,176,0.2); color: #ce93d8; }
-        .chip-cat.selecionado-materiais { border-color: #00acc1; background: rgba(0,172,193,0.2); color: #b2ebf2; }
+        .chip-cat.selecionado-produtos {
+            border-color: #4caf50;
+            background: rgba(76,175,80,0.22);
+            color: #a5d6a7;
+            transform: translateY(-5px) scale(1.07);
+            box-shadow: 0 6px 18px rgba(76,175,80,0.55), 0 2px 0 #4caf50;
+            border-bottom-width: 3px;
+            border-bottom-color: #4caf50;
+            z-index: 2;
+        }
+        .chip-cat.selecionado-peca {
+            border-color: #ff9800;
+            background: rgba(255,152,0,0.22);
+            color: #ffcc80;
+            transform: translateY(-5px) scale(1.07);
+            box-shadow: 0 6px 18px rgba(255,152,0,0.55), 0 2px 0 #ff9800;
+            border-bottom-width: 3px;
+            border-bottom-color: #ff9800;
+            z-index: 2;
+        }
+        .chip-cat.selecionado-maquina {
+            border-color: #9c27b0;
+            background: rgba(156,39,176,0.22);
+            color: #ce93d8;
+            transform: translateY(-5px) scale(1.07);
+            box-shadow: 0 6px 18px rgba(156,39,176,0.55), 0 2px 0 #9c27b0;
+            border-bottom-width: 3px;
+            border-bottom-color: #9c27b0;
+            z-index: 2;
+        }
         .chip-cat:active { transform: scale(0.96); }
 
         #btnCancelar {
@@ -426,59 +408,6 @@
         .estado-vazio .icone-vazio { font-size: 48px; margin-bottom: 12px; }
         .estado-vazio p { font-size: 17px; margin: 0; }
 
-        .barra-topo-filtros {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin: 10px 0 18px;
-        }
-        .linha-resumo-filtros {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .linha-resumo-filtros .contador-total {
-            margin: 0;
-            flex-shrink: 0;
-        }
-        .linha-resumo-filtros .contador-total span {
-            min-height: 40px;
-            padding: 8px 16px;
-            font-size: 15px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            white-space: nowrap;
-            line-height: 1;
-        }
-        .linha-resumo-filtros .chip-filtro {
-            min-height: 40px;
-            padding: 8px 16px;
-            font-size: 15px;
-            white-space: nowrap;
-            flex-shrink: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-        }
-        .filtros-secundarios {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 0;
-            overflow: visible;
-            padding-bottom: 0;
-        }
-        .filtros-secundarios .chip-filtro {
-            flex: 1 1 0;
-            min-width: 0;
-            padding: 8px 4px;
-            font-size: 12px;
-            text-align: center;
-            white-space: nowrap;
-        }
-
         input[type="hidden"] { display: none; }
     </style>
 </head>
@@ -487,29 +416,11 @@
 <div class="app">
     <div class="topo">
         <div class="titulo-wrap">
-            <div class="titulo">Pedidos</div>
+            <div class="titulo" id="tituloPedidos">Pedidos</div>
         </div>
         <div class="btn-home" onclick="window.location.href='index.html'">
             <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
         </div>
-    </div>
-
-    <div class="barra-topo-filtros">
-        <div class="linha-resumo-filtros">
-            <div class="contador-total">
-                <span id="textoContador">0 pendentes</span>
-            </div>
-
-            <div class="chip-filtro ativo" data-filtro="todos" onclick="setFiltro('todos')">Todos</div>
-        </div>
-
-        <div class="filtros filtros-secundarios" id="filtros">
-        <div class="chip-filtro" data-filtro="produtos" onclick="setFiltro('produtos')">🟢 Produtos</div>
-        <div class="chip-filtro" data-filtro="peca" onclick="setFiltro('peca')">🟠 Peças</div>
-        <div class="chip-filtro" data-filtro="maquina" onclick="setFiltro('maquina')">🟣 Máquinas</div>
-        <div class="chip-filtro" data-filtro="materiais" onclick="setFiltro('materiais')">🔵 Materiais</div>
-        </div>
-
     </div>
 
     <div id="listaPedidos">
@@ -524,16 +435,15 @@
 <div class="form-fixo">
     <div class="form-fixo-topo">
         <div class="form-fixo-titulo">Novo Pedido</div>
-        <div id="formCategoriaAtual" class="form-fixo-categoria vazia">Selecione</div>
+        <div id="formCategoriaAtual" class="form-fixo-categoria vazia" style="display:none">Selecione</div>
     </div>
     <button id="btnCancelar" onclick="cancelarEdicao()">✕ Cancelar edição</button>
     <input type="hidden" id="idPedido">
 
     <div class="chips-cat" id="chipsCat">
-        <div class="chip-cat selecionado-produtos" data-val="produtos" onclick="selecionarCat('produtos')"><span class="chip-icon">🟢</span><span class="chip-label">Produtos</span></div>
-        <div class="chip-cat" data-val="peca" onclick="selecionarCat('peca')"><span class="chip-icon">🟠</span><span class="chip-label">Peças</span></div>
+        <div class="chip-cat selecionado-peca" data-val="peca" onclick="selecionarCat('peca')"><span class="chip-icon">🟠</span><span class="chip-label">Outros / Peças</span></div>
+        <div class="chip-cat" data-val="produtos" onclick="selecionarCat('produtos')"><span class="chip-icon">🟢</span><span class="chip-label">Produtos</span></div>
         <div class="chip-cat" data-val="maquina" onclick="selecionarCat('maquina')"><span class="chip-icon">🟣</span><span class="chip-label">Máquinas</span></div>
-        <div class="chip-cat" data-val="materiais" onclick="selecionarCat('materiais')"><span class="chip-icon">🔵</span><span class="chip-label">Materiais</span></div>
     </div>
 
     <div class="linha-enviar">
@@ -556,7 +466,8 @@
     const isGestor = _usuarioObj ? (_usuarioObj.nivel_completo || '').includes('gestao') : false;
 
     // Categoria selecionada no form
-    let catAtual = '';
+    let catAtual = 'peca';
+    let pedidoRecemSalvo = null;
     function atualizarCategoriaTituloForm() {
         const categoriaEl = document.getElementById('formCategoriaAtual');
         if (!categoriaEl) return;
@@ -564,10 +475,16 @@
             produtos: 'Produtos',
             peca: 'Peças',
             maquina: 'Máquinas',
-            materiais: 'Materiais'
         };
         categoriaEl.className = `form-fixo-categoria ${catAtual || 'vazia'}`;
         categoriaEl.textContent = rotulos[catAtual] || 'Selecione';
+        const tituloPedidos = document.getElementById('tituloPedidos');
+        if (tituloPedidos) {
+            tituloPedidos.className = 'titulo';
+            tituloPedidos.innerHTML = catAtual
+                ? `Pedidos <span class="titulo-tipo ${catAtual}">${rotulos[catAtual]}</span>`
+                : 'Pedidos';
+        }
     }
     window.selecionarCat = function(val) {
         catAtual = val;
@@ -576,7 +493,9 @@
             if (c.dataset.val === val) c.classList.add('selecionado-' + val);
         });
         atualizarCategoriaTituloForm();
+        aplicarFiltroCategoria();
     };
+    selecionarCat('peca');
 
     function limparSelecaoCategoria() {
         catAtual = '';
@@ -584,43 +503,14 @@
             c.className = 'chip-cat';
         });
         atualizarCategoriaTituloForm();
+        aplicarFiltroCategoria();
     }
 
-    // Filtro ativo
-    let filtroAtivo = 'todos';
-    window.setFiltro = function(f) {
-        filtroAtivo = f;
-        document.querySelectorAll('.chip-filtro').forEach(c => {
-            c.classList.toggle('ativo', c.dataset.filtro === f);
-        });
-        aplicarFiltroVisual();
-    };
-
-    function ajustarRotulosFiltrosTopo() {
-        const rotulos = {
-            todos: 'Todos',
-            produtos: '🟢 Produtos',
-            peca: '🟠 Peças',
-            maquina: '🟣 Máquinas',
-            materiais: '🔵 Materiais'
-        };
-        document.querySelectorAll('.chip-filtro').forEach(chip => {
-            chip.textContent = rotulos[chip.dataset.filtro] || chip.textContent;
-        });
-    }
-
-    function aplicarFiltroVisual() {
+    function aplicarFiltroCategoria() {
         document.querySelectorAll('.card-pedido').forEach(card => {
-            const cat = card.dataset.cat;
-            card.style.display = (filtroAtivo === 'todos' || cat === filtroAtivo) ? '' : 'none';
+            const categoria = card.dataset.cat || '';
+            card.style.display = !catAtual || categoria === catAtual ? '' : 'none';
         });
-        atualizarContador();
-    }
-
-    function atualizarContador() {
-        const visiveis = [...document.querySelectorAll('.card-pedido')].filter(c => c.style.display !== 'none').length;
-        const t = document.getElementById('textoContador');
-        t.textContent = visiveis === 0 ? 'nenhum pendente' : `${visiveis} pendente${visiveis > 1 ? 's' : ''}`;
     }
 
     function calcularDias(dataIso) {
@@ -630,15 +520,20 @@
         return Math.max(0, Math.floor((hoje - d) / 86400000));
     }
 
+    function timestampPedido(pedido) {
+        const ts = Date.parse(pedido?.data || '');
+        return Number.isNaN(ts) ? 0 : ts;
+    }
+
     function txtDias(dias) {
-        return dias === 1 ? '1 dia atrás' : `${dias} dias atrás`;
+        return dias === 1 ? 'há 1 dia' : `há ${dias} dias`;
     }
 
     function badgeTempo(dias, media) {
         if (dias === 0)          return { cls: 'tempo-hoje',    txt: 'Hoje' };
         if (dias <= media * 0.5) return { cls: 'tempo-fresco',  txt: txtDias(dias) };
-        if (dias <= media)       return { cls: 'tempo-alerta',  txt: `${txtDias(dias)} ⚠️` };
-        return                          { cls: 'tempo-urgente', txt: `${txtDias(dias)} 🔥` };
+        if (dias <= media)       return { cls: 'tempo-alerta',  txt: txtDias(dias) };
+        return                          { cls: 'tempo-urgente', txt: txtDias(dias) };
     }
 
     function urgenciaClass(dias, media) {
@@ -662,20 +557,20 @@
                     <div class="icone-vazio">✅</div>
                     <p>Tudo comprado! Nenhum pedido pendente.</p>
                 </div>`;
-            document.getElementById('textoContador').textContent = 'nenhum pendente';
             return;
         }
 
         const todosDias = lista.map(p => calcularDias(p.data));
         const media = todosDias.length ? todosDias.reduce((a, b) => a + b, 0) / todosDias.length : 7;
 
-        lista.slice().reverse().forEach(p => {
+        let cardRecemSalvo = null;
+        lista.slice().sort((a, b) => timestampPedido(a) - timestampPedido(b)).forEach(p => {
             const dias = calcularDias(p.data);
             const tempo = badgeTempo(dias, media);
             const urgencia = urgenciaClass(dias, media);
             const souDono = (p.solicitante === usuarioLogado);
 
-            const catMap = { produtos: 'Produtos', peca: 'Peças', maquina: 'Máquinas', materiais: 'Materiais' };
+            const catMap = { produtos: 'Produtos', peca: 'Peças', maquina: 'Máquinas' };
             const nomeCat = catMap[p.categoria] || p.categoria;
 
             const classeConfirmar = souDono ? 'ativo-confirmar' : '';
@@ -687,6 +582,7 @@
             const card = document.createElement('div');
             card.className = `card-pedido ${urgencia}`;
             card.dataset.cat = p.categoria;
+            card.dataset.id = p.firebaseUrl || '';
 
             card.innerHTML = `
                 <div class="card-accent accent-${p.categoria}"></div>
@@ -695,12 +591,12 @@
                         <div class="desc-item">${p.descricao}</div>
                         <div class="badges-col">
                             <span class="badge-cat badge-${p.categoria}">${nomeCat}</span>
-                            <span class="badge-tempo ${tempo.cls}">${tempo.txt}</span>
                         </div>
                     </div>
                     <div class="card-rodape">
                         <div class="avatar">${inicialAvatar(p.solicitante)}</div>
                         <span class="nome-sol">${p.solicitante}</span>
+                        <span class="badge-tempo ${tempo.cls}">${tempo.txt}</span>
                         <button class="btn-acao ${classeEditar}" onclick='${acaoEditar}'>✏️</button>
                         <button class="btn-acao ${classeConfirmar}" onclick="${acaoConfirmar}">${souDono ? '✅' : '⏳'}</button>
                         ${isGestor ? `<button class="btn-excluir" onclick="excluirPedido('${p.firebaseUrl}')">🗑️</button>` : ''}
@@ -708,9 +604,26 @@
                 </div>`;
 
             container.appendChild(card);
+            if (
+                pedidoRecemSalvo &&
+                p.solicitante === pedidoRecemSalvo.solicitante &&
+                p.categoria === pedidoRecemSalvo.categoria &&
+                p.descricao === pedidoRecemSalvo.descricao &&
+                p.data === pedidoRecemSalvo.data
+            ) {
+                cardRecemSalvo = card;
+            }
         });
 
-        aplicarFiltroVisual();
+        aplicarFiltroCategoria();
+        if (cardRecemSalvo) {
+            setTimeout(() => {
+                cardRecemSalvo.classList.add('destacar-salvo');
+                cardRecemSalvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => cardRecemSalvo.classList.remove('destacar-salvo'), 2200);
+                pedidoRecemSalvo = null;
+            }, 80);
+        }
     });
 
     // 2. SALVAR PEDIDO
@@ -720,13 +633,24 @@
         if (!desc) { await window.playAlert('Digite o que precisa comprar.'); return; }
         if (!catAtual) { await window.playAlert('Selecione a categoria do pedido.'); return; }
 
-        await dbSalvarPedido({
+        const dataPedido = new Date().toISOString();
+        const categoriaPedido = catAtual;
+        const pedido = {
             descricao:   desc,
-            categoria:   catAtual,
+            categoria:   categoriaPedido,
             solicitante: usuarioLogado,
-            data:        new Date().toISOString()
-        }, id);
-        cancelarEdicao();
+            data:        dataPedido
+        };
+
+        if (!id) pedidoRecemSalvo = pedido;
+        await dbSalvarPedido(pedido, id);
+
+        document.getElementById('idPedido').value          = '';
+        document.getElementById('descPedido').value        = '';
+        document.getElementById('btnEnviar').innerText      = 'ENVIAR';
+        document.getElementById('btnCancelar').style.display = 'none';
+        document.querySelector('.form-fixo-titulo').textContent = 'Novo Pedido';
+        selecionarCat(categoriaPedido);
     };
 
     // 3. EDITAR PEDIDO
@@ -747,7 +671,7 @@
         document.getElementById('btnEnviar').innerText      = 'ENVIAR';
         document.getElementById('btnCancelar').style.display = 'none';
         document.querySelector('.form-fixo-titulo').textContent = 'Novo Pedido';
-        limparSelecaoCategoria();
+        selecionarCat('peca');
     };
 
     // 5. CONFIRMAR COMPRA
@@ -764,8 +688,7 @@
         }
     };
 
-    ajustarRotulosFiltrosTopo();
-    limparSelecaoCategoria();
+    selecionarCat('peca');
 
 </script>
 </body>
