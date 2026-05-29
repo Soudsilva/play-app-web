@@ -4138,7 +4138,7 @@ export async function dbAprovarContestacaoBalancoComAjuste(responsavel, contesta
                 origemRegistro: 'balanco',
                 itemChave: contestacao.itemChave,
                 movimento: diferenca,
-                descricao: diferenca > 0 ? 'Ajuste de balanço: adicionado pelo gestor' : 'Ajuste de balanço: retirado pelo gestor',
+                descricao: 'Correção feita pelo gestor',
                 refId: id,
                 controlarPosse: true,
                 ignorarValidacaoPosse: true,

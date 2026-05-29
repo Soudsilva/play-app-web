@@ -1167,6 +1167,15 @@
         .hist-item.pos  { border-left-color:#69f0ae; }
         .hist-item.neg  { border-left-color:#ef9a9a; }
         .hist-item.contestacao { border-left-color:#ffeb3b; }
+        .hist-item.gestor {
+            border-left-color:#f59e0b;
+            border-left-width:4px;
+            border-top: 1.5px solid rgba(245,158,11,0.45);
+            border-right: 1.5px solid rgba(245,158,11,0.15);
+            border-bottom: 1.5px solid rgba(245,158,11,0.15);
+            background: linear-gradient(135deg, rgba(245,158,11,0.10) 0%, rgba(15,42,102,0) 60%);
+            box-shadow: 0 0 16px rgba(245,158,11,0.15), 0 4px 14px rgba(0,0,0,0.28);
+        }
         .hist-item.aprovacao {
             border-left-color:#4ade80;
             border-left-width:4px;
@@ -1229,7 +1238,7 @@
         .hist-item.contestacao .hist-info-valor.quantidade { color:#ffeb3b; }
         .hist-item.aprovacao .hist-info-valor.quantidade { color:#86efac; }
         .hist-item.aprovacao .hist-info-valor.total { color:#86efac; font-size:17px; font-weight:700; }
-        .hist-info-valor.total { font-size:14px; font-weight:500; color:#ffffff; }
+        .hist-info-valor.total { font-size:16px; font-weight:700; color:#c8d8f8; }
         .hist-info-valor.total.negativo,
         .hist-item.aprovacao .hist-info-valor.total.negativo,
         .contest-val-sistema.negativo,
@@ -2595,7 +2604,7 @@
             return '<div class="item-contestacao aprovada">Conferido</div>';
         }
         if (!contestacaoEstaEmAnalise(contestacao)) return '';
-        return `<div class="item-contestacao">Análise ${formatarDiferencaContestacao(contestacao)}</div>`;
+        return '<div class="item-contestacao">Análise</div>';
     }
 
     function obterContestacoesGestorEmAnalise() {
@@ -2698,6 +2707,8 @@
     function formatarDescricaoHistoricoBalanco(entrada) {
         const tipo = String(entrada?.tipo || '').trim();
         const descricao = String(entrada?.descricao || '').trim();
+        if (tipo === 'ajuste_balanco_gestor') return 'Correção';
+
         const rotulosManutencao = {
             manutencao: 'Reposição',
             manutencao_adicao: 'Adicionou',
@@ -2773,14 +2784,16 @@
             const totalNumeroLinha = e.totalApos != null ? Number(e.totalApos) : null;
             const totalStr = totalNumeroLinha != null ? formatarQuantidadeVisual(totalNumeroLinha) : '—';
             const totalClasse = totalNumeroLinha != null && totalNumeroLinha < 0 ? ' negativo' : '';
+            const isGestorAjuste = tipoLinha === 'movimento' && String(e.tipo || '') === 'ajuste_balanco_gestor';
             const classeLinha = tipoLinha === 'contestacao'
                 ? 'contestacao'
-                : (tipoLinha === 'aprovacao' ? 'aprovacao' : (pos ? 'pos' : 'neg'));
+                : (tipoLinha === 'aprovacao' ? 'aprovacao' : (isGestorAjuste ? 'gestor' : (pos ? 'pos' : 'neg')));
 
             return `${grupoHtml}
             <div class="hist-item ${classeLinha}">
                 <div class="hist-topo-linha">
                     ${tipoLinha === 'aprovacao' ? `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.45);border-radius:20px;padding:2px 10px 2px 7px;font-size:13px;font-weight:700;color:#86efac;letter-spacing:0.3px;margin-right:8px;white-space:nowrap;">✔ Conferido</span>` : ''}
+                    ${isGestorAjuste ? `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.45);border-radius:20px;padding:2px 10px 2px 7px;font-size:11px;font-weight:700;color:#fcd34d;letter-spacing:0.3px;margin-right:6px;white-space:nowrap;flex-shrink:0;">✦ Gestor</span>` : ''}
                     ${tipoLinha === 'aprovacao' ? '' : `<span class="hist-desc">${desc}</span>`}
                 </div>
                 ${tipoLinha === 'aprovacao' ? `
@@ -3412,7 +3425,7 @@
                                     <div class="item-barra" style="width:${Math.round((Math.abs(qtd) / maxProd) * 100)}%;background:${qtd < 0 ? 'linear-gradient(90deg,#b71c1c,#ef5350)' : ''};box-shadow:${qtd < 0 ? '0 0 7px rgba(239,83,80,0.45)' : ''}"></div>
                                 </div>
                             </div>
-                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.5);color:#ef9a9a;box-shadow:0 0 10px rgba(239,83,80,0.2);' : ''}">${qtd} <span style="font-size:9px;opacity:0.45;margin-left:3px;letter-spacing:-1px;">··</span></div>
+                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.5);color:#ef9a9a;box-shadow:0 0 10px rgba(239,83,80,0.2);' : ''}">${formatarQuantidadeVisual(qtd)}</div>
                         </div>`;
                         })()}`).join('')}
                 </div>
@@ -3437,7 +3450,7 @@
                                     <div class="item-barra" style="width:${Math.round((Math.abs(qtd) / maxPecas) * 100)}%;background:${qtd < 0 ? 'linear-gradient(90deg,#b71c1c,#ef5350)' : '#0ea5e9'};box-shadow:${qtd < 0 ? '0 0 7px rgba(239,83,80,0.45)' : ''}"></div>
                                 </div>
                             </div>
-                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.5);color:#ef9a9a;box-shadow:0 0 10px rgba(239,83,80,0.2);' : ''}">${qtd} <span style="font-size:9px;opacity:0.45;margin-left:3px;letter-spacing:-1px;">··</span></div>
+                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.5);color:#ef9a9a;box-shadow:0 0 10px rgba(239,83,80,0.2);' : ''}">${formatarQuantidadeVisual(qtd)}</div>
                         </div>`;
                         })()}`).join('')}
                 </div>
@@ -3474,7 +3487,7 @@
                                     <div class="item-barra" style="width:${Math.round((Math.abs(qtd) / maxMaqPosse) * 100)}%;background:${qtd < 0 ? '#ef5350' : (i === 0 ? '#4caf50' : 'rgba(76,175,80,0.6)')}"></div>
                                 </div>
                             </div>
-                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.45);color:#ef9a9a;' : (i === 0 ? 'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;' : '')}">${qtd} <span style="font-size:9px;opacity:0.45;margin-left:3px;letter-spacing:-1px;">··</span></div>
+                            <div class="item-badge${i === 0 && qtd > 0 ? ' destaque' : ''}" style="${qtd < 0 ? 'background:rgba(239,83,80,0.18);border-color:rgba(239,83,80,0.45);color:#ef9a9a;' : (i === 0 ? 'background:rgba(76,175,80,0.25);border-color:rgba(76,175,80,0.5);color:#81c784;' : '')}">${formatarQuantidadeVisual(qtd)}</div>
                         </div>`;
                         })()}`).join('')}
                 </div>
