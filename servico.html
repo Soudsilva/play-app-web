@@ -1130,11 +1130,12 @@
 
         if (adicionados.length === 1) {
             const contador = String(adicionados[0].contador || '').trim();
+            const pix = String(adicionados[0].pix || '-').trim() || '-';
             return {
-                titulo: `${adicionados[0].nome} adicionada`,
-                info: contador
-                    ? `Pix ${adicionados[0].pix || '-'} contador ${contador}`
-                    : `Pix ${adicionados[0].pix || '-'}`
+                titulo: contador
+                    ? `Pix ${pix} contador ${contador}`
+                    : `Pix ${pix}`,
+                info: ''
             };
         }
 
@@ -1169,7 +1170,7 @@
                 ${fotoDestaque}
                 <div class="pix-servico-destaque-texto">
                     <div class="pix-servico-destaque-titulo">${escHtml(resumo.titulo)}</div>
-                    <div class="pix-servico-destaque-info">${escHtml(resumo.info)}</div>
+                    ${resumo.info ? `<div class="pix-servico-destaque-info">${escHtml(resumo.info)}</div>` : ''}
                     ${responsavel ? `<div class="pix-servico-destaque-responsavel"><span>Servi&ccedil;o feito por:</span> ${escHtml(responsavel)}</div>` : ''}
                 </div>
             </div>`;
@@ -1423,7 +1424,7 @@
                     enderecoEntrega: c.endereco || '',
                     enderecoSolicitacao: solicitacao?.clienteEndereco || '',
                     foto,
-                    fotosInstalacao,
+                    fotosInstalacao: itensPix.length > 0 ? [] : fotosInstalacao,
                     pixItens: itensPix,
                     buscaExtra: montarBuscaExtraPix(itensPix)
                 };

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sa&uacute;de de Vendas</title>
     <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; }
         .app { width:100%; max-width:700px; padding:15px; box-sizing:border-box; min-height: 100vh; padding-bottom: 70px; }
 
@@ -13,66 +14,81 @@
         .btn-home { background: rgba(255,255,255,0.1); padding: 8px; border-radius: 50%; cursor: pointer; display:flex; position:absolute; right:0; }
         .btn-home img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
 
-        .barra { position: sticky; top: 0; z-index: 100; background:#042d86; padding: 10px 0 12px; margin-bottom: 12px; }
-        .linha-barra { display:flex; gap: 10px; align-items: center; }
-        .card-controle {
-            flex: 1;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.18);
-            border-radius: 14px;
-            padding: 10px 12px;
-        }
-        .card-controle.periodo {
-            flex: 0 0 62px;
-            padding-left: 6px;
-            padding-right: 6px;
-        }
-        .card-controle.ordenar {
-            flex: 0 0 62px;
-            padding-left: 6px;
-            padding-right: 6px;
-        }
-        .card-controle.periodo select {
-            padding-left: 8px;
-            padding-right: 8px;
-            text-align: center;
-        }
-        .card-controle.ordenar select {
-            padding-left: 6px;
-            padding-right: 6px;
-            text-align: center;
-        }
-        .card-controle.buscar { flex: 1.35; }
-        .busca-topo {
+        .barra {
+            background: #042d86;
+            padding: 10px 0 6px;
+            margin-bottom: 0;
             display: flex;
             flex-direction: column;
-            align-items: stretch;
-            justify-content: center;
-            gap: 6px;
-            margin-bottom: 6px;
+            gap: 8px;
         }
-        .modo-busca-row {
+        .linha-barra-wrap { }
+        .linha-barra {
             display: flex;
-            gap: 6px;
+            gap: 8px;
+            align-items: stretch;
         }
-        .btn-modo-busca {
-            flex: 1;
-            border: 1px solid rgba(255,255,255,0.22);
-            background: rgba(255,255,255,0.10);
-            color: white;
-            border-radius: 10px;
-            padding: 8px 10px;
-            font-size: 12px;
-            font-weight: bold;
-            cursor: pointer;
+        .busca-fixa {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #042d86;
+            padding: 4px 0 10px;
+        }
+        .card-controle {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 12px;
+            padding: 8px 8px;
+        }
+        .card-controle.periodo { flex: 0 0 58px; text-align: center; }
+        .card-controle.ordenar { flex: 0 0 58px; text-align: center; }
+        .card-controle.periodo select,
+        .card-controle.ordenar select {
             text-align: center;
-            transition: 0.15s ease;
+            padding-left: 4px;
+            padding-right: 4px;
         }
-        .btn-modo-busca.ativo {
-            background: rgba(255,235,59,0.18);
-            border-color: rgba(255,235,59,0.45);
-            color: #ffeb3b;
+        .card-controle.buscar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 6px 8px;
         }
+        .segmented {
+            display: flex;
+            background: rgba(0,0,0,0.28);
+            border-radius: 8px;
+            padding: 3px;
+            gap: 8px;
+        }
+        .seg-btn {
+            flex: 1;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            padding: 7px 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.6);
+            background: rgba(255,255,255,0.06);
+            cursor: pointer;
+            white-space: nowrap;
+            letter-spacing: 0.2px;
+        }
+        .seg-btn.ativo-cliente {
+            background: rgba(41,182,246,0.30);
+            color: #81d4fa;
+            transform: translateY(-4px) scale(1.06);
+            box-shadow: 0 6px 14px rgba(41,182,246,0.45), 0 2px 0 #29b6f6;
+        }
+        .seg-btn.ativo-maquina {
+            background: rgba(156,39,176,0.35);
+            color: #e1bee7;
+            transform: translateY(-4px) scale(1.06);
+            box-shadow: 0 6px 14px rgba(156,39,176,0.45), 0 2px 0 #9c27b0;
+        }
+        .seg-btn:active { transform: scale(0.96); }
         .busca-campo[hidden] { display: none !important; }
         .lbl { font-size: 11px; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; }
         input[type="date"], input[type="text"], select {
@@ -323,6 +339,34 @@
         }
 
         .vazia { text-align:center; opacity: 0.65; margin-top: 45px; background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.12); padding: 18px; border-radius: 14px; }
+        .vazia.carregando {
+            opacity: 1;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: bold;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .spinner-colorido {
+            width: 46px;
+            height: 46px;
+            margin: 0 auto 12px;
+            border-radius: 50%;
+            background: conic-gradient(#ffeb3b, #00e676, #29b6f6, #ab47bc, #ff7043, #ffeb3b);
+            animation: girar-eng 0.9s linear infinite;
+            position: relative;
+        }
+        .spinner-colorido::after {
+            content: "";
+            position: absolute;
+            inset: 6px;
+            border-radius: 50%;
+            background: #0d2c6e;
+        }
+        @keyframes girar-eng {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
 
         @keyframes led-pulse {
             0%, 100% { color: #7eb8ff; text-shadow: 0 0 6px #4a90e2; }
@@ -366,6 +410,7 @@
     </div>
 
     <div class="barra">
+        <div class="linha-barra-wrap">
         <div class="linha-barra">
             <div class="card-controle periodo">
                 <div class="lbl" style="text-align:center;">Per&iacute;odo</div>
@@ -382,19 +427,21 @@
                 </select>
             </div>
             <div class="card-controle buscar">
-                <div class="busca-topo">
-                    <div class="lbl" id="lblEscolhaBusca" style="text-align:center; margin-bottom:0;">Escolha</div>
-                    <div class="modo-busca-row">
-                        <button type="button" class="btn-modo-busca" id="btnModoCliente">Cliente</button>
-                        <button type="button" class="btn-modo-busca" id="btnModoMaquina">Máquina</button>
-                    </div>
+                <div class="lbl" style="text-align:center; margin-bottom:5px;">Buscar por</div>
+                <div class="segmented">
+                    <button type="button" class="seg-btn" id="btnModoMaquina">⚙ Máquina</button>
+                    <button type="button" class="seg-btn" id="btnModoCliente">👤 Cliente</button>
                 </div>
-                <input class="busca-campo" type="text" id="busca" placeholder="Nome, n&ordm; ou rota">
-                <select class="busca-campo" id="buscaMaquina" hidden>
-                    <option value="">Selecione a m&aacute;quina</option>
-                </select>
             </div>
         </div>
+        </div>
+        <div id="lblEscolhaBusca" hidden></div>
+    </div>
+    <div class="busca-fixa">
+        <input class="busca-campo" type="text" id="busca" placeholder="Nome, n&ordm; ou rota">
+        <select class="busca-campo" id="buscaMaquina" hidden>
+            <option value="">Selecione a m&aacute;quina</option>
+        </select>
     </div>
 
     <div id="lista" class="lista"></div>
@@ -428,13 +475,15 @@
     let mapaClientesPorId = new Map();
     let mapaClientesPorNumero = new Map();
     let termo = '';
-    let modoBusca = '';
+    let modoBusca = 'maquina';
     let termoMaquina = '';
-    let modoOrdenacao = 'numero_menor';
+    let modoOrdenacao = 'valor_menor';
     let usuarioGestao = false;
     let nomesMaquinasEstoque = [];
     let cardExpandidoId = '';
     let atendimentosCachePromise = null;
+    let mediaDeVendasCarregada = false;
+    let clientesCarregados = false;
     const detalhesFotosCache = new Map();
 
     const elLista = document.getElementById('lista');
@@ -729,8 +778,8 @@
     function atualizarModoBuscaUI() {
         const clienteAtivo = modoBusca === 'cliente';
         const maquinaAtiva = modoBusca === 'maquina';
-        elBtnModoCliente.classList.toggle('ativo', clienteAtivo);
-        elBtnModoMaquina.classList.toggle('ativo', maquinaAtiva);
+        elBtnModoCliente.classList.toggle('ativo-cliente', clienteAtivo);
+        elBtnModoMaquina.classList.toggle('ativo-maquina', maquinaAtiva);
         elLblEscolhaBusca.hidden = !!modoBusca;
         elBusca.hidden = !clienteAtivo;
         elBuscaMaquina.hidden = !maquinaAtiva;
@@ -802,10 +851,10 @@
     }
 
     function atualizarOpcoesOrdenacaoPorPerfil() {
-        const valorAtual = modoOrdenacao || elOrdenacao.value || 'numero_menor';
+        const valorAtual = modoOrdenacao || elOrdenacao.value || 'valor_menor';
         const valorPermitido = usuarioGestao
             ? valorAtual
-            : (valorAtual === 'ultimo_atendimento_maior' ? 'numero_menor' : valorAtual);
+            : (valorAtual === 'ultimo_atendimento_maior' ? 'valor_menor' : valorAtual);
 
         elOrdenacao.innerHTML = `
             <option value="valor_menor">- &#128181;</option>
@@ -879,11 +928,27 @@
         return { msg: null, dias, estimativa, vendaDia, ultimoAtendimentoEm: ultimo };
     }
 
+    function mostrarCarregamentoInicial() {
+        elLista.innerHTML = '';
+        elVazia.classList.add('carregando');
+        elVazia.style.display = 'block';
+        elVazia.innerHTML = `
+            <div class="spinner-colorido" aria-hidden="true"></div>
+            <div>Carregando registros...</div>
+        `;
+    }
+
     function render() {
         if (!navigator.onLine) {
             elLista.innerHTML = '';
+            elVazia.classList.remove('carregando');
             elVazia.style.display = 'block';
             elVazia.innerText = 'Sem internet — esta tela depende de dados em tempo real.';
+            return;
+        }
+
+        if (!mediaDeVendasCarregada || !clientesCarregados) {
+            mostrarCarregamentoInicial();
             return;
         }
 
@@ -915,11 +980,13 @@
 
         if (listaOrdenada.length === 0) {
             elLista.innerHTML = '';
+            elVazia.classList.remove('carregando');
             elVazia.style.display = 'block';
             elVazia.innerText = termo ? 'Nenhum cliente encontrado para este filtro.' : 'Nenhum registro dispon\u00edvel.';
             return;
         }
 
+        elVazia.classList.remove('carregando');
         elVazia.style.display = 'none';
         elLista.innerHTML = '';
         const listaCalculada = listaOrdenada.map(reg => {
@@ -1068,14 +1135,15 @@
     });
     elPeriodo.addEventListener('change', render);
     elOrdenacao.addEventListener('change', () => {
-        modoOrdenacao = elOrdenacao.value || 'numero_menor';
+        modoOrdenacao = elOrdenacao.value || 'valor_menor';
         render();
     });
 
     // Default: próximos 15 dias
     atualizarModoBuscaUI();
     elPeriodo.value = '15';
-    elOrdenacao.value = 'numero_menor';
+    elOrdenacao.value = 'valor_menor';
+
 
     dbEscutarColaboradores((lista) => {
         colaboradores = lista || [];
@@ -1099,11 +1167,13 @@
 
     dbEscutarMediaDeVendas((lista) => {
         listaBase = Array.isArray(lista) ? lista : [];
+        mediaDeVendasCarregada = true;
         render();
     });
 
     dbEscutarClientes((lista) => {
         atualizarMapasClientes(Array.isArray(lista) ? lista : []);
+        clientesCarregados = true;
         render();
     });
 
