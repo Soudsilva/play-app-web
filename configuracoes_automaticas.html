@@ -10,135 +10,201 @@
             margin: 0;
             min-height: 100vh;
             font-family: Arial, Helvetica, sans-serif;
-            background: #042d86;
+            background: #0b2256;
             color: #ffffff;
             display: flex;
             justify-content: center;
             user-select: none;
             -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
+            position: relative;
+            z-index: 0;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at top, rgba(54, 105, 214, 0.55), transparent 34%),
+                linear-gradient(180deg, #11317a 0%, #0b2256 42%, #071634 100%);
+            z-index: -1;
         }
         .app {
             width: 100%;
             max-width: 440px;
             min-height: 100vh;
-            padding: 14px 16px 28px;
+            padding: 18px 16px 32px;
         }
         .topo {
             position: relative;
-            min-height: 48px;
+            min-height: 56px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
+            padding: 10px 0 4px;
         }
         .titulo {
             color: #ffffff;
-            font-size: 22px;
+            font-size: 24px;
             line-height: 1.1;
             font-weight: 700;
             text-align: center;
             max-width: calc(100% - 58px);
+            letter-spacing: 0.3px;
         }
         .btn-home {
             position: absolute;
             right: 0;
-            top: 5px;
-            width: 38px;
-            height: 38px;
-            border: 1px solid #ffffff;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            background: rgba(255,255,255,0.16);
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
-            background: #173f90;
-            color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.28);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+            font-size: 20px;
+            color: #ffffff;
+        }
+        .btn-home:active {
+            background: rgba(255,255,255,0.30);
+            transform: translateY(-50%) scale(0.92);
+        }
+        .btn-home img {
+            width: 22px;
+            height: 22px;
+            filter: brightness(0) invert(1);
         }
         .status {
-            min-height: 22px;
             margin: 4px 0 10px;
-            color: #ffffff;
-            font-size: 15px;
+            color: rgba(255,255,255,0.65);
+            font-size: 14px;
             line-height: 1.35;
             text-align: center;
             font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+        .status:empty {
+            margin: 0;
         }
         .secao {
-            border: 1px solid #ffffff;
-            border-radius: 8px;
-            background: #12377d;
-            padding: 14px 12px;
-            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.14);
+            border-radius: 18px;
+            background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(8px);
+            padding: 18px 16px;
+            margin-bottom: 14px;
         }
         .secao-titulo {
             color: #ffeb3b;
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
             text-align: center;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+            letter-spacing: 0.3px;
         }
         .campo {
-            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 0;
         }
-        .campo:last-child { margin-bottom: 0; }
+        .campo + .campo {
+            border-top: 1px solid rgba(255,255,255,0.07);
+        }
         label {
-            display: block;
-            color: #ffffff;
-            font-size: 15px;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 6px;
+            color: rgba(255,255,255,0.9);
+            font-size: 16px;
+            font-weight: 500;
+            text-align: left;
+            flex: 1;
+            margin: 0;
+            line-height: 1.3;
         }
         input {
-            width: 100%;
-            min-height: 44px;
-            border: 2px solid #ffffff;
-            border-radius: 8px;
-            background: #ffffff;
-            color: #111111;
-            font-size: 18px;
+            width: 100px;
+            flex-shrink: 0;
+            min-height: 46px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.12);
+            color: #ffeb3b;
+            font-size: 22px;
             font-weight: 700;
             text-align: center;
             padding: 8px 10px;
             outline: none;
             user-select: text;
             -webkit-user-select: text;
+            transition: background 0.15s ease, box-shadow 0.15s ease;
+            border: 1px solid rgba(255,255,255,0.18);
+        }
+        input:focus {
+            background: rgba(255,255,255,0.18);
+            box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.5);
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            appearance: textfield;
+            -moz-appearance: textfield;
         }
         .meta {
-            margin-top: 10px;
-            padding: 10px;
-            border: 1px solid #ffffff;
-            border-radius: 8px;
-            color: #ffffff;
+            margin-top: 12px;
+            padding: 9px 12px 9px 12px;
+            border-left: 3px solid rgba(255,255,255,0.28);
+            border-radius: 0 6px 6px 0;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.65);
             font-size: 13px;
-            line-height: 1.35;
-            text-align: center;
+            line-height: 1.45;
+            text-align: left;
         }
         .acoes {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-top: 14px;
+            margin-top: 18px;
         }
         button {
-            min-height: 46px;
+            min-height: 50px;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 16px;
             font-weight: 700;
             cursor: pointer;
             color: #ffffff;
             user-select: none;
             -webkit-user-select: none;
+            letter-spacing: 0.4px;
+            transition: transform 0.12s ease;
         }
-        .btn-salvar { background: #1b8f3a; }
-        .btn-resetar { background: #4f5f80; }
+        button:active { transform: scale(0.97); }
+        .btn-salvar {
+            background: linear-gradient(135deg, #1b8f3a 0%, #27ae60 100%);
+            box-shadow: 0 4px 16px rgba(27, 143, 58, 0.4);
+        }
+        .btn-resetar {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.22);
+        }
         button:disabled {
-            background: #667085;
-            color: #ffffff;
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.3);
+            box-shadow: none;
             cursor: not-allowed;
+            transform: none;
         }
     </style>
 </head>
@@ -146,7 +212,9 @@
 <div class="app">
     <div class="topo">
         <div class="titulo">Configurações Automáticas</div>
-        <button type="button" class="btn-home" onclick="window.location.href='index.html'" aria-label="Voltar">⌂</button>
+        <div class="btn-home" onclick="window.location.href='index.html'" role="button" aria-label="Voltar">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
+        </div>
     </div>
 
     <div class="status" id="status">Carregando configurações...</div>
@@ -158,8 +226,12 @@
             <input id="valorMinimoRota" type="number" min="1" step="1" inputmode="numeric">
         </div>
         <div class="campo">
-            <label for="diasMinimosRota">Dias mínimos sem fazer</label>
-            <input id="diasMinimosRota" type="number" min="1" step="1" inputmode="numeric">
+            <label for="diasMaximosRota">Dias máximos sem fazer</label>
+            <input id="diasMaximosRota" type="number" min="1" step="1" inputmode="numeric">
+        </div>
+        <div class="campo">
+            <label for="diasMinimosRota">Dias mínimos</label>
+            <input id="diasMinimosRota" type="number" min="0" step="1" inputmode="numeric">
         </div>
     </div>
 
@@ -187,7 +259,8 @@
     const PADRAO = {
         prioridade_rota: {
             valor_minimo: 1500,
-            dias_minimos: 70
+            dias_minimos: 0,
+            dias_maximos: 70
         },
         manutencao_sem_visita: {
             dias_minimos: 100
@@ -199,10 +272,14 @@
         meta: document.getElementById('metaAtualizacao'),
         valorMinimoRota: document.getElementById('valorMinimoRota'),
         diasMinimosRota: document.getElementById('diasMinimosRota'),
+        diasMaximosRota: document.getElementById('diasMaximosRota'),
         diasSemVisita: document.getElementById('diasSemVisita'),
         btnSalvar: document.getElementById('btnSalvar'),
         btnPadrao: document.getElementById('btnPadrao')
     };
+
+    let assinaturaSalva = '';
+    let salvando = false;
 
     function obterUsuarioAtual() {
         return String(localStorage.getItem('usuarioLogado') || localStorage.getItem('usuario_selecionado') || '').trim();
@@ -235,29 +312,67 @@
         return Math.round(numero);
     }
 
+    function numeroNaoNegativo(valor, nomeCampo) {
+        const numero = Number(String(valor || '').trim());
+        if (!Number.isFinite(numero) || numero < 0) {
+            throw new Error(`Informe um valor válido para ${nomeCampo}.`);
+        }
+        return Math.round(numero);
+    }
+
+    function montarAssinaturaValores(valores) {
+        return [
+            Number(valores?.prioridade_rota?.valor_minimo || 0),
+            Number(valores?.prioridade_rota?.dias_minimos || 0),
+            Number(valores?.prioridade_rota?.dias_maximos || 0),
+            Number(valores?.manutencao_sem_visita?.dias_minimos || 0)
+        ].join('|');
+    }
+
+    function obterValoresCampos() {
+        return {
+            prioridade_rota: {
+                valor_minimo: numeroPositivo(els.valorMinimoRota.value, 'valor mínimo da rota'),
+                dias_minimos: numeroNaoNegativo(els.diasMinimosRota.value, 'dias mínimos da rota'),
+                dias_maximos: numeroPositivo(els.diasMaximosRota.value, 'dias máximos da rota')
+            },
+            manutencao_sem_visita: {
+                dias_minimos: numeroPositivo(els.diasSemVisita.value, 'dias sem visita')
+            }
+        };
+    }
+
+    function atualizarEstadoSalvar() {
+        if (salvando || !validarAcesso()) {
+            els.btnSalvar.disabled = true;
+            return;
+        }
+        try {
+            els.btnSalvar.disabled = montarAssinaturaValores(obterValoresCampos()) === assinaturaSalva;
+        } catch (_) {
+            els.btnSalvar.disabled = true;
+        }
+    }
+
     function preencherCampos(config = {}) {
         els.valorMinimoRota.value = Number(config?.prioridade_rota?.valor_minimo || PADRAO.prioridade_rota.valor_minimo);
-        els.diasMinimosRota.value = Number(config?.prioridade_rota?.dias_minimos || PADRAO.prioridade_rota.dias_minimos);
+        els.diasMinimosRota.value = Number(config?.prioridade_rota?.dias_minimos ?? PADRAO.prioridade_rota.dias_minimos);
+        els.diasMaximosRota.value = Number(config?.prioridade_rota?.dias_maximos || PADRAO.prioridade_rota.dias_maximos);
         els.diasSemVisita.value = Number(config?.manutencao_sem_visita?.dias_minimos || PADRAO.manutencao_sem_visita.dias_minimos);
 
         const atualizadoPor = String(config?.atualizado_por || '').trim();
         const atualizadoEm = config?.atualizado_em ? new Date(config.atualizado_em) : null;
         if (atualizadoPor && atualizadoEm && !Number.isNaN(atualizadoEm.getTime())) {
-            els.meta.textContent = `Última alteração por ${atualizadoPor} em ${atualizadoEm.toLocaleString('pt-BR')}.`;
+            els.meta.textContent = `Feito por ${atualizadoPor} - ${atualizadoEm.toLocaleString('pt-BR')}`;
         } else {
             els.meta.textContent = 'Sem atualização registrada.';
         }
+        atualizarEstadoSalvar();
     }
 
     function montarPayload() {
         return {
-            prioridade_rota: {
-                valor_minimo: numeroPositivo(els.valorMinimoRota.value, 'valor mínimo da rota'),
-                dias_minimos: numeroPositivo(els.diasMinimosRota.value, 'dias mínimos da rota')
-            },
-            manutencao_sem_visita: {
-                dias_minimos: numeroPositivo(els.diasSemVisita.value, 'dias sem visita')
-            },
+            ...obterValoresCampos(),
             atualizado_em: new Date().toISOString(),
             atualizado_por: obterUsuarioAtual()
         };
@@ -267,10 +382,21 @@
         if (!validarAcesso()) return;
         try {
             const config = await dbObterConfiguracoesAutomaticas();
+            assinaturaSalva = montarAssinaturaValores({
+                prioridade_rota: {
+                    valor_minimo: Number(config?.prioridade_rota?.valor_minimo || PADRAO.prioridade_rota.valor_minimo),
+                    dias_minimos: Number(config?.prioridade_rota?.dias_minimos ?? PADRAO.prioridade_rota.dias_minimos),
+                    dias_maximos: Number(config?.prioridade_rota?.dias_maximos || PADRAO.prioridade_rota.dias_maximos)
+                },
+                manutencao_sem_visita: {
+                    dias_minimos: Number(config?.manutencao_sem_visita?.dias_minimos || PADRAO.manutencao_sem_visita.dias_minimos)
+                }
+            });
             preencherCampos(config);
-            els.status.textContent = 'Valores carregados.';
+            els.status.textContent = '';
         } catch (error) {
-            console.error('Erro ao carregar configurações automáticas:', error);
+            console.error('Erro ao carregar configuracoes automaticas:', error);
+            assinaturaSalva = montarAssinaturaValores(PADRAO);
             preencherCampos(PADRAO);
             els.status.textContent = 'Não foi possível carregar. Exibindo valores padrão.';
         }
@@ -279,10 +405,12 @@
     async function salvar() {
         if (!validarAcesso()) return;
         try {
-            els.btnSalvar.disabled = true;
+            salvando = true;
+            atualizarEstadoSalvar();
             els.status.textContent = 'Salvando...';
             const payload = montarPayload();
             await dbSalvarConfiguracoesAutomaticas(payload);
+            assinaturaSalva = montarAssinaturaValores(payload);
             preencherCampos(payload);
             els.status.textContent = 'Configurações salvas.';
         } catch (error) {
@@ -290,11 +418,15 @@
             if (window.playAlert) await window.playAlert(error.message || 'Erro ao salvar configurações.');
             els.status.textContent = 'Erro ao salvar.';
         } finally {
-            els.btnSalvar.disabled = false;
+            salvando = false;
+            atualizarEstadoSalvar();
         }
     }
 
     els.btnSalvar.addEventListener('click', salvar);
+    [els.valorMinimoRota, els.diasMinimosRota, els.diasMaximosRota, els.diasSemVisita].forEach(input => {
+        input.addEventListener('input', atualizarEstadoSalvar);
+    });
     els.btnPadrao.addEventListener('click', () => {
         preencherCampos(PADRAO);
         els.status.textContent = 'Valores padrão preenchidos. Toque em Salvar para aplicar.';

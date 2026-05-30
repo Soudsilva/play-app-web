@@ -1355,7 +1355,7 @@ window.selecionarRota = async function() {
 
     if (!rotaSelecionada) {
         estaAnimando = false;
-        mostrarToast('Todas as rotas já foram selecionadas!');
+        mostrarToast('Nenhuma rota disponível dentro dos critérios.');
         btn.setAttribute('disabled', true);
         btn.innerHTML = '🔒 &nbsp;Nenhuma rota disponível';
         return;
@@ -1480,6 +1480,26 @@ async function calcularValoresPorRota() {
         mediaPorNumero[numero] = item;
     });
 
+    function parseDataRota(valor) {
+        if (!valor) return null;
+        const data = new Date(valor);
+        return Number.isNaN(data.getTime()) ? null : data;
+    }
+
+    function inicioDia(data) {
+        if (!data) return null;
+        const copia = new Date(data);
+        copia.setHours(0, 0, 0, 0);
+        return copia;
+    }
+
+    function diasDesde(valor) {
+        const data = inicioDia(parseDataRota(valor));
+        if (!data) return null;
+        const hoje = inicioDia(new Date());
+        return Math.max(0, Math.round((hoje - data) / 86400000));
+    }
+
     // Calcula estimativa por cliente usando 100% a base Media_de_Vendas atual
     const rotasMap = {}; // { "01": { valor_estimado, clientes: [] } }
 
@@ -1493,9 +1513,15 @@ async function calcularValoresPorRota() {
         const estimativa = Number.isFinite(Number(mediaAtual?.estimativaAtualDia))
             ? Math.round((Number(mediaAtual.estimativaAtualDia) + Number.EPSILON) * 100) / 100
             : 0;
+        const ultimaCobrancaEm = mediaAtual?.ultimaCobrancaEm || null;
 
         if (!rotasMap[numRota]) {
-            rotasMap[numRota] = { valor_estimado: 0, clientes: [], num_clientes: 0 };
+            rotasMap[numRota] = { valor_estimado: 0, clientes: [], num_clientes: 0, ultimoAtendimentoEm: null };
+        }
+        const ultimaAtual = parseDataRota(rotasMap[numRota].ultimoAtendimentoEm);
+        const ultimaCliente = parseDataRota(ultimaCobrancaEm);
+        if (ultimaCliente && (!ultimaAtual || ultimaCliente > ultimaAtual)) {
+            rotasMap[numRota].ultimoAtendimentoEm = ultimaCobrancaEm;
         }
         rotasMap[numRota].valor_estimado += estimativa;
         rotasMap[numRota].num_clientes++;
@@ -1512,7 +1538,11 @@ async function calcularValoresPorRota() {
 
     // Ordena por valor desc
     const rotas = Object.entries(rotasMap)
-        .map(([numero, dados]) => ({ numero, ...dados }))
+        .map(([numero, dados]) => ({
+            numero,
+            ...dados,
+            dias_sem_fazer: diasDesde(dados.ultimoAtendimentoEm)
+        }))
         .sort((a, b) => b.valor_estimado - a.valor_estimado);
 
     // Monta clientesPorRota
@@ -1542,6 +1572,7 @@ async function iniciarSessao() {
         rotasObj[r.numero] = {
             valor_estimado: r.valor_estimado,
             num_clientes: r.num_clientes,
+            dias_sem_fazer: Number.isFinite(Number(r.dias_sem_fazer)) ? Number(r.dias_sem_fazer) : null,
             selecionada_por: null,
             selecionada_em: null,
             validade_maxima_em: null,
@@ -1586,6 +1617,7 @@ async function iniciarSessao() {
             rotasObj[numero] = {
                 valor_estimado: rotaAntiga.valor_estimado || 0,
                 num_clientes: rotaAntiga.num_clientes ?? ((clientesPorRotaAntigos[numero] || []).length),
+                dias_sem_fazer: Number.isFinite(Number(rotaAntiga.dias_sem_fazer)) ? Number(rotaAntiga.dias_sem_fazer) : null,
                 selecionada_por: rotaAntiga.selecionada_por,
                 selecionada_em: rotaAntiga.selecionada_em || null,
                 validade_maxima_em: rotaAntiga.validade_maxima_em || null,

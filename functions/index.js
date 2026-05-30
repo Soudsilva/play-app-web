@@ -13,7 +13,7 @@ admin.initializeApp({
 const RESUMO_BALANCO_ID = "resumo_balanco";
 const CINCO_DIAS_MS = 5 * 24 * 60 * 60 * 1000;
 const VALOR_MINIMO_ADIANTAR_ROTA = 1500;
-const DIAS_MINIMOS_ADIANTAR_ROTA = 70;
+const DIAS_MAXIMOS_ADIANTAR_ROTA = 70;
 const DIAS_MINIMOS_REPOR_SEM_VISITA = 100;
 const CONFIGURACOES_AUTOMATICAS_ROOT = "configuracoes_automaticas";
 const DEPOSITOS_RESUMO_ROOT = "firebase_functions_depositos";
@@ -77,9 +77,9 @@ async function obterConfiguracoesAutomaticas(db) {
           config?.prioridade_rota?.valor_minimo,
           VALOR_MINIMO_ADIANTAR_ROTA,
         ),
-        diasMinimos: numeroConfig(
-          config?.prioridade_rota?.dias_minimos,
-          DIAS_MINIMOS_ADIANTAR_ROTA,
+        diasMaximos: numeroConfig(
+          config?.prioridade_rota?.dias_maximos,
+          DIAS_MAXIMOS_ADIANTAR_ROTA,
         ),
       },
       manutencaoSemVisita: {
@@ -94,7 +94,7 @@ async function obterConfiguracoesAutomaticas(db) {
     return {
       prioridadeRota: {
         valorMinimo: VALOR_MINIMO_ADIANTAR_ROTA,
-        diasMinimos: DIAS_MINIMOS_ADIANTAR_ROTA,
+        diasMaximos: DIAS_MAXIMOS_ADIANTAR_ROTA,
       },
       manutencaoSemVisita: {
         diasMinimos: DIAS_MINIMOS_REPOR_SEM_VISITA,
@@ -992,7 +992,7 @@ exports.adianta_rota = onSchedule(
       obterConfiguracoesAutomaticas(db),
     ]);
     const valorMinimoRota = config.prioridadeRota.valorMinimo;
-    const diasMinimosRota = config.prioridadeRota.diasMinimos;
+    const diasMaximosRota = config.prioridadeRota.diasMaximos;
 
     if (!rotasSnap.exists() || !mediaSnap.exists()) {
       logger.info("Adianta rota sem dados suficientes para processar.");
@@ -1047,7 +1047,7 @@ exports.adianta_rota = onSchedule(
       const diasSemFazer = diasDesdeBrasilia(resumo.ultimaCobrancaEm, agora);
       const atendeValor = resumo.valorEstimado >= valorMinimoRota;
       const atendeTempo = diasSemFazer != null &&
-        diasSemFazer >= diasMinimosRota;
+        diasSemFazer >= diasMaximosRota;
 
       if (!atendeValor || !atendeTempo) return;
 
@@ -1066,7 +1066,7 @@ exports.adianta_rota = onSchedule(
       totalAnalisadas,
       totalMarcadas,
       valorMinimo: valorMinimoRota,
-      diasMinimos: diasMinimosRota,
+      diasMaximos: diasMaximosRota,
       data: dataBrasiliaISOData(agora),
     });
   },

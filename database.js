@@ -4532,11 +4532,15 @@ export async function dbDefinirPrioridadeManualRota(numeroRota, usuario, ativa) 
 
 export async function dbSelecionarRota(nomeUsuario) {
     const sessionRef = ref(db, 'selecao_rotas/ativa');
-    const snapshot = await get(sessionRef);
+    const [snapshot, config] = await Promise.all([
+        get(sessionRef),
+        dbObterConfiguracoesAutomaticas().catch(() => ({}))
+    ]);
     const sessao = snapshot.val();
     if (!sessao || !sessao.rotas) return null;
 
     const rotas = sessao.rotas;
+    const diasMinimosRota = Number(config?.prioridade_rota?.dias_minimos || 0);
 
     // Ordena as disponíveis pelo maior valor estimado
     function obterPrioridadeMs(rota) {
@@ -4546,6 +4550,7 @@ export async function dbSelecionarRota(nomeUsuario) {
 
     const disponiveis = Object.entries(rotas)
         .filter(([_, r]) => !r.selecionada_por)
+        .filter(([_, r]) => diasMinimosRota <= 0 || Number(r?.dias_sem_fazer ?? -1) >= diasMinimosRota)
         .sort(([numA, a], [numB, b]) => {
             const prioA = a?.prioridade_manual === true;
             const prioB = b?.prioridade_manual === true;
