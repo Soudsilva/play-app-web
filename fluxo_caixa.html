@@ -566,6 +566,17 @@
         return `${ano}-${mes}-${dia}`;
     }
 
+    function obterDataMovimentoISO(item) {
+        const valor = item?.data || item?.criado_em || '';
+        if (!valor) return '';
+
+        const texto = String(valor);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return texto;
+
+        const data = new Date(valor);
+        return Number.isNaN(data.getTime()) ? '' : obterDataLocalISO(data);
+    }
+
     function normalizarValorMoeda(valor) {
         const texto = String(valor ?? '').trim().replace(/\s+/g, '').replace(/[^\d,.-]/g, '');
         if (!texto) return NaN;
@@ -621,10 +632,13 @@
     function obterMovimentacoesFiltradas() {
         const meses = [...new Set(
             estado.movimentacoes
-                .map(item => item.data ? item.data.slice(0, 7) : '')
+                .map(item => obterDataMovimentoISO(item).slice(0, 7))
                 .filter(Boolean)
         )].sort().reverse().slice(0, 3);
-        return estado.movimentacoes.filter(item => item.data && meses.includes(item.data.slice(0, 7)));
+        return estado.movimentacoes.filter(item => {
+            const dataMovimento = obterDataMovimentoISO(item);
+            return dataMovimento && meses.includes(dataMovimento.slice(0, 7));
+        });
     }
 
     function calcularSaldo(lista) {
@@ -689,7 +703,7 @@
 
         const grupos = new Map();
         for (const item of listaFiltrada) {
-            const chave = item.data || 'sem-data';
+            const chave = obterDataMovimentoISO(item) || 'sem-data';
             if (!grupos.has(chave)) grupos.set(chave, []);
             grupos.get(chave).push(item);
         }

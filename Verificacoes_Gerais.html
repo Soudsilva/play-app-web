@@ -1313,12 +1313,7 @@
         const diff = Math.round((hoje - data) / 86400000);
         if (diff === 0) return 'Hoje';
         if (diff === 1) return 'Ontem';
-        if (diff < 7) {
-            const nome = data.toLocaleDateString('pt-BR', { weekday: 'long' });
-            return nome.charAt(0).toUpperCase() + nome.slice(1);
-        }
-        const mes = MESES[data.getMonth()];
-        return data.getFullYear() === hoje.getFullYear() ? mes : `${mes} ${data.getFullYear()}`;
+        return data.toLocaleDateString('pt-BR');
     }
 
     function renderizarEnvios() {

@@ -250,7 +250,7 @@
             text-align: center;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             gap: 8px;
         }
 
@@ -521,6 +521,42 @@
 
         .rota-cidade-stack b {
             color: #ff9800;
+        }
+
+        .rota-selecionada-aviso {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin-top: 6px;
+            padding: 5px 10px 5px 10px;
+            border-left: 4px solid #4caf50;
+            border-radius: 0 6px 6px 0;
+            background: rgba(76, 175, 80, 0.15);
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.4;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .rota-selecionada-aviso strong {
+            color: #ff9800;
+            font-weight: 700;
+            margin-left: 4px;
+        }
+
+        .rota-icone-responsavel {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 12px;
+            margin-right: 6px;
+            flex-shrink: 0;
         }
 
         .icones-acao {
@@ -1024,7 +1060,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbEscutarManutencoes, dbSalvarManutencao, dbEscutarAtendimentos } from './database.js';
+    import { dbEscutarClientes, dbEscutarManutencoes, dbSalvarManutencao, dbEscutarAtendimentos, dbEscutarRotasSessaoAtiva } from './database.js';
 
     let clientes = [];
     let manutencoes = [];
@@ -1036,6 +1072,7 @@
     let termoPesquisa = "";
     let filtroMinhasSelecoes = false;
     let manutencaoPendenteAjuste = "";
+    let rotasSelecionadasPorUsuario = {};
 
     const _loadingMsgs = [
         "Buscando as ordens de serviço...",
@@ -1081,6 +1118,10 @@
             .toLowerCase()
             .replace(/\s+/g, " ")
             .trim();
+    }
+
+    function normalizarNumeroRota(valor) {
+        return String(valor || "").trim().replace(/^R\.?\s*/i, "");
     }
 
     function obterMesAtual() {
@@ -1788,11 +1829,13 @@
 
         // Perfil estoque: exibe apenas "adicionar" e "ponto novo"
         let isEstoque = false;
+        let isAtendimentoNivel1 = false;
         try {
             const cache = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
             const userObj = cache.find(c => c.nome === usuarioLogado);
             const perfil = userObj?.nivel_completo || '';
             isEstoque = perfil.includes('estoque') && !perfil.includes('gestao');
+            isAtendimentoNivel1 = perfil.includes('atendimento_1');
             if (!exibindoConcluidas && isEstoque) {
                 listaFiltrada = listaFiltrada.filter(item => {
                     const tipo = String(item.tipoAcao || '').toLowerCase();
@@ -1821,6 +1864,12 @@
             const selecaoLabel = estaSelecionado
                 ? `<span class="card-selecao-tecnico">${escaparHtml(item.selecionadoPor)}</span> vai realizar este serviço`
                 : 'Marcar que farei este serviço';
+
+            const rotaKey = normalizarNumeroRota(item.clienteRota);
+            const rotaSelecionadaPor = rotaKey ? String(rotasSelecionadasPorUsuario[rotaKey] || "").trim() : "";
+            const avisoRotaSelecionada = rotaSelecionadaPor && !isAtendimentoNivel1
+                ? `<div class="rota-selecionada-aviso"><span class="rota-icone-responsavel">&#128100;</span> Rota ser&aacute; feita por <strong>${escaparHtml(rotaSelecionadaPor)}</strong></div>`
+                : '';
 
             card.innerHTML = `
                 ${!exibindoConcluidas && !isEstoque ? `
@@ -1855,6 +1904,7 @@
                         </div>` : ''}
                     </div>
                     <div class="linha-solicitado"><b>Solicitado:</b> ${escaparHtml(item.solicitante)} &nbsp;&nbsp; solicitação feita há ${escaparHtml(formatarDiasEmAberto(item.diasEmAberto).toLowerCase())}</div>
+                    ${avisoRotaSelecionada}
                     ${exibindoConcluidas ? `
                     <div class="linha-conclusao">
                         <div><b>Conclu&iacute;do por:</b> ${escaparHtml(item.concluidoPor || "Nao informado")}</div>
@@ -1979,6 +2029,17 @@
     dbEscutarClientes((lista) => {
         clientes = lista;
         atualizarCacheManutencoesPendentes();
+        agendarRenderizacao();
+    });
+
+    dbEscutarRotasSessaoAtiva((rotas) => {
+        const mapa = {};
+        Object.entries(rotas || {}).forEach(([numero, rota]) => {
+            const selecionadaPor = String(rota?.selecionada_por || "").trim();
+            const rotaKey = normalizarNumeroRota(rota?.numero || numero);
+            if (rotaKey && selecionadaPor) mapa[rotaKey] = selecionadaPor;
+        });
+        rotasSelecionadasPorUsuario = mapa;
         agendarRenderizacao();
     });
 

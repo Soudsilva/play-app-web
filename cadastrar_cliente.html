@@ -1137,10 +1137,17 @@
         return obterEquipamentosDetalhadosDoFormulario().some(item => String(item.nome || "").trim());
     }
 
+    function haMaquinaRetiradaDaLojaParaInstalacao() {
+        return obterEquipamentosDetalhadosDoFormulario().some(item =>
+            String(item.nome || "").trim() && item.contabilizarFinanceiro !== false
+        );
+    }
+
     function validarProdutosObrigatoriosPorMaquina() {
         if (!haMaquinaPreenchidaNoFormulario()) return [];
 
         const produtos = coletarProdutosInstalacaoParaSalvar();
+        if (!haMaquinaRetiradaDaLojaParaInstalacao()) return produtos;
         if (produtos.length === 0) {
             throw new Error("Como houve inclusão de máquina, informe os produtos utilizados.");
         }

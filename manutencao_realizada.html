@@ -1228,6 +1228,25 @@ function obterPixRetiradosSelecionados() {
     return obterEquipamentosRetiradosSelecionados().filter(item => String(item?.pix || '').trim());
 }
 
+function obterNomeFotoMaquinaManutencao(item) {
+    let nome = String(item?.nome || '').trim();
+    if (!nome) return '';
+
+    let qtd = Number.parseInt(String(item?.qtd || '1').trim(), 10) || 1;
+    const matchQtdNoNome = nome.match(/\s*\((\d+)\)\s*$/);
+    if (matchQtdNoNome) {
+        qtd = Number.parseInt(matchQtdNoNome[1], 10) || qtd;
+        nome = nome.replace(/\s*\(\d+\)\s*$/, '').trim();
+    }
+
+    const nomeNormalizado = nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+    if (nomeNormalizado === 'maquina g') return '';
+    if (nomeNormalizado === 'maquina p' && qtd > 2 && qtd <= 4) return 'RACK';
+
+    return nome;
+}
+
 function obterSlotsFotosEquipamentosRetirados() {
     if (!respostas.acoesMaquinas.retirou) return [];
 
@@ -1235,13 +1254,14 @@ function obterSlotsFotosEquipamentosRetirados() {
         return obterEquipamentosRetiradosSelecionados()
             .map(item => ({
                 slotKey: `ret_${item.indice}`,
-                nomeExibicao: String(item?.nome || 'Maquina').trim() || 'Maquina'
+                nomeExibicao: obterNomeFotoMaquinaManutencao(item)
             }))
             .filter(item => item.nomeExibicao);
     }
 
     const livre = String(document.getElementById('campoEquipLivre')?.value || '').trim();
-    return livre ? [{ slotKey: 'ret_livre', nomeExibicao: livre }] : [];
+    const nomeExibicaoLivre = obterNomeFotoMaquinaManutencao({ nome: livre });
+    return nomeExibicaoLivre ? [{ slotKey: 'ret_livre', nomeExibicao: nomeExibicaoLivre }] : [];
 }
 
 function capturarPreviewsFotosEquipamentosRetirados() {
@@ -1306,7 +1326,7 @@ function renderizarFotosEquipamentosRetirados() {
 async function coletarFotosEquipamentosRetiradosParaSalvar() {
     const inputs = Array.from(document.querySelectorAll('#containerFotosEquipamentosRetirados .input-foto-equip-retirado'));
     if (inputs.length === 0) {
-        throw new Error('Adicione as fotos das maquinas retiradas.');
+        return [];
     }
 
     const faltando = [];
@@ -2278,9 +2298,12 @@ function obterSlotsFotosEquipamentosAdicionados() {
         const nome = String(item.nome || '').trim();
         const quantidade = Math.max(Number.parseInt(item.qtd, 10) || 0, 0);
         if (!nome || quantidade <= 0) return;
+        const nomeExibicaoBase = obterNomeFotoMaquinaManutencao(item);
+        if (!nomeExibicaoBase) return;
 
         // Maquina P com até 4 unidades é tratada como um único equipamento (1 foto só)
-        const eMaquinaP = /^maquina\s+p$/i.test(nome);
+        const nomeNormalizado = nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const eMaquinaP = /^maquina\s+p$/i.test(nomeNormalizado);
         const slotsParaGerar = (eMaquinaP && quantidade <= 4) ? 1 : quantidade;
 
         for (let indiceFoto = 1; indiceFoto <= slotsParaGerar; indiceFoto += 1) {
@@ -2289,7 +2312,7 @@ function obterSlotsFotosEquipamentosAdicionados() {
                 slotKey: `equip_${linhaIndexValida + 1}_${indiceFoto}`,
                 linhaIndexValida,
                 nomeBase: nome,
-                nomeExibicao: `${nome}${sufixo}`,
+                nomeExibicao: `${nomeExibicaoBase}${sufixo}`,
             });
         }
     });
@@ -2434,7 +2457,7 @@ function coletarEquipamentosAdicionadosParaSalvar() {
 async function coletarFotosEquipamentosAdicionadosParaSalvar() {
     const inputs = Array.from(document.querySelectorAll('#containerFotosEquipamentosAdicionados .input-foto-equip-adicionado'));
     if (inputs.length === 0) {
-        throw new Error('Adicione as fotos das máquinas instaladas.');
+        return [];
     }
 
     const faltando = [];

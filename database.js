@@ -4475,6 +4475,13 @@ export function dbEscutarSessaoRotas(callback) {
     });
 }
 
+// Escuta apenas os metadados das rotas, sem carregar clientes_por_rota.
+export function dbEscutarRotasSessaoAtiva(callback) {
+    onValue(ref(db, 'selecao_rotas/ativa/rotas'), (snapshot) => {
+        callback(snapshot.val() || {});
+    });
+}
+
 // Lê uma vez a sessão ativa
 export async function dbObterSessaoRotas() {
     const snapshot = await get(ref(db, 'selecao_rotas/ativa'));
