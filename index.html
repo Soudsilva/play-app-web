@@ -298,6 +298,10 @@
                     <span class="icone">&#128270;</span>
                     <span>Verificar Rotas</span>
                 </div>
+                <div class="botao-sub" id="btnConfigAutomaticas" onclick="window.location.href='configuracoes_automaticas.html'" style="display:none;">
+                    <span class="icone">&#9881;</span>
+                    <span>Config. Autom&aacute;ticas</span>
+                </div>
             </div>
         </div>
 
@@ -731,6 +735,7 @@
             pagamentosGestor: document.getElementById('btnPagamentosGestor'),
             representante: document.getElementById('btnRepresentante'),
             verificarRotas: document.getElementById('btnVerificarRotas'),
+            configAutomaticas: document.getElementById('btnConfigAutomaticas'),
             contrato: document.getElementById('btnContrato')
         };
 
@@ -857,6 +862,7 @@
 
         // Verificar Rotas: apenas Gestão Nível 3
         btns.verificarRotas.style.display = perfil.includes('gestao_3') ? 'flex' : 'none';
+        btns.configAutomaticas.style.display = perfil.includes('gestao_3') ? 'flex' : 'none';
 
         // GESTOR NÍVEL 3: botão Financeiro (Pagamentos_Gestor), sem Fluxo de Caixa
         if (perfil.includes('gestao_3')) {

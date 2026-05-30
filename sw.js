@@ -10,6 +10,7 @@ const SHELL = [
     '/verificar_envios.html',
     '/media_de_vendas.html',
     '/importar_cobrancas_dataverse.html',
+    '/configuracoes_automaticas.html',
     '/auth.js',
     '/database.js',
     '/offline-sync.js',

@@ -2389,6 +2389,16 @@ export async function dbExcluirTodosMovimentosFluxoCaixa(nomeUsuario) {
     }
 }
 
+export async function dbObterConfiguracoesAutomaticas() {
+    const snapshot = await get(ref(db, 'configuracoes_automaticas'));
+    return snapshot.val() || {};
+}
+
+export async function dbSalvarConfiguracoesAutomaticas(configuracoes) {
+    await set(ref(db, 'configuracoes_automaticas'), configuracoes);
+    return configuracoes;
+}
+
 function _normalizarNomeRemuneracao(nome) {
     return String(nome || '').trim().toLowerCase();
 }

@@ -12,9 +12,10 @@ admin.initializeApp({
 
 const RESUMO_BALANCO_ID = "resumo_balanco";
 const CINCO_DIAS_MS = 5 * 24 * 60 * 60 * 1000;
-const VALOR_MINIMO_ADIANTAR_ROTA = 2200;
-const DIAS_MINIMOS_ADIANTAR_ROTA = 60;
+const VALOR_MINIMO_ADIANTAR_ROTA = 1500;
+const DIAS_MINIMOS_ADIANTAR_ROTA = 70;
 const DIAS_MINIMOS_REPOR_SEM_VISITA = 100;
+const CONFIGURACOES_AUTOMATICAS_ROOT = "configuracoes_automaticas";
 const DEPOSITOS_RESUMO_ROOT = "firebase_functions_depositos";
 const LIMITE_BLOQUEIO_DEPOSITO = 5000;
 const MEDIA_VENDAS_ROOT = "Media_de_Vendas";
@@ -59,6 +60,47 @@ function normalizarChaveUsuario(nomeUsuario) {
 function numero(valor) {
   const n = Number(valor || 0);
   return Number.isFinite(n) ? n : 0;
+}
+
+function numeroConfig(valor, padrao) {
+  const n = Number(valor);
+  return Number.isFinite(n) && n > 0 ? n : padrao;
+}
+
+async function obterConfiguracoesAutomaticas(db) {
+  try {
+    const snap = await db.ref(CONFIGURACOES_AUTOMATICAS_ROOT).get();
+    const config = snap.val() || {};
+    return {
+      prioridadeRota: {
+        valorMinimo: numeroConfig(
+          config?.prioridade_rota?.valor_minimo,
+          VALOR_MINIMO_ADIANTAR_ROTA,
+        ),
+        diasMinimos: numeroConfig(
+          config?.prioridade_rota?.dias_minimos,
+          DIAS_MINIMOS_ADIANTAR_ROTA,
+        ),
+      },
+      manutencaoSemVisita: {
+        diasMinimos: numeroConfig(
+          config?.manutencao_sem_visita?.dias_minimos,
+          DIAS_MINIMOS_REPOR_SEM_VISITA,
+        ),
+      },
+    };
+  } catch (error) {
+    logger.warn("Falha ao carregar configuracoes automaticas. Usando padroes.", error);
+    return {
+      prioridadeRota: {
+        valorMinimo: VALOR_MINIMO_ADIANTAR_ROTA,
+        diasMinimos: DIAS_MINIMOS_ADIANTAR_ROTA,
+      },
+      manutencaoSemVisita: {
+        diasMinimos: DIAS_MINIMOS_REPOR_SEM_VISITA,
+      },
+    };
+  }
 }
 
 function normalizarNumeroCliente(valor) {
@@ -944,10 +986,13 @@ exports.adianta_rota = onSchedule(
     const db = admin.database();
     const agora = new Date();
     const agoraIso = agora.toISOString();
-    const [rotasSnap, mediaSnap] = await Promise.all([
+    const [rotasSnap, mediaSnap, config] = await Promise.all([
       db.ref("selecao_rotas/ativa/rotas").get(),
       db.ref(MEDIA_VENDAS_ROOT).get(),
+      obterConfiguracoesAutomaticas(db),
     ]);
+    const valorMinimoRota = config.prioridadeRota.valorMinimo;
+    const diasMinimosRota = config.prioridadeRota.diasMinimos;
 
     if (!rotasSnap.exists() || !mediaSnap.exists()) {
       logger.info("Adianta rota sem dados suficientes para processar.");
@@ -1000,9 +1045,9 @@ exports.adianta_rota = onSchedule(
 
       totalAnalisadas += 1;
       const diasSemFazer = diasDesdeBrasilia(resumo.ultimaCobrancaEm, agora);
-      const atendeValor = resumo.valorEstimado >= VALOR_MINIMO_ADIANTAR_ROTA;
+      const atendeValor = resumo.valorEstimado >= valorMinimoRota;
       const atendeTempo = diasSemFazer != null &&
-        diasSemFazer >= DIAS_MINIMOS_ADIANTAR_ROTA;
+        diasSemFazer >= diasMinimosRota;
 
       if (!atendeValor || !atendeTempo) return;
 
@@ -1020,8 +1065,8 @@ exports.adianta_rota = onSchedule(
     logger.info("Adianta rota concluida.", {
       totalAnalisadas,
       totalMarcadas,
-      valorMinimo: VALOR_MINIMO_ADIANTAR_ROTA,
-      diasMinimos: DIAS_MINIMOS_ADIANTAR_ROTA,
+      valorMinimo: valorMinimoRota,
+      diasMinimos: diasMinimosRota,
       data: dataBrasiliaISOData(agora),
     });
   },
@@ -1036,11 +1081,13 @@ exports.cadastrarManutencoesReposicaoSemVisita = onSchedule(
     const db = admin.database();
     const agora = new Date();
     const agoraIso = agora.toISOString();
-    const [mediaSnap, clientesSnap, manutencoesSnap] = await Promise.all([
+    const [mediaSnap, clientesSnap, manutencoesSnap, config] = await Promise.all([
       db.ref(MEDIA_VENDAS_ROOT).get(),
       db.ref("clientes").get(),
       db.ref("manutencoes").get(),
+      obterConfiguracoesAutomaticas(db),
     ]);
+    const diasMinimosSemVisita = config.manutencaoSemVisita.diasMinimos;
 
     if (!mediaSnap.exists() || !clientesSnap.exists()) {
       logger.info("Reposicao sem visita sem dados suficientes para processar.");
@@ -1106,7 +1153,7 @@ exports.cadastrarManutencoesReposicaoSemVisita = onSchedule(
       const ultimaCobrancaEm = media.ultimaCobrancaEm || "";
       const diasSemVisita = diasDesdeBrasilia(ultimaCobrancaEm, agora);
       if (diasSemVisita == null ||
-        diasSemVisita <= DIAS_MINIMOS_REPOR_SEM_VISITA) {
+        diasSemVisita <= diasMinimosSemVisita) {
         return;
       }
 
@@ -1186,7 +1233,7 @@ exports.cadastrarManutencoesReposicaoSemVisita = onSchedule(
       ignoradosPorDuplicidade,
       ignoradosSemCliente,
       ignoradosEncerrados,
-      diasMinimos: DIAS_MINIMOS_REPOR_SEM_VISITA,
+      diasMinimos: diasMinimosSemVisita,
       data: dataBrasiliaISOData(agora),
     });
   },

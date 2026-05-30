@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações Automáticas</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #042d86;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .app {
+            width: 100%;
+            max-width: 440px;
+            min-height: 100vh;
+            padding: 14px 16px 28px;
+        }
+        .topo {
+            position: relative;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+        .titulo {
+            color: #ffffff;
+            font-size: 22px;
+            line-height: 1.1;
+            font-weight: 700;
+            text-align: center;
+            max-width: calc(100% - 58px);
+        }
+        .btn-home {
+            position: absolute;
+            right: 0;
+            top: 5px;
+            width: 38px;
+            height: 38px;
+            border: 1px solid #ffffff;
+            border-radius: 50%;
+            background: #173f90;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .status {
+            min-height: 22px;
+            margin: 4px 0 10px;
+            color: #ffffff;
+            font-size: 15px;
+            line-height: 1.35;
+            text-align: center;
+            font-weight: 400;
+        }
+        .secao {
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            background: #12377d;
+            padding: 14px 12px;
+            margin-bottom: 12px;
+        }
+        .secao-titulo {
+            color: #ffeb3b;
+            font-size: 18px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .campo {
+            margin-bottom: 12px;
+        }
+        .campo:last-child { margin-bottom: 0; }
+        label {
+            display: block;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+        input {
+            width: 100%;
+            min-height: 44px;
+            border: 2px solid #ffffff;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #111111;
+            font-size: 18px;
+            font-weight: 700;
+            text-align: center;
+            padding: 8px 10px;
+            outline: none;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        .meta {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ffffff;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 13px;
+            line-height: 1.35;
+            text-align: center;
+        }
+        .acoes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        button {
+            min-height: 46px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #ffffff;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .btn-salvar { background: #1b8f3a; }
+        .btn-resetar { background: #4f5f80; }
+        button:disabled {
+            background: #667085;
+            color: #ffffff;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="topo">
+        <div class="titulo">Configurações Automáticas</div>
+        <button type="button" class="btn-home" onclick="window.location.href='index.html'" aria-label="Voltar">⌂</button>
+    </div>
+
+    <div class="status" id="status">Carregando configurações...</div>
+
+    <div class="secao">
+        <div class="secao-titulo">Prioridade de rota</div>
+        <div class="campo">
+            <label for="valorMinimoRota">Valor mínimo da rota</label>
+            <input id="valorMinimoRota" type="number" min="1" step="1" inputmode="numeric">
+        </div>
+        <div class="campo">
+            <label for="diasMinimosRota">Dias mínimos sem fazer</label>
+            <input id="diasMinimosRota" type="number" min="1" step="1" inputmode="numeric">
+        </div>
+    </div>
+
+    <div class="secao">
+        <div class="secao-titulo">Manutenção automática</div>
+        <div class="campo">
+            <label for="diasSemVisita">Dias sem visita para criar manutenção</label>
+            <input id="diasSemVisita" type="number" min="1" step="1" inputmode="numeric">
+        </div>
+        <div class="meta" id="metaAtualizacao">Sem atualização registrada.</div>
+    </div>
+
+    <div class="acoes">
+        <button type="button" class="btn-resetar" id="btnPadrao">Padrão</button>
+        <button type="button" class="btn-salvar" id="btnSalvar">Salvar</button>
+    </div>
+</div>
+
+<script src="assets/js/play-dialogs.js"></script>
+<script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    verificarAutenticacao();
+    import { dbObterConfiguracoesAutomaticas, dbSalvarConfiguracoesAutomaticas } from './database.js';
+
+    const PADRAO = {
+        prioridade_rota: {
+            valor_minimo: 1500,
+            dias_minimos: 70
+        },
+        manutencao_sem_visita: {
+            dias_minimos: 100
+        }
+    };
+
+    const els = {
+        status: document.getElementById('status'),
+        meta: document.getElementById('metaAtualizacao'),
+        valorMinimoRota: document.getElementById('valorMinimoRota'),
+        diasMinimosRota: document.getElementById('diasMinimosRota'),
+        diasSemVisita: document.getElementById('diasSemVisita'),
+        btnSalvar: document.getElementById('btnSalvar'),
+        btnPadrao: document.getElementById('btnPadrao')
+    };
+
+    function obterUsuarioAtual() {
+        return String(localStorage.getItem('usuarioLogado') || localStorage.getItem('usuario_selecionado') || '').trim();
+    }
+
+    function obterPerfilAtual() {
+        const nome = obterUsuarioAtual();
+        try {
+            const cache = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
+            const usuario = cache.find(c => String(c?.nome || '').trim() === nome);
+            return String(usuario?.nivel_completo || '');
+        } catch (_) {
+            return '';
+        }
+    }
+
+    function validarAcesso() {
+        if (obterPerfilAtual().includes('gestao_3')) return true;
+        els.status.textContent = 'Acesso restrito à gestão nível 3.';
+        els.btnSalvar.disabled = true;
+        els.btnPadrao.disabled = true;
+        return false;
+    }
+
+    function numeroPositivo(valor, nomeCampo) {
+        const numero = Number(String(valor || '').trim());
+        if (!Number.isFinite(numero) || numero <= 0) {
+            throw new Error(`Informe um valor válido para ${nomeCampo}.`);
+        }
+        return Math.round(numero);
+    }
+
+    function preencherCampos(config = {}) {
+        els.valorMinimoRota.value = Number(config?.prioridade_rota?.valor_minimo || PADRAO.prioridade_rota.valor_minimo);
+        els.diasMinimosRota.value = Number(config?.prioridade_rota?.dias_minimos || PADRAO.prioridade_rota.dias_minimos);
+        els.diasSemVisita.value = Number(config?.manutencao_sem_visita?.dias_minimos || PADRAO.manutencao_sem_visita.dias_minimos);
+
+        const atualizadoPor = String(config?.atualizado_por || '').trim();
+        const atualizadoEm = config?.atualizado_em ? new Date(config.atualizado_em) : null;
+        if (atualizadoPor && atualizadoEm && !Number.isNaN(atualizadoEm.getTime())) {
+            els.meta.textContent = `Última alteração por ${atualizadoPor} em ${atualizadoEm.toLocaleString('pt-BR')}.`;
+        } else {
+            els.meta.textContent = 'Sem atualização registrada.';
+        }
+    }
+
+    function montarPayload() {
+        return {
+            prioridade_rota: {
+                valor_minimo: numeroPositivo(els.valorMinimoRota.value, 'valor mínimo da rota'),
+                dias_minimos: numeroPositivo(els.diasMinimosRota.value, 'dias mínimos da rota')
+            },
+            manutencao_sem_visita: {
+                dias_minimos: numeroPositivo(els.diasSemVisita.value, 'dias sem visita')
+            },
+            atualizado_em: new Date().toISOString(),
+            atualizado_por: obterUsuarioAtual()
+        };
+    }
+
+    async function carregar() {
+        if (!validarAcesso()) return;
+        try {
+            const config = await dbObterConfiguracoesAutomaticas();
+            preencherCampos(config);
+            els.status.textContent = 'Valores carregados.';
+        } catch (error) {
+            console.error('Erro ao carregar configurações automáticas:', error);
+            preencherCampos(PADRAO);
+            els.status.textContent = 'Não foi possível carregar. Exibindo valores padrão.';
+        }
+    }
+
+    async function salvar() {
+        if (!validarAcesso()) return;
+        try {
+            els.btnSalvar.disabled = true;
+            els.status.textContent = 'Salvando...';
+            const payload = montarPayload();
+            await dbSalvarConfiguracoesAutomaticas(payload);
+            preencherCampos(payload);
+            els.status.textContent = 'Configurações salvas.';
+        } catch (error) {
+            console.error('Erro ao salvar configurações automáticas:', error);
+            if (window.playAlert) await window.playAlert(error.message || 'Erro ao salvar configurações.');
+            els.status.textContent = 'Erro ao salvar.';
+        } finally {
+            els.btnSalvar.disabled = false;
+        }
+    }
+
+    els.btnSalvar.addEventListener('click', salvar);
+    els.btnPadrao.addEventListener('click', () => {
+        preencherCampos(PADRAO);
+        els.status.textContent = 'Valores padrão preenchidos. Toque em Salvar para aplicar.';
+    });
+
+    carregar();
+</script>
+</body>
+</html>
