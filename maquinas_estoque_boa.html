@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Máquinas em Estoque</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #030e2b;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            color: #ffffff;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 420px;
+            min-height: 100vh;
+            padding-bottom: 40px;
+            background: linear-gradient(180deg, #071d4a 0%, #030e2b 60%);
+        }
+
+        /* ── CABEÇALHO ── */
+        .header {
+            background: linear-gradient(135deg, #0d2f6e 0%, #1a4fa8 100%);
+            padding: 18px 16px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            border-bottom: 2px solid #2a5fd4;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .header-titulo {
+            color: #ffffff;
+            font-size: 21px;
+            font-weight: bold;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+            letter-spacing: 0.3px;
+        }
+
+        .btn-home {
+            position: absolute;
+            right: 14px;
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.12);
+            color: #ffffff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .btn-home svg {
+            width: 20px;
+            height: 20px;
+            fill: #ffffff;
+        }
+
+        /* ── BANNER DE RESUMO ── */
+        .banner {
+            margin: 18px 14px 0;
+            padding: 16px 18px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #1a6e3a 0%, #0f4a27 100%);
+            border: 1px solid #27a44f;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+
+        .banner-icone {
+            font-size: 38px;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .banner-texto {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+        }
+
+        .banner-label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #7fffb0;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .banner-valor {
+            font-size: 26px;
+            font-weight: bold;
+            color: #ffffff;
+            line-height: 1.1;
+        }
+
+        .banner-sub {
+            font-size: 12px;
+            color: #a8f0c0;
+            margin-top: 2px;
+        }
+
+        /* ── LISTA ── */
+        .lista {
+            padding: 14px 14px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* ── CARD ── */
+        .card {
+            background: #0d2255;
+            border-radius: 14px;
+            border: 1px solid #1e3d8a;
+            border-left: 4px solid #22c55e;
+            border-bottom: 1px solid #ffffff;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+        }
+
+        .card-esquerda {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .card-icone {
+            font-size: 26px;
+            flex-shrink: 0;
+        }
+
+        .card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
+        }
+
+        .card-nome {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            letter-spacing: 0.2px;
+            text-shadow: 0 1px 6px rgba(255,255,255,0.15);
+        }
+
+        .card-rotulo {
+            font-size: 11px;
+            color: #7fa8e8;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .card-qtd-badge {
+            flex-shrink: 0;
+            background: rgba(34,197,94,0.22);
+            color: #6ef09a;
+            font-size: 20px;
+            font-weight: bold;
+            min-width: 44px;
+            padding: 0 10px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(34,197,94,0.5);
+        }
+
+        .card-qtd-badge.grande { font-size: 17px; }
+
+        /* ── ESTADO VAZIO / CARREGANDO ── */
+        .estado-lista {
+            margin: 0;
+            padding: 24px 16px;
+            border-radius: 14px;
+            background: #0d2255;
+            border: 1px solid #1e3d8a;
+            font-size: 15px;
+            color: #7fa8e8;
+            text-align: center;
+            line-height: 1.6;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+
+    <!-- CABEÇALHO -->
+    <div class="header">
+        <span class="header-titulo">Máquinas em Estoque</span>
+        <button class="btn-home" onclick="window.location.href='index.html'" title="Voltar ao menu">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- BANNER RESUMO -->
+    <div class="banner" id="bannerResumo" style="display:none;">
+        <div class="banner-texto">
+            <span class="banner-valor">&#128377; <span id="bannerTotal">—</span></span>
+            <span class="banner-sub" id="bannerSub">— prontas para uso</span>
+        </div>
+    </div>
+
+    <!-- LISTA -->
+    <div class="lista" id="listaMaquinas">
+        <div class="estado-lista">Carregando máquinas em estoque...</div>
+    </div>
+
+</div>
+<script type="module">
+    import { verificarAutenticacao } from './auth.js';
+    import { dbEscutarEstoque } from './database.js';
+
+    verificarAutenticacao();
+
+    const listaEl   = document.getElementById('listaMaquinas');
+    const bannerEl  = document.getElementById('bannerResumo');
+    const totalEl   = document.getElementById('bannerTotal');
+    const subEl     = document.getElementById('bannerSub');
+
+    function escaparHtml(valor) {
+        return String(valor ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function renderizarMaquinasBoas(lista) {
+        const maquinasBoas = (Array.isArray(lista) ? lista : [])
+            .filter(item => String(item?.categoria || '').trim() === 'maquina')
+            .map(item => ({
+                ...item,
+                quantidadeBoa: Number.parseInt(item?.quantidade || 0, 10) || 0
+            }))
+            .filter(item => item.quantidadeBoa > 0)
+            .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+        if (!maquinasBoas.length) {
+            bannerEl.style.display = 'none';
+            listaEl.innerHTML = '<div class="estado-lista">Nenhuma máquina boa em estoque.</div>';
+            return;
+        }
+
+        const totalUnidades = maquinasBoas.reduce((s, m) => s + m.quantidadeBoa, 0);
+        bannerEl.style.display  = 'flex';
+        totalEl.textContent     = `${maquinasBoas.length} tipo${maquinasBoas.length > 1 ? 's' : ''}`;
+        subEl.textContent       = `${totalUnidades} unidade${totalUnidades > 1 ? 's' : ''} prontas para uso`;
+
+        listaEl.innerHTML = maquinasBoas.map(item => {
+            const qtd        = item.quantidadeBoa;
+            const badgeClass = qtd >= 100 ? 'card-qtd-badge grande' : 'card-qtd-badge';
+            return `
+            <div class="card">
+                <div class="card-esquerda">
+                    <div class="card-info">
+                        <span class="card-nome">${escaparHtml(item.nome || 'Máquina')}</span>
+                    </div>
+                </div>
+                <div class="${badgeClass}">${qtd}</div>
+            </div>`;
+        }).join('');
+    }
+
+    dbEscutarEstoque(renderizarMaquinasBoas);
+</script>
+</body>
+</html>

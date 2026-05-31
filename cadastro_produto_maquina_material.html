@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro de Produto, MÃ¡quina e Material</title>
+    <title>Cadastro de Itens</title>
     <style>
         body { margin:0; font-family:Arial, sans-serif; background:#042d86; display:flex; justify-content:center; color:white; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; }
         .app { width:100%; max-width:420px; padding:10px 15px 15px; box-sizing:border-box; min-height: 100vh; }
@@ -31,7 +31,7 @@
         .bg-maquina { background: #9c27b0; }
         .bg-produtos { background: #4caf50; }
         .bg-peca { background: #ff9800; }
-        .bg-materiais { background: #00acc1; }
+        .bg-materiais { background: #ff9800; }
 
         .lado-card { display:flex; align-items:center; flex-shrink: 0; }
         .acoes-card { display: flex; gap: 4px; }
@@ -57,14 +57,6 @@
             color: #888;
         }
         .barra-topo-filtros { display:flex; flex-direction:column; gap:8px; margin:0 0 14px; position:sticky; top:0; z-index:5; background:linear-gradient(180deg, rgba(4,45,134,0.98), rgba(4,45,134,0.88)); padding-bottom:8px; }
-        .filtros-secundarios { display:flex; gap:6px; }
-        .chip-filtro { flex:1 1 0; min-width:0; padding:8px 4px; border-radius:999px; border:1px solid rgba(255,255,255,0.22); background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.85); font-size:12px; font-weight:bold; text-align:center; white-space:nowrap; cursor:pointer; transition:0.15s ease; }
-        .chip-filtro.ativo { color:#fff; }
-        .chip-filtro[data-filtro="todos"].ativo { border-color: rgba(255,235,59,0.52); background: rgba(255,235,59,0.18); color: #fff2a8; }
-        .chip-filtro[data-filtro="produtos"].ativo { border-color: #4caf50; background: rgba(76,175,80,0.2); color: #b9f6ca; }
-        .chip-filtro[data-filtro="peca"].ativo { border-color: #ff9800; background: rgba(255,152,0,0.2); color: #ffe0b2; }
-        .chip-filtro[data-filtro="maquina"].ativo { border-color: #9c27b0; background: rgba(156,39,176,0.2); color: #e1bee7; }
-        .chip-filtro[data-filtro="materiais"].ativo { border-color: #00acc1; background: rgba(0,172,193,0.2); color: #b2ebf2; }
         .linha-categoria-valor { display: flex; gap: 10px; align-items: flex-end; }
         .linha-categoria-valor > div { flex: 1; }
         #wrapValorEquipamento { display: none; }
@@ -84,13 +76,6 @@
         <div class="subtitulo">Itens Registrados</div>
         <div class="barra-topo-filtros">
         <input type="text" id="campoPesquisa" placeholder="Buscar item...">
-            <div class="filtros-secundarios">
-                <div class="chip-filtro ativo" data-filtro="todos" onclick="setFiltro('todos')">Todos</div>
-                <div class="chip-filtro" data-filtro="produtos" onclick="setFiltro('produtos')">Produtos</div>
-                <div class="chip-filtro" data-filtro="peca" onclick="setFiltro('peca')">Peças</div>
-                <div class="chip-filtro" data-filtro="maquina" onclick="setFiltro('maquina')">Máquinas</div>
-                <div class="chip-filtro" data-filtro="materiais" onclick="setFiltro('materiais')">Materiais</div>
-            </div>
         </div>
         <div id="containerEstoque">
             <p style='text-align:center; opacity:0.5; font-size:12px;'>Carregando itens...</p>
@@ -112,9 +97,8 @@
                 <label class="label-focada">Categoria</label>
                 <select id="categoriaItem">
                     <option value="produtos">Produtos</option>
-                    <option value="peca">Peças</option>
+                    <option value="peca">Peças / Outros</option>
                     <option value="maquina">Máquinas</option>
-                    <option value="materiais">Materiais</option>
                 </select>
             </div>
             <div id="wrapValorEquipamento">
@@ -198,11 +182,8 @@
         if (categoria === 'maquina') {
             label.textContent = 'Valor da Máquina';
             input.placeholder = '1.000';
-        } else if (categoria === 'peca') {
-            label.textContent = 'Valor da Peça';
-            input.placeholder = '1.000';
-        } else if (categoria === 'materiais') {
-            label.textContent = 'Valor do Material';
+        } else if (categoria === 'peca' || categoria === 'materiais') {
+            label.textContent = 'Valor da Peça / Outros';
             input.placeholder = '1.000';
         } else {
             label.textContent = 'Valor do Produto';
@@ -234,24 +215,16 @@
         });
     }
 
-    let filtroAtivo = 'todos';
-
-    window.setFiltro = function(filtro) {
-        filtroAtivo = filtro;
-        document.querySelectorAll('.chip-filtro').forEach(chip => {
-            chip.classList.toggle('ativo', chip.dataset.filtro === filtro);
-        });
-        aplicarFiltros();
-    };
-
     function aplicarFiltros() {
         const termo = document.getElementById('campoPesquisa').value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const filtroAtivo = document.getElementById('categoriaItem')?.value || '';
         const cards = document.querySelectorAll('.card-estoque');
         cards.forEach(card => {
             const nome = card.querySelector('.info-estoque b').innerText.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
             const categoria = card.dataset.categoria || '';
             const correspondePesquisa = nome.includes(termo);
-            const correspondeFiltro = filtroAtivo === 'todos' || categoria === filtroAtivo;
+            const categoriaFiltro = categoria === 'materiais' ? 'peca' : categoria;
+            const correspondeFiltro = !filtroAtivo || categoriaFiltro === filtroAtivo;
             card.style.display = (correspondePesquisa && correspondeFiltro) ? 'flex' : 'none';
         });
     }
@@ -269,8 +242,8 @@
                 card.dataset.categoria = item.categoria;
                 let classeCor = "bg-produtos", nomeCategoria = "Produtos";
                 if(item.categoria === "maquina") { classeCor = "bg-maquina"; nomeCategoria = "Máquina"; }
-                if(item.categoria === "peca") { classeCor = "bg-peca"; nomeCategoria = "Peça"; }
-                if(item.categoria === "materiais") { classeCor = "bg-materiais"; nomeCategoria = "Materiais"; }
+                if(item.categoria === "peca") { classeCor = "bg-peca"; nomeCategoria = "Peças / Outros"; }
+                if(item.categoria === "materiais") { classeCor = "bg-materiais"; nomeCategoria = "Peças / Outros"; }
                 const valorEquipamento = Number(item.valorEquipamento || 0);
                 const valorHtml = valorEquipamento > 0
                     ? `<div>Valor: ${formatarValorItem(valorEquipamento, item.categoria)}</div>`
@@ -307,7 +280,8 @@
     };
 
     window.prepararEdicao = function(id, nome, categoria, qtd, minimo, valorEquipamento = 0) {
-        document.getElementById('idItem').value = id; document.getElementById('nomeItem').value = nome; document.getElementById('categoriaItem').value = categoria; document.getElementById('qtdItem').value = qtd; document.getElementById('minimoItem').value = minimo; document.getElementById('valorEquipamento').value = formatarValorItem(valorEquipamento || '', categoria);
+        const categoriaFormulario = categoria === 'materiais' ? 'peca' : categoria;
+        document.getElementById('idItem').value = id; document.getElementById('nomeItem').value = nome; document.getElementById('categoriaItem').value = categoriaFormulario; document.getElementById('qtdItem').value = qtd; document.getElementById('minimoItem').value = minimo; document.getElementById('valorEquipamento').value = formatarValorItem(valorEquipamento || '', categoriaFormulario);
         atualizarCampoValorEquipamento();
         const btn = document.getElementById('btnSalvarEstoque'); btn.innerText = "Atualizar Item"; btn.style.background = "#ff9800"; document.getElementById('btnCancelarEdicao').style.display = "block"; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     };
@@ -317,7 +291,10 @@
         const btn = document.getElementById('btnSalvarEstoque'); btn.innerText = "+ Adicionar ao Estoque"; btn.style.background = "#4caf50"; document.getElementById('btnCancelarEdicao').style.display = "none";
     };
     window.excluirItem = async function(id) { if(await window.playConfirm("Deseja realmente excluir este item?")) { await dbExcluirItemEstoque(id); } };
-    document.getElementById('categoriaItem').addEventListener('change', atualizarCampoValorEquipamento);
+    document.getElementById('categoriaItem').addEventListener('change', () => {
+        atualizarCampoValorEquipamento();
+        aplicarFiltros();
+    });
     conectarCampoValor();
     atualizarCampoValorEquipamento();
     carregarEstoque();

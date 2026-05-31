@@ -271,7 +271,7 @@
             </div>
             <div class="submenu" id="submenuGestao">
                 <div class="botao-sub" id="btnVerificarEnvios" onclick="abrirEnvios()">
-                    <span class="icone">&#128228;</span>
+                    <span class="icone">&#128373;</span>
                     <span>Verificar Envios</span>
                 </div>
                 <div class="botao-sub" id="btnVerificacoesGerais" onclick="window.location.href='Verificacoes_Gerais.html'" style="display: none;">
@@ -281,6 +281,10 @@
                 <div class="botao-sub" id="btnMediaVendas" onclick="abrirMediaVendas()" style="display: none;">
                     <span class="icone">&#128185;</span>
                     <span>Sa&uacute;de de Vendas</span>
+                </div>
+                <div class="botao-sub" id="btnMaquinasEstoque" onclick="window.location.href='maquinas_estoque_boa.html'" style="display:none;">
+                    <span class="icone">&#128377;</span>
+                    <span>M&aacute;quinas em Estoque</span>
                 </div>
                 <div class="botao-sub" id="btnDepositos" onclick="abrirTela('depositos')">
                     <span class="icone">&#127974;</span>
@@ -718,6 +722,7 @@
             gestao: document.getElementById('btnGestao'),
             blocoGestao: document.getElementById('blocoGestao'),
             verificarEnvios: document.getElementById('btnVerificarEnvios'),
+            maquinasEstoque: document.getElementById('btnMaquinasEstoque'),
             verificacoesGerais: document.getElementById('btnVerificacoesGerais'),
             mediaVendas: document.getElementById('btnMediaVendas'),
             balanco: document.getElementById('btnBalanco'),
@@ -793,6 +798,7 @@
             btns.manutencao.style.display = 'flex';
             btns.gestao.style.display = 'flex';
             btns.verificarEnvios.style.display = 'flex';
+            btns.maquinasEstoque.style.display = 'flex';
             btns.verificacoesGerais.style.display = 'none';
             btns.mediaVendas.style.display = ehAtendimentoNivel2 ? 'flex' : 'none';
             btns.depositos.style.display = ehAtendimentoNivel2 ? 'none' : 'flex';

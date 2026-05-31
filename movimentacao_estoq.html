@@ -32,7 +32,7 @@
         /* Grade 2×2 dos campos */
         .card-grid {
             display: grid;
-            grid-template-columns: 115px 1fr;
+            grid-template-columns: minmax(115px, auto) 1fr;
             gap: 6px 10px;
             margin-bottom: 16px;
         }
@@ -875,9 +875,8 @@
                 <select id="filtroCategoria" onchange="filtrarItens()">
                     <option value="">Tipo</option>
                     <option value="maquina">Máquina</option>
-                    <option value="peca">Peça</option>
+                    <option value="peca">Peças / Outros</option>
                     <option value="produtos">Produtos</option>
-                    <option value="materiais">Materiais</option>
                     <option value="pix">PIX</option>
                 </select>
             </div>
@@ -1187,7 +1186,8 @@
     function atualizarSecaoPosseUsuario() {
         const temResponsavel = !!responsavelHistoricoAtual;
         const responsavelFornecedor = responsavelHistoricoAtual === 'Fornecedor';
-        const mostrarPosse = temResponsavel && !responsavelFornecedor;
+        const responsavelMaquina = responsavelHistoricoAtual === 'Máquina';
+        const mostrarPosse = temResponsavel && !responsavelFornecedor && !responsavelMaquina;
         secaoItensEl?.classList.remove('oculta-por-posse');
         secaoPosseUsuarioEl?.classList.toggle('visivel', mostrarPosse);
         if (!mostrarPosse) {
@@ -1209,7 +1209,7 @@
 
         posseUsuarioAtual = [];
         pixUsuarioAtual = [];
-        if (!responsavelHistoricoAtual) {
+        if (!responsavelHistoricoAtual || responsavelHistoricoAtual === 'Fornecedor' || responsavelHistoricoAtual === 'Máquina') {
             atualizarSecaoPosseUsuario();
             return;
         }
@@ -1590,7 +1590,7 @@
 
         card?.classList.toggle('modo-pix', ehPix);
         campoPix?.classList.toggle('visivel', ehPix);
-        if (labelResponsavel) labelResponsavel.textContent = ehPix ? 'Quem está retirando' : 'Responsável';
+        if (labelResponsavel) labelResponsavel.textContent = 'Responsável';
         if (linhas) linhas.style.display = ehPix ? 'none' : 'flex';
         if (ehPix && saldoBox) saldoBox.style.display = 'none';
 
