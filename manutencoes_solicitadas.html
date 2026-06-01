@@ -1060,7 +1060,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbEscutarManutencoes, dbSalvarManutencao, dbEscutarAtendimentos, dbEscutarRotasSessaoAtiva } from './database.js';
+    import { dbEscutarClientes, dbEscutarManutencoes, dbSalvarManutencao, dbAtualizarSelecaoManutencoes, dbEscutarAtendimentos, dbEscutarRotasSessaoAtiva } from './database.js';
 
     let clientes = [];
     let manutencoes = [];
@@ -1259,6 +1259,64 @@
     function statusManutencaoConcluido(manutencao) {
         const status = String(manutencao?.status || "pendente").toLowerCase();
         return status === 'concluida' || status === 'concluido';
+    }
+
+    function normalizarRotaSelecao(valor) {
+        return String(valor || "").trim();
+    }
+
+    function normalizarNumeroPesquisa(valor) {
+        return String(valor || "").trim().replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+    }
+
+    function buscaSomenteNumero(valor) {
+        return /^\d+$/.test(String(valor || "").trim());
+    }
+
+    function ordenarPrioridadeNumero(lista, termo) {
+        if (!buscaSomenteNumero(termo)) return lista;
+
+        const numeroBusca = normalizarNumeroPesquisa(termo);
+        if (!numeroBusca) return lista;
+
+        return [...lista].sort((a, b) => {
+            const clienteA = normalizarNumeroPesquisa(a?.clienteNumero) === numeroBusca ? 0 : 1;
+            const clienteB = normalizarNumeroPesquisa(b?.clienteNumero) === numeroBusca ? 0 : 1;
+            if (clienteA !== clienteB) return clienteA - clienteB;
+
+            const rotaA = normalizarNumeroPesquisa(a?.clienteRota) === numeroBusca ? 0 : 1;
+            const rotaB = normalizarNumeroPesquisa(b?.clienteRota) === numeroBusca ? 0 : 1;
+            if (rotaA !== rotaB) return rotaA - rotaB;
+
+            return 0;
+        });
+    }
+
+    function textoContemTermos(valor, termo) {
+        const palavras = normalizar(termo).split(" ").filter(Boolean);
+        if (palavras.length === 0) return false;
+        const texto = normalizar(valor);
+        return palavras.every(palavra => texto.includes(palavra));
+    }
+
+    function ordenarPrioridadeTexto(lista, termo) {
+        if (!termo || buscaSomenteNumero(termo)) return lista;
+
+        return [...lista].sort((a, b) => {
+            const nomeA = textoContemTermos(a?.clienteNome, termo) ? 0 : 1;
+            const nomeB = textoContemTermos(b?.clienteNome, termo) ? 0 : 1;
+            if (nomeA !== nomeB) return nomeA - nomeB;
+
+            const numeroA = textoContemTermos(a?.clienteNumero, termo) ? 0 : 1;
+            const numeroB = textoContemTermos(b?.clienteNumero, termo) ? 0 : 1;
+            if (numeroA !== numeroB) return numeroA - numeroB;
+
+            const rotaA = textoContemTermos(a?.clienteRota, termo) ? 0 : 1;
+            const rotaB = textoContemTermos(b?.clienteRota, termo) ? 0 : 1;
+            if (rotaA !== rotaB) return rotaA - rotaB;
+
+            return 0;
+        });
     }
 
     function obterResponsavelConclusao(manutencao) {
@@ -1676,23 +1734,30 @@
                 return;
             }
         }
-        const atualizado = { ...item };
-        delete atualizado.firebaseUrl;
-
         manutencaoPendenteAjuste = marcado ? id : "";
 
-        if (marcado) {
-            atualizado.selecionadoPor = usuarioLogado;
-            atualizado.dataSelecionado = new Date().toISOString();
-        } else {
-            delete atualizado.selecionadoPor;
-            delete atualizado.dataSelecionado;
-        }
-
         try {
-            await dbSalvarManutencao(atualizado, id);
+            if (marcado) {
+                const rotaSelecionada = normalizarRotaSelecao(item.clienteRota);
+                const idsParaMarcar = rotaSelecionada
+                    ? manutencoesPendentesEnriquecidas
+                        .filter(m => {
+                            if (!m?.firebaseUrl || m.selecionadoPor) return false;
+                            return normalizarRotaSelecao(m.clienteRota) === rotaSelecionada;
+                        })
+                        .map(m => m.firebaseUrl)
+                    : [id];
+                if (!idsParaMarcar.includes(id)) idsParaMarcar.push(id);
+
+                await dbAtualizarSelecaoManutencoes(idsParaMarcar, {
+                    selecionadoPor: usuarioLogado,
+                    dataSelecionado: new Date().toISOString()
+                });
+            } else {
+                await dbAtualizarSelecaoManutencoes([id], {});
+            }
         } catch (e) {
-            await window.playAlert(e?.message || "Erro ao salvar seleção.");
+            await window.playAlert(e?.message || "Erro ao salvar selecao.");
         }
     };
 
@@ -1816,6 +1881,8 @@
         let listaFiltrada = termoPesquisa
             ? lista.filter(item => itemBatePesquisa(item, termoPesquisa))
             : lista;
+        listaFiltrada = ordenarPrioridadeNumero(listaFiltrada, inputPesquisa.value);
+        listaFiltrada = ordenarPrioridadeTexto(listaFiltrada, inputPesquisa.value);
 
         if (exibindoConcluidas) {
             listaFiltrada = listaFiltrada.filter(item =>
@@ -1945,6 +2012,12 @@
 
     const inputPesquisa = document.getElementById('campoPesquisa');
     const btnLimpar = document.getElementById('btnLimparPesquisa');
+    const filtroClienteInicial = new URLSearchParams(window.location.search).get('cliente');
+    if (filtroClienteInicial) {
+        inputPesquisa.value = filtroClienteInicial;
+        termoPesquisa = normalizar(filtroClienteInicial);
+        btnLimpar.style.display = 'block';
+    }
 
     let _manutencoesRecebidas = false;
     let _renderTimeout = null;

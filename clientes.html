@@ -1288,7 +1288,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbExcluirCliente, dbSalvarCliente, dbEscutarColaboradores, dbEscutarAtendimentos, dbListarAtendimentos, dbEscutarManutencoes, dbBuscarProdutosDoAtendimento, dbEscutarEstoque, dbSalvarHistoricoBalanco } from './database.js';
+    import { dbEscutarClientes, dbExcluirCliente, dbSalvarCliente, dbEscutarColaboradores, dbEscutarAtendimentos, dbListarAtendimentos, dbEscutarManutencoes, dbBuscarProdutosDoAtendimento, dbEscutarEstoque, dbSalvarHistoricoBalanco, dbClienteTemManutencaoPendenteNumero } from './database.js';
 
     // --- CACHE LOCAL DE CLIENTES ---
     // Salva a lista e a versão no localStorage para acesso offline e economia de dados.
@@ -1378,6 +1378,7 @@
     let clientesSalvos = [];
     const ultimasVisitasPorClienteId = {};
     let pontosNovos = [];
+    let numerosClientesComManutencaoPendente = new Set();
     let listaProdutosRepor = [];
     let reposicaoClienteAtivo = null;
     const urlParamsClientes = new URLSearchParams(window.location.search);
@@ -1388,6 +1389,15 @@
             .replace(/[\u0300-\u036f]/g, "")
             .toLowerCase()
             .trim();
+    }
+
+    function normalizarNumeroClienteManutencao(numero) {
+        return String(numero ?? '').trim().replace(/[.#$/[\]]/g, '_');
+    }
+
+    function manutencaoEstaPendente(manutencao) {
+        const status = String(manutencao?.status || 'pendente').trim().toLowerCase();
+        return status !== 'concluida' && status !== 'concluido';
     }
 
     function usuarioEhGestaoNivel3() {
@@ -2076,12 +2086,40 @@
         }
     };
 
-    window.abrirConfiguracoes = function(url) {
+    window.abrirConfiguracoes = async function(url) {
         const id = String(url || "").split('/').pop().replace('.json', '');
         if (!id) {
             alert("Cliente nao encontrado.");
             return;
         }
+        const cliente = clientesSalvos.find(c => c.firebaseUrl === id);
+        const numeroCliente = normalizarNumeroClienteManutencao(cliente?.numero);
+
+        if (numeroCliente) {
+            let temPendente = numerosClientesComManutencaoPendente.has(numeroCliente);
+            if (!temPendente) {
+                try {
+                    temPendente = await dbClienteTemManutencaoPendenteNumero(numeroCliente);
+                } catch (erro) {
+                    console.warn('Nao foi possivel verificar manutencao pendente do cliente:', erro);
+                }
+            }
+
+            if (temPendente) {
+                const verLista = await window.playConfirm("Cliente ja esta na lista de manutencao. Deseja ver?", {
+                    secondaryLabel: "Nao",
+                    primaryLabel: "Ver",
+                    secondaryResult: false,
+                    primaryResult: true,
+                    overlayResult: false
+                });
+                if (verLista) {
+                    window.location.href = `manutencoes_solicitadas.html?cliente=${encodeURIComponent(numeroCliente)}`;
+                }
+                return;
+            }
+        }
+
         window.location.href = `manutencao_cliente.html?cliente=${encodeURIComponent(id)}`;
     };
     window.abrirMapa = function(endereco) {
@@ -2306,6 +2344,13 @@
             const status = String(m?.status || "pendente").toLowerCase();
             return m.tipoAcao === "Ponto Novo" && status !== "concluida" && status !== "concluido";
         });
+
+        numerosClientesComManutencaoPendente = new Set(
+            lista
+                .filter(manutencaoEstaPendente)
+                .map(m => normalizarNumeroClienteManutencao(m?.clienteNumero))
+                .filter(Boolean)
+        );
 
         if (document.getElementById('escolhaPasso2').style.display === 'block') {
             abrirEtapaCadastrarCliente();

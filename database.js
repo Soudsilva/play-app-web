@@ -2197,11 +2197,28 @@ export async function dbMarcarClienteEncerrado(firebaseUrlCliente, valorCobrado)
 
 export async function dbSalvarManutencao(manutencao, idExistente = null) {
     try {
+        const numeroCliente = _normalizarNumeroClienteManutencao(manutencao?.clienteNumero);
+        const statusPendente = _manutencaoEstaPendente(manutencao);
+        let numeroClienteAnterior = '';
+
         if (idExistente) {
+            const snapAnterior = await get(ref(db, `manutencoes/${idExistente}`));
+            const dadosAnteriores = snapAnterior.exists() ? snapAnterior.val() : null;
+            numeroClienteAnterior = _normalizarNumeroClienteManutencao(dadosAnteriores?.clienteNumero);
             await set(ref(db, `manutencoes/${idExistente}`), manutencao);
         } else {
+            if (numeroCliente && statusPendente && await dbClienteTemManutencaoPendenteNumero(numeroCliente)) {
+                throw new Error('Este cliente ja esta na lista de manutencao.');
+            }
             const manutencoesRef = ref(db, 'manutencoes');
-            await push(manutencoesRef, manutencao);
+            const novoRef = push(manutencoesRef);
+            await set(novoRef, manutencao);
+            idExistente = novoRef.key;
+        }
+
+        await _atualizarIndiceManutencaoPendenteCliente(numeroCliente, statusPendente, idExistente);
+        if (numeroClienteAnterior && numeroClienteAnterior !== numeroCliente) {
+            await _atualizarIndiceManutencaoPendenteCliente(numeroClienteAnterior, false, idExistente);
         }
     } catch (error) {
         console.error("ERRO AO SALVAR MANUTENCAO:", error);
@@ -2209,17 +2226,89 @@ export async function dbSalvarManutencao(manutencao, idExistente = null) {
     }
 }
 
+function _normalizarNumeroClienteManutencao(numero) {
+    return String(numero ?? '').trim().replace(/[.#$/[\]]/g, '_');
+}
+
+function _manutencaoEstaPendente(manutencao) {
+    const status = String(manutencao?.status || 'pendente').trim().toLowerCase();
+    return status !== 'concluida' && status !== 'concluido';
+}
+
+async function _existeOutraManutencaoPendenteCliente(numeroCliente, idIgnorado = null) {
+    const numero = _normalizarNumeroClienteManutencao(numeroCliente);
+    if (!numero) return false;
+
+    const snap = await get(ref(db, 'manutencoes'));
+    const data = snap.val() || {};
+    return Object.entries(data).some(([id, item]) => {
+        if (idIgnorado && id === idIgnorado) return false;
+        return _normalizarNumeroClienteManutencao(item?.clienteNumero) === numero
+            && _manutencaoEstaPendente(item);
+    });
+}
+
+async function _atualizarIndiceManutencaoPendenteCliente(numeroCliente, pendente, idAtual = null) {
+    const numero = _normalizarNumeroClienteManutencao(numeroCliente);
+    if (!numero) return;
+
+    const indiceRef = ref(db, `manutencoes_pendentes_clientes/${numero}`);
+    if (pendente) {
+        await set(indiceRef, true);
+        return;
+    }
+
+    if (await _existeOutraManutencaoPendenteCliente(numero, idAtual)) {
+        await set(indiceRef, true);
+    } else {
+        await remove(indiceRef);
+    }
+}
+
+export async function dbClienteTemManutencaoPendenteNumero(numeroCliente) {
+    const numero = _normalizarNumeroClienteManutencao(numeroCliente);
+    if (!numero) return false;
+
+    const snapIndice = await get(ref(db, `manutencoes_pendentes_clientes/${numero}`));
+    if (snapIndice.exists() && snapIndice.val() === true) return true;
+
+    return _existeOutraManutencaoPendenteCliente(numero);
+}
+
 export async function dbReverterConclusaoManutencao(manutencaoId) {
     try {
         if (!manutencaoId) return;
+        const snap = await get(ref(db, `manutencoes/${manutencaoId}`));
+        const manutencao = snap.exists() ? snap.val() : null;
         await update(ref(db, `manutencoes/${manutencaoId}`), {
             status: 'pendente',
             dataConclusao: null
         });
+        await _atualizarIndiceManutencaoPendenteCliente(manutencao?.clienteNumero, true, manutencaoId);
     } catch (erro) {
         console.error("ERRO AO REVERTER CONCLUSAO DA MANUTENCAO:", erro);
         throw erro;
     }
+}
+
+export async function dbAtualizarSelecaoManutencoes(ids = [], dadosSelecao = {}) {
+    const unicos = [...new Set((Array.isArray(ids) ? ids : [])
+        .map(id => String(id || '').trim())
+        .filter(Boolean))];
+    if (unicos.length === 0) return;
+
+    const updates = {};
+    unicos.forEach(id => {
+        if (dadosSelecao.selecionadoPor) {
+            updates[`manutencoes/${id}/selecionadoPor`] = dadosSelecao.selecionadoPor;
+            updates[`manutencoes/${id}/dataSelecionado`] = dadosSelecao.dataSelecionado || new Date().toISOString();
+        } else {
+            updates[`manutencoes/${id}/selecionadoPor`] = null;
+            updates[`manutencoes/${id}/dataSelecionado`] = null;
+        }
+    });
+
+    await update(ref(db, '/'), updates);
 }
 
 export async function dbConfirmarGestorManutencao(id, nomeGestor) {
