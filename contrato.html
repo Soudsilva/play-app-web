@@ -440,9 +440,9 @@
 
         <div class="card">
             <div class="colab-card">
-                <div class="avatar" style="background:#0d3320; color:#4ade80;">JC</div>
+                <div class="avatar" style="background:#0d3320; color:#4ade80;">PA</div>
                 <div class="colab-info">
-                    <div class="colab-nome">João Carlos</div>
+                    <div class="colab-nome">Pedro Augusto</div>
                     <div class="colab-cargo">Técnico de Manutenção · CLT</div>
                 </div>
                 <div>
@@ -595,11 +595,6 @@
                 <button class="doc-action">Ver</button>
             </div>
             <div class="doc-item">
-                <div class="doc-icon-wrap">👤</div>
-                <div><div class="doc-name">Contrato João Carlos</div><div class="doc-meta">PDF · CLT · Mar 2025</div></div>
-                <button class="doc-action">Ver</button>
-            </div>
-            <div class="doc-item">
                 <div class="doc-icon-wrap">📋</div>
                 <div><div class="doc-name">Modelo Contrato Ponto</div><div class="doc-meta">DOCX · Versão 2.1</div></div>
                 <button class="doc-action">Ver</button>
@@ -692,6 +687,7 @@
     import {
         dbEscutarColaboradores,
         dbEscutarContratosSocios,
+        dbCarregarContratosSocios,
         dbInicializarContratosSociosSeNecessario,
         dbProporAlteracaoContrato,
         dbResponderAlteracaoContrato
@@ -970,24 +966,40 @@
     };
 
     /* ── INICIALIZAR ── */
-    // Renderiza os padrões imediatamente para a tela não ficar em branco
-    renderizarAtivos({});
-    renderizarPendentes({});
+    async function inicializarTelaContratos() {
+        try {
+            await dbInicializarContratosSociosSeNecessario(CLAUSULAS_INICIAIS);
 
-    // Inicializa o nó no Firebase se ainda não existe (não bloqueia)
-    dbInicializarContratosSociosSeNecessario(CLAUSULAS_INICIAIS).catch(e => console.warn('Init contrato:', e));
+            const dadosIniciais = await dbCarregarContratosSocios();
+            _estado = dadosIniciais;
+            renderizarAtivos(dadosIniciais.ativos?.socios || {}, dadosIniciais.pendentes || {});
+            renderizarPendentes(dadosIniciais.pendentes || {});
+        } catch (e) {
+            console.warn('Init contrato:', e);
+            document.getElementById('secaoAtivos').innerHTML = '<div class="loading">Nao foi possivel carregar os acordos.</div>';
+            renderizarPendentes({});
+        }
 
-    dbEscutarColaboradores(lista => {
-        localStorage.setItem('cache_colaboradores', JSON.stringify(lista || []));
-        renderizarPendentes(_estado.pendentes || {});
-    });
+        dbEscutarColaboradores(lista => {
+            localStorage.setItem('cache_colaboradores', JSON.stringify(lista || []));
+            renderizarPendentes(_estado.pendentes || {});
+        });
 
-    // Escuta mudanças em tempo real
-    dbEscutarContratosSocios(dados => {
-        _estado = dados;
-        renderizarAtivos(dados.ativos?.socios || {}, dados.pendentes || {});
-        renderizarPendentes(dados.pendentes || {});
-    });
+        let ignorarPrimeiroEventoContratos = true;
+
+        // Escuta mudancas em tempo real depois da primeira leitura para evitar piscar dados antigos.
+        dbEscutarContratosSocios(dados => {
+            if (ignorarPrimeiroEventoContratos) {
+                ignorarPrimeiroEventoContratos = false;
+                return;
+            }
+            _estado = dados;
+            renderizarAtivos(dados.ativos?.socios || {}, dados.pendentes || {});
+            renderizarPendentes(dados.pendentes || {});
+        });
+    }
+
+    inicializarTelaContratos();
 </script>
 
 </body>

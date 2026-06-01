@@ -46,6 +46,16 @@ const storage = getStorage(app);
 
 const CONTESTACAO_ATENDIMENTO_ROOT = 'contestacao_atendimento';
 
+async function _carregarValorRealtimeServidor(caminho) {
+    const path = String(caminho || '').replace(/^\/+|\/+$/g, '');
+    const url = `${firebaseConfig.databaseURL}/${path}.json?cb=${Date.now()}`;
+    const resposta = await fetch(url, { cache: 'no-store' });
+    if (!resposta.ok) {
+        throw new Error(`Falha ao carregar ${path} do servidor: ${resposta.status}`);
+    }
+    return resposta.json();
+}
+
 function _normalizarChaveContestacaoAtendimentoUsuario(nomeUsuario) {
     return String(nomeUsuario || '').trim();
 }
@@ -4962,9 +4972,27 @@ export function dbEscutarContratosSocios(callback) {
     return onValue(r, snap => callback(snap.val() || {}));
 }
 
+export async function dbCarregarContratosSocios() {
+    try {
+        return (await _carregarValorRealtimeServidor(CONTRATOS_ROOT)) || {};
+    } catch (error) {
+        console.warn("Nao foi possivel carregar contratos direto do servidor:", error);
+        const snap = await get(ref(db, CONTRATOS_ROOT));
+        return snap.val() || {};
+    }
+}
+
 export async function dbInicializarContratosSociosSeNecessario(dadosIniciais) {
-    const snap = await get(ref(db, `${CONTRATOS_ROOT}/ativos/socios`));
-    if (!snap.exists()) {
+    let dadosAtivos = null;
+    try {
+        dadosAtivos = await _carregarValorRealtimeServidor(`${CONTRATOS_ROOT}/ativos/socios`);
+    } catch (error) {
+        console.warn("Nao foi possivel verificar contratos no servidor:", error);
+        const snap = await get(ref(db, `${CONTRATOS_ROOT}/ativos/socios`));
+        dadosAtivos = snap.val();
+    }
+
+    if (!dadosAtivos) {
         await set(ref(db, `${CONTRATOS_ROOT}/ativos/socios`), dadosIniciais);
     }
 }
