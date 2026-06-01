@@ -158,6 +158,53 @@
             color: rgba(255,255,255,0.5);
         }
 
+        .mes-filtro-wrap {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .mes-menu {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: calc(100% + 6px);
+            width: 190px;
+            max-height: 260px;
+            overflow-y: auto;
+            z-index: 160;
+            border: 1px solid #ffffff;
+            border-radius: 10px;
+            background: #123d94;
+            box-shadow: 0 10px 22px #001a52;
+            padding: 6px;
+        }
+
+        .mes-filtro-wrap.aberto .mes-menu {
+            display: grid;
+            gap: 4px;
+        }
+
+        .mes-opcao {
+            width: 100%;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 9px;
+            background: transparent;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mes-opcao.ativo {
+            border: 1px solid #ffeb3b;
+            color: #ffeb3b;
+        }
+
         .filter-input {
             flex: 1;
             background: rgba(255,255,255,0.1);
@@ -261,6 +308,20 @@
             white-space: nowrap;
         }
 
+        .resumo-total-valor.salarios {
+            font-size: 22px;
+        }
+
+        .resumo-label.salarios {
+            color: #ffeb3b;
+            font-size: 18px;
+        }
+
+        .resumo-total-valor.salarios-pendentes {
+            color: #ffffff;
+            font-size: 14px;
+        }
+
         .resumo-lista {
             display: none;
             grid-template-columns: 1fr;
@@ -310,6 +371,31 @@
             font-size: 13px;
             color: #cfd6e3;
             margin-top: 2px;
+        }
+
+        .resumo-card-linha.salario {
+            grid-template-columns: minmax(0, 1fr) auto auto;
+        }
+
+        .resumo-ok-btn {
+            min-width: 48px;
+            border: 1px solid #ffffff;
+            border-radius: 999px;
+            padding: 7px 10px;
+            background: #1f7a38;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .resumo-ok-btn:disabled {
+            background: #375d49;
+            cursor: default;
         }
 
         .resumo-barra {
@@ -841,10 +927,13 @@
 
         <!-- Filtro de mÃªs + busca por nome -->
         <div class="barra-filtros">
-            <button class="mes-btn-atual">
-                Abril de 2026 <span class="seta">▼</span>
-                <!-- [PROGRAMAÃ‡ÃƒO] Seletor de mÃªs para filtrar depÃ³sitos -->
-            </button>
+            <div class="mes-filtro-wrap">
+                <button class="mes-btn-atual" type="button" aria-expanded="false">
+                    <span class="mes-btn-label">Carregando...</span> <span class="seta">▼</span>
+                    <!-- [PROGRAMAÃ‡ÃƒO] Seletor de mÃªs para filtrar depÃ³sitos -->
+                </button>
+                <div class="mes-menu"></div>
+            </div>
             <input
                 class="filter-input"
                 type="search"
@@ -856,6 +945,7 @@
     </div>
 
     <div id="resumoGestao3Depositos" class="resumo-gestao3"></div>
+    <div id="resumoGestao3Salarios" class="resumo-gestao3"></div>
 
     <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• LISTA â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
     <div class="content">
@@ -1109,18 +1199,30 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
-    import { dbConfirmarDeposito, dbDesfazerConfirmacaoDeposito, dbEscutarTodosDepositos, dbEscutarTodosResumosDepositos } from './database.js';
+    import { dbConfirmarDeposito, dbDesfazerConfirmacaoDeposito, dbEscutarTodosDepositos, dbEscutarTodosResumosDepositos, dbEscutarRemuneracaoMensal, dbEscutarConfirmacoesSalarioDeposito, dbConfirmarSalarioDeposito } from './database.js';
     import { verificarAutenticacao } from './auth.js';
 
     const content = document.querySelector('.content');
     const resumoGestao3Depositos = document.getElementById('resumoGestao3Depositos');
+    const resumoGestao3Salarios = document.getElementById('resumoGestao3Salarios');
+    const mesFiltroWrap = document.querySelector('.mes-filtro-wrap');
+    const mesBtnAtual = document.querySelector('.mes-btn-atual');
+    const mesBtnLabel = document.querySelector('.mes-btn-label');
+    const mesMenu = document.querySelector('.mes-menu');
     const badges = document.querySelectorAll('.badge');
     const campoBusca = document.querySelector('.filter-input');
     const tabs = document.querySelectorAll('.tab');
     let depositos = [];
     let resumosDepositos = {};
+    let remuneracoesSalarioMesAnterior = [];
+    let confirmacoesSalarioMesAnterior = {};
+    let mesesDepositosDisponiveis = [];
+    let mesSelecionadoDepositos = '';
     let pararEscutaResumosDepositos = null;
+    let pararEscutaRemuneracaoSalarios = null;
+    let pararEscutaConfirmacoesSalarios = null;
     let resumoGestao3Aberto = false;
+    let resumoSalariosAberto = false;
     let busca = '';
     let abaAtiva = 'pendentes';
     const usuarioLogado = String(localStorage.getItem('usuarioLogado') || localStorage.getItem('usuario_selecionado') || '').trim();
@@ -1162,6 +1264,11 @@
     function usuarioLogadoEhGestorNivel3() {
         const perfil = perfilUsuarioLogado();
         return perfil.includes('gestao_3');
+    }
+
+    function usuarioLogadoPodeVerSalariosGestor() {
+        const perfil = perfilUsuarioLogado();
+        return perfil.includes('gestao_1') || perfil.includes('gestao_3');
     }
 
     function podeDesfazerConfirmacao(deposito) {
@@ -1210,6 +1317,111 @@
         return `R$ ${Math.round(Number(valor || 0)).toLocaleString('pt-BR')}`;
     }
 
+    function valorDepositoParaFiltroMes(deposito) {
+        return Number(deposito?.valorConferido || deposito?.valor || deposito?.valorEnvelope || deposito?.valorInformado || 0);
+    }
+
+    function obterMesAnoDeposito(deposito) {
+        const data = dataDeposito(deposito);
+        if (!data) return '';
+        const partes = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/Sao_Paulo',
+            year: 'numeric',
+            month: '2-digit'
+        }).formatToParts(data);
+        const ano = partes.find(p => p.type === 'year')?.value || '';
+        const mes = partes.find(p => p.type === 'month')?.value || '';
+        return ano && mes ? `${ano}-${mes}` : '';
+    }
+
+    function rotuloMesAno(mesAno) {
+        const [ano, mes] = String(mesAno || '').split('-').map(Number);
+        if (!ano || !mes) return '';
+        const nomes = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        return `${nomes[mes - 1]} de ${ano}`;
+    }
+
+    function rotuloMes(mesAno) {
+        const mes = Number(String(mesAno || '').split('-')[1] || 0);
+        const nomes = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        return mes ? nomes[mes - 1] : '';
+    }
+
+    function obterMesAnteriorAoSelecionado() {
+        let [ano, mes] = String(mesSelecionadoDepositos || '').split('-').map(Number);
+        if (!ano || !mes) return '';
+        mes -= 1;
+        if (mes < 1) {
+            mes = 12;
+            ano -= 1;
+        }
+        return `${ano}-${String(mes).padStart(2, '0')}`;
+    }
+
+    function atualizarEscutasSalariosGestor() {
+        if (typeof pararEscutaRemuneracaoSalarios === 'function') pararEscutaRemuneracaoSalarios();
+        if (typeof pararEscutaConfirmacoesSalarios === 'function') pararEscutaConfirmacoesSalarios();
+        pararEscutaRemuneracaoSalarios = null;
+        pararEscutaConfirmacoesSalarios = null;
+        remuneracoesSalarioMesAnterior = [];
+        confirmacoesSalarioMesAnterior = {};
+        const mesSalarios = obterMesAnteriorAoSelecionado();
+
+        if (!usuarioLogadoPodeVerSalariosGestor() || !mesSalarios) {
+            renderizarResumoSalariosGestao3();
+            return;
+        }
+
+        pararEscutaRemuneracaoSalarios = dbEscutarRemuneracaoMensal(mesSalarios, (lista) => {
+            remuneracoesSalarioMesAnterior = Array.isArray(lista) ? lista : [];
+            renderizarResumoSalariosGestao3();
+        });
+        pararEscutaConfirmacoesSalarios = dbEscutarConfirmacoesSalarioDeposito(mesSalarios, (confirmacoes) => {
+            confirmacoesSalarioMesAnterior = confirmacoes || {};
+            renderizarResumoSalariosGestao3();
+        });
+    }
+
+    function selecionarMesDepositos(mesAno, { atualizarSalarios = true } = {}) {
+        mesSelecionadoDepositos = String(mesAno || '').trim();
+        if (mesBtnLabel) mesBtnLabel.textContent = rotuloMesAno(mesSelecionadoDepositos) || 'Sem depósitos';
+        renderizarMenuMeses();
+        renderizar();
+        if (atualizarSalarios) atualizarEscutasSalariosGestor();
+    }
+
+    function atualizarMesesDepositosDisponiveis() {
+        mesesDepositosDisponiveis = [...new Set(
+            depositos
+                .filter(depositoTemStatusValido)
+                .filter(deposito => valorDepositoParaFiltroMes(deposito) > 0)
+                .map(obterMesAnoDeposito)
+                .filter(Boolean)
+        )].sort((a, b) => b.localeCompare(a));
+
+        if (!mesesDepositosDisponiveis.length) {
+            selecionarMesDepositos('', { atualizarSalarios: true });
+            return;
+        }
+
+        if (!mesSelecionadoDepositos || !mesesDepositosDisponiveis.includes(mesSelecionadoDepositos)) {
+            selecionarMesDepositos(mesesDepositosDisponiveis[0], { atualizarSalarios: true });
+            return;
+        }
+
+        renderizarMenuMeses();
+        if (mesBtnLabel) mesBtnLabel.textContent = rotuloMesAno(mesSelecionadoDepositos);
+    }
+
+    function renderizarMenuMeses() {
+        if (!mesMenu) return;
+        mesMenu.innerHTML = mesesDepositosDisponiveis.map(mes => `
+            <button class="mes-opcao ${mes === mesSelecionadoDepositos ? 'ativo' : ''}" type="button" data-mes="${escaparHtml(mes)}">
+                ${escaparHtml(rotuloMesAno(mes))}
+            </button>
+        `).join('') || '<div class="resumo-vazio">Sem depósitos</div>';
+    }
+
     function normalizarChaveUsuario(nomeUsuario) {
         return String(nomeUsuario || '').trim().replace(/[.#$/[\]]/g, '_');
     }
@@ -1236,6 +1448,92 @@
     function obterResumoUsuario(chave) {
         const item = resumosDepositos?.[chave] || null;
         return item?.resumo || null;
+    }
+
+    function confirmacaoSalarioUsuario(chave) {
+        const item = confirmacoesSalarioMesAnterior?.[chave] || null;
+        return item?.confirmado === true;
+    }
+
+    function obterRegistroRemuneracaoUsuario(chave, nome) {
+        const nomeNorm = String(nome || '').trim().toLowerCase();
+        return (Array.isArray(remuneracoesSalarioMesAnterior) ? remuneracoesSalarioMesAnterior : []).find(item =>
+            String(item?.usuarioKey || '').trim() === chave
+            || String(item?.nome || '').trim().toLowerCase() === nomeNorm
+        ) || null;
+    }
+
+    function renderizarResumoSalariosGestao3() {
+        if (!resumoGestao3Salarios) return;
+        if (!usuarioLogadoPodeVerSalariosGestor()) {
+            resumoGestao3Salarios.classList.remove('visivel');
+            resumoGestao3Salarios.classList.remove('aberto');
+            resumoGestao3Salarios.innerHTML = '';
+            return;
+        }
+
+        if (confirmacoesSalarioMesAnterior?.erro) {
+            resumoGestao3Salarios.classList.add('visivel');
+            resumoGestao3Salarios.innerHTML = `
+                <div class="resumo-shell">
+                    <div class="resumo-vazio">${escaparHtml(confirmacoesSalarioMesAnterior.mensagem || 'Não foi possível ler as confirmações de salário.')}</div>
+                </div>`;
+            return;
+        }
+
+        const linhas = colaboradoresAtendimentoNivel1()
+            .map(usuario => {
+                const registro = obterRegistroRemuneracaoUsuario(usuario.chave, usuario.nome) || {};
+                return {
+                    ...usuario,
+                    valor: Number(registro.total || 0)
+                };
+            })
+            .filter(item => item.valor > 0 && !confirmacaoSalarioUsuario(item.chave))
+            .sort((a, b) => b.valor - a.valor || a.nome.localeCompare(b.nome, 'pt-BR'));
+
+        if (!linhas.length) {
+            resumoGestao3Salarios.classList.remove('visivel');
+            resumoGestao3Salarios.classList.remove('aberto');
+            resumoGestao3Salarios.innerHTML = '';
+            return;
+        }
+
+        const maiorValor = Math.max(1, ...linhas.map(item => item.valor));
+        const cards = linhas.map(item => {
+            const pct = Math.max(4, Math.min(100, Math.round((item.valor / maiorValor) * 100)));
+            return `
+                <div class="resumo-card">
+                    <div class="resumo-card-linha salario">
+                        <div>
+                            <div class="resumo-nome">${escaparHtml(item.nome)}</div>
+                            <div class="resumo-card-label">Fechamento individual</div>
+                        </div>
+                        <div class="resumo-valor">${moedaInteira(item.valor)}</div>
+                        <button class="resumo-ok-btn" type="button" data-salario-ok="${escaparHtml(item.nome)}">OK</button>
+                    </div>
+                    <div class="resumo-barra" aria-hidden="true">
+                        <div class="resumo-barra-fill" style="width:${pct}%;"></div>
+                    </div>
+                </div>`;
+        }).join('');
+
+        resumoGestao3Salarios.classList.add('visivel');
+        resumoGestao3Salarios.classList.toggle('aberto', resumoSalariosAberto);
+        const mesSalarios = obterMesAnteriorAoSelecionado();
+        resumoGestao3Salarios.innerHTML = `
+            <div class="resumo-shell">
+                <div class="resumo-topo">
+                    <button class="resumo-toggle" type="button" aria-expanded="${resumoSalariosAberto ? 'true' : 'false'}">
+                        <span class="resumo-total">
+                            <span class="resumo-label salarios">Salários de ${escaparHtml(rotuloMes(mesSalarios))}</span>
+                            <span class="resumo-total-valor salarios-pendentes">${linhas.length} ${linhas.length === 1 ? 'pendente' : 'pendentes'}</span>
+                        </span>
+                        <span class="resumo-seta">▼</span>
+                    </button>
+                </div>
+                <div class="resumo-lista">${cards}</div>
+            </div>`;
     }
 
     function renderizarResumoGestao3() {
@@ -1354,6 +1652,11 @@
             : status === 'aguardando_conferencia';
     }
 
+    function depositoEstaNoMesSelecionado(deposito) {
+        if (!mesSelecionadoDepositos) return false;
+        return obterMesAnoDeposito(deposito) === mesSelecionadoDepositos;
+    }
+
     function fotoHtml(deposito) {
         const foto = String(deposito?.foto || '').trim();
         const thumb = String(deposito?.fotoThumb || foto).trim();
@@ -1423,6 +1726,7 @@
     function renderizar() {
         const filtrados = depositos
             .filter(depositoTemStatusValido)
+            .filter(depositoEstaNoMesSelecionado)
             .filter(depositoEstaNaAbaAtiva)
             .filter(d => {
                 const termo = `${d.usuario || ''} ${d.depositante || ''} ${d.registradoPor || ''} ${d.obs || ''}`.toLowerCase();
@@ -1430,9 +1734,10 @@
             })
             .sort((a, b) => (dataDeposito(b)?.getTime() || 0) - (dataDeposito(a)?.getTime() || 0));
 
-        const validos = depositos.filter(depositoTemStatusValido);
-        const pendentes = validos.filter(d => statusDeposito(d) === 'aguardando_conferencia').length;
-        const conferidos = validos.filter(ehConferido).length;
+        const validosGlobais = depositos.filter(depositoTemStatusValido);
+        const validosMes = validosGlobais.filter(depositoEstaNoMesSelecionado);
+        const pendentes = validosGlobais.filter(d => statusDeposito(d) === 'aguardando_conferencia').length;
+        const conferidos = validosMes.filter(ehConferido).length;
         if (badges[0]) badges[0].textContent = String(pendentes);
         if (badges[1]) badges[1].textContent = String(conferidos);
 
@@ -1694,12 +1999,61 @@
         });
     });
 
+    mesBtnAtual?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const aberto = !mesFiltroWrap?.classList.contains('aberto');
+        mesFiltroWrap?.classList.toggle('aberto', aberto);
+        mesBtnAtual.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+    });
+
+    mesMenu?.addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-mes]');
+        if (!btn) return;
+        mesFiltroWrap?.classList.remove('aberto');
+        mesBtnAtual?.setAttribute('aria-expanded', 'false');
+        selecionarMesDepositos(btn.dataset.mes || '');
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!mesFiltroWrap?.contains(event.target)) {
+            mesFiltroWrap?.classList.remove('aberto');
+            mesBtnAtual?.setAttribute('aria-expanded', 'false');
+        }
+    });
+
     resumoGestao3Depositos?.addEventListener('click', (event) => {
         const btn = event.target.closest('.resumo-toggle');
         if (!btn) return;
         resumoGestao3Aberto = !resumoGestao3Aberto;
         resumoGestao3Depositos.classList.toggle('aberto', resumoGestao3Aberto);
         btn.setAttribute('aria-expanded', resumoGestao3Aberto ? 'true' : 'false');
+    });
+
+    resumoGestao3Salarios?.addEventListener('click', async (event) => {
+        const btnOk = event.target.closest('[data-salario-ok]');
+        if (btnOk) {
+            const nome = String(btnOk.dataset.salarioOk || '').trim();
+            if (!nome || btnOk.disabled) return;
+            const mesSalarios = obterMesAnteriorAoSelecionado();
+            const confirmou = await confirmarAcao(`Confirmar OK para o salário de ${nome} em ${rotuloMesAno(mesSalarios)}?`);
+            if (!confirmou) return;
+            try {
+                btnOk.disabled = true;
+                btnOk.textContent = '...';
+                await dbConfirmarSalarioDeposito(mesSalarios, nome, usuarioLogado);
+            } catch (erro) {
+                btnOk.disabled = false;
+                btnOk.textContent = 'OK';
+                if (window.playAlert) window.playAlert(`Erro ao confirmar salário: ${erro?.message || 'verifique o console.'}`);
+            }
+            return;
+        }
+
+        const btn = event.target.closest('.resumo-toggle');
+        if (!btn) return;
+        resumoSalariosAberto = !resumoSalariosAberto;
+        resumoGestao3Salarios.classList.toggle('aberto', resumoSalariosAberto);
+        btn.setAttribute('aria-expanded', resumoSalariosAberto ? 'true' : 'false');
     });
 
     content.innerHTML = `
@@ -1711,6 +2065,7 @@
     await verificarAutenticacao();
 
     renderizarResumoGestao3();
+    renderizarResumoSalariosGestao3();
     if (usuarioLogadoEhGestorNivel3()) {
         pararEscutaResumosDepositos = dbEscutarTodosResumosDepositos((resumos) => {
             resumosDepositos = resumos || {};
@@ -1732,11 +2087,14 @@
             return;
         }
         depositos = Array.isArray(lista) ? lista : [];
+        atualizarMesesDepositosDisponiveis();
         renderizar();
     });
 
     window.addEventListener('beforeunload', () => {
         if (typeof pararEscutaResumosDepositos === 'function') pararEscutaResumosDepositos();
+        if (typeof pararEscutaRemuneracaoSalarios === 'function') pararEscutaRemuneracaoSalarios();
+        if (typeof pararEscutaConfirmacoesSalarios === 'function') pararEscutaConfirmacoesSalarios();
     });
 </script>
 

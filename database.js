@@ -2963,6 +2963,40 @@ export function dbEscutarRemuneracaoMensal(mesAno, callback) {
     });
 }
 
+const CONFIRMACOES_SALARIO_DEPOSITO_ROOT = 'confirmacoes_salario_deposito';
+
+export function dbEscutarConfirmacoesSalarioDeposito(mesAno, callback) {
+    const mes = String(mesAno || '').trim();
+    if (!mes) {
+        callback({});
+        return () => {};
+    }
+
+    return onValue(ref(db, `${CONFIRMACOES_SALARIO_DEPOSITO_ROOT}/${mes}`), (snapshot) => {
+        callback(snapshot.exists() ? (snapshot.val() || {}) : {});
+    }, (error) => {
+        console.error("ERRO AO ESCUTAR CONFIRMACOES DE SALARIO:", error);
+        callback({ erro: true, mensagem: error?.message || 'Permissao negada ao ler confirmacoes de salario.' });
+    });
+}
+
+export async function dbConfirmarSalarioDeposito(mesAno, nomeUsuario, confirmadoPor) {
+    try {
+        const mes = String(mesAno || '').trim();
+        const chaveUsuario = _normalizarChaveUsuario(nomeUsuario);
+        if (!mes || !chaveUsuario) throw new Error('Confirmacao de salario invalida.');
+
+        await set(ref(db, `${CONFIRMACOES_SALARIO_DEPOSITO_ROOT}/${mes}/${chaveUsuario}`), {
+            confirmado: true,
+            confirmadoPor: String(confirmadoPor || '').trim(),
+            confirmadoEm: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error("ERRO AO CONFIRMAR SALARIO:", error);
+        throw error;
+    }
+}
+
 export async function dbListarRemuneracaoAcumuladaProdutos() {
     try {
         const snapshot = await get(ref(db, 'remuneracao/acumulado/producao_produtos'));
