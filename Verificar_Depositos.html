@@ -373,6 +373,18 @@
             margin-top: 2px;
         }
 
+        .resumo-card-detalhes {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-top: 3px;
+        }
+
+        .resumo-card-detalhe {
+            font-size: 13px;
+            color: #cfd6e3;
+        }
+
         .resumo-card-linha.salario {
             grid-template-columns: minmax(0, 1fr) auto auto;
         }
@@ -1463,6 +1475,31 @@
         ) || null;
     }
 
+    const PERFIS_REMUNERACAO_SALARIOS = [
+        ['comissao_global', 'Global'],
+        ['comissao_producao', 'Produção'],
+        ['representante', 'Representante'],
+        ['fixo', 'Fixo'],
+        ['bonus_fixo', 'Bônus fixo'],
+        ['bonus_producao', 'Bônus produção'],
+        ['producao_equipamentos', 'Equipamentos'],
+        ['producao_pecas', 'Peças'],
+        ['prestacao_servico', 'Prestação serviço']
+    ];
+
+    function obterDetalhesRemuneracaoSalario(perfis) {
+        return PERFIS_REMUNERACAO_SALARIOS
+            .map(([chave, label]) => {
+                const perfil = perfis?.[chave] || {};
+                const valor = Number(perfil.valor || 0);
+                return {
+                    label,
+                    valor
+                };
+            })
+            .filter(item => item.valor > 0);
+    }
+
     function renderizarResumoSalariosGestao3() {
         if (!resumoGestao3Salarios) return;
         if (!usuarioLogadoPodeVerSalariosGestor()) {
@@ -1486,7 +1523,8 @@
                 const registro = obterRegistroRemuneracaoUsuario(usuario.chave, usuario.nome) || {};
                 return {
                     ...usuario,
-                    valor: Number(registro.total || 0)
+                    valor: Number(registro.total || 0),
+                    detalhes: obterDetalhesRemuneracaoSalario(registro.perfis || {})
                 };
             })
             .filter(item => item.valor > 0 && !confirmacaoSalarioUsuario(item.chave))
@@ -1502,12 +1540,16 @@
         const maiorValor = Math.max(1, ...linhas.map(item => item.valor));
         const cards = linhas.map(item => {
             const pct = Math.max(4, Math.min(100, Math.round((item.valor / maiorValor) * 100)));
+            const detalhes = Array.isArray(item.detalhes) ? item.detalhes : [];
+            const detalhesHtml = detalhes.length > 1 ? detalhes.map(detalhe => `
+                <div class="resumo-card-detalhe">${escaparHtml(detalhe.label)}: ${moedaInteira(detalhe.valor)}</div>
+            `).join('') : '';
             return `
                 <div class="resumo-card">
                     <div class="resumo-card-linha salario">
                         <div>
                             <div class="resumo-nome">${escaparHtml(item.nome)}</div>
-                            <div class="resumo-card-label">Fechamento individual</div>
+                            ${detalhesHtml ? `<div class="resumo-card-detalhes">${detalhesHtml}</div>` : ''}
                         </div>
                         <div class="resumo-valor">${moedaInteira(item.valor)}</div>
                         <button class="resumo-ok-btn" type="button" data-salario-ok="${escaparHtml(item.nome)}">OK</button>

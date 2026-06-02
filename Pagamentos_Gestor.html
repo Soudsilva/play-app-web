@@ -544,7 +544,7 @@
         }
         .card-pag-breakdown-item {
             font-size: 13px;
-            color: rgba(255,255,255,0.4);
+            color: #c8d8f0;
         }
 
         /* Painel produção de produtos */
@@ -1515,6 +1515,39 @@
         return Number(perfis?.[chave]?.valor || 0);
     }
 
+    const PERFIS_REMUNERACAO_PAG = [
+        ['comissao_global', 'Global'],
+        ['comissao_producao', 'Produção'],
+        ['representante', 'Representante'],
+        ['fixo', 'Fixo'],
+        ['bonus_fixo', 'Bônus fixo'],
+        ['bonus_producao', 'Bônus produção'],
+        ['producao_equipamentos', 'Equipamentos'],
+        ['producao_pecas', 'Peças'],
+        ['prestacao_servico', 'Prestação serviço']
+    ];
+
+    function formatarPercentualPerfilPag(valor) {
+        const num = Number(valor || 0);
+        if (!Number.isFinite(num) || num <= 0) return '';
+        return `${num.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`;
+    }
+
+    function obterDetalhesRemuneracaoPag(perfis) {
+        return PERFIS_REMUNERACAO_PAG
+            .map(([chave, label]) => {
+                const perfil = perfis?.[chave] || {};
+                const valor = Number(perfil.valor || 0);
+                const percentual = formatarPercentualPerfilPag(perfil.percentual);
+                return {
+                    chave,
+                    label: percentual ? `${label} ${percentual}` : label,
+                    valor
+                };
+            })
+            .filter(item => item.valor > 0);
+    }
+
     function obterResumoRemuneracaoMensal(registro) {
         const perfis = registro?.perfis || {};
         const financeiro = (
@@ -1533,7 +1566,12 @@
         const qtd = Math.round(Number(perfis?.comissao_producao?.base || 0)) > 0
             ? 'Comissão por produção'
             : '';
-        return { financeiro, producao, subtitulo: qtd };
+        return {
+            financeiro,
+            producao,
+            subtitulo: qtd,
+            detalhes: obterDetalhesRemuneracaoPag(perfis)
+        };
     }
 
     function getComissaoParaMesPag(colab, mesAno) {
@@ -1792,7 +1830,7 @@
             const temAmbos = p.financeiro > 0 && p.producao > 0;
             const breakdown = temAmbos ? `
                 <div class="card-pag-breakdown">
-                    <span class="card-pag-breakdown-item">Financeiro: ${formatarMoeda(p.financeiro)}</span>
+                    <span class="card-pag-breakdown-item">Global: ${formatarMoeda(p.financeiro)}</span>
                     <span class="card-pag-breakdown-item">Produ&ccedil;&atilde;o: ${formatarMoeda(p.producao)}</span>
                 </div>` : '';
             const subtitulo = (!p.nivel2 && p.qtd > 0 && p.financeiro > 0 && !temAmbos)
@@ -1827,7 +1865,8 @@
                     financeiro: resumo.financeiro,
                     producao: resumo.producao,
                     total: Number(registro.total || (resumo.financeiro + resumo.producao)),
-                    subtitulo: resumo.subtitulo
+                    subtitulo: resumo.subtitulo,
+                    detalhes: resumo.detalhes
                 };
             })
             .filter(item => item.total > 0)
@@ -1859,13 +1898,14 @@
 
         container.innerHTML = lista.map(p => {
             const total = p.total;
-            const temAmbos = p.financeiro > 0 && p.producao > 0;
-            const breakdown = temAmbos ? `
+            const detalhes = Array.isArray(p.detalhes) ? p.detalhes : [];
+            const breakdown = detalhes.length > 1 ? `
                 <div class="card-pag-breakdown">
-                    <span class="card-pag-breakdown-item">Financeiro: ${formatarMoeda(p.financeiro)}</span>
-                    <span class="card-pag-breakdown-item">Produ&ccedil;&atilde;o: ${formatarMoeda(p.producao)}</span>
+                    ${detalhes.map(item => `
+                        <span class="card-pag-breakdown-item">${escapeHtml(item.label)}: ${formatarMoeda(item.valor)}</span>
+                    `).join('')}
                 </div>` : '';
-            const subtitulo = (p.subtitulo && p.financeiro > 0 && !temAmbos)
+            const subtitulo = (p.subtitulo && p.financeiro > 0 && detalhes.length <= 1)
                 ? `<div class="card-pag-taxa">${escapeHtml(p.subtitulo)}</div>` : '';
             return `
             <div class="card-pagamento">
