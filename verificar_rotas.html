@@ -93,62 +93,88 @@
         .filtros {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 6px;
-            padding: 12px 14px 10px;
+            gap: 8px;
+            padding: 10px 14px 14px;
             position: sticky;
             top: 52px;
             z-index: 19;
             background: #042d86;
-            border-bottom: 1px solid #1e3d7a;
+            border-bottom: 2px solid rgba(255,235,59,0.12);
+            box-shadow: 0 2px 10px rgba(2, 15, 60, 0.5);
+        }
+
+        .filtro-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            align-items: stretch;
+        }
+
+        .filtro-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .filtro-select {
             width: 100%;
             min-width: 0;
-            border: 1px solid #ffffff;
-            border-radius: 9px;
-            background: #123b92;
+            border: 1.5px solid #2d50a0;
+            border-radius: 16px;
+            background: #0d2e80;
             color: #ffffff;
-            font-size: 13px;
-            font-weight: 700;
-            padding: 8px 6px;
-            text-align: center;
-            outline: none;
-        }
-
-        .filtro-select option {
-            background: #123b92;
-            color: #ffffff;
-        }
-
-        .filtro-tempo-btn {
-            width: 100%;
-            min-width: 0;
-            border: 1px solid #ffffff;
-            border-radius: 9px;
-            background: #123b92;
-            color: #ffffff;
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 700;
             padding: 7px 4px;
             text-align: center;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
             cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            transition: border-color 0.15s, background 0.15s, color 0.15s;
+        }
+
+        .filtro-select:focus {
+            border-color: #ffeb3b;
+            background: #163d9e;
+            color: #ffeb3b;
+        }
+
+        .filtro-select option {
+            background: #0d2e80;
+            color: #ffffff;
+        }
+
+        .filtro-btns {
+            display: flex;
             gap: 4px;
+        }
+
+        .filtro-btn {
+            flex: 1;
+            border: 1.5px solid #2d50a0;
+            border-radius: 16px;
+            background: #0d2e80;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 4px 4px;
+            text-align: center;
+            cursor: pointer;
+            line-height: 1;
             user-select: none;
             -webkit-user-select: none;
+            transition: border-color 0.15s, background 0.15s, color 0.15s;
         }
 
-        .filtro-tempo-texto {
-            font-size: 13px;
-            line-height: 1;
-            white-space: nowrap;
-        }
-
-        .filtro-tempo-btn.ativo {
+        .filtro-btn.ativo {
             border-color: #ffeb3b;
+            background: #163d9e;
             color: #ffeb3b;
         }
 
@@ -457,24 +483,35 @@
     </div>
 
     <div class="filtros" aria-label="Filtros de rotas">
-        <button id="filtroTempo" class="filtro-tempo-btn" type="button" aria-label="Filtrar rotas por tempo" title="Filtrar por tempo">
-            <span id="filtroTempoTexto" class="filtro-tempo-texto">+60 Dias</span>
-        </button>
-        <select id="filtroNumero" class="filtro-select" aria-label="Ordenar por número da rota">
-            <option value="">Rota</option>
-            <option value="numero_asc">Rota ↑</option>
-            <option value="numero_desc">Rota ↓</option>
-        </select>
-        <select id="filtroValor" class="filtro-select" aria-label="Ordenar por valor">
-            <option value="">Valor</option>
-            <option value="valor_desc">Valor ↓</option>
-            <option value="valor_asc">Valor ↑</option>
-        </select>
-        <select id="filtroSelecao" class="filtro-select" aria-label="Filtrar por seleção">
-            <option value="todas">Todas</option>
-            <option value="selecionadas">Selecionadas</option>
-            <option value="livres">Livres</option>
-        </select>
+        <div class="filtro-item">
+            <span class="filtro-label">⏱ Tempo</span>
+            <div class="filtro-btns">
+                <button class="filtro-btn" data-ordem="tempo_asc" aria-label="Menos tempo">−</button>
+                <button class="filtro-btn ativo" data-ordem="tempo_desc" aria-label="Mais tempo">+</button>
+            </div>
+        </div>
+        <div class="filtro-item">
+            <span class="filtro-label">↕ Rota</span>
+            <div class="filtro-btns">
+                <button class="filtro-btn" data-ordem="numero_desc" aria-label="Rota decrescente">−</button>
+                <button class="filtro-btn" data-ordem="numero_asc" aria-label="Rota crescente">+</button>
+            </div>
+        </div>
+        <div class="filtro-item">
+            <span class="filtro-label">R$ Valor</span>
+            <div class="filtro-btns">
+                <button class="filtro-btn" data-ordem="valor_asc" aria-label="Menor valor">−</button>
+                <button class="filtro-btn" data-ordem="valor_desc" aria-label="Maior valor">+</button>
+            </div>
+        </div>
+        <div class="filtro-item">
+            <span class="filtro-label">◉ Seleção</span>
+            <select id="filtroSelecao" class="filtro-select" aria-label="Filtrar por seleção">
+                <option value="todas">Todas</option>
+                <option value="selecionadas">Selecionadas</option>
+                <option value="livres">Livres</option>
+            </select>
+        </div>
     </div>
 
     <div id="lista" class="lista"></div>
@@ -490,17 +527,13 @@
 
     const elLista = document.getElementById('lista');
     const elEstado = document.getElementById('estado');
-    const filtroNumero = document.getElementById('filtroNumero');
-    const filtroValor = document.getElementById('filtroValor');
     const filtroSelecao = document.getElementById('filtroSelecao');
-    const filtroTempo = document.getElementById('filtroTempo');
-    const filtroTempoTexto = document.getElementById('filtroTempoTexto');
+    const filtroBtns = document.querySelectorAll('.filtro-btn[data-ordem]');
     let listaMediaDeVendasAtual = [];
     let mediaDeVendasCarregada = false;
     let sessaoRotasAtual = null;
-    let ordemAtual = 'valor_desc';
+    let ordemAtual = 'tempo_desc';
     let selecaoAtual = 'todas';
-    let filtrarTempo60 = false;
 
     function escaparHtml(valor) {
         return String(valor ?? '')
@@ -563,11 +596,21 @@
             filtradas = filtradas.filter(rota => !rotaEstaSelecionada(rota.numero));
         }
 
-        if (filtrarTempo60) {
-            filtradas = filtradas.filter(rota => (rota.diasSemFazer ?? -1) >= 60);
-        }
-
         filtradas.sort((a, b) => {
+            if (ordemAtual === 'tempo_desc') {
+                const diasA = a.diasSemFazer ?? -1;
+                const diasB = b.diasSemFazer ?? -1;
+                if (diasB !== diasA) return diasB - diasA;
+                if (b.valorEstimado !== a.valorEstimado) return b.valorEstimado - a.valorEstimado;
+                return compararNumeroRota(a, b);
+            }
+            if (ordemAtual === 'tempo_asc') {
+                const diasA = a.diasSemFazer ?? -1;
+                const diasB = b.diasSemFazer ?? -1;
+                if (diasA !== diasB) return diasA - diasB;
+                if (b.valorEstimado !== a.valorEstimado) return b.valorEstimado - a.valorEstimado;
+                return compararNumeroRota(a, b);
+            }
             if (ordemAtual === 'numero_asc') return compararNumeroRota(a, b);
             if (ordemAtual === 'numero_desc') return compararNumeroRota(b, a);
             if (ordemAtual === 'valor_asc') {
@@ -725,7 +768,7 @@
             : '';
 
         return `
-            <div class="card ${Number(rota.diasSemFazer || 0) >= 60 ? 'rota-tempo-alerta' : ''}" id="${escaparHtml(id)}">
+            <div class="card ${Number(rota.diasSemFazer || 0) >= 30 ? 'rota-tempo-alerta' : ''}" id="${escaparHtml(id)}">
                 <div class="card-header" role="button" tabindex="0" data-toggle-card>
                     <div class="card-mainline">
                         <div class="rota-badge">R.${escaparHtml(rota.numero)}</div>
@@ -861,17 +904,16 @@
         alternarCard(header.closest('.card'));
     });
 
-    filtroNumero.addEventListener('change', () => {
-        ordemAtual = filtroNumero.value || 'valor_desc';
-        filtroValor.value = ordemAtual === 'valor_desc' ? 'valor_desc' : '';
-        render();
-    });
+    function ativarFiltroBotao(ordem) {
+        filtroBtns.forEach(btn => btn.classList.toggle('ativo', btn.dataset.ordem === ordem));
+    }
 
-    filtroValor.addEventListener('change', () => {
-        ordemAtual = filtroValor.value || 'valor_desc';
-        filtroValor.value = ordemAtual === 'valor_desc' ? 'valor_desc' : ordemAtual;
-        filtroNumero.value = '';
-        render();
+    filtroBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            ordemAtual = btn.dataset.ordem;
+            ativarFiltroBotao(ordemAtual);
+            render();
+        });
     });
 
     filtroSelecao.addEventListener('change', () => {
@@ -879,14 +921,7 @@
         render();
     });
 
-    filtroTempo.addEventListener('click', () => {
-        filtrarTempo60 = !filtrarTempo60;
-        filtroTempo.classList.toggle('ativo', filtrarTempo60);
-        filtroTempoTexto.textContent = filtrarTempo60 ? 'Limpar' : '+60 Dias';
-        render();
-    });
-
-    filtroValor.value = ordemAtual;
+    ativarFiltroBotao(ordemAtual);
 
     dbEscutarMediaDeVendas((lista) => {
         listaMediaDeVendasAtual = Array.isArray(lista) ? lista : [];
