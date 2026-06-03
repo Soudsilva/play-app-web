@@ -1283,7 +1283,7 @@ function nomeNormalizadoPedidoAutomaticoProduto(pedido) {
 
 exports.pedidoAutomaticoProdutos = onSchedule(
   {
-    schedule: "30 23 * * *",
+    schedule: "0 9 * * *",
     timeZone: "America/Sao_Paulo",
   },
   async () => {
