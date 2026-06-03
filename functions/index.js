@@ -1325,8 +1325,7 @@ exports.pedidoAutomaticoProdutos = onSchedule(
       updates[`pedidos/${novaRef.key}`] = {
         descricao:
           `Comprar ${nome} - abaixo do minimo ` +
-          `(saldo ${formatarQuantidadePedidoProduto(quantidade)} / ` +
-          `minimo ${formatarQuantidadePedidoProduto(minimo)})`,
+          `- Qtd atual ${formatarQuantidadePedidoProduto(quantidade)}`,
         categoria: "produtos",
         solicitante: "Pedido automático",
         data: agoraIso,
