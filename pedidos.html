@@ -546,6 +546,14 @@
         return (nome || '?').trim().charAt(0).toUpperCase();
     }
 
+    function normalizarTextoPedido(valor) {
+        return String(valor || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim();
+    }
+
     // 1. CARREGAR PEDIDOS
     dbEscutarPedidos((lista) => {
         const container = document.getElementById('listaPedidos');
@@ -569,13 +577,15 @@
             const tempo = badgeTempo(dias, media);
             const urgencia = urgenciaClass(dias, media);
             const souDono = (p.solicitante === usuarioLogado);
+            const pedidoAutomatico = normalizarTextoPedido(p.solicitante) === 'pedido automatico';
+            const podeConfirmar = souDono || pedidoAutomatico;
 
             const catMap = { produtos: 'Produtos', peca: 'Peças', maquina: 'Máquinas' };
             const nomeCat = catMap[p.categoria] || p.categoria;
 
-            const classeConfirmar = souDono ? 'ativo-confirmar' : '';
-            const textoConfirmar  = souDono ? '✔ Recebido' : 'Aguardando';
-            const acaoConfirmar   = souDono ? `confirmarCompra('${p.firebaseUrl}')` : '';
+            const classeConfirmar = podeConfirmar ? 'ativo-confirmar' : '';
+            const textoConfirmar  = podeConfirmar ? '✔ Recebido' : 'Aguardando';
+            const acaoConfirmar   = podeConfirmar ? `confirmarCompra('${p.firebaseUrl}')` : '';
             const classeEditar    = souDono ? 'ativo-editar' : '';
             const acaoEditar      = souDono ? `editarPedido(${JSON.stringify(p).replace(/'/g,"&#39;")})` : '';
 
@@ -598,7 +608,7 @@
                         <span class="nome-sol">${p.solicitante}</span>
                         <span class="badge-tempo ${tempo.cls}">${tempo.txt}</span>
                         <button class="btn-acao ${classeEditar}" onclick='${acaoEditar}'>✏️</button>
-                        <button class="btn-acao ${classeConfirmar}" onclick="${acaoConfirmar}">${souDono ? '✅' : '⏳'}</button>
+                        <button class="btn-acao ${classeConfirmar}" onclick="${acaoConfirmar}">${podeConfirmar ? '✅' : '⏳'}</button>
                         ${isGestor ? `<button class="btn-excluir" onclick="excluirPedido('${p.firebaseUrl}')">🗑️</button>` : ''}
                     </div>
                 </div>`;

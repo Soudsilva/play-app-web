@@ -1238,3 +1238,113 @@ exports.cadastrarManutencoesReposicaoSemVisita = onSchedule(
     });
   },
 );
+
+function numeroEstoquePedido(valor) {
+  if (typeof valor === "number") {
+    return Number.isFinite(valor) ? valor : 0;
+  }
+  const texto = String(valor || "").trim().replace(/\./g, "").replace(",", ".");
+  const n = Number(texto);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function formatarQuantidadePedidoProduto(valor) {
+  const n = numeroEstoquePedido(valor);
+  return Number.isInteger(n) ? String(n) : String(n).replace(".", ",");
+}
+
+function pedidoAutomaticoProdutoJaExiste(pedidos, nomeProduto) {
+  const nomeNormalizado = normalizarTextoBasico(nomeProduto);
+  if (!nomeNormalizado) return false;
+
+  return Object.values(pedidos || {}).some((pedido) => {
+    if (!pedido || typeof pedido !== "object") return false;
+    if (normalizarTextoBasico(pedido.categoria) !== "produtos") return false;
+    if (normalizarTextoBasico(pedido.solicitante) !== "pedido automatico") {
+      return false;
+    }
+
+    const descricao = normalizarTextoBasico(pedido.descricao);
+    return descricao.startsWith(`comprar ${nomeNormalizado} - abaixo do minimo`);
+  });
+}
+
+exports.pedidoAutomaticoProdutos = onSchedule(
+  {
+    schedule: "30 23 * * *",
+    timeZone: "America/Sao_Paulo",
+  },
+  async () => {
+    const db = admin.database();
+    const agora = new Date();
+    const agoraIso = agora.toISOString();
+    const [estoqueSnap, pedidosSnap] = await Promise.all([
+      db.ref("estoque").get(),
+      db.ref("pedidos").get(),
+    ]);
+
+    if (!estoqueSnap.exists()) {
+      logger.info("Pedido automatico de produtos sem estoque para processar.");
+      return;
+    }
+
+    const pedidos = pedidosSnap.val() || {};
+    const updates = {};
+    let analisados = 0;
+    let criados = 0;
+    let ignoradosSemMinimo = 0;
+    let ignoradosAcimaDoMinimo = 0;
+    let ignoradosPorDuplicidade = 0;
+
+    Object.values(estoqueSnap.val() || {}).forEach((item) => {
+      if (!item || typeof item !== "object") return;
+      if (normalizarTextoBasico(item.categoria) !== "produtos") return;
+
+      const nome = String(item.nome || "").trim();
+      if (!nome) return;
+
+      analisados += 1;
+      const minimo = numeroEstoquePedido(item.minimo);
+      if (minimo <= 0) {
+        ignoradosSemMinimo += 1;
+        return;
+      }
+
+      const quantidade = numeroEstoquePedido(item.quantidade);
+      if (quantidade >= minimo) {
+        ignoradosAcimaDoMinimo += 1;
+        return;
+      }
+
+      if (pedidoAutomaticoProdutoJaExiste(pedidos, nome)) {
+        ignoradosPorDuplicidade += 1;
+        return;
+      }
+
+      const novaRef = db.ref("pedidos").push();
+      updates[`pedidos/${novaRef.key}`] = {
+        descricao:
+          `Comprar ${nome} - abaixo do minimo ` +
+          `(saldo ${formatarQuantidadePedidoProduto(quantidade)} / ` +
+          `minimo ${formatarQuantidadePedidoProduto(minimo)})`,
+        categoria: "produtos",
+        solicitante: "Pedido automático",
+        data: agoraIso,
+      };
+      criados += 1;
+    });
+
+    if (Object.keys(updates).length) {
+      await db.ref().update(updates);
+    }
+
+    logger.info("Pedido automatico de produtos concluido.", {
+      analisados,
+      criados,
+      ignoradosSemMinimo,
+      ignoradosAcimaDoMinimo,
+      ignoradosPorDuplicidade,
+      data: dataBrasiliaISOData(agora),
+    });
+  },
+);
