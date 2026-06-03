@@ -1269,6 +1269,18 @@ function pedidoAutomaticoProdutoJaExiste(pedidos, nomeProduto) {
   });
 }
 
+function nomeNormalizadoPedidoAutomaticoProduto(pedido) {
+  if (!pedido || typeof pedido !== "object") return "";
+  if (normalizarTextoBasico(pedido.categoria) !== "produtos") return "";
+  if (normalizarTextoBasico(pedido.solicitante) !== "pedido automatico") {
+    return "";
+  }
+
+  const match = normalizarTextoBasico(pedido.descricao)
+    .match(/^comprar\s+(.+?)\s+-\s+abaixo do minimo/);
+  return match ? String(match[1] || "").trim() : "";
+}
+
 exports.pedidoAutomaticoProdutos = onSchedule(
   {
     schedule: "30 23 * * *",
@@ -1295,6 +1307,34 @@ exports.pedidoAutomaticoProdutos = onSchedule(
     let ignoradosSemMinimo = 0;
     let ignoradosAcimaDoMinimo = 0;
     let ignoradosPorDuplicidade = 0;
+    let removidosAcimaDoMinimo = 0;
+
+    const produtosPorNome = new Map();
+    Object.values(estoqueSnap.val() || {}).forEach((item) => {
+      if (!item || typeof item !== "object") return;
+      if (normalizarTextoBasico(item.categoria) !== "produtos") return;
+
+      const nome = String(item.nome || "").trim();
+      const nomeNormalizado = normalizarTextoBasico(nome);
+      if (!nomeNormalizado) return;
+
+      produtosPorNome.set(nomeNormalizado, {
+        quantidade: numeroEstoquePedido(item.quantidade),
+        minimo: numeroEstoquePedido(item.minimo),
+      });
+    });
+
+    Object.entries(pedidos).forEach(([pedidoId, pedido]) => {
+      const nomePedido = nomeNormalizadoPedidoAutomaticoProduto(pedido);
+      if (!nomePedido) return;
+
+      const produto = produtosPorNome.get(nomePedido);
+      if (!produto || produto.minimo <= 0) return;
+      if (produto.quantidade < produto.minimo) return;
+
+      updates[`pedidos/${pedidoId}`] = null;
+      removidosAcimaDoMinimo += 1;
+    });
 
     Object.values(estoqueSnap.val() || {}).forEach((item) => {
       if (!item || typeof item !== "object") return;
@@ -1343,6 +1383,7 @@ exports.pedidoAutomaticoProdutos = onSchedule(
       ignoradosSemMinimo,
       ignoradosAcimaDoMinimo,
       ignoradosPorDuplicidade,
+      removidosAcimaDoMinimo,
       data: dataBrasiliaISOData(agora),
     });
   },
