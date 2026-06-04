@@ -4631,6 +4631,151 @@ export async function dbObterSessaoRotas() {
     return snapshot.val();
 }
 
+// Mantem a copia do cliente na sessao ativa coerente com o status de recuperacao.
+function _normalizarListaClientesRotaSessao(lista) {
+    if (Array.isArray(lista)) return lista.filter(Boolean);
+    if (!lista || typeof lista !== 'object') return [];
+    return Object.keys(lista)
+        .sort((a, b) => String(a).localeCompare(String(b), 'pt-BR', { numeric: true }))
+        .map(key => lista[key])
+        .filter(Boolean);
+}
+
+function _normalizarNumeroSessaoRota(valor) {
+    return String(valor ?? '').replace(/\D+/g, '').replace(/^0+(?=\d)/, '').trim();
+}
+
+function _clienteSessaoEhMesmoCliente(clienteSessao, clienteId, numeroCliente) {
+    const idSessao = String(clienteSessao?.id || clienteSessao?.firebaseUrl || '').trim();
+    const idCliente = String(clienteId || '').trim();
+    if (idSessao && idCliente && idSessao === idCliente) return true;
+
+    const numeroSessao = _normalizarNumeroSessaoRota(clienteSessao?.numero);
+    const numeroBase = _normalizarNumeroSessaoRota(numeroCliente);
+    return Boolean(numeroSessao && numeroBase && numeroSessao === numeroBase);
+}
+
+function _montarClienteParaSessaoRota(cliente, clienteId) {
+    return {
+        id: clienteId || cliente?.firebaseUrl || '',
+        numero: cliente?.numero || '',
+        nome: cliente?.nome || '',
+        endereco: cliente?.endereco || '',
+        numero_endereco: cliente?.numero_endereco || '',
+        cidade: cliente?.cidade || '',
+        aberto: cliente?.aberto || ''
+    };
+}
+
+function _montarRotaSessaoVazia() {
+    return {
+        valor_estimado: 0,
+        num_clientes: 0,
+        dias_sem_fazer: null,
+        selecionada_por: null,
+        selecionada_em: null,
+        validade_maxima_em: null,
+        prazo_justificativa_em: null,
+        liberar_em: null,
+        motivo_liberacao: null,
+        prioridade_manual: null,
+        prioridade_manual_em: null,
+        prioridade_manual_por: null
+    };
+}
+
+async function _obterEstimativaAtualClienteRota(cliente) {
+    const numero = String(cliente?.numero ?? '').trim();
+    if (!numero) return 0;
+
+    try {
+        const snapshot = await get(ref(db, `Media_de_Vendas/${numero}`));
+        const media = snapshot.exists() ? snapshot.val() : null;
+        const estimativa = Number(media?.estimativaAtualDia);
+        return Number.isFinite(estimativa)
+            ? Math.round((estimativa + Number.EPSILON) * 100) / 100
+            : 0;
+    } catch (error) {
+        console.warn('Nao foi possivel obter estimativa do cliente para sincronizar rota:', error);
+        return 0;
+    }
+}
+
+export async function dbSincronizarClienteRecuperacaoSessaoRotas(cliente, clienteId, emRecuperacao, opcoes = {}) {
+    const id = String(clienteId || cliente?.firebaseUrl || '').trim();
+    const rotaAtual = String(cliente?.rota || '').trim();
+    const numeroCliente = cliente?.numero;
+    if (!id && !numeroCliente) return;
+
+    const estimativaCliente = await _obterEstimativaAtualClienteRota(cliente);
+    const incluirNaRota = opcoes?.incluirNaRota === true;
+
+    await runTransaction(ref(db, 'selecao_rotas/ativa'), (sessao) => {
+        if (!sessao || !sessao.rotas || !sessao.clientes_por_rota) return sessao;
+
+        const clientesPorRota = { ...(sessao.clientes_por_rota || {}) };
+        const rotas = { ...(sessao.rotas || {}) };
+        const rotasAlteradas = new Set();
+
+        Object.keys(clientesPorRota).forEach((numeroRota) => {
+            const listaAtual = _normalizarListaClientesRotaSessao(clientesPorRota[numeroRota]);
+            const listaFiltrada = listaAtual.filter((clienteRota) => {
+                return !_clienteSessaoEhMesmoCliente(clienteRota, id, numeroCliente);
+            });
+
+            if (listaFiltrada.length !== listaAtual.length) {
+                clientesPorRota[numeroRota] = listaFiltrada;
+                rotasAlteradas.add(numeroRota);
+                if (rotas[numeroRota]) {
+                    const valorAtual = Number(rotas[numeroRota].valor_estimado || 0);
+                    rotas[numeroRota] = {
+                        ...rotas[numeroRota],
+                        valor_estimado: Math.max(0, Math.round((valorAtual - estimativaCliente + Number.EPSILON) * 100) / 100)
+                    };
+                }
+            }
+        });
+
+        if ((emRecuperacao !== true || incluirNaRota) && rotaAtual) {
+            if (!rotas[rotaAtual]) rotas[rotaAtual] = _montarRotaSessaoVazia();
+            const listaAtual = _normalizarListaClientesRotaSessao(clientesPorRota[rotaAtual]);
+            if (!listaAtual.some(clienteRota => _clienteSessaoEhMesmoCliente(clienteRota, id, numeroCliente))) {
+                clientesPorRota[rotaAtual] = [...listaAtual, _montarClienteParaSessaoRota(cliente, id)]
+                    .sort((a, b) => Number(a?.numero || 0) - Number(b?.numero || 0));
+                rotasAlteradas.add(rotaAtual);
+                if (rotas[rotaAtual]) {
+                    const valorAtual = Number(rotas[rotaAtual].valor_estimado || 0);
+                    rotas[rotaAtual] = {
+                        ...rotas[rotaAtual],
+                        valor_estimado: Math.round((valorAtual + estimativaCliente + Number.EPSILON) * 100) / 100
+                    };
+                }
+            }
+        }
+
+        rotasAlteradas.forEach((numeroRota) => {
+            if (!rotas[numeroRota]) return;
+            const lista = _normalizarListaClientesRotaSessao(clientesPorRota[numeroRota]);
+            if (lista.length === 0 && !rotas[numeroRota]?.selecionada_por) {
+                delete clientesPorRota[numeroRota];
+                delete rotas[numeroRota];
+                return;
+            }
+            rotas[numeroRota] = {
+                ...rotas[numeroRota],
+                num_clientes: lista.length
+            };
+        });
+
+        return {
+            ...sessao,
+            rotas,
+            clientes_por_rota: clientesPorRota,
+            atualizada_em: new Date().toISOString()
+        };
+    });
+}
+
 // Encerra a sessão ativa de seleção de rotas
 export async function dbEncerrarSessaoRotas() {
     try {

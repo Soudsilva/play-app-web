@@ -446,25 +446,32 @@
             padding: 0 28px 0 24px;
         }
 
-        .card-selecao {
+        .card-selecao-row {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 12px;
-            padding: 10px 12px;
+            padding: 8px 10px 8px 12px;
             background: rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,0.12);
             border-radius: 12px;
-            cursor: pointer;
-            user-select: none;
         }
 
-        .card-selecao.selecionado {
+        .card-selecao-row.selecionado {
             background: rgba(76,175,80,0.15);
             border-color: rgba(76,175,80,0.4);
         }
 
-        .card-selecao input[type="checkbox"] {
+        .card-selecao-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+            cursor: pointer;
+        }
+
+        .card-selecao-label input[type="checkbox"] {
             width: 20px;
             height: 20px;
             accent-color: #4caf50;
@@ -473,15 +480,24 @@
         }
 
         .card-selecao-texto {
-            font-size: 17px;
+            font-size: 19px;
             color: #ffffff;
             line-height: 1.3;
         }
 
         .card-selecao-tecnico {
-            font-size: 14px;
+            font-size: 17px;
             color: #81c784;
             font-weight: bold;
+        }
+
+        .card-selecao-row .icones-acao {
+            flex-shrink: 0;
+            gap: 14px;
+        }
+
+        .card-selecao-row .icone-btn-wrap {
+            gap: 0;
         }
 
 
@@ -490,7 +506,7 @@
         }
 
         .linha-nome {
-            font-size: 19px;
+            font-size: 20px;
             font-weight: bold;
             color: #ffffff;
             line-height: 1.2;
@@ -502,7 +518,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 15px;
+            font-size: 16px;
             margin-bottom: 8px;
             color: rgba(255,255,255,0.9);
         }
@@ -515,7 +531,7 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
-            font-size: 15px;
+            font-size: 16px;
             color: rgba(255,255,255,0.9);
         }
 
@@ -533,7 +549,7 @@
             border-radius: 0 6px 6px 0;
             background: rgba(76, 175, 80, 0.15);
             color: rgba(255, 255, 255, 0.95);
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 500;
             line-height: 1.4;
             user-select: none;
@@ -597,13 +613,13 @@
         }
 
         .icone-btn img {
-            width: 22px;
-            height: 22px;
+            width: 27px;
+            height: 27px;
         }
 
         .icone-ok svg {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             stroke: #4caf50;
             fill: none;
             stroke-width: 2.5;
@@ -612,7 +628,7 @@
         }
 
         .linha-cidade {
-            font-size: 15px;
+            font-size: 16px;
             color: rgba(255,255,255,0.9);
             margin-bottom: 8px;
         }
@@ -622,7 +638,7 @@
         }
 
         .linha-solicitado {
-            font-size: 14px;
+            font-size: 15px;
             color: rgba(255,255,255,0.76);
         }
 
@@ -638,7 +654,7 @@
             border-radius: 12px;
             background: rgba(76,175,80,0.12);
             border: 1px solid rgba(76,175,80,0.30);
-            font-size: 14px;
+            font-size: 15px;
             color: #ffffff;
         }
 
@@ -658,7 +674,7 @@
         }
 
         .bloco-acao-titulo {
-            font-size: 19px;
+            font-size: 20px;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -670,7 +686,7 @@
         }
 
         .bloco-acao-texto {
-            font-size: 16px;
+            font-size: 17px;
             line-height: 1.5;
             color: white;
             white-space: pre-line;
@@ -684,7 +700,7 @@
 
         .ponto-novo-info-label {
             display: block;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: bold;
             color: #ffeb3b;
             text-align: center;
@@ -692,7 +708,7 @@
         }
 
         .ponto-novo-info-texto {
-            font-size: 15px;
+            font-size: 16px;
             line-height: 1.35;
             color: #ffffff;
             text-align: center;
@@ -783,7 +799,7 @@
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 10px;
             padding: 8px 12px;
-            font-size: 16px;
+            font-size: 17px;
             color: rgba(255,255,255,0.75);
             white-space: nowrap;
             overflow: hidden;
@@ -1427,6 +1443,7 @@
                     clienteCidade: cliente?.cidade || manutencao?.clienteCidade || "Nao informada",
                     clienteRota: cliente?.rota || manutencao?.clienteRota || "Nao informada",
                     clienteEndereco: cliente?.endereco || manutencao?.clienteEndereco || "",
+                    clienteAberto: cliente?.aberto || manutencao?.clienteAberto || "",
                     solicitante: manutencao?.cadastradoPor || "Nao informado",
                     diasEmAberto,
                     classeUrgencia: obterClasseUrgencia(diasEmAberto),
@@ -1489,6 +1506,7 @@
                     clienteCidade: cliente?.cidade || manutencao?.clienteCidade || "Nao informada",
                     clienteRota: cliente?.rota || manutencao?.clienteRota || "Nao informada",
                     clienteEndereco: cliente?.endereco || manutencao?.clienteEndereco || "",
+                    clienteAberto: cliente?.aberto || manutencao?.clienteAberto || "",
                     solicitante: manutencao?.cadastradoPor || "Nao informado",
                     diasEmAberto,
                     classeUrgencia: obterClasseUrgencia(diasEmAberto),
@@ -1929,8 +1947,8 @@
             const detalhesPontoNovo = montarDetalhesPontoNovo(item);
             const estaSelecionado = !!item.selecionadoPor;
             const selecaoLabel = estaSelecionado
-                ? `<span class="card-selecao-tecnico">${escaparHtml(item.selecionadoPor)}</span> vai realizar este serviço`
-                : 'Marcar que farei este serviço';
+                ? `<span class="card-selecao-tecnico">${escaparHtml(item.selecionadoPor)}</span> fará`
+                : 'Vou fazer';
 
             const rotaKey = normalizarNumeroRota(item.clienteRota);
             const rotaSelecionadaPor = rotaKey ? String(rotasSelecionadasPorUsuario[rotaKey] || "").trim() : "";
@@ -1940,10 +1958,26 @@
 
             card.innerHTML = `
                 ${!exibindoConcluidas && !isEstoque ? `
-                <label class="card-selecao${estaSelecionado ? ' selecionado' : ''}">
-                    <input type="checkbox" ${estaSelecionado ? 'checked' : ''} onchange="alternarSelecao('${escaparHtml(item.firebaseUrl)}', this.checked, this)">
-                    <span class="card-selecao-texto">${selecaoLabel}</span>
-                </label>` : ''}
+                <div class="card-selecao-row${estaSelecionado ? ' selecionado' : ''}">
+                    <label class="card-selecao-label">
+                        <input type="checkbox" ${estaSelecionado ? 'checked' : ''} onchange="alternarSelecao('${escaparHtml(item.firebaseUrl)}', this.checked, this)">
+                        <span class="card-selecao-texto">${selecaoLabel}</span>
+                    </label>
+                    <div class="icones-acao">
+                        <div class="icone-btn-wrap" onclick="abrirLocalizacao('${escaparHtml(item.clienteEndereco || item.clienteCidade)}')">
+                            <div class="icone-btn">
+                                <img src="assets/img/Localizacao.png" alt="Localização">
+                            </div>
+                        </div>
+                        <div class="icone-btn-wrap" onclick="confirmarConclusao('${escaparHtml(item.firebaseUrl)}')">
+                            <div class="icone-btn icone-ok">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M20 6L9 17l-5-5"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>` : ''}
 
                 <div class="card-info-linhas">
                     <div class="linha-nome">${item.clienteNumero ? 'N. ' + escaparHtml(item.clienteNumero) + ' - ' : ''}${escaparHtml(item.clienteNome)}</div>
@@ -1951,24 +1985,8 @@
                         <div class="rota-cidade-stack">
                             <div><b>Rota:</b> ${escaparHtml(item.clienteRota)}</div>
                             <div><b>Cidade:</b> ${escaparHtml(item.clienteCidade)}</div>
+                            ${item.clienteAberto ? `<div><b>Aberto:</b> ${escaparHtml(item.clienteAberto)}</div>` : ''}
                         </div>
-                        ${!exibindoConcluidas && !isEstoque ? `
-                        <div class="icones-acao">
-                            <div class="icone-btn-wrap" onclick="abrirLocalizacao('${escaparHtml(item.clienteEndereco || item.clienteCidade)}')">
-                                <div class="icone-btn">
-                                    <img src="assets/img/Localizacao.png" alt="Localização">
-                                </div>
-                                <span class="icone-label">Localização</span>
-                            </div>
-                            <div class="icone-btn-wrap" onclick="confirmarConclusao('${escaparHtml(item.firebaseUrl)}')">
-                                <div class="icone-btn icone-ok">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M20 6L9 17l-5-5"/>
-                                    </svg>
-                                </div>
-                                <span class="icone-label">Realizada</span>
-                            </div>
-                        </div>` : ''}
                     </div>
                     <div class="linha-solicitado"><b>Solicitado:</b> ${escaparHtml(item.solicitante)} &nbsp;&nbsp; solicitação feita há ${escaparHtml(formatarDiasEmAberto(item.diasEmAberto).toLowerCase())}</div>
                     ${avisoRotaSelecionada}

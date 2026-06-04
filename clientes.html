@@ -1288,7 +1288,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbExcluirCliente, dbSalvarCliente, dbEscutarColaboradores, dbEscutarAtendimentos, dbListarAtendimentos, dbEscutarManutencoes, dbBuscarProdutosDoAtendimento, dbEscutarEstoque, dbSalvarHistoricoBalanco, dbClienteTemManutencaoPendenteNumero } from './database.js';
+    import { dbEscutarClientes, dbExcluirCliente, dbSalvarCliente, dbEscutarColaboradores, dbEscutarAtendimentos, dbListarAtendimentos, dbEscutarManutencoes, dbBuscarProdutosDoAtendimento, dbEscutarEstoque, dbSalvarHistoricoBalanco, dbClienteTemManutencaoPendenteNumero, dbSincronizarClienteRecuperacaoSessaoRotas } from './database.js';
 
     // --- CACHE LOCAL DE CLIENTES ---
     // Salva a lista e a versão no localStorage para acesso offline e economia de dados.
@@ -2078,9 +2078,36 @@
             alert("VocÃª nÃ£o tem permissÃ£o para alterar este cliente.");
             return;
         }
-        const ativar = cliente.emRecuperacao !== true;
+        const clienteEmRecuperacao = cliente.emRecuperacao === true;
         try {
-            await dbSalvarCliente({ emRecuperacao: ativar ? true : null }, id);
+            let emRecuperacao = clienteEmRecuperacao ? null : true;
+            let incluirNaRota = false;
+
+            if (clienteEmRecuperacao) {
+                const acao = await window.playConfirm(
+                    "O que deseja fazer com este cliente?",
+                    {
+                        secondaryLabel: "So incluir na rota",
+                        primaryLabel: "Tirar recuperacao",
+                        secondaryResult: "incluir_rota",
+                        primaryResult: "tirar_recuperacao",
+                        overlayResult: null
+                    }
+                );
+                if (!acao) return;
+                incluirNaRota = acao === "incluir_rota";
+                emRecuperacao = incluirNaRota ? true : null;
+            }
+
+            if (!incluirNaRota) {
+                await dbSalvarCliente({ emRecuperacao }, id);
+            }
+            await dbSincronizarClienteRecuperacaoSessaoRotas(
+                { ...cliente, emRecuperacao },
+                id,
+                emRecuperacao,
+                { incluirNaRota }
+            );
         } catch (e) {
             alert("Erro ao alterar recuperaÃ§Ã£o.");
         }
