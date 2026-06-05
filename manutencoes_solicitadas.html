@@ -1160,6 +1160,11 @@
 
     function itemBatePesquisa(item, termo) {
         if (!termo) return true;
+        const numeroRotaBusca = obterNumeroBuscaRota(termo);
+        if (numeroRotaBusca) {
+            return normalizarNumeroPesquisa(item?.clienteRota) === numeroRotaBusca;
+        }
+
         const palavras = termo.split(" ").filter(Boolean);
         const haystack = normalizar([
             item.clienteNome,
@@ -1289,6 +1294,11 @@
         return /^\d+$/.test(String(valor || "").trim());
     }
 
+    function obterNumeroBuscaRota(valor) {
+        const match = normalizar(valor).trim().match(/^rota\s*[:#-]?\s*(\d+)$/);
+        return match ? normalizarNumeroPesquisa(match[1]) : "";
+    }
+
     function ordenarPrioridadeNumero(lista, termo) {
         if (!buscaSomenteNumero(termo)) return lista;
 
@@ -1308,6 +1318,19 @@
         });
     }
 
+    function ordenarPrioridadeRota(lista, termo) {
+        const numeroRotaBusca = obterNumeroBuscaRota(termo);
+        if (!numeroRotaBusca) return lista;
+
+        return [...lista].sort((a, b) => {
+            const rotaA = normalizarNumeroPesquisa(a?.clienteRota) === numeroRotaBusca ? 0 : 1;
+            const rotaB = normalizarNumeroPesquisa(b?.clienteRota) === numeroRotaBusca ? 0 : 1;
+            if (rotaA !== rotaB) return rotaA - rotaB;
+
+            return 0;
+        });
+    }
+
     function textoContemTermos(valor, termo) {
         const palavras = normalizar(termo).split(" ").filter(Boolean);
         if (palavras.length === 0) return false;
@@ -1316,7 +1339,7 @@
     }
 
     function ordenarPrioridadeTexto(lista, termo) {
-        if (!termo || buscaSomenteNumero(termo)) return lista;
+        if (!termo || buscaSomenteNumero(termo) || obterNumeroBuscaRota(termo)) return lista;
 
         return [...lista].sort((a, b) => {
             const nomeA = textoContemTermos(a?.clienteNome, termo) ? 0 : 1;
@@ -1900,6 +1923,7 @@
             ? lista.filter(item => itemBatePesquisa(item, termoPesquisa))
             : lista;
         listaFiltrada = ordenarPrioridadeNumero(listaFiltrada, inputPesquisa.value);
+        listaFiltrada = ordenarPrioridadeRota(listaFiltrada, inputPesquisa.value);
         listaFiltrada = ordenarPrioridadeTexto(listaFiltrada, inputPesquisa.value);
 
         if (exibindoConcluidas) {

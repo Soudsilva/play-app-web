@@ -138,6 +138,8 @@
         .envio-header { border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 10px; }
         .envio-data { font-size: 13px; color: #ffeb3b; font-weight: bold; user-select: none; -webkit-user-select: none; }
         .envio-cliente { font-size: 20px; font-weight: bold; margin-top: 5px; color: white; user-select: none; -webkit-user-select: none; }
+        .envio-rota { margin-top: 5px; font-size: 14px; color: #ffffff; font-weight: bold; user-select: none; -webkit-user-select: none; }
+        .envio-rota span { color: #ffffff; }
 
         /* TÃ­tulos de SeÃ§Ã£o Interna */
         .secao-titulo { 
@@ -779,6 +781,215 @@
         return String(txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     }
 
+    function normalizarNumeroPesquisa(valor) {
+        return String(valor || '').trim().replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+    }
+
+    function buscaSomenteNumero(valor) {
+        return /^\d+$/.test(String(valor || '').trim());
+    }
+
+    function obterNumeroBuscaRota(valor) {
+        const match = normalizarTexto(valor).trim().match(/^rota\s*[:#-]?\s*(\d+)$/);
+        return match ? normalizarNumeroPesquisa(match[1]) : '';
+    }
+
+    function textoContemTermos(valor, termo) {
+        const palavras = normalizarTexto(termo).split(' ').filter(Boolean);
+        if (palavras.length === 0) return false;
+        const texto = normalizarTexto(valor);
+        return palavras.every(palavra => texto.includes(palavra));
+    }
+
+    function obterClienteCadastradoPorNumero(numero) {
+        const numeroBusca = normalizarNumeroPesquisa(numero);
+        if (!numeroBusca) return null;
+        return clientesSalvos.find(cliente => normalizarNumeroPesquisa(cliente?.numero) === numeroBusca) || null;
+    }
+
+    function obterClienteCadastradoPorNome(nome) {
+        const nomeBusca = normalizarTexto(nome).trim();
+        if (!nomeBusca) return null;
+        return clientesSalvos.find(cliente => normalizarTexto(cliente?.nome).trim() === nomeBusca) || null;
+    }
+
+    function obterInfoClienteBusca(envio) {
+        const cadastro = envio?.clienteCadastro || null;
+        const cliente = envio?.cliente || {};
+        const numero = String(cadastro?.numero || cliente?.numero || '').trim();
+        const nome = String(cadastro?.nome || cliente?.nome || '').trim();
+        const clienteSalvo = obterClienteCadastradoPorNumero(numero) || obterClienteCadastradoPorNome(nome) || {};
+
+        return {
+            numero: numero || String(clienteSalvo?.numero || '').trim(),
+            nome: nome || String(clienteSalvo?.nome || '').trim(),
+            rota: String(cadastro?.rota || cliente?.rota || clienteSalvo?.rota || '').trim(),
+            cidade: String(cadastro?.cidade || cliente?.cidade || clienteSalvo?.cidade || '').trim(),
+            endereco: String(cadastro?.endereco || cliente?.endereco || clienteSalvo?.endereco || '').trim()
+        };
+    }
+
+    function montarHtmlRotaEnvio(envio) {
+        const rota = obterInfoClienteBusca(envio).rota;
+        return rota ? `<div class="envio-rota"><span>Rota:</span> ${escaparHtml(rota)}</div>` : '';
+    }
+
+    function obterCamposBuscaAtendimento(envio) {
+        const fotos = envio?.fotos || {};
+        const manutencaoCompleta = ehRegistroManutencao(envio) ? obterManutencaoCompleta(envio) : {};
+        const eventosCadastroPix = obterEventosCadastroPixDoEnvio(envio);
+        const maquinasAdicionadas = Array.isArray(manutencaoCompleta?.equipamentosAdicionados)
+            ? manutencaoCompleta.equipamentosAdicionados.map(formatarDescricaoEquipamento)
+            : [];
+        const maquinasRetiradas = Array.isArray(manutencaoCompleta?.equipamentosRetiradosDetalhes) && manutencaoCompleta.equipamentosRetiradosDetalhes.length > 0
+            ? manutencaoCompleta.equipamentosRetiradosDetalhes.map(formatarDescricaoEquipamento)
+            : (Array.isArray(manutencaoCompleta?.equipamentosRetirados)
+                ? manutencaoCompleta.equipamentosRetirados.map(formatarDescricaoEquipamento)
+                : []);
+
+        return [
+            obterNomeAutorEnvio(envio),
+            envio?.autorizadoPor,
+            ...(envio?.produtos || []).map(p => p.nome),
+            manutencaoCompleta?.tipoServico || '',
+            ...maquinasAdicionadas,
+            ...maquinasRetiradas,
+            ...eventosCadastroPix.map(item => `pix ${item.numeroPix}`),
+            ...eventosCadastroPix.map(item => item.local),
+            manutencaoCompleta?.observacoes || '',
+            manutencaoCompleta?.valorEncerramento || '',
+            formatarDataHora(envio?.data),
+            fotos.ficha ? 'ficha' : '',
+            ...(fotos.maquinas || []).map(m => m.nome),
+            ...(fotos.pix || []).map(p => `pix ${p.numero}`)
+        ];
+    }
+
+    function obterCamposBuscaCadastroPix(item) {
+        const registro = item?.cadastroPix || {};
+        return [
+            registro.numero_pix,
+            registro.equipamento,
+            registro.identificacao,
+            registro.cliente,
+            item?.eventoTipo === 'retirou' ? 'retirou' : 'colocou',
+            formatarDataHora(item?.data)
+        ];
+    }
+
+    function obterCamposBuscaMovimentoEstoque(item) {
+        return [
+            item?.tipo === 'entrada' || item?.origemRegistro === 'entrada_estoque' ? 'entrada de estoque' : 'retirada de estoque',
+            item?.itemNome,
+            item?.itemCategoria,
+            item?.responsavel,
+            item?.registradoPor,
+            item?.autorizadoPor,
+            ...(item?.produtos || []).map(produto => produto?.nome),
+            formatarDataHora(item?.data)
+        ];
+    }
+
+    function obterCamposBuscaCadastroCliente(item) {
+        const info = item?.clienteCadastro || item || {};
+        return [
+            info?.cidade,
+            info?.endereco,
+            info?.statusCadastro,
+            info?.aberto,
+            info?.obs,
+            obterEquipamentosTextoLista(info?.equipDetalhes, info?.equip),
+            formatarDataHora(info?.dataCadastro || item?.data)
+        ];
+    }
+
+    function obterCamposBuscaEnvio(envio) {
+        if (envio?.tipoLinhaTempo === 'cadastro_pix') return obterCamposBuscaCadastroPix(envio);
+        if (envio?.tipoLinhaTempo === 'cadastro_cliente') return obterCamposBuscaCadastroCliente(envio);
+        if (ehMovimentoEstoque(envio)) return obterCamposBuscaMovimentoEstoque(envio);
+        return obterCamposBuscaAtendimento(envio);
+    }
+
+    function itemBateBuscaEnvio(envio, termo) {
+        if (!termo) return true;
+
+        const cliente = obterInfoClienteBusca(envio);
+        const numeroRotaBusca = obterNumeroBuscaRota(termo);
+        if (numeroRotaBusca) {
+            return normalizarNumeroPesquisa(cliente.rota) === numeroRotaBusca;
+        }
+
+        const palavras = normalizarTexto(termo).split(' ').filter(Boolean);
+        const haystack = normalizarTexto([
+            cliente.numero,
+            cliente.nome,
+            cliente.rota,
+            cliente.cidade,
+            cliente.endereco,
+            ...obterCamposBuscaEnvio(envio)
+        ].join(' '));
+
+        return palavras.every(palavra => haystack.includes(palavra));
+    }
+
+    function ordenarPrioridadeNumero(lista, termo) {
+        if (!buscaSomenteNumero(termo)) return lista;
+
+        const numeroBusca = normalizarNumeroPesquisa(termo);
+        if (!numeroBusca) return lista;
+
+        return [...lista].sort((a, b) => {
+            const clienteA = obterInfoClienteBusca(a);
+            const clienteB = obterInfoClienteBusca(b);
+            const numeroA = normalizarNumeroPesquisa(clienteA.numero) === numeroBusca ? 0 : 1;
+            const numeroB = normalizarNumeroPesquisa(clienteB.numero) === numeroBusca ? 0 : 1;
+            if (numeroA !== numeroB) return numeroA - numeroB;
+
+            const rotaA = normalizarNumeroPesquisa(clienteA.rota) === numeroBusca ? 0 : 1;
+            const rotaB = normalizarNumeroPesquisa(clienteB.rota) === numeroBusca ? 0 : 1;
+            if (rotaA !== rotaB) return rotaA - rotaB;
+
+            return 0;
+        });
+    }
+
+    function ordenarPrioridadeRota(lista, termo) {
+        const numeroRotaBusca = obterNumeroBuscaRota(termo);
+        if (!numeroRotaBusca) return lista;
+
+        return [...lista].sort((a, b) => {
+            const clienteA = obterInfoClienteBusca(a);
+            const clienteB = obterInfoClienteBusca(b);
+            const rotaA = normalizarNumeroPesquisa(clienteA.rota) === numeroRotaBusca ? 0 : 1;
+            const rotaB = normalizarNumeroPesquisa(clienteB.rota) === numeroRotaBusca ? 0 : 1;
+            if (rotaA !== rotaB) return rotaA - rotaB;
+
+            return 0;
+        });
+    }
+
+    function ordenarPrioridadeTexto(lista, termo) {
+        if (!termo || buscaSomenteNumero(termo) || obterNumeroBuscaRota(termo)) return lista;
+
+        return [...lista].sort((a, b) => {
+            const clienteA = obterInfoClienteBusca(a);
+            const clienteB = obterInfoClienteBusca(b);
+            const nomeA = textoContemTermos(clienteA.nome, termo) ? 0 : 1;
+            const nomeB = textoContemTermos(clienteB.nome, termo) ? 0 : 1;
+            if (nomeA !== nomeB) return nomeA - nomeB;
+
+            const numeroA = textoContemTermos(clienteA.numero, termo) ? 0 : 1;
+            const numeroB = textoContemTermos(clienteB.numero, termo) ? 0 : 1;
+            if (numeroA !== numeroB) return numeroA - numeroB;
+
+            const rotaA = textoContemTermos(clienteA.rota, termo) ? 0 : 1;
+            const rotaB = textoContemTermos(clienteB.rota, termo) ? 0 : 1;
+            if (rotaA !== rotaB) return rotaA - rotaB;
+
+            return 0;
+        });
+    }
+
     function escaparHtml(valor) {
         return String(valor ?? '')
             .replace(/&/g, '&amp;')
@@ -1233,18 +1444,6 @@
 
     function obterMovimentosEstoqueDoUsuario() {
         return historicoEstoqueSalvo
-            .filter(item => {
-                if (!termoBusca) return true;
-                const campos = [
-                    item?.tipo === 'entrada' ? 'entrada de estoque' : 'retirada de estoque',
-                    item?.itemNome,
-                    item?.itemCategoria,
-                    item?.responsavel,
-                    item?.registradoPor,
-                    formatarDataHora(item?.data)
-                ];
-                return campos.some(c => normalizarTexto(c).includes(termoBusca));
-            })
             .map(item => ({
                 tipoLinhaTempo: 'movimento_estoque',
                 firebaseUrl: item?.firebaseUrl ? `historico_${item.firebaseUrl}` : '',
@@ -1260,6 +1459,7 @@
                     quantidade: Number(item?.qtd || 0)
                 }]
             }))
+            .filter(item => itemBateBuscaEnvio(item, document.getElementById('inputBusca')?.value || ''))
             .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
     }
 
@@ -1296,22 +1496,6 @@
 
         return clientesSalvos
             .filter(item => normalizarTexto(item?.cadastradoPor) === usuario)
-            .filter(item => {
-                if (!termoBusca) return true;
-                const campos = [
-                    item?.numero,
-                    item?.nome,
-                    item?.cidade,
-                    item?.rota,
-                    item?.endereco,
-                    item?.statusCadastro,
-                    item?.aberto,
-                    item?.obs,
-                    obterEquipamentosTextoLista(item?.equipDetalhes, item?.equip),
-                    formatarDataHora(item?.dataCadastro)
-                ];
-                return campos.some(c => normalizarTexto(c).includes(termoBusca));
-            })
             .map(item => ({
                 tipoLinhaTempo: 'cadastro_cliente',
                 data: item?.dataCadastro || '',
@@ -1321,6 +1505,7 @@
                     nome: item?.nome || 'Cliente sem nome'
                 }
             }))
+            .filter(item => itemBateBuscaEnvio(item, document.getElementById('inputBusca')?.value || ''))
             .sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
     }
 
@@ -1502,6 +1687,7 @@
 
     function renderizarEnvios() {
         const container = document.getElementById('listaEnvios');
+        const termoBuscaOriginal = document.getElementById('inputBusca')?.value || '';
         container.innerHTML = '';
         atualizarResumoContestacoes();
 
@@ -1520,56 +1706,13 @@
                 if (!pertenceAoUsuario(a)) return false;
                 if (ehMovimentoEstoque(a)) return false;
                 if (filtroContestacoesAtivo && !contestacaoRegistrada(a)) return false;
-                if (!termoBusca) return true;
-                const fotos = a.fotos || {};
-                const manutencaoCompleta = ehRegistroManutencao(a) ? obterManutencaoCompleta(a) : {};
-                const eventosCadastroPix = obterEventosCadastroPixDoEnvio(a);
-                const maquinasAdicionadas = Array.isArray(manutencaoCompleta?.equipamentosAdicionados)
-                    ? manutencaoCompleta.equipamentosAdicionados.map(formatarDescricaoEquipamento)
-                    : [];
-                const maquinasRetiradas = Array.isArray(manutencaoCompleta?.equipamentosRetiradosDetalhes) && manutencaoCompleta.equipamentosRetiradosDetalhes.length > 0
-                    ? manutencaoCompleta.equipamentosRetiradosDetalhes.map(formatarDescricaoEquipamento)
-                    : (Array.isArray(manutencaoCompleta?.equipamentosRetirados)
-                        ? manutencaoCompleta.equipamentosRetirados.map(formatarDescricaoEquipamento)
-                        : []);
-                const campos = [
-                    obterNomeAutorEnvio(a),
-                    a.autorizadoPor,
-                    a.cliente?.nome,
-                    a.cliente?.numero,
-                    ...(a.produtos || []).map(p => p.nome),
-                    manutencaoCompleta?.tipoServico || '',
-                    ...maquinasAdicionadas,
-                    ...maquinasRetiradas,
-                    ...eventosCadastroPix.map(item => `pix ${item.numeroPix}`),
-                    ...eventosCadastroPix.map(item => item.local),
-                    manutencaoCompleta?.observacoes || '',
-                    manutencaoCompleta?.valorEncerramento || '',
-                    new Date(a.data).toLocaleString('pt-BR'),
-                    fotos.ficha ? 'ficha' : '',
-                    ...(fotos.maquinas || []).map(m => m.nome),
-                    ...(fotos.pix || []).map(p => `pix ${p.numero}`)
-                ];
-                return campos.some(c => normalizarTexto(c).includes(termoBusca));
+                return itemBateBuscaEnvio(a, termoBuscaOriginal);
             });
 
         const enviosCadastroPix = obterCadastrosPixAvulsosDoUsuario()
             .filter(item => {
                 if (filtroContestacoesAtivo) return false;
-                if (!termoBusca) return true;
-                const registro = item?.cadastroPix || {};
-                const cliente = item?.cliente || {};
-                const campos = [
-                    cliente.numero,
-                    cliente.nome,
-                    registro.numero_pix,
-                    registro.equipamento,
-                    registro.identificacao,
-                    registro.cliente,
-                    item?.eventoTipo === 'retirou' ? 'retirou' : 'colocou',
-                    formatarDataHora(item?.data)
-                ];
-                return campos.some(c => normalizarTexto(c).includes(termoBusca));
+                return itemBateBuscaEnvio(item, termoBuscaOriginal);
             });
 
         const enviosEstoque = filtroContestacoesAtivo ? [] : obterMovimentosEstoqueDoUsuario();
@@ -1584,7 +1727,15 @@
         ]
             .sort((a, b) => new Date(b.data) - new Date(a.data));
 
-        if (meusEnvios.length === 0) {
+        const meusEnviosOrdenados = ordenarPrioridadeTexto(
+            ordenarPrioridadeRota(
+                ordenarPrioridadeNumero(meusEnvios, termoBuscaOriginal),
+                termoBuscaOriginal
+            ),
+            termoBuscaOriginal
+        );
+
+        if (meusEnviosOrdenados.length === 0) {
             container.innerHTML = filtroContestacoesAtivo
                 ? '<p class="sem-envios">Nenhuma contestação encontrada.</p>'
                 : termoBusca
@@ -1595,7 +1746,7 @@
 
         // Agrupa por data e insere rótulos
         let ultimoGrupo = null;
-        meusEnvios.forEach(envio => {
+        meusEnviosOrdenados.forEach(envio => {
             const grupoKey = dataLocalYMD(envio.data);
             if (grupoKey !== ultimoGrupo) {
                 ultimoGrupo = grupoKey;
@@ -1611,7 +1762,7 @@
                 const clienteNome = envio?.cliente?.nome || 'Cliente Desconhecido';
                 const clienteNumero = envio?.cliente?.numero || 'S/N';
                 const dataFormatada = formatarDataHora(envio?.data);
-                const htmlHeader = `<div class="envio-header"><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>`;
+                const htmlHeader = `<div class="envio-header"><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div>${montarHtmlRotaEnvio(envio)}</div>`;
                 const htmlCadastroPixAvulso = montarHtmlCadastroPixAvulso(envio);
                 const htmlRodape = `
                     <div class="envio-rodape-estoque">
@@ -1627,7 +1778,7 @@
                 const clienteNumero = envio?.cliente?.numero || 'S/N';
                 const dataFormatada = formatarDataHora(envio?.data);
                 const info = envio?.clienteCadastro || {};
-                const htmlHeader = `<div class="envio-header"><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div></div>`;
+                const htmlHeader = `<div class="envio-header"><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div>${montarHtmlRotaEnvio(envio)}</div>`;
                 let htmlFotos = '';
                 const fotos = [];
                 if (info?.fotoFichaInstalacao) {
@@ -1677,6 +1828,7 @@
                             <span style="font-size:11px; color:rgba(255,255,255,0.35); font-family:monospace; letter-spacing:0.5px;user-select:none;-webkit-user-select:none;">ID: ${idAtend}</span>
                         </div>
                         <div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div>
+                        ${montarHtmlRotaEnvio(envio)}
                     </div>`;
             }
 
