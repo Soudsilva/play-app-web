@@ -1140,6 +1140,7 @@ import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscar
 
 const dadosManutencao = JSON.parse(sessionStorage.getItem('manutencao_realizando') || 'null');
 if (!dadosManutencao) { window.location.href = 'manutencoes_solicitadas.html'; }
+const abrirComplementoInfoManutencao = sessionStorage.getItem('manutencao_complemento_info') === '1';
 const usuarioLogado = String(localStorage.getItem('usuarioLogado') || dadosManutencao?.selecionadoPor || 'Técnico').trim();
 let salvandoRegistroManutencao = false;
 
@@ -1796,7 +1797,9 @@ function inicializarHistoricoNavegador() {
     const clienteNumero = String(dadosManutencao?.clienteNumero ?? dadosManutencao?.cliente?.numero ?? '').trim();
     const clienteRota = String(dadosManutencao?.clienteRota || dadosManutencao?.cliente?.rota || '').trim();
     const clienteCidade = String(dadosManutencao?.clienteCidade || dadosManutencao?.cliente?.cidade || '').trim();
-    const solicitante = String(dadosManutencao?.solicitante || dadosManutencao?.cadastradoPor || '').trim();
+    const solicitante = abrirComplementoInfoManutencao
+        ? usuarioLogado
+        : String(dadosManutencao?.solicitante || dadosManutencao?.cadastradoPor || '').trim();
     const meta = [
         clienteRota ? `Rota ${clienteRota}` : null,
         clienteCidade ? clienteCidade : null,
@@ -3251,6 +3254,60 @@ window.responderProdutos = function(teve) {
     registrarNovoEstadoHistorico();
 };
 
+async function abrirTelaComplementoInfoManutencao() {
+    if (!abrirComplementoInfoManutencao) return;
+    sessionStorage.removeItem('manutencao_complemento_info');
+
+    respostas.servicoRealizado = false;
+    respostas.teveAlteracaoMaquinas = false;
+    respostas.acoesMaquinas.adicionou = false;
+    respostas.acoesMaquinas.retirou = false;
+    respostas.encerramentoRespondido = false;
+    respostas.pontoEncerrado = false;
+    respostas.valorEncerramento = '';
+    respostas.teveProdutos = false;
+
+    const subObs = document.getElementById('subObsPendente');
+    if (subObs) subObs.classList.add('visivel');
+
+    const campoObs = document.getElementById('campoObsPendente');
+    if (campoObs) campoObs.value = dadosManutencao.observacoes || '';
+
+    marcarSecaoRespondida('secaoServico', 'Não, ficou pendente ⚠️');
+    await carregarEquipamentosDoCliente();
+
+    mostrarSecao('secaoMaquinas');
+    document.getElementById('subPixEncerramento')?.classList.remove('visivel');
+    const listaPixEncerramento = document.getElementById('listaPixEncerramento');
+    if (listaPixEncerramento) listaPixEncerramento.innerHTML = '';
+    marcarSecaoRespondida('secaoMaquinas', 'Não mexi em máquinas ✔️');
+
+    sincronizarSecaoProdutosUI();
+    mostrarSecao('secaoProdutos');
+    document.getElementById('subProdutos')?.classList.remove('visivel');
+    const labelProdutos = document.getElementById('labelProdutosManutencao');
+    if (labelProdutos) labelProdutos.style.display = 'none';
+    const mensagemProdutos = document.getElementById('mensagemProdutosManutencao');
+    if (mensagemProdutos) mensagemProdutos.style.display = 'none';
+    marcarSecaoRespondida('secaoProdutos', 'Sem reposição ✔️');
+
+    const tituloServico = document.querySelector('#secaoServico .secao-titulo');
+    if (tituloServico) tituloServico.style.display = 'none';
+    document.querySelectorAll('#secaoServico .resposta-confirmada').forEach(el => el.style.display = 'none');
+    document.getElementById('secaoMaquinas')?.classList.remove('visivel');
+    document.getElementById('secaoProdutos')?.classList.remove('visivel');
+
+    atualizarBotaoFinalizar();
+    registrarNovoEstadoHistorico();
+
+    setTimeout(() => {
+        if (!campoObs) return;
+        campoObs.focus();
+        const tamanhoTexto = campoObs.value.length;
+        campoObs.setSelectionRange(tamanhoTexto, tamanhoTexto);
+    }, 120);
+}
+
 window.confirmarProdutos = function() {
     try {
         const produtos = coletarProdutosRepostosParaSalvar();
@@ -3420,6 +3477,11 @@ window.finalizarRegistro = async function() {
             ...camposExtras,
         };
 
+        if (abrirComplementoInfoManutencao) {
+            dadosFinais.solicitante = usuarioLogado;
+            dadosFinais.cadastradoPor = usuarioLogado;
+        }
+
         if (!foiConcluido) {
             const observacaoPendente = document.getElementById('campoObsPendente')?.value.trim() || '';
             if (observacaoPendente) {
@@ -3575,6 +3637,7 @@ window.finalizarRegistro = async function() {
         }
 
         sessionStorage.removeItem('manutencao_realizando');
+        sessionStorage.removeItem('manutencao_complemento_info');
         ocultarStatus();
         botao.textContent = '✅ Salvo com sucesso!';
         setTimeout(() => window.location.replace('manutencoes_solicitadas.html'), 1200);
@@ -3600,6 +3663,7 @@ estadoInicial = {
 };
 
 inicializarHistoricoNavegador();
+abrirTelaComplementoInfoManutencao();
 </script>
 </body>
 </html>
