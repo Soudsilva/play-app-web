@@ -987,6 +987,7 @@
     let unsubscribeHistoricoResponsavel = null;
     let unsubscribePosseUsuario = null;
     let unsubscribePixUsuario = null;
+    const RESPONSAVEL_PIX_ESTOQUE = 'Fornecedor';
 
     const tituloHistorico = document.querySelector('.titulo-hist');
     const filtroHistoricoEl = document.getElementById('filtroHistorico');
@@ -1469,6 +1470,8 @@
     dbEscutarTodosPixEmPosse((numeros, porNumero) => {
         pixEmPosseGlobal = numeros instanceof Set ? numeros : new Set();
         pixEmPossePorNumero = porNumero instanceof Map ? porNumero : new Map();
+        atualizarBotaoItens();
+        if (itensVisivelEstoque && tipoSelecionadoEhPix()) filtrarItensLista();
     });
 
     function obterEquipamentosDetalhadosClientePix(cliente) {
@@ -1620,6 +1623,7 @@
         }
         if (modoAtual === 'saida' && pixJaEstaEmPosse(valor)) {
             const responsavelAtual = obterResponsavelPixEmPosse(valor);
+            if (responsavelAtual === RESPONSAVEL_PIX_ESTOQUE) return;
             await window.playAlert(responsavelAtual
                 ? `Pix ${valor} já está em posse de ${responsavelAtual}.`
                 : `Pix ${valor} já está em posse de um usuário.`);
@@ -1642,6 +1646,12 @@
         const categoriaAtual = document.getElementById('filtroCategoria').value;
 
         if (categoriaAtual === 'pix') {
+            if (modoAtual === 'entrada') {
+                const optForn = document.createElement('option');
+                optForn.value = RESPONSAVEL_PIX_ESTOQUE;
+                optForn.innerText = RESPONSAVEL_PIX_ESTOQUE;
+                select.appendChild(optForn);
+            }
             colabsGlobal
                 .filter(usuarioTemPerfilAtendimentoNivel2)
                 .forEach((colab) => {
@@ -2211,7 +2221,7 @@
 
     function obterCategoriaFiltroEstoqueAtual() {
         const categoria = document.getElementById('filtroCategoria')?.value || '';
-        return categoria === 'pix' ? '' : categoria;
+        return categoria;
     }
 
     function obterLinhasMovimentacao() {
@@ -2444,20 +2454,35 @@
         }
         if (modoAtual === 'saida' && pixJaEstaEmPosse(numeroPix)) {
             const responsavelAtual = obterResponsavelPixEmPosse(numeroPix);
-            await window.playAlert(responsavelAtual
-                ? `Pix ${numeroPix} já está em posse de ${responsavelAtual}.`
-                : `Pix ${numeroPix} já está em posse de um usuário.`);
-            inputPix.value = '';
-            inputPix.focus();
-            return;
-        }
-        if (modoAtual === 'entrada') {
-            const pixDoResponsavel = await dbLerPixEmPosse(responsavel);
-            const usuarioTemPix = pixDoResponsavel.some(item => String(item?.numero_pix || '').trim() === numeroPix);
-            if (!usuarioTemPix) {
-                await window.playAlert('Usuário não tem esse Pix com ele para dar entrada.');
+            if (responsavelAtual !== RESPONSAVEL_PIX_ESTOQUE) {
+                await window.playAlert(responsavelAtual
+                    ? `Pix ${numeroPix} já está em posse de ${responsavelAtual}.`
+                    : `Pix ${numeroPix} já está em posse de um usuário.`);
+                inputPix.value = '';
                 inputPix.focus();
                 return;
+            }
+        }
+        if (modoAtual === 'entrada') {
+            const responsavelEhFornecedor = responsavel === RESPONSAVEL_PIX_ESTOQUE;
+            if (responsavelEhFornecedor && pixJaEstaEmPosse(numeroPix)) {
+                const responsavelAtual = obterResponsavelPixEmPosse(numeroPix);
+                await window.playAlert(responsavelAtual
+                    ? `Pix ${numeroPix} já está em posse de ${responsavelAtual}.`
+                    : `Pix ${numeroPix} já está registrado no estoque.`);
+                inputPix.value = '';
+                inputPix.focus();
+                return;
+            }
+
+            if (!responsavelEhFornecedor) {
+                const pixDoResponsavel = await dbLerPixEmPosse(responsavel);
+                const usuarioTemPix = pixDoResponsavel.some(item => String(item?.numero_pix || '').trim() === numeroPix);
+                if (!usuarioTemPix) {
+                    await window.playAlert('Usuário não tem esse Pix com ele para dar entrada.');
+                    inputPix.focus();
+                    return;
+                }
             }
         }
 
@@ -2465,9 +2490,22 @@
             salvandoMovimentacao = true;
             definirEstadoSalvando(true);
             if (modoAtual === 'entrada') {
-                await dbRemoverPixEmPosse(responsavel, numeroPix);
-                removerPixEmPosseLocal(numeroPix);
+                if (responsavel !== RESPONSAVEL_PIX_ESTOQUE) {
+                    await dbRemoverPixEmPosse(responsavel, numeroPix);
+                }
+                await dbAdicionarPixEmPosse(RESPONSAVEL_PIX_ESTOQUE, numeroPix, {
+                    responsavel: RESPONSAVEL_PIX_ESTOQUE,
+                    registradoPor,
+                    origemRegistro: 'movimentacao_estoque',
+                    tipo: 'pix_estoque',
+                    recebidoDe: responsavel,
+                    timestamp: new Date().toISOString()
+                });
+                registrarPixEmPosseLocal(numeroPix, RESPONSAVEL_PIX_ESTOQUE);
             } else {
+                if (obterResponsavelPixEmPosse(numeroPix) === RESPONSAVEL_PIX_ESTOQUE) {
+                    await dbRemoverPixEmPosse(RESPONSAVEL_PIX_ESTOQUE, numeroPix);
+                }
                 await dbAdicionarPixEmPosse(responsavel, numeroPix, {
                     responsavel,
                     retiradoPor: responsavel,
@@ -2506,12 +2544,14 @@
         btn.classList.toggle('aberto', itensVisivelEstoque);
         btn.setAttribute('aria-expanded', itensVisivelEstoque ? 'true' : 'false');
         const categoriaAtual = obterCategoriaFiltroEstoqueAtual();
-        const total = categoriaAtual
-            ? listaGlobal.filter(item => item.categoria === categoriaAtual).length
-            : 0;
+        const total = categoriaAtual === 'pix'
+            ? obterPixEstoqueDisponiveis().length
+            : (categoriaAtual ? listaGlobal.filter(item => item.categoria === categoriaAtual).length : 0);
         const badgeTexto = total > 0 ? total : '';
         const subtexto = categoriaAtual
-            ? (itensVisivelEstoque ? 'Toque para ocultar' : 'Toque para ver todos os itens')
+            ? (categoriaAtual === 'pix'
+                ? (itensVisivelEstoque ? 'Pix disponiveis no estoque' : 'Toque para ver os Pix disponiveis')
+                : (itensVisivelEstoque ? 'Toque para ocultar' : 'Toque para ver todos os itens'))
             : 'Selecione um tipo';
         btn.innerHTML = `
             <span class="titulo-hist-olho"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg></span>
@@ -2574,6 +2614,17 @@
         if (!itensVisivelEstoque) return;
         const termo = document.getElementById('filtroItens').value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
         const categoriaAtual = obterCategoriaFiltroEstoqueAtual();
+
+        if (categoriaAtual === 'pix') {
+            const pixEstoque = obterPixEstoqueDisponiveis().filter(item => {
+                const numero = String(item.numero_pix || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                return numero.includes(termo);
+            });
+            renderizarPixEstoque(pixEstoque);
+            atualizarVisualFiltrosItens();
+            return;
+        }
+
         const filtrados = listaGlobal.filter(item => {
             if (!categoriaAtual || item.categoria !== categoriaAtual) return false;
             const nome = item.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -2582,6 +2633,39 @@
         renderizarItensEstoque(filtrados);
         atualizarVisualFiltrosItens();
     };
+
+    function obterPixEstoqueDisponiveis() {
+        return Array.from(pixEmPossePorNumero.entries())
+            .filter(([, responsavel]) => String(responsavel || '').trim() === RESPONSAVEL_PIX_ESTOQUE)
+            .map(([numero]) => ({ numero_pix: String(numero || '').trim() }))
+            .filter(item => item.numero_pix)
+            .sort((a, b) => {
+                const na = /^\d+$/.test(a.numero_pix) ? Number(a.numero_pix) : Number.MAX_SAFE_INTEGER;
+                const nb = /^\d+$/.test(b.numero_pix) ? Number(b.numero_pix) : Number.MAX_SAFE_INTEGER;
+                if (na !== nb) return na - nb;
+                return a.numero_pix.localeCompare(b.numero_pix, 'pt-BR');
+            });
+    }
+
+    function renderizarPixEstoque(lista) {
+        const container = document.getElementById('listaItens');
+        container.innerHTML = '';
+        if (lista.length === 0) {
+            container.innerHTML = '<p style="text-align:center; font-size:11px; opacity:0.5;">Nenhum Pix disponivel no estoque.</p>';
+            return;
+        }
+
+        const pixTexto = formatarPixUsuario(lista);
+        container.innerHTML = `
+            <div class="posse-secao">
+                <div class="posse-secao-titulo">PIX em Estoque</div>
+                <div class="posse-pix-card">
+                    <div class="posse-pix-label">Numeros Pix</div>
+                    <div class="posse-pix-numeros">${pixTexto}</div>
+                </div>
+            </div>
+        `;
+    }
 
     function renderizarItensEstoque(lista) {
         const container = document.getElementById('listaItens');
