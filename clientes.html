@@ -2215,13 +2215,13 @@
                     const tb = b.dataHora || b.data || b.timestamp || 0;
                     return String(tb).localeCompare(String(ta));
                 });
-            const ultimoAtendimento = atendimentosDoCliente[0] || null;
+            const ultimoAtendimento = atendimentosDoCliente.find(a => Number(a?.financeiro?.totalGeral || 0) > 0) || null;
 
             const secoes = [];
 
             // Foto da ficha — apenas atendimento nível 2 ou gestão
             const podeVerFicha = perfilUsuarioLogado.startsWith('gestao') || perfilUsuarioLogado === 'atendimento_2';
-            if (podeVerFicha) {
+            if (podeVerFicha && ultimoAtendimento) {
                 const fotosficha = [];
                 const fichaInstalacao = cliente.fotoFichaInstalacao || cliente.fotosInstalacao?.ficha || "";
                 if (fichaInstalacao) fotosficha.push({ titulo: 'Ficha', url: fichaInstalacao, thumbUrl: cliente.fotoFichaInstalacaoThumb || fichaInstalacao });
@@ -2233,11 +2233,6 @@
             const fotosMaquinas = [];
             if (Array.isArray(ultimoAtendimento?.fotos?.maquinas) && ultimoAtendimento.fotos.maquinas.length > 0) {
                 ultimoAtendimento.fotos.maquinas.forEach((f, i) => {
-                    const u = f?.url || f?.src || "";
-                    if (u) fotosMaquinas.push({ titulo: f?.nome ? String(f.nome).trim() : `Maquina ${i+1}`, url: u, thumbUrl: f?.thumbUrl || u });
-                });
-            } else if (Array.isArray(cliente.fotosMaquinasInstalacao)) {
-                cliente.fotosMaquinasInstalacao.forEach((f, i) => {
                     const u = f?.url || f?.src || "";
                     if (u) fotosMaquinas.push({ titulo: f?.nome ? String(f.nome).trim() : `Maquina ${i+1}`, url: u, thumbUrl: f?.thumbUrl || u });
                 });
