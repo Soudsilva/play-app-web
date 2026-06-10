@@ -3403,6 +3403,22 @@ async function _atualizarPosseItensUsuario(entrada, movimento) {
 }
 
 async function _obterValorUnitarioHistoricoBalanco(entrada, itemChave = '') {
+    if (
+        String(entrada?.categoria || '').trim() === 'maquina' &&
+        (
+            (
+                String(entrada?.origemRegistro || '').trim() === 'cadastro_cliente' &&
+                String(entrada?.tipo || '').trim() !== 'cadastro_cliente_adicao'
+            ) ||
+            (
+                String(entrada?.origemRegistro || '').trim() === 'manutencao' &&
+                String(entrada?.tipo || '').trim() !== 'manutencao_adicao'
+            )
+        )
+    ) {
+        return null;
+    }
+
     const valorInformado = _parseNumeroRemuneracao(entrada?.valorUnitario);
     if (valorInformado > 0) return valorInformado;
 
@@ -3676,7 +3692,7 @@ export async function dbSincronizarItensManutencaoNoHistorico(atendimentoId, ate
                 quantidade: Number(item?.qtd || item?.quantidade || 0),
                 contabilizarFinanceiro: item?.contabilizarFinanceiro !== false
             }))
-            .filter(item => item.nome && item.quantidade > 0 && item.contabilizarFinanceiro !== false);
+            .filter(item => item.nome && item.quantidade > 0);
 
         const maquinaAdicionadaSemId = adicionadosValidos.find(item => !item.itemId);
         if (maquinaAdicionadaSemId) {
@@ -3689,7 +3705,7 @@ export async function dbSincronizarItensManutencaoNoHistorico(atendimentoId, ate
                 registradoPor: atendimento?.atendente || responsavel,
                 itemNome: maquina.nome,
                 categoria: maquina.categoria,
-                tipo: 'manutencao_adicao',
+                tipo: maquina.contabilizarFinanceiro === false ? 'manutencao' : 'manutencao_adicao',
                 origemRegistro: 'manutencao',
                 itemChave: maquina.itemId,
                 movimento: -Number(maquina.quantidade || 0),
@@ -3792,7 +3808,8 @@ export async function dbSincronizarItensCadastroClienteNoHistorico(clienteId, cl
                 categoria: String(item?.categoria || 'maquina').trim() || 'maquina',
                 nome: String(item?.nome || '').trim(),
                 quantidade: Number(item?.qtd || item?.quantidade || 0),
-                tecnicoResponsavel: String(item?.tecnico || item?.tecnicoResponsavel || '').trim()
+                tecnicoResponsavel: String(item?.tecnico || item?.tecnicoResponsavel || '').trim(),
+                contabilizarFinanceiro: item?.contabilizarFinanceiro !== false
             }))
             .filter(item => item.nome && item.quantidade > 0);
 
@@ -3807,7 +3824,7 @@ export async function dbSincronizarItensCadastroClienteNoHistorico(clienteId, cl
                 registradoPor: responsavel,
                 itemNome: maquina.nome,
                 categoria: maquina.categoria,
-                tipo: 'cadastro_cliente_adicao',
+                tipo: maquina.contabilizarFinanceiro === false ? 'cadastro_cliente' : 'cadastro_cliente_adicao',
                 origemRegistro: 'cadastro_cliente',
                 itemChave: maquina.itemId,
                 movimento: -Number(maquina.quantidade || 0),

@@ -1158,17 +1158,7 @@
         const idRef = String(clienteId || "").trim();
         if (!idRef) return;
         if (Boolean(editId) && perfilUsuarioLogado.includes('gestao')) return;
-        const atendimentoSalvandoCliente = !modoSolicitar
-            && perfilUsuarioLogado.includes('atendimento')
-            && !perfilUsuarioLogado.includes('gestao');
-        const dadosHistorico = atendimentoSalvandoCliente
-            ? {
-                ...dadosCliente,
-                equipDetalhes: (Array.isArray(dadosCliente?.equipDetalhes) ? dadosCliente.equipDetalhes : [])
-                    .filter(item => item?.contabilizarFinanceiro !== false)
-            }
-            : dadosCliente;
-        await dbSincronizarItensCadastroClienteNoHistorico(idRef, dadosHistorico);
+        await dbSincronizarItensCadastroClienteNoHistorico(idRef, dadosCliente);
     }
 
     function obterEquipamentosDetalhadosDoCliente(cliente) {
