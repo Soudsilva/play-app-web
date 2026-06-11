@@ -1919,9 +1919,18 @@
             atualizarEspacoDaBarra(false);
         }
 
-        let listaFiltrada = termoPesquisa
-            ? lista.filter(item => itemBatePesquisa(item, termoPesquisa))
-            : lista;
+        let listaFiltrada = lista;
+        if (termoPesquisa) {
+            const numeroBusca = buscaSomenteNumero(inputPesquisa.value)
+                ? normalizarNumeroPesquisa(inputPesquisa.value)
+                : "";
+            const itensComNumero = numeroBusca
+                ? lista.filter(item => normalizarNumeroPesquisa(item?.clienteNumero) === numeroBusca)
+                : [];
+            listaFiltrada = itensComNumero.length > 0
+                ? itensComNumero
+                : lista.filter(item => itemBatePesquisa(item, termoPesquisa));
+        }
         listaFiltrada = ordenarPrioridadeNumero(listaFiltrada, inputPesquisa.value);
         listaFiltrada = ordenarPrioridadeRota(listaFiltrada, inputPesquisa.value);
         listaFiltrada = ordenarPrioridadeTexto(listaFiltrada, inputPesquisa.value);

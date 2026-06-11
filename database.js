@@ -2270,7 +2270,12 @@ export async function dbClienteTemManutencaoPendenteNumero(numeroCliente) {
     if (!numero) return false;
 
     const snapIndice = await get(ref(db, `manutencoes_pendentes_clientes/${numero}`));
-    if (snapIndice.exists() && snapIndice.val() === true) return true;
+    if (snapIndice.exists() && snapIndice.val() === true) {
+        const existePendenteReal = await _existeOutraManutencaoPendenteCliente(numero);
+        if (existePendenteReal) return true;
+        await remove(ref(db, `manutencoes_pendentes_clientes/${numero}`));
+        return false;
+    }
 
     return _existeOutraManutencaoPendenteCliente(numero);
 }
