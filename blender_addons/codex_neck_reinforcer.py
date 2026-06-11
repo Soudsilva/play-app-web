@@ -1,10 +1,10 @@
 bl_info = {
     "name": "Codex - Reforco 360 do Pescoco",
     "author": "Codex",
-    "version": (1, 1, 0),
+    "version": (1, 2, 0),
     "blender": (5, 1, 0),
     "location": "View3D > Sidebar > Codex",
-    "description": "Cria e ajusta um reforco circular 360 graus no pescoco para impressao 3D.",
+    "description": "Cria reforco circular no pescoco e reducao reversivel de malha.",
     "category": "Object",
 }
 
@@ -13,7 +13,7 @@ import bpy
 
 SUPPORT_NAME = "Codex_Reforco_Pescoco_360"
 MATERIAL_NAME = "Codex_Reforco_Pescoco_360_Cinza"
-SHORTEN_SHAPE_KEY_NAME = "Codex_Diminuir_Pescoco"
+DECIMATE_MODIFIER_NAME = "Codex_Reduzir_Malha"
 
 
 def _get_support_object():
@@ -49,62 +49,6 @@ def _get_main_mesh_object():
     return max(meshes, key=lambda obj: len(obj.data.polygons))
 
 
-def _remove_shape_key(obj, key_name):
-    if obj is None or obj.data.shape_keys is None:
-        return False
-    key_blocks = obj.data.shape_keys.key_blocks
-    if key_name not in key_blocks:
-        return False
-    obj.active_shape_key_index = key_blocks.find(key_name)
-    bpy.context.view_layer.objects.active = obj
-    obj.select_set(True)
-    bpy.ops.object.shape_key_remove()
-    return True
-
-
-def create_or_update_neck_shortening(context):
-    props = context.scene.codex_neck_reinforcer
-    obj = _get_main_mesh_object()
-    if obj is None:
-        return None
-
-    bpy.ops.object.select_all(action="DESELECT")
-    obj.select_set(True)
-    context.view_layer.objects.active = obj
-
-    if obj.data.shape_keys is None:
-        obj.shape_key_add(name="Basis", from_mix=False)
-
-    _remove_shape_key(obj, SHORTEN_SHAPE_KEY_NAME)
-    shape_key = obj.shape_key_add(name=SHORTEN_SHAPE_KEY_NAME, from_mix=False)
-    shape_key.value = 1.0
-
-    matrix = obj.matrix_world
-    inverse = matrix.inverted()
-    bottom_z = props.neck_bottom_z
-    top_z = props.neck_top_z
-    amount = props.neck_shorten_amount
-    band_height = max(top_z - bottom_z, 0.001)
-
-    for vertex in obj.data.vertices:
-        world = matrix @ vertex.co
-        if world.z <= bottom_z:
-            continue
-        if world.z >= top_z:
-            delta = amount
-        else:
-            delta = amount * ((world.z - bottom_z) / band_height)
-        moved = world.copy()
-        moved.z -= delta
-        shape_key.data[vertex.index].co = inverse @ moved
-
-    obj["codex_pescoco_diminuido"] = (
-        "Shape key reversivel criada pelo Codex para encurtar o pescoco. "
-        "Remova a shape key para voltar ao formato original."
-    )
-    return obj
-
-
 def create_or_update_neck_reinforcement(context):
     props = context.scene.codex_neck_reinforcer
 
@@ -129,15 +73,47 @@ def create_or_update_neck_reinforcement(context):
     bevel.affect = "EDGES"
 
     obj.modifiers.new("Normal suave", "WEIGHTED_NORMAL")
-
     bpy.ops.object.shade_smooth()
 
     obj["codex_observacao"] = (
         "Reforco circular 360 graus para engrossar o pescoco. "
         "Ajuste raio, altura e posicao antes de exportar para impressao."
     )
-
     return obj
+
+
+def create_or_update_mesh_reduction(context):
+    props = context.scene.codex_neck_reinforcer
+    obj = _get_main_mesh_object()
+    if obj is None:
+        return None
+
+    modifier = obj.modifiers.get(DECIMATE_MODIFIER_NAME)
+    if modifier is None:
+        modifier = obj.modifiers.new(DECIMATE_MODIFIER_NAME, "DECIMATE")
+
+    modifier.decimate_type = "COLLAPSE"
+    modifier.ratio = props.mesh_ratio
+    modifier.use_collapse_triangulate = False
+    modifier.show_viewport = props.mesh_preview
+    modifier.show_render = props.mesh_preview
+
+    obj["codex_reducao_malha"] = (
+        "Modificador Decimate reversivel criado pelo Codex. "
+        "Aplique o modificador somente em uma copia final para exportacao."
+    )
+    return obj
+
+
+def remove_mesh_reduction():
+    obj = _get_main_mesh_object()
+    if obj is None:
+        return False
+    modifier = obj.modifiers.get(DECIMATE_MODIFIER_NAME)
+    if modifier is None:
+        return False
+    obj.modifiers.remove(modifier)
+    return True
 
 
 class CodexNeckReinforcerProperties(bpy.types.PropertyGroup):
@@ -215,35 +191,19 @@ class CodexNeckReinforcerProperties(bpy.types.PropertyGroup):
         min=1,
         max=20,
     )
-    neck_shorten_amount: bpy.props.FloatProperty(
-        name="Diminuir pescoço",
-        description="Quanto a cabeça desce e o pescoço encurta",
-        default=0.65,
-        min=0.0,
-        max=2.50,
+    mesh_ratio: bpy.props.FloatProperty(
+        name="Quantidade de malha",
+        description="1.00 mantem tudo; 0.70 preserva cerca de 70%; 0.50 preserva cerca de metade",
+        default=0.70,
+        min=0.10,
+        max=1.00,
         step=5,
         precision=2,
-        unit="LENGTH",
     )
-    neck_bottom_z: bpy.props.FloatProperty(
-        name="Base do pescoço",
-        description="Altura onde o pescoço fica fixo no corpo",
-        default=18.80,
-        min=-100.0,
-        max=100.0,
-        step=2,
-        precision=2,
-        unit="LENGTH",
-    )
-    neck_top_z: bpy.props.FloatProperty(
-        name="Topo do pescoço",
-        description="Altura a partir da qual a cabeça desce junto",
-        default=20.70,
-        min=-100.0,
-        max=100.0,
-        step=2,
-        precision=2,
-        unit="LENGTH",
+    mesh_preview: bpy.props.BoolProperty(
+        name="Mostrar reducao",
+        description="Liga ou desliga a visualizacao da reducao sem remover o ajuste",
+        default=True,
     )
 
 
@@ -286,30 +246,29 @@ class CODEX_OT_select_neck_reinforcement(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class CODEX_OT_create_update_neck_shortening(bpy.types.Operator):
-    bl_idname = "codex.create_update_neck_shortening"
-    bl_label = "Aplicar Tamanho do Pescoço"
-    bl_description = "Cria ou atualiza uma shape key reversivel para diminuir a altura do pescoco"
+class CODEX_OT_create_update_mesh_reduction(bpy.types.Operator):
+    bl_idname = "codex.create_update_mesh_reduction"
+    bl_label = "Atualizar Reducao"
+    bl_description = "Cria ou atualiza um modificador Decimate reversivel na peca inteira"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        obj = create_or_update_neck_shortening(context)
+        obj = create_or_update_mesh_reduction(context)
         if obj is None:
             self.report({"WARNING"}, "Objeto principal do personagem nao encontrado.")
             return {"CANCELLED"}
         return {"FINISHED"}
 
 
-class CODEX_OT_remove_neck_shortening(bpy.types.Operator):
-    bl_idname = "codex.remove_neck_shortening"
-    bl_label = "Remover Diminuição"
-    bl_description = "Remove a shape key de diminuicao do pescoco"
+class CODEX_OT_remove_mesh_reduction(bpy.types.Operator):
+    bl_idname = "codex.remove_mesh_reduction"
+    bl_label = "Remover Reducao"
+    bl_description = "Remove o modificador de reducao da malha"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        obj = _get_main_mesh_object()
-        if not _remove_shape_key(obj, SHORTEN_SHAPE_KEY_NAME):
-            self.report({"WARNING"}, "A diminuicao do pescoco ainda nao existe.")
+        if not remove_mesh_reduction():
+            self.report({"WARNING"}, "A reducao de malha ainda nao existe.")
             return {"CANCELLED"}
         return {"FINISHED"}
 
@@ -333,7 +292,7 @@ class CODEX_PT_neck_reinforcer_panel(bpy.types.Panel):
         layout.prop(props, "bevel")
 
         advanced = layout.box()
-        advanced.label(text="Detalhe")
+        advanced.label(text="Detalhe do reforco")
         advanced.prop(props, "segments")
         advanced.prop(props, "bevel_segments")
 
@@ -342,13 +301,12 @@ class CODEX_PT_neck_reinforcer_panel(bpy.types.Panel):
         row.operator("codex.select_neck_reinforcement", icon="RESTRICT_SELECT_OFF")
         row.operator("codex.remove_neck_reinforcement", icon="TRASH")
 
-        shorten = layout.box()
-        shorten.label(text="Diminuir tamanho")
-        shorten.prop(props, "neck_shorten_amount")
-        shorten.prop(props, "neck_bottom_z")
-        shorten.prop(props, "neck_top_z")
-        shorten.operator("codex.create_update_neck_shortening", icon="SHAPEKEY_DATA")
-        shorten.operator("codex.remove_neck_shortening", icon="LOOP_BACK")
+        reduction = layout.box()
+        reduction.label(text="Reduzir malha")
+        reduction.prop(props, "mesh_ratio")
+        reduction.prop(props, "mesh_preview")
+        reduction.operator("codex.create_update_mesh_reduction", icon="MOD_DECIM")
+        reduction.operator("codex.remove_mesh_reduction", icon="TRASH")
 
 
 classes = (
@@ -356,8 +314,8 @@ classes = (
     CODEX_OT_create_update_neck_reinforcement,
     CODEX_OT_remove_neck_reinforcement,
     CODEX_OT_select_neck_reinforcement,
-    CODEX_OT_create_update_neck_shortening,
-    CODEX_OT_remove_neck_shortening,
+    CODEX_OT_create_update_mesh_reduction,
+    CODEX_OT_remove_mesh_reduction,
     CODEX_PT_neck_reinforcer_panel,
 )
 

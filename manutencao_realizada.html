@@ -1132,7 +1132,7 @@
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
 verificarAutenticacao();
-import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbSalvarCliente, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, storageSalvarFotoComThumb, dbSalvarMovimentoFluxoCaixa, dbSincronizarItensManutencaoNoHistorico } from './database.js';
+import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbSalvarCliente, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, storageSalvarFotoComThumb, dbSalvarMovimentoFluxoCaixa, dbSincronizarItensManutencaoNoHistorico, dbSincronizarClienteRecuperacaoSessaoRotas } from './database.js';
 
 // ════════════════════════════════════════════════
 // DADOS DA MANUTENÇÃO
@@ -3632,8 +3632,29 @@ window.finalizarRegistro = async function() {
             });
         }
 
+        const manutencaoAfetaRecuperacao = Boolean(
+            String(dadosManutencao?.tipoAcao || '').trim().toLowerCase() === 'retirar'
+            || clienteEncontrado?.emRecuperacao === true
+            || camposExtras.pontoEncerrado === true
+            || (camposExtras.equipamentosRetiradosDetalhes && camposExtras.equipamentosRetiradosDetalhes.length)
+        );
+
         if (foiConcluido && clienteSnapshotAtendimento.id) {
             await dbSalvarCliente({ emRecuperacao: null }, clienteSnapshotAtendimento.id);
+        }
+
+        if (foiConcluido && clienteSnapshotAtendimento.id && manutencaoAfetaRecuperacao) {
+            await dbSincronizarClienteRecuperacaoSessaoRotas(
+                { ...clienteSnapshotAtendimento, firebaseUrl: clienteSnapshotAtendimento.id, emRecuperacao: null },
+                clienteSnapshotAtendimento.id,
+                null
+            );
+        } else if (!foiConcluido && clienteSnapshotAtendimento.id && manutencaoAfetaRecuperacao) {
+            await dbSincronizarClienteRecuperacaoSessaoRotas(
+                { ...clienteSnapshotAtendimento, firebaseUrl: clienteSnapshotAtendimento.id, emRecuperacao: true },
+                clienteSnapshotAtendimento.id,
+                true
+            );
         }
 
         sessionStorage.removeItem('manutencao_realizando');

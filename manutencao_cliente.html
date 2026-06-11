@@ -531,7 +531,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbListarAtendimentos, dbListarClientes, dbSalvarCliente, dbSalvarManutencao, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
+    import { dbListarAtendimentos, dbListarClientes, dbSalvarCliente, dbSalvarManutencao, dbSincronizarClienteRecuperacaoSessaoRotas, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
 
     let clienteAtual = null;
     let usuarioPodeDevolverPix = false;
@@ -967,6 +967,11 @@
             await dbSalvarManutencao(manutencao);
             if (manutencao.tipoAcao === "Retirar" && clienteAtual.firebaseUrl) {
                 await dbSalvarCliente({ emRecuperacao: true }, clienteAtual.firebaseUrl);
+                await dbSincronizarClienteRecuperacaoSessaoRotas(
+                    { ...clienteAtual, emRecuperacao: true },
+                    clienteAtual.firebaseUrl,
+                    true
+                );
             }
             await window.playAlert("Manutencao salva com sucesso!");
             voltarParaClientes();
