@@ -59,6 +59,7 @@
         .barra-topo-filtros { display:flex; flex-direction:column; gap:8px; margin:0 0 14px; position:sticky; top:0; z-index:5; background:linear-gradient(180deg, rgba(4,45,134,0.98), rgba(4,45,134,0.88)); padding-bottom:8px; }
         .linha-categoria-valor { display: flex; gap: 10px; align-items: flex-end; }
         .linha-categoria-valor > div { flex: 1; }
+        .linha-categoria-valor .campo-categoria { flex: 1.05; }
         #wrapValorEquipamento { display: none; }
     </style>
 </head>
@@ -93,7 +94,7 @@
         </div>
 
         <div class="linha-categoria-valor">
-            <div>
+            <div class="campo-categoria">
                 <label class="label-focada">Categoria</label>
                 <select id="categoriaItem">
                     <option value="produtos">Produtos</option>
@@ -104,6 +105,10 @@
             <div id="wrapValorEquipamento">
                 <label class="label-focada" id="labelValorEquipamento">Valor</label>
                 <input type="text" id="valorEquipamento" placeholder="0" maxlength="10" inputmode="numeric">
+            </div>
+            <div id="wrapQtdEmbalagem">
+                <label class="label-focada">Qtd. na Embalagem</label>
+                <input type="number" id="qtdEmbalagem" placeholder="Ex: 50" min="0" inputmode="numeric">
             </div>
         </div>
 
@@ -248,7 +253,9 @@
                 const valorHtml = valorEquipamento > 0
                     ? `<div>Valor: ${formatarValorItem(valorEquipamento, item.categoria)}</div>`
                     : '';
-                card.innerHTML = `<div class="info-estoque" style="flex:1;"><div class="linha-topo-estoque"><div class="titulo-item-estoque"><b>${item.nome}</b></div><div class="topo-direita-estoque"><span class="qtd-inline">${item.quantidade}</span><span class="badge ${classeCor}">${nomeCategoria}</span></div></div><div class="rodape-estoque"><div class="meta-estoque"><div>Mínimo: ${item.minimo || 0}</div>${valorHtml}</div><div class="lado-card"><div class="acoes-card"><div class="btn-editar-card" title="Editar" onclick="prepararEdicao('${item.firebaseUrl}', '${item.nome}', '${item.categoria}', ${item.quantidade}, ${item.minimo}, ${valorEquipamento || 0})">✎</div><div class="btn-excluir-card" title="Excluir" onclick="excluirItem('${item.firebaseUrl}')">🗑</div></div></div></div></div>`;
+                const qtdEmbalagem = Number(item.qtdEmbalagem || 0);
+                const embalagemHtml = qtdEmbalagem > 0 ? `<div>Embalagem: ${qtdEmbalagem}</div>` : '';
+                card.innerHTML = `<div class="info-estoque" style="flex:1;"><div class="linha-topo-estoque"><div class="titulo-item-estoque"><b>${item.nome}</b></div><div class="topo-direita-estoque"><span class="qtd-inline">${item.quantidade}</span><span class="badge ${classeCor}">${nomeCategoria}</span></div></div><div class="rodape-estoque"><div class="meta-estoque"><div>Mínimo: ${item.minimo || 0}</div>${valorHtml}${embalagemHtml}</div><div class="lado-card"><div class="acoes-card"><div class="btn-editar-card" title="Editar" onclick="prepararEdicao('${item.firebaseUrl}', '${item.nome}', '${item.categoria}', ${item.quantidade}, ${item.minimo}, ${valorEquipamento || 0}, ${qtdEmbalagem || 0})">✎</div><div class="btn-excluir-card" title="Excluir" onclick="excluirItem('${item.firebaseUrl}')">🗑</div></div></div></div></div>`;
                 container.appendChild(card);
             });
             if(document.getElementById('campoPesquisa').value) { document.getElementById('campoPesquisa').dispatchEvent(new Event('input')); }
@@ -274,14 +281,15 @@
             quantidade: parseInt(document.getElementById('qtdItem').value),
             minimo: parseInt(document.getElementById('minimoItem').value) || 0,
             valorEquipamento,
+            qtdEmbalagem: parseInt(document.getElementById('qtdEmbalagem').value) || 0,
             dataAtualizacao: new Date().toISOString()
         };
         try { await dbSalvarItemEstoque(dados, id); cancelarEdicao(); } catch (err) { alert("Erro ao salvar."); }
     };
 
-    window.prepararEdicao = function(id, nome, categoria, qtd, minimo, valorEquipamento = 0) {
+    window.prepararEdicao = function(id, nome, categoria, qtd, minimo, valorEquipamento = 0, qtdEmbalagem = 0) {
         const categoriaFormulario = categoria === 'materiais' ? 'peca' : categoria;
-        document.getElementById('idItem').value = id; document.getElementById('nomeItem').value = nome; document.getElementById('categoriaItem').value = categoriaFormulario; document.getElementById('qtdItem').value = qtd; document.getElementById('minimoItem').value = minimo; document.getElementById('valorEquipamento').value = formatarValorItem(valorEquipamento || '', categoriaFormulario);
+        document.getElementById('idItem').value = id; document.getElementById('nomeItem').value = nome; document.getElementById('categoriaItem').value = categoriaFormulario; document.getElementById('qtdItem').value = qtd; document.getElementById('minimoItem').value = minimo; document.getElementById('valorEquipamento').value = formatarValorItem(valorEquipamento || '', categoriaFormulario); document.getElementById('qtdEmbalagem').value = qtdEmbalagem || '';
         atualizarCampoValorEquipamento();
         const btn = document.getElementById('btnSalvarEstoque'); btn.innerText = "Atualizar Item"; btn.style.background = "#ff9800"; document.getElementById('btnCancelarEdicao').style.display = "block"; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     };

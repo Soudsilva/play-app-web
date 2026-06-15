@@ -2579,8 +2579,21 @@ function atualizarOpcoesProdutosManutencao() {
 
         select.innerHTML = opcoesHTML;
         select.value = valorAtual;
+        atualizarPlaceholderQtdProdutoManutencao(select.closest('.linha-produto'));
     });
 }
+
+function atualizarPlaceholderQtdProdutoManutencao(linha) {
+    if (!linha) return;
+    const select = linha.querySelector('.input-prod');
+    const inputQtd = linha.querySelector('.input-qtd');
+    if (!select || !inputQtd) return;
+
+    const produto = listaProdutos.find(item => item.firebaseUrl === select.value);
+    const qtdEmbalagem = Number(produto?.qtdEmbalagem || 0);
+    inputQtd.placeholder = qtdEmbalagem > 0 ? `Ex: ${qtdEmbalagem}` : 'Qtd';
+}
+window.atualizarPlaceholderQtdProdutoManutencao = atualizarPlaceholderQtdProdutoManutencao;
 
 function capturarLinhasProdutosManutencao() {
     return Array.from(document.querySelectorAll('#containerProdutosManutencao .linha-produto')).map(linha => ({
@@ -2682,7 +2695,7 @@ window.adicionarLinhaProdutoManutencao = function(inputAnterior = null, valorPro
     const linha = document.createElement('div');
     linha.className = 'linha-produto';
     linha.innerHTML = `
-        <select class="campo-texto input-prod col-prod" onchange="atualizarOpcoesProdutosManutencao()"></select>
+        <select class="campo-texto input-prod col-prod" onchange="atualizarOpcoesProdutosManutencao(); atualizarPlaceholderQtdProdutoManutencao(this.closest('.linha-produto'))"></select>
         <input type="text" inputmode="numeric" class="campo-texto input-qtd col-qtd" placeholder="Qtd" oninput="this.value = this.value.replace(/[^0-9]/g, ''); adicionarLinhaProdutoManutencao(this)">
     `;
 

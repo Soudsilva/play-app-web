@@ -2265,10 +2265,22 @@
 
             select.innerHTML = opcoesHTML;
             select.value = valorAtual;
+            atualizarPlaceholderQtdMovimentacao(select.closest('.linha-movimentacao'));
         });
 
         mostrarSaldoAtual(selectAlterado);
     };
+
+    function atualizarPlaceholderQtdMovimentacao(linha) {
+        if (!linha) return;
+        const select = linha.querySelector('.input-mov-item');
+        const inputQtd = linha.querySelector('.input-mov-qtd');
+        if (!select || !inputQtd) return;
+
+        const item = listaGlobal.find(i => i.firebaseUrl === select.value);
+        const qtdEmbalagem = Number(item?.qtdEmbalagem || 0);
+        inputQtd.placeholder = qtdEmbalagem > 0 ? `Ex: ${qtdEmbalagem}` : 'Qtd';
+    }
 
     window.adicionarLinhaMovimentacao = function(inputAnterior = null, valorItem = '', valorQtd = '') {
         const container = document.getElementById('containerMovimentacaoItens');

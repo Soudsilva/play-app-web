@@ -1619,7 +1619,19 @@ function obterIdAtendimentoEmEdicao() {
             select.innerHTML = opcoesHTML;
             select.value = valorForcado; // Mantém a seleção
             delete select.dataset.valorOriginal;
+            atualizarPlaceholderQtdProduto(select.closest('.linha-produto'));
         });
+    }
+
+    window.atualizarPlaceholderQtdProduto = function(linha) {
+        if (!linha) return;
+        const select = linha.querySelector('.input-prod');
+        const inputQtd = linha.querySelector('.input-qtd');
+        if (!select || !inputQtd) return;
+
+        const produto = listaProdutos.find(p => p.firebaseUrl === select.value);
+        const qtdEmbalagem = Number(produto?.qtdEmbalagem || 0);
+        inputQtd.placeholder = qtdEmbalagem > 0 ? `Ex: ${qtdEmbalagem}` : 'Qtd';
     }
 
     window.adicionarLinhaProduto = function(inputAnterior = null, valorProd = null, valorQtd = null) {
@@ -1640,7 +1652,7 @@ function obterIdAtendimentoEmEdicao() {
         // O conteúdo do Select será preenchido dinamicamente pela função atualizarOpcoes
         div.innerHTML = `
             <div class="col-prod">
-                <select class="input-prod" onchange="atualizarOpcoes()">
+                <select class="input-prod" onchange="atualizarOpcoes(); atualizarPlaceholderQtdProduto(this.closest('.linha-produto'))">
                     <!-- Preenchido via JS -->
                 </select>
             </div>

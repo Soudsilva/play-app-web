@@ -1031,8 +1031,21 @@
             });
             select.innerHTML = opcoes;
             select.value = valorAtual;
+            atualizarPlaceholderQtdProdutoInstalacao(select.closest('.linha-produto-instalacao'));
         });
     }
+
+    function atualizarPlaceholderQtdProdutoInstalacao(linha) {
+        if (!linha) return;
+        const select = linha.querySelector('.produto-instalacao-select');
+        const inputQtd = linha.querySelector('.produto-instalacao-qtd');
+        if (!select || !inputQtd) return;
+
+        const produto = produtosDisponiveis.find(item => item.firebaseUrl === select.value);
+        const qtdEmbalagem = Number(produto?.qtdEmbalagem || 0);
+        inputQtd.placeholder = qtdEmbalagem > 0 ? `Ex: ${qtdEmbalagem}` : 'Qtd';
+    }
+    window.atualizarPlaceholderQtdProdutoInstalacao = atualizarPlaceholderQtdProdutoInstalacao;
 
     function obterLinhasProdutosInstalacao() {
         return Array.from(document.querySelectorAll('#container-produtos-instalacao .linha-produto-instalacao'));
@@ -2329,6 +2342,7 @@
 
     document.getElementById('container-produtos-instalacao').addEventListener('change', (e) => {
         if (e.target.classList.contains('produto-instalacao-select')) {
+            atualizarPlaceholderQtdProdutoInstalacao(e.target.closest('.linha-produto-instalacao'));
             normalizarLinhasProdutosInstalacao();
         }
     });

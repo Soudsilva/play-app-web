@@ -2720,7 +2720,20 @@
         });
         select.innerHTML = html;
         if (valorAtual) select.value = valorAtual;
+        _atualizarPlaceholderQtdRepor(select.closest('.linha-produto-repor'));
     }
+
+    function _atualizarPlaceholderQtdRepor(linha) {
+        if (!linha) return;
+        const select = linha.querySelector('.prod-select-repor');
+        const inputQtd = linha.querySelector('.qtd-input-repor');
+        if (!select || !inputQtd) return;
+
+        const produto = listaProdutosRepor.find(p => p.firebaseUrl === select.value);
+        const qtdEmbalagem = Number(produto?.qtdEmbalagem || 0);
+        inputQtd.placeholder = qtdEmbalagem > 0 ? `Ex: ${qtdEmbalagem}` : 'Qtd';
+    }
+    window._atualizarPlaceholderQtdRepor = _atualizarPlaceholderQtdRepor;
 
     function _limitarUmaQtdVaziaRepor(linhaPreferida = null) {
         const container = document.getElementById('containerProdutosRepor');
@@ -2770,7 +2783,7 @@
         const div = document.createElement('div');
         div.className = 'linha-produto-repor';
         div.innerHTML = `
-            <select class="prod-select-repor"></select>
+            <select class="prod-select-repor" onchange="_atualizarPlaceholderQtdRepor(this.closest('.linha-produto-repor'))"></select>
             <input type="text" inputmode="numeric" class="qtd-input-repor" placeholder="Qtd"
                    oninput="this.value=this.value.replace(/[^0-9]/g,''); adicionarLinhaProdutoRepor(this)">
         `;
