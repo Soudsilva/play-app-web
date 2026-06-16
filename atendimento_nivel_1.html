@@ -271,6 +271,90 @@
         .linha-form { display: flex; gap: 10px; margin-bottom: 10px; }
         #areaPix { padding-left: 6px; padding-right: 6px; }
         #containerPix .linha-form { gap: 6px; }
+        #containerPix .pix-valor-col {
+            display: none;
+        }
+        .financeiro-secao-titulo,
+        .resumo-titulo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 12px;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .financeiro-linha-total {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 132px;
+            align-items: center;
+            gap: 10px;
+            margin: 0 auto 10px;
+            max-width: 360px;
+        }
+        .financeiro-linha-total .lbl-fin {
+            color: white;
+            font-size: 17px;
+            font-weight: 700;
+            text-align: center;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .resumo-topo {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            margin-bottom: 12px;
+            min-height: 46px;
+        }
+        .resumo-titulo {
+            margin-bottom: 0;
+            align-self: center;
+        }
+        .resumo-titulo-icone {
+            font-size: 14px;
+            line-height: 1;
+        }
+        .resumo-comissao-pct {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: auto;
+            text-align: center;
+        }
+        .resumo-comissao-valor {
+            width: 54px;
+            padding: 5px 6px;
+            border: 1px solid #ffffff;
+            border-radius: 6px;
+            background: transparent;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.2;
+            text-align: center;
+        }
+        .resumo-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px 10px;
+        }
+        .resumo-item .lbl-fin,
+        .resumo-comissao-pct .lbl-fin {
+            text-align: center;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .financeiro-linha-total input,
+        .resumo-item input,
+        .resumo-comissao-pct input {
+            text-align: center;
+        }
         .lbl-fin { font-size: 13px; color: #ccc; margin-bottom: 2px; display: block; }
         .pix-topo-linha {
             position: relative;
@@ -604,38 +688,43 @@
 
         <!-- Área Dinheiro em Espécie -->
         <div class="sub-card">
-            <div class="titulo-sub titulo-sub-balanceado">
-                <span class="titulo-sub-icone" style="font-size:20px">💵</span>
-                <span class="titulo-sub-texto">Dinheiro em Espécie</span>
-                <span class="titulo-sub-espaco" aria-hidden="true"></span>
+            <div class="financeiro-secao-titulo">
+                <span aria-hidden="true">💵</span>
+                <span>Dinheiro</span>
             </div>
-            
-            <div style="display: flex; justify-content: center;">
-                <div style="width: 50%;">
-                    <label class="lbl-fin" style="text-align: center;">Dinheiro (R$)</label>
-                    <input type="text" inputmode="numeric" id="valorDinheiro" placeholder="0" oninput="formatarNumero(this, 8); calcularTotais(); salvarRascunho()" style="text-align: center;">
-                </div>
+            <div class="financeiro-linha-total">
+                <label class="lbl-fin" for="valorDinheiro">Total em Espécie</label>
+                <input type="text" inputmode="numeric" id="valorDinheiro" placeholder="0" oninput="formatarNumero(this, 8); calcularTotais(); salvarRascunho()" style="text-align: center;">
             </div>
+        </div>
 
-            <div class="linha-form" style="margin-top:10px;">
-                <div style="flex:1">
-                    <label class="lbl-fin" style="text-align: center;">Comissão %</label>
-                    <input type="text" id="porcComissao" class="input-readonly" readonly placeholder="%" style="text-align: center;">
+        <!-- Resumo Financeiro -->
+        <div class="sub-card">
+            <div class="resumo-topo">
+                <div class="resumo-titulo">
+                    <span class="resumo-titulo-icone" aria-hidden="true">📝🔎</span>
+                    <span>Resumo</span>
                 </div>
-                <div style="flex:2">
-                    <label class="lbl-fin" style="text-align: center;">Valor Comissão</label>
-                    <input type="text" id="valorComissao" class="input-comissao" readonly placeholder="R$ 0.00">
+                <div class="resumo-comissao-pct">
+                    <input type="text" id="porcComissao" class="resumo-comissao-valor" readonly placeholder="%">
                 </div>
             </div>
-
-            <div class="linha-form">
-                <div style="flex:1">
-                    <label class="lbl-fin" style="text-align: center;">Total Geral</label>
+            <div class="resumo-grid">
+                <div class="resumo-item">
+                    <label class="lbl-fin" for="valorPixTotalVisual">Pix</label>
+                    <input type="text" id="valorPixTotalVisual" class="input-readonly" readonly placeholder="0">
+                </div>
+                <div class="resumo-item">
+                    <label class="lbl-fin" for="totalGeral">Total Geral</label>
                     <input type="text" id="totalGeral" class="input-readonly" readonly placeholder="R$ 0.00" style="text-align: center;">
                 </div>
-                <div style="flex:1">
-                    <label class="lbl-fin" style="text-align: center;">Saldo Parcial</label>
+                <div class="resumo-item">
+                    <label class="lbl-fin" for="saldoFinal">Saldo Parcial</label>
                     <input type="text" id="saldoFinal" class="input-saldo" readonly placeholder="R$ 0.00" style="text-align: center;">
+                </div>
+                <div class="resumo-item">
+                    <label class="lbl-fin" for="valorComissao">Comissão</label>
+                    <input type="text" id="valorComissao" class="input-comissao" readonly placeholder="R$ 0.00">
                 </div>
             </div>
         </div>
@@ -1297,7 +1386,7 @@ function obterIdAtendimentoEmEdicao() {
                 <label class="lbl-fin">Cont. Atual</label>
                 <input type="text" inputmode="numeric" class="pixContAtual" placeholder="0" oninput="formatarNumero(this, 6); atualizarValorLinhaPix(this.closest('.linha-form'))" value="${data.contAtual || ''}">
             </div>
-            <div style="flex:2">
+            <div class="pix-valor-col">
                 <label class="lbl-fin">Valor</label>
                 <input type="text" inputmode="numeric" class="valorPix input-readonly" readonly placeholder="0" value="${data.valor || ''}">
             </div>
@@ -1743,6 +1832,10 @@ function obterIdAtendimentoEmEdicao() {
         const formatoMoeda = { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 };
 
         // Atualiza campos readonly
+        const valorPixTotalVisual = document.getElementById('valorPixTotalVisual');
+        if (valorPixTotalVisual) {
+            valorPixTotalVisual.value = vPixTotal > 0 ? vPixTotal.toLocaleString('pt-BR') : '';
+        }
         document.getElementById('valorComissao').value = valorComissao.toLocaleString('pt-BR', formatoMoeda);
         document.getElementById('totalGeral').value = total.toLocaleString('pt-BR', formatoMoeda);
         document.getElementById('saldoFinal').value = saldoDepositar.toLocaleString('pt-BR', formatoMoeda);
