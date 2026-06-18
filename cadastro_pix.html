@@ -1971,7 +1971,7 @@ window.renderizarAdicionarPix = function() {
                 <div class="maquina-form-inline" id="formpix-${chave}">
                     <div class="pix-form-row">
                         <input type="text" class="form-input pix-input-nr" id="pixnr-${chave}" placeholder="N°" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onblur="validarPixAdicionarAoSair('${chave}')">
-                        <input type="text" class="form-input pix-input-cnt" id="pixcnt-${chave}" placeholder="Contador" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                        <input type="text" class="form-input pix-input-cnt" id="pixcnt-${chave}" placeholder="Contador" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="${esc(e.contador || '')}" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
                     </div>
                     ${montarHtmlFotoContadorAdicao(chave)}
                     <div class="pix-erro" id="pixerro-${chave}" style="display:none"></div>
@@ -2831,13 +2831,18 @@ window.confirmarGestorItem = async function(btnEl, clienteId, rowId, tipo) {
         }
 
         if (tipo === 'retirada') {
+            const registroRetirada = obterRegistroCadastroPixGestor(cliente, {
+                nome: equips[idx]?.nome,
+                pix: equips[idx]?.pixRetiradoPendente || equips[idx]?.pix
+            });
+            const preservarContador = registroRetirada && registroRetirada.retirou_trocou_contador === false;
             equips[idx].pixRetiradoPendente = '';
             equips[idx].contadorRetiradoPendente = '';
             equips[idx].retiradaPendenteEm = '';
             equips[idx].retiradaPendentePor = '';
             if (equips[idx].manutencaoPendente === 'retirada') {
                 equips[idx].pix      = '';
-                equips[idx].contador = '';
+                if (!preservarContador) equips[idx].contador = '';
             }
         }
         if (tipo === 'adicao' && String(equips[idx].pixRetiradoPendente || '').trim() === String(equips[idx].pix || '').trim()) {
@@ -2954,7 +2959,8 @@ window.confirmarRetiradaCard = async function(clienteId, rowId, pixNum, pixKey) 
                 atendente: usuarioLogado,
                 equipamentosRetiradosDetalhes: [{
                     nome: nomeEquipamento,
-                    pix: String(pixNum || '').trim()
+                    pix: String(pixNum || '').trim(),
+                    retirou_trocou_contador: dadosContador.usaContador
                 }]
             });
         } catch (erroCliente) {

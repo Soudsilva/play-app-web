@@ -2093,13 +2093,15 @@ export async function dbAplicarPendenciasManutencaoCliente(firebaseUrlCliente, p
 
             if (!alvo) return;
             const pixAtual = String(alvo?.pix || "").trim();
+            const preservarContador = Object.prototype.hasOwnProperty.call(item || {}, "retirou_trocou_contador")
+                && item?.retirou_trocou_contador === false;
             if (pixAtual && !String(alvo?.pixRetiradoPendente || "").trim()) {
                 alvo.pixRetiradoPendente = pixAtual;
                 alvo.contadorRetiradoPendente = String(alvo?.contador || "").trim();
                 alvo.retiradaPendenteEm = agoraIso;
                 alvo.retiradaPendentePor = atendente;
                 alvo.pix = "";
-                alvo.contador = "";
+                if (!preservarContador) alvo.contador = "";
             }
             alvo.manutencaoPendente = 'retirada';
             alvo.aguardandoConfirmacao = true;
