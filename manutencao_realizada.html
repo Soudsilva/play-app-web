@@ -1080,11 +1080,10 @@
             <!-- Sub-sub: ponto encerrado? -->
             <div class="sub-secao" id="subEncerramento">
                 <div class="aviso-encerramento">
-                    ⚠️ Você selecionou todos os equipamentos. O ponto foi encerrado?
+                    ⚠️ Todas as máquinas foram selecionadas. Confirme o encerramento do ponto.
                 </div>
                 <div class="grade-opcoes horizontal" style="margin-top:12px; gap:10px;">
-                    <button class="btn-opcao sim" style="flex:1;" onclick="responderEncerramento(true)">✅ Sim, encerrou</button>
-                    <button class="btn-opcao nao" style="flex:1;" onclick="responderEncerramento(false)">➡️ Não, só retirou</button>
+                    <button class="btn-opcao sim" style="flex:1;" onclick="responderEncerramento(true)">✅ Sim, encerrei o ponto</button>
                 </div>
                 <div class="sub-secao" id="subValorEncerramento">
                     <div class="campo-wrap">
@@ -2828,7 +2827,7 @@ function sincronizarPosicaoProdutos() {
     const secaoProdutos = document.getElementById('secaoProdutos');
     if (!subProdutos || !hostObrigatorio || !hostPadrao || !secaoProdutos) return;
 
-    if (pontoEncerradoPulaProdutos()) {
+    if (pontoEncerradoPulaProdutos() || encerramentoEstaPendente()) {
         if (subProdutos.parentElement !== hostPadrao) {
             hostPadrao.appendChild(subProdutos);
         }
@@ -2854,7 +2853,7 @@ function sincronizarSecaoProdutosUI() {
 
     sincronizarPosicaoProdutos();
 
-    if (pontoEncerradoPulaProdutos()) {
+    if (pontoEncerradoPulaProdutos() || encerramentoEstaPendente()) {
         secao?.classList.add('oculta-por-fluxo');
         document.getElementById('subProdutos')?.classList.remove('visivel');
         return;

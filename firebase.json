@@ -1,4 +1,26 @@
 {
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      ".git/**",
+      ".vscode/**",
+      ".claude/**",
+      "**/node_modules/**",
+      "functions/**",
+      "tools/**",
+      "blender_addons/**",
+      ".tmp_blender_mcp_package/**",
+      ".tmp_blender_views/**",
+      "AGENTS.md",
+      "package.json",
+      "package-lock.json",
+      "firebase-debug.log",
+      "firebase-debug.*.log",
+      "*.zip"
+    ]
+  },
   "functions": [
     {
       "source": "functions",
