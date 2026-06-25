@@ -3,3 +3,7 @@
 test-results/
 _tmp_*.mjs
 Prints/
+
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
