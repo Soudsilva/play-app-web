@@ -285,11 +285,40 @@
         }
 
         .card-limpar-slot {
-            width: 24px;
+            width: auto;
+            min-width: 54px;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex: 0 0 24px;
+            gap: 6px;
+            flex: 0 0 auto;
+        }
+
+        .btn-baixar-rota {
+            width: 24px;
+            height: 24px;
+            border: 1px solid #ffffff;
+            border-radius: 50%;
+            background: transparent;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 22px;
+            padding: 0;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .btn-baixar-rota:active {
+            transform: scale(0.94);
+        }
+
+        .btn-baixar-rota:disabled {
+            border-color: #dce6ff;
+            color: #dce6ff;
+            cursor: wait;
         }
 
         .btn-limpar-selecao {
@@ -521,7 +550,7 @@
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
-    import { dbEscutarMediaDeVendas, dbEscutarSessaoRotas, dbLiberarRota, dbDefinirPrioridadeManualRota } from './database.js';
+    import { dbEscutarClientes, dbEscutarMediaDeVendas, dbEscutarSessaoRotas, dbLiberarRota, dbDefinirPrioridadeManualRota } from './database.js';
 
     verificarAutenticacao();
 
@@ -530,6 +559,7 @@
     const filtroSelecao = document.getElementById('filtroSelecao');
     const filtroBtns = document.querySelectorAll('.filtro-btn[data-ordem]');
     let listaMediaDeVendasAtual = [];
+    let listaClientesAtual = [];
     let mediaDeVendasCarregada = false;
     let sessaoRotasAtual = null;
     let ordemAtual = 'tempo_desc';
@@ -547,6 +577,10 @@
     function normalizarRota(valor) {
         const limpa = String(valor ?? '').trim().replace(/^R\.?\s*/i, '');
         return limpa || '';
+    }
+
+    function normalizarNumeroCliente(valor) {
+        return String(valor ?? '').trim();
     }
 
     function obterRotaSessao(numeroRota) {
@@ -760,6 +794,7 @@
         const botaoPrioridadeHtml = !selecionadaPor
             ? `<button class="btn-prioridade-rota ${prioridadeAtiva ? 'ativo' : ''}" type="button" data-prioridade-rota="${escaparHtml(chaveRotaSessao)}" data-prioridade-ativa="${prioridadeAtiva ? '1' : '0'}" aria-label="${prioridadeAtiva ? 'Remover prioridade da rota' : 'Priorizar rota'} ${escaparHtml(rota.numero)}" title="${prioridadeAtiva ? 'Remover prioridade' : 'Priorizar rota'}">${prioridadeAtiva ? '★' : '⌛'}</button>`
             : '';
+        const botaoBaixarHtml = `<button class="btn-baixar-rota" type="button" data-baixar-rota="${escaparHtml(rota.numero)}" aria-label="Baixar clientes da rota ${escaparHtml(rota.numero)} para My Maps" title="Baixar rota para My Maps">⇩</button>`;
         const selecionadaHtml = selecionadaPor
             ? `<div class="selecionada-por"><span class="selecionada-label">Selecionada</span>${escaparHtml(selecionadaPor)}</div>`
             : '';
@@ -781,6 +816,7 @@
                     <div class="card-subline">
                         <div class="card-feito-grupo">
                             <div class="card-limpar-slot">
+                                ${botaoBaixarHtml}
                                 ${botaoLimparHtml || botaoPrioridadeHtml}
                             </div>
                             <div class="card-sub">Feito ${escaparHtml(ultimaTxt)}</div>
@@ -798,6 +834,70 @@
                 </div>
             </div>
         `;
+    }
+
+    function csvValor(valor) {
+        const texto = String(valor ?? '');
+        return `"${texto.replace(/"/g, '""')}"`;
+    }
+
+    function obterClientesComEnderecoDaRota(numeroRota) {
+        const rotaNormalizada = normalizarRota(numeroRota);
+        return listaClientesAtual
+            .filter(cliente => normalizarRota(cliente?.rota) === rotaNormalizada)
+            .map(cliente => ({
+                numero: normalizarNumeroCliente(cliente?.numero),
+                nome: String(cliente?.nome || '').trim(),
+                rota: normalizarRota(cliente?.rota),
+                endereco: String(cliente?.endereco || '').trim()
+            }))
+            .filter(cliente => cliente.numero && cliente.nome && cliente.endereco)
+            .sort((a, b) => Number(a.numero || 0) - Number(b.numero || 0));
+    }
+
+    function baixarTextoComoArquivo(nomeArquivo, conteudo, tipo = 'text/csv;charset=utf-8') {
+        const blob = new Blob([conteudo], { type: tipo });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = nomeArquivo;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    async function baixarRotaMyMaps(botao) {
+        const numeroRota = botao?.dataset?.baixarRota;
+        if (!numeroRota || botao.disabled) return;
+
+        const clientes = obterClientesComEnderecoDaRota(numeroRota);
+        if (clientes.length === 0) {
+            await window.playAlert?.(`Nenhum cliente com endereco encontrado na rota R.${numeroRota}.`);
+            return;
+        }
+
+        const textoOriginal = botao.textContent;
+        botao.disabled = true;
+        botao.textContent = '...';
+
+        try {
+            const linhas = [
+                ['Numero', 'Endereco', 'Nome', 'Rota'],
+                ...clientes.map(cliente => [
+                    cliente.numero,
+                    cliente.endereco,
+                    cliente.nome,
+                    `R.${cliente.rota}`
+                ])
+            ];
+            const csv = `${linhas.map(linha => linha.map(csvValor).join(',')).join('\n')}\n`;
+            const rotaArquivo = normalizarRota(numeroRota).padStart(2, '0');
+            baixarTextoComoArquivo(`rota_${rotaArquivo}_clientes_mymaps.csv`, csv);
+        } finally {
+            botao.disabled = false;
+            botao.textContent = textoOriginal;
+        }
     }
 
     function render() {
@@ -890,13 +990,21 @@
             return;
         }
 
+        const botaoBaixar = event.target.closest('[data-baixar-rota]');
+        if (botaoBaixar) {
+            event.preventDefault();
+            event.stopPropagation();
+            baixarRotaMyMaps(botaoBaixar);
+            return;
+        }
+
         const header = event.target.closest('[data-toggle-card]');
         if (!header) return;
         alternarCard(header.closest('.card'));
     });
 
     elLista.addEventListener('keydown', (event) => {
-        if (event.target.closest('[data-liberar-rota], [data-prioridade-rota]')) return;
+        if (event.target.closest('[data-liberar-rota], [data-prioridade-rota], [data-baixar-rota]')) return;
         if (event.key !== 'Enter' && event.key !== ' ') return;
         const header = event.target.closest('[data-toggle-card]');
         if (!header) return;
@@ -927,6 +1035,10 @@
         listaMediaDeVendasAtual = Array.isArray(lista) ? lista : [];
         mediaDeVendasCarregada = true;
         render();
+    });
+
+    dbEscutarClientes((lista) => {
+        listaClientesAtual = Array.isArray(lista) ? lista : [];
     });
 
     dbEscutarSessaoRotas((sessao) => {
