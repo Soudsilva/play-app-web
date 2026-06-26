@@ -338,6 +338,11 @@
             <span>Pedidos</span>
         </div>
 
+        <div class="botao" id="btnWhatsPlay" onclick="window.location.href='whatsplay.html'">
+            <span class="icone">&#128172;</span>
+            <span>WhatsApp Play</span>
+        </div>
+
         <div class="botao" id="btnFinanceiro" onclick="abrirTela('financeiro')" style="display: none;">
             <span class="icone">&#128176;</span>
             <span>Financeiro</span>
@@ -733,6 +738,7 @@
             cadastroItens: document.getElementById('btnCadastroItens'),
             movimentacao: document.getElementById('btnMovimentacao'),
             pedidos: document.getElementById('btnPedidos'),
+            whatsplay: document.getElementById('btnWhatsPlay'),
             servico: document.getElementById('btnServico'),
             financeiro: document.getElementById('btnFinanceiro'),
             pix: document.getElementById('btnPix'),
@@ -773,6 +779,7 @@
             btns.cadastroItens.style.display = 'none';
 
             btns.pedidos.style.display = 'flex';
+            btns.whatsplay.style.display = 'flex';
             btns.servico.style.display = 'none';
             btns.financeiro.style.display = 'flex';
 
@@ -828,6 +835,7 @@
             btns.movimentacao.style.display = 'none';
             btns.cadastroItens.style.display = 'none';
             btns.pedidos.style.display = ehAtendimentoNivel2 ? 'flex' : 'none';
+            btns.whatsplay.style.display = 'flex';
             btns.servico.style.display = 'none';
             btns.financeiro.style.display = 'none';
 
@@ -854,6 +862,7 @@
             btns.movimentacao.style.display = 'none';
             
             btns.pedidos.style.display = 'flex';
+            btns.whatsplay.style.display = 'flex';
             btns.servico.style.display = 'flex';
 
             btns.pix.style.display = perfil.includes('gestao') ? 'flex' : 'none'; // Apenas GestÃ£o (ou atendimento acima)
@@ -881,6 +890,7 @@
             btns.cadColab.style.display = 'none';
             btns.cadastroItens.style.display = 'none';
             btns.pedidos.style.display = 'none';
+            btns.whatsplay.style.display = 'flex';
             btns.fluxoCaixa.style.display = 'none';
             btns.pix.style.display = 'none';
             btns.mediaVendas.style.display = 'none';

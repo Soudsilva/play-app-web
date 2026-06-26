@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>WhatsApp Play</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#101b22">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WhatsApp Play">
+    <link rel="apple-touch-icon" href="assets/img/logomenor.png">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: #0b141a;
+            color: #ffffff;
+            font-family: Arial, Helvetica, sans-serif;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 440px;
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: #111b21;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app.modo-realizado {
+            background: #151d22;
+        }
+
+        .ui-text,
+        .topo,
+        .titulo,
+        .subtitulo,
+        .btn-icon,
+        .btn-acao,
+        .tabs,
+        .tab-btn,
+        .card,
+        .chip,
+        .estado-vazio,
+        .form-label,
+        .chat-meta,
+        .chat-status,
+        .msg-meta,
+        .msg-hora,
+        .contador {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        button {
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: 700;
+        }
+
+        .topo {
+            min-height: 64px;
+            padding: 8px 10px;
+            background: #202c33;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .app.modo-realizado .lista-view .topo {
+            background: #253039;
+        }
+
+        .chat-topo {
+            background: #202c33;
+            border-left: 4px solid #f5c542;
+            border-bottom: 0;
+            padding-left: 10px;
+            margin: 8px 8px 0;
+            border-top: 1px solid #263640;
+            border-right: 1px solid #263640;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .btn-icon {
+            width: 42px;
+            height: 42px;
+            border: 0;
+            border-radius: 50%;
+            background: #2a3942;
+            color: #ffffff;
+            font-size: 23px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex: 0 0 auto;
+            order: 10;
+            margin-left: auto;
+        }
+
+        .btn-icon img {
+            width: 22px;
+            height: 22px;
+            display: block;
+            filter: brightness(0) invert(1);
+        }
+
+        .btn-icon:active,
+        .btn-acao:active,
+        .btn-status-toggle:active,
+        .tab-btn:active,
+        .card:active {
+            transform: scale(0.98);
+        }
+
+        .titulo-area {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .titulo {
+            color: #ffffff;
+            font-size: 23px;
+            line-height: 1.1;
+            font-weight: 700;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #chatTitulo {
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+            word-break: break-word;
+        }
+
+        .subtitulo {
+            margin-top: 3px;
+            color: #d1d7db;
+            font-size: 14px;
+            line-height: 1.2;
+            font-weight: 400;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lista-topo .titulo,
+        .lista-topo .subtitulo {
+            text-align: center;
+        }
+
+        .chip {
+            border: 1px solid #ffffff;
+            color: #ffffff;
+            background: transparent;
+            border-radius: 999px;
+            padding: 0 10px;
+            min-height: 24px;
+            font-size: 14px;
+            line-height: 1.1;
+            font-weight: 700;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.ativa {
+            display: block;
+        }
+
+        .lista-view {
+            height: 100vh;
+            height: 100dvh;
+            overflow-y: auto;
+            padding-bottom: 84px;
+        }
+
+        .resumo {
+            padding: 12px 12px 6px;
+            background: #111b21;
+        }
+
+        .app.modo-realizado .resumo {
+            background: #151d22;
+        }
+
+        .tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .tab-btn {
+            border: 1px solid #2a3942;
+            background: #1f2c33;
+            color: #ffffff;
+            border-radius: 12px;
+            min-height: 44px;
+            font-size: 16px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.1;
+        }
+
+        .tab-btn.ativo {
+            background: #005c4b;
+            border-color: #00a884;
+        }
+
+        .contador {
+            color: #d1d7db;
+            font-size: 15px;
+            font-weight: 400;
+            text-align: center;
+            margin: 4px 0 8px;
+        }
+
+        .lista {
+            padding: 0 14px 10px;
+        }
+
+        .app.modo-realizado .lista {
+            background: #151d22;
+        }
+
+        .card {
+            width: 100%;
+            border: 1px solid #263640;
+            border-left: 4px solid #f5c542;
+            border-bottom-color: #e9edef;
+            background: #162229;
+            color: #ffffff;
+            border-radius: 12px;
+            padding: 10px 10px 10px 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .card:active {
+            background: #1d2a31;
+        }
+
+        .app.modo-realizado .card {
+            background: #1a252b;
+            border-color: #30414b;
+            border-left-color: #00a884;
+            border-bottom-color: #e9edef;
+        }
+
+        .app.modo-realizado .card:active {
+            background: #1d2930;
+        }
+
+        .card-corpo {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .card-topo {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+
+        .card-titulo {
+            color: #ffffff;
+            font-size: 17.5px;
+            line-height: 1.25;
+            font-weight: 700;
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-tempo {
+            color: #8696a0;
+            font-size: 13.5px;
+            font-weight: 400;
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+
+        .card-criador {
+            color: #e9edef;
+            font-size: 16px;
+            line-height: 1.25;
+            font-weight: 700;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-rodape {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 3px;
+        }
+
+        .card-msg {
+            color: #8696a0;
+            font-size: 15px;
+            line-height: 1.3;
+            font-weight: 400;
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-autor-destaque {
+            color: #53bdeb;
+            font-weight: 700;
+        }
+
+        .card-responder {
+            color: #f5c542;
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+            flex: 0 0 auto;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex: 0 0 auto;
+        }
+
+        .status-dot.status-pendente {
+            background: #f5c542;
+        }
+
+        .status-dot.status-realizado {
+            background: #00a884;
+        }
+
+        .status-pendente {
+            border-color: #f5c542;
+            color: #f5c542;
+        }
+
+        .status-realizado {
+            border-color: #00a884;
+            color: #00a884;
+        }
+
+        .estado-vazio {
+            color: #d1d7db;
+            font-size: 17px;
+            line-height: 1.45;
+            font-weight: 400;
+            text-align: center;
+            padding: 42px 18px 0;
+        }
+
+        .btn-novo {
+            position: fixed;
+            right: max(16px, calc((100vw - 440px) / 2 + 16px));
+            bottom: 18px;
+            z-index: 30;
+            width: 56px;
+            height: 56px;
+            border: 0;
+            border-radius: 50%;
+            background: #00a884;
+            color: #ffffff;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px #061014;
+        }
+
+        .btn-novo-label {
+            position: fixed;
+            right: max(84px, calc((100vw - 440px) / 2 + 84px));
+            bottom: 36px;
+            z-index: 30;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.1;
+            white-space: nowrap;
+        }
+
+        .form-view {
+            height: 100vh;
+            height: 100dvh;
+            overflow-y: auto;
+            padding-bottom: 26px;
+        }
+
+        .form-box {
+            padding: 18px 14px;
+        }
+
+        .form-label {
+            display: block;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            margin: 16px 0 8px;
+        }
+
+        .campo,
+        .textarea,
+        .chat-input {
+            width: 100%;
+            border: 1px solid #2a3942;
+            background: #202c33;
+            color: #ffffff;
+            border-radius: 12px;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 17px;
+            font-weight: 400;
+            outline: none;
+        }
+
+        .campo {
+            min-height: 48px;
+            padding: 12px 14px;
+        }
+
+        .textarea {
+            min-height: 150px;
+            padding: 12px 14px;
+            resize: vertical;
+            line-height: 1.35;
+        }
+
+        .campo::placeholder,
+        .textarea::placeholder,
+        .chat-input::placeholder {
+            color: #aebac1;
+        }
+
+        .campo:focus,
+        .textarea:focus,
+        .chat-input:focus {
+            border-color: #00a884;
+        }
+
+        .campo:disabled,
+        .textarea:disabled,
+        .chat-input:disabled {
+            background: #1a252b;
+            color: #aebac1;
+            border-color: #2a3942;
+            cursor: not-allowed;
+        }
+
+        .form-acoes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .btn-acao {
+            border: 0;
+            border-radius: 12px;
+            min-height: 48px;
+            padding: 10px 12px;
+            font-size: 17px;
+            cursor: pointer;
+        }
+
+        .btn-secundario {
+            background: #2a3942;
+            color: #ffffff;
+        }
+
+        .btn-primario {
+            background: #00a884;
+            color: #ffffff;
+        }
+
+        .btn-acao:disabled,
+        .btn-icon:disabled {
+            background: #41515a;
+            color: #d1d7db;
+            cursor: default;
+            transform: none;
+        }
+
+        .btn-status-toggle {
+            border: 0;
+            border-radius: 999px;
+            min-height: auto;
+            height: 30px;
+            padding: 0 14px;
+            font-size: 14px;
+            line-height: 1.1;
+            font-weight: 700;
+            cursor: pointer;
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-status-toggle.acao-concluir {
+            background: #00a884;
+            color: #ffffff;
+        }
+
+        .btn-status-toggle.acao-reabrir {
+            background: transparent;
+            border: 1px solid #2a3942;
+            color: #d1d7db;
+        }
+
+        .chat-view {
+            height: 100vh;
+            height: 100dvh;
+            min-height: 0;
+            display: none;
+            flex-direction: column;
+            background: #0b141a;
+            overflow: hidden;
+        }
+
+        .chat-view.ativa {
+            display: flex;
+        }
+
+        .chat-status {
+            padding: 8px 10px 8px 14px;
+            margin: 0 8px 0;
+            background: #111b21;
+            border-left: 4px solid #f5c542;
+            border-right: 1px solid #263640;
+            border-bottom: 1px solid #e9edef;
+            border-top: 1px solid #263640;
+            border-radius: 0 0 12px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .chat-view.chat-realizado .chat-topo,
+        .chat-view.chat-realizado .chat-status {
+            border-left-color: #00a884;
+        }
+
+        .chat-meta {
+            flex: 1;
+            min-width: 160px;
+            color: #d1d7db;
+            font-size: 14px;
+            line-height: 1.25;
+            font-weight: 400;
+        }
+
+        .chat-lista {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            padding: 12px 10px 14px;
+            background-color: #0b141a;
+            background-image:
+                radial-gradient(circle at 18px 18px, #ffffff0d 2px, transparent 2.5px),
+                radial-gradient(circle at 54px 50px, #ffffff0d 2px, transparent 2.5px);
+            background-size: 72px 72px;
+        }
+
+        .data-divisor {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0 14px;
+        }
+
+        .data-divisor span {
+            background: #182229;
+            color: #8696a0;
+            font-size: 13.5px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 8px;
+        }
+
+        .msg-row {
+            display: flex;
+            margin: 5px 0;
+        }
+
+        .msg-row.minha {
+            justify-content: flex-end;
+        }
+
+        .msg-row.outra {
+            justify-content: flex-start;
+        }
+
+        .msg-bolha {
+            max-width: 82%;
+            border-radius: 8px;
+            padding: 7px 8px 5px;
+            color: #ffffff;
+            font-size: 16px;
+            line-height: 1.35;
+            font-weight: 400;
+            box-shadow: 0 1px 2px #061014;
+            word-break: break-word;
+        }
+
+        .msg-row.minha .msg-bolha {
+            background: #005c4b;
+            border-top-right-radius: 2px;
+        }
+
+        .msg-row.outra .msg-bolha {
+            background: #202c33;
+            border-top-left-radius: 2px;
+        }
+
+        .msg-meta {
+            color: #53bdeb;
+            font-size: 14px;
+            line-height: 1.2;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .msg-texto {
+            color: #ffffff;
+            white-space: pre-wrap;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        .msg-hora {
+            color: #d1d7db;
+            font-size: 13px;
+            line-height: 1;
+            font-weight: 400;
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        .chat-envio {
+            background: #111b21;
+            padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+            border-top: 1px solid #2a3942;
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+            flex: 0 0 auto;
+        }
+
+        .chat-input {
+            min-height: 44px;
+            max-height: 112px;
+            resize: none;
+            padding: 11px 13px;
+            line-height: 1.25;
+            flex: 1;
+        }
+
+        .btn-enviar {
+            width: 46px;
+            height: 46px;
+            border: 0;
+            border-radius: 50%;
+            background: #00a884;
+            color: #ffffff;
+            font-size: 21px;
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+
+        .btn-enviar:disabled {
+            background: #41515a;
+            color: #d1d7db;
+            cursor: default;
+        }
+
+        @media (max-width: 360px) {
+            .titulo {
+                font-size: 21px;
+            }
+
+            .card-titulo {
+                font-size: 17px;
+            }
+
+            .form-acoes {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body style="visibility: hidden;">
+    <div class="app">
+        <section class="view lista-view ativa" id="viewLista">
+            <header class="topo lista-topo">
+                <div class="titulo-area">
+                    <div class="titulo">WhatsApp Play</div>
+                </div>
+            </header>
+
+            <div class="resumo">
+                <div class="tabs">
+                    <button class="tab-btn ativo" type="button" data-tab="pendente">Pendentes</button>
+                    <button class="tab-btn" type="button" data-tab="realizado">Realizados</button>
+                </div>
+                <div class="contador" id="contadorLista">Carregando...</div>
+            </div>
+
+            <main class="lista" id="listaSolicitacoes"></main>
+            <span class="btn-novo-label">Novo pedido</span>
+            <button class="btn-novo" type="button" id="btnNovo" title="Novo pedido" aria-label="Novo pedido"><span>+</span></button>
+        </section>
+
+        <section class="view form-view" id="viewForm">
+            <header class="topo">
+                <button class="btn-icon" type="button" id="btnVoltarForm" aria-label="Inicio" title="Inicio"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt=""></button>
+                <div class="titulo-area">
+                    <div class="titulo">Novo pedido</div>
+                    <div class="subtitulo">Registre o que precisa ser feito</div>
+                </div>
+            </header>
+
+            <form class="form-box" id="formSolicitacao">
+                <label class="form-label" for="campoTitulo">Título do pedido</label>
+                <input class="campo" id="campoTitulo" type="text" maxlength="90" autocomplete="off" placeholder="Ex: Alterar endereco do cliente">
+
+                <label class="form-label" for="campoDescricao">Mensagem inicial</label>
+                <textarea class="textarea" id="campoDescricao" maxlength="1600" placeholder="Explique o pedido com os dados necessarios" disabled></textarea>
+
+                <div class="form-acoes">
+                    <button class="btn-acao btn-secundario" type="button" id="btnCancelarForm">Cancelar</button>
+                    <button class="btn-acao btn-primario" type="submit" id="btnSalvarSolicitacao" disabled>Enviar pedido</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="view chat-view" id="viewChat">
+            <header class="topo chat-topo">
+                <button class="btn-icon" type="button" id="btnVoltarChat" aria-label="Inicio" title="Inicio"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt=""></button>
+                <div class="titulo-area">
+                    <div class="titulo" id="chatTitulo">WhatsApp Play</div>
+                </div>
+            </header>
+
+            <div class="chat-status">
+                <div class="chat-meta" id="chatMeta"></div>
+                <span class="chip" id="chatStatusChip">Pendente</span>
+                <button class="btn-status-toggle acao-concluir" type="button" id="btnConcluir">Feito</button>
+            </div>
+
+            <main class="chat-lista" id="chatMensagens"></main>
+
+            <form class="chat-envio" id="formMensagem">
+                <textarea class="chat-input" id="campoMensagem" rows="1" maxlength="1200" placeholder="Digite uma mensagem"></textarea>
+                <button class="btn-enviar" type="submit" id="btnEnviarMensagem" aria-label="Enviar">&#9658;</button>
+            </form>
+        </section>
+    </div>
+
+    <script src="assets/js/play-dialogs.js"></script>
+    <script type="module">
+        import { verificarAutenticacao } from './auth.js';
+        import {
+            dbListarColaboradores,
+            dbEscutarWhatsPlaySolicitacoes,
+            dbCriarWhatsPlaySolicitacao,
+            dbEnviarMensagemWhatsPlay,
+            dbMarcarWhatsPlayRealizada,
+            dbAtualizarStatusWhatsPlay
+        } from './database.js';
+
+        const TZ = 'America/Sao_Paulo';
+        const estado = {
+            usuarioNome: '',
+            usuarioId: '',
+            usuarioPerfil: '',
+            isGestor: false,
+            tab: 'pendente',
+            solicitacoes: [],
+            solicitacaoAbertaId: '',
+            viewAtual: 'lista',
+            unsubscribe: null
+        };
+
+        const els = {
+            app: document.querySelector('.app'),
+            viewLista: document.getElementById('viewLista'),
+            viewForm: document.getElementById('viewForm'),
+            viewChat: document.getElementById('viewChat'),
+            contadorLista: document.getElementById('contadorLista'),
+            listaSolicitacoes: document.getElementById('listaSolicitacoes'),
+            btnNovo: document.getElementById('btnNovo'),
+            formSolicitacao: document.getElementById('formSolicitacao'),
+            campoTitulo: document.getElementById('campoTitulo'),
+            campoDescricao: document.getElementById('campoDescricao'),
+            btnSalvarSolicitacao: document.getElementById('btnSalvarSolicitacao'),
+            chatTitulo: document.getElementById('chatTitulo'),
+            chatMeta: document.getElementById('chatMeta'),
+            chatStatusChip: document.getElementById('chatStatusChip'),
+            chatMensagens: document.getElementById('chatMensagens'),
+            btnConcluir: document.getElementById('btnConcluir'),
+            formMensagem: document.getElementById('formMensagem'),
+            campoMensagem: document.getElementById('campoMensagem'),
+            btnEnviarMensagem: document.getElementById('btnEnviarMensagem')
+        };
+
+        function texto(valor) {
+            return String(valor || '').trim();
+        }
+
+        function normalizar(valor) {
+            return texto(valor)
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase();
+        }
+
+        function escaparHtml(valor) {
+            return String(valor ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function parseData(valor) {
+            const ms = Date.parse(valor || '');
+            return Number.isFinite(ms) ? ms : 0;
+        }
+
+        function formatarHora(valor) {
+            const ms = parseData(valor);
+            if (!ms) return '';
+            return new Intl.DateTimeFormat('pt-BR', {
+                timeZone: TZ,
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(new Date(ms));
+        }
+
+        function formatarDataHora(valor) {
+            const ms = parseData(valor);
+            if (!ms) return '';
+            return new Intl.DateTimeFormat('pt-BR', {
+                timeZone: TZ,
+                day: '2-digit',
+                month: '2-digit',
+                year: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(new Date(ms));
+        }
+
+        function tempoDecorrido(valor) {
+            const ms = parseData(valor);
+            if (!ms) return 'agora';
+            const diff = Math.max(0, Date.now() - ms);
+            const min = Math.floor(diff / 60000);
+            if (min < 1) return 'agora';
+            if (min < 60) return `ha ${min} min`;
+            const horas = Math.floor(min / 60);
+            if (horas < 24) return `ha ${horas}h`;
+            const dias = Math.floor(horas / 24);
+            if (dias < 30) return `ha ${dias}d`;
+            const meses = Math.floor(dias / 30);
+            return `ha ${meses} mes`;
+        }
+
+        function formatarDataDivisor(valor) {
+            const ms = parseData(valor);
+            if (!ms) return '';
+            const data = new Date(ms);
+            const hoje = new Date();
+            const diasDiff = Math.floor((new Date(hoje.toDateString()) - new Date(data.toDateString())) / 86400000);
+            if (diasDiff === 0) return 'Hoje';
+            if (diasDiff === 1) return 'Ontem';
+            return new Intl.DateTimeFormat('pt-BR', {
+                timeZone: TZ,
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }).format(data);
+        }
+
+        function obterColaboradoresCache() {
+            try {
+                const lista = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
+                return Array.isArray(lista) ? lista : [];
+            } catch (_) {
+                return [];
+            }
+        }
+
+        async function carregarPerfilUsuario() {
+            const nome = texto(localStorage.getItem('usuarioLogado') || localStorage.getItem('usuario_selecionado'));
+            estado.usuarioNome = nome;
+            let lista = obterColaboradoresCache();
+            if (!lista.length && navigator.onLine) {
+                lista = await dbListarColaboradores().catch(() => []);
+                if (Array.isArray(lista) && lista.length) {
+                    localStorage.setItem('cache_colaboradores', JSON.stringify(lista));
+                }
+            }
+            const usuario = lista.find(item => texto(item?.nome) === nome) || {};
+            estado.usuarioId = texto(usuario.firebaseUrl || usuario.id || nome);
+            estado.usuarioPerfil = texto(usuario.nivel_completo || usuario.perfil || usuario.cargo);
+            const perfilNormalizado = normalizar(estado.usuarioPerfil);
+            estado.isGestor = perfilNormalizado.includes('gestao') || perfilNormalizado.includes('gestor') || normalizar(usuario.cargo) === 'socio';
+        }
+
+        function mostrarView(nome, opcoes = {}) {
+            [els.viewLista, els.viewForm, els.viewChat].forEach(el => el.classList.remove('ativa'));
+            if (nome === 'form') els.viewForm.classList.add('ativa');
+            else if (nome === 'chat') els.viewChat.classList.add('ativa');
+            else els.viewLista.classList.add('ativa');
+            estado.viewAtual = nome === 'form' || nome === 'chat' ? nome : 'lista';
+
+            if (opcoes.registrarHistorico && estado.viewAtual !== 'lista') {
+                history.pushState({ whatsplayView: estado.viewAtual }, '', window.location.href);
+            }
+        }
+
+        function solicitacaoVisivel(item) {
+            if (estado.isGestor) return true;
+            const meuNome = normalizar(estado.usuarioNome);
+            const meuId = normalizar(estado.usuarioId);
+            return normalizar(item.criadoPorId) === meuId || normalizar(item.criadoPor) === meuNome;
+        }
+
+        function solicitacoesFiltradas() {
+            return estado.solicitacoes
+                .filter(solicitacaoVisivel)
+                .filter(item => texto(item.status || 'pendente').toLowerCase() === estado.tab);
+        }
+
+        function obterResumoUltimaMensagem(item) {
+            const mensagens = item?.mensagens || {};
+            const ultima = Object.keys(mensagens).map(key => mensagens[key])
+                .sort((a, b) => parseData(b.timestamp) - parseData(a.timestamp))[0] || null;
+
+            if (ultima) {
+                return {
+                    autor: texto(ultima.autor) || texto(item?.ultimaMensagemPor) || texto(item?.criadoPor) || 'Usuario',
+                    autorId: texto(ultima.autorId) || texto(item?.ultimaMensagemPorId) || texto(ultima.autor),
+                    texto: texto(ultima.texto) || texto(item?.ultimaMensagem || item?.descricao || item?.titulo)
+                };
+            }
+
+            return {
+                autor: texto(item?.ultimaMensagemPor) || texto(item?.criadoPor) || 'Usuario',
+                autorId: texto(item?.ultimaMensagemPorId) || texto(item?.ultimaMensagemPor) || texto(item?.criadoPorId),
+                texto: texto(item?.ultimaMensagem || item?.descricao || item?.titulo)
+            };
+        }
+
+        function montarCard(item) {
+            const status = texto(item.status || 'pendente').toLowerCase();
+            const statusClasse = status === 'realizado' ? 'status-realizado' : 'status-pendente';
+            const dataBase = item.criadoEm || item.ultimaMensagemEm || item.atualizadoEm;
+            const criador = item.criadoPor || 'Usuario';
+            const ultima = obterResumoUltimaMensagem(item);
+            const tituloPedido = item.titulo || 'Pedido sem titulo';
+            const ultimaMensagemMinha = normalizar(ultima.autorId || ultima.autor) === normalizar(estado.usuarioId)
+                || normalizar(ultima.autor) === normalizar(estado.usuarioNome);
+            const indicadorResposta = !ultimaMensagemMinha
+                ? `<span class="card-responder">Ver</span>${status === 'realizado' ? '' : `<span class="status-dot ${statusClasse}"></span>`}`
+                : '';
+            return `
+                <button class="card" type="button" data-id="${escaparHtml(item.firebaseUrl)}">
+                    <div class="card-corpo">
+                        <div class="card-topo">
+                            <div class="card-titulo">${escaparHtml(estado.isGestor ? criador : tituloPedido)}</div>
+                            <div class="card-tempo">${escaparHtml(tempoDecorrido(dataBase))}</div>
+                        </div>
+                        ${estado.isGestor ? `<div class="card-criador">${escaparHtml(tituloPedido)}</div>` : ''}
+                        <div class="card-rodape">
+                            <div class="card-msg"><span class="card-autor-destaque">${escaparHtml(ultima.autor)}:</span> ${escaparHtml(ultima.texto)}</div>
+                            ${indicadorResposta}
+                        </div>
+                    </div>
+                </button>
+            `;
+        }
+
+        function renderLista() {
+            const lista = solicitacoesFiltradas();
+            const total = lista.length;
+            const label = estado.tab === 'pendente' ? 'pendente' : 'realizado';
+            els.contadorLista.textContent = `${total} pedido${total === 1 ? '' : 's'} ${label}${total === 1 ? '' : 's'}`;
+            if (!lista.length) {
+                els.listaSolicitacoes.innerHTML = `<div class="estado-vazio">Nenhum pedido ${label} no WhatsApp Play.</div>`;
+                return;
+            }
+            els.listaSolicitacoes.innerHTML = lista.map(montarCard).join('');
+        }
+
+        function obterSolicitacaoAberta() {
+            return estado.solicitacoes.find(item => item.firebaseUrl === estado.solicitacaoAbertaId) || null;
+        }
+
+        function mensagensOrdenadas(item) {
+            const mensagens = item?.mensagens || {};
+            return Object.keys(mensagens).map(key => ({
+                firebaseUrl: key,
+                ...mensagens[key]
+            })).sort((a, b) => parseData(a.timestamp) - parseData(b.timestamp));
+        }
+
+        function mensagemEhMinha(msg) {
+            const autorId = normalizar(msg.autorId || msg.autor);
+            return autorId === normalizar(estado.usuarioId) || normalizar(msg.autor) === normalizar(estado.usuarioNome);
+        }
+
+        function renderChat() {
+            const item = obterSolicitacaoAberta();
+            if (!item) {
+                mostrarView('lista');
+                return;
+            }
+
+            const status = texto(item.status || 'pendente').toLowerCase();
+            const realizado = status === 'realizado';
+            const autor = item.criadoPor || 'Usuario';
+            els.viewChat.classList.toggle('chat-realizado', realizado);
+            els.chatTitulo.textContent = item.titulo || 'WhatsApp Play';
+            els.chatMeta.textContent = `Criado ${tempoDecorrido(item.criadoEm)} (${formatarDataHora(item.criadoEm)})`;
+            els.chatStatusChip.textContent = realizado ? 'Realizado' : 'Pendente';
+            els.chatStatusChip.className = `chip ${realizado ? 'status-realizado' : 'status-pendente'}`;
+            els.btnConcluir.style.display = (estado.isGestor || realizado) ? 'inline-flex' : 'none';
+            els.btnConcluir.textContent = realizado ? 'Reabrir' : 'Feito';
+            els.btnConcluir.className = realizado ? 'btn-status-toggle acao-reabrir' : 'btn-status-toggle acao-concluir';
+            els.formMensagem.style.display = realizado ? 'none' : 'flex';
+            els.campoMensagem.disabled = realizado;
+            els.btnEnviarMensagem.disabled = realizado;
+            els.campoMensagem.placeholder = 'Digite uma mensagem';
+            if (realizado) {
+                els.campoMensagem.value = '';
+                ajustarAlturaMensagem();
+            }
+
+            const mensagens = mensagensOrdenadas(item);
+            let ultimoDia = '';
+            els.chatMensagens.innerHTML = mensagens.map(msg => {
+                const diaMsg = formatarDataDivisor(msg.timestamp);
+                let divisor = '';
+                if (diaMsg && diaMsg !== ultimoDia) {
+                    ultimoDia = diaMsg;
+                    divisor = `<div class="data-divisor"><span>${escaparHtml(diaMsg)}</span></div>`;
+                }
+                const minha = mensagemEhMinha(msg);
+                const autor = minha ? '' : `<div class="msg-meta">${escaparHtml(msg.autor || 'Usuario')}</div>`;
+                return `
+                    ${divisor}
+                    <div class="msg-row ${minha ? 'minha' : 'outra'}">
+                        <div class="msg-bolha">
+                            ${autor}
+                            <div class="msg-texto">${escaparHtml(msg.texto || '')}</div>
+                            <div class="msg-hora">${escaparHtml(formatarHora(msg.timestamp))}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('') || '<div class="estado-vazio">Ainda nao ha mensagens neste pedido.</div>';
+
+            requestAnimationFrame(() => {
+                els.chatMensagens.scrollTop = els.chatMensagens.scrollHeight;
+            });
+        }
+
+        async function criarSolicitacao(event) {
+            event.preventDefault();
+            const titulo = texto(els.campoTitulo.value);
+            const descricao = texto(els.campoDescricao.value);
+            const textoInicial = descricao || titulo;
+            if (!titulo) {
+                await window.playAlert('Preencha o título do pedido.');
+                return;
+            }
+
+            els.btnSalvarSolicitacao.disabled = true;
+            els.btnSalvarSolicitacao.textContent = 'Enviando...';
+            try {
+                const agoraLocal = new Date().toISOString();
+                const id = await dbCriarWhatsPlaySolicitacao({
+                    titulo,
+                    descricao,
+                    autor: estado.usuarioNome,
+                    autorId: estado.usuarioId,
+                    autorPerfil: estado.usuarioPerfil
+                });
+                els.formSolicitacao.reset();
+                atualizarBloqueioFormulario();
+                estado.tab = 'pendente';
+                atualizarTabs();
+                estado.solicitacaoAbertaId = id;
+                estado.solicitacoes = [{
+                    firebaseUrl: id,
+                    titulo,
+                    descricao,
+                    status: 'pendente',
+                    criadoPor: estado.usuarioNome,
+                    criadoPorId: estado.usuarioId,
+                    criadoPorPerfil: estado.usuarioPerfil,
+                    criadoEm: agoraLocal,
+                    atualizadoEm: agoraLocal,
+                    ultimaMensagem: textoInicial,
+                    ultimaMensagemPor: estado.usuarioNome,
+                    ultimaMensagemPorId: estado.usuarioId,
+                    ultimaMensagemEm: agoraLocal,
+                    mensagens: {
+                        local: {
+                            texto: textoInicial,
+                            autor: estado.usuarioNome,
+                            autorId: estado.usuarioId,
+                            autorPerfil: estado.usuarioPerfil,
+                            timestamp: agoraLocal
+                        }
+                    }
+                }, ...estado.solicitacoes.filter(item => item.firebaseUrl !== id)];
+                renderChat();
+                history.replaceState({ whatsplayView: 'chat' }, '', window.location.href);
+                mostrarView('chat');
+            } catch (error) {
+                console.error(error);
+                await window.playAlert('Nao foi possivel enviar o pedido. Tente novamente.');
+            } finally {
+                els.btnSalvarSolicitacao.textContent = 'Enviar pedido';
+                atualizarBloqueioFormulario();
+            }
+        }
+
+        async function enviarMensagem(event) {
+            event.preventDefault();
+            const item = obterSolicitacaoAberta();
+            const realizado = texto(item?.status || 'pendente').toLowerCase() === 'realizado';
+            if (realizado) return;
+            const textoMensagem = texto(els.campoMensagem.value);
+            if (!item || !textoMensagem) return;
+
+            els.btnEnviarMensagem.disabled = true;
+            try {
+                await dbEnviarMensagemWhatsPlay(item.firebaseUrl, {
+                    texto: textoMensagem,
+                    autor: estado.usuarioNome,
+                    autorId: estado.usuarioId,
+                    autorPerfil: estado.usuarioPerfil
+                });
+                els.campoMensagem.value = '';
+                ajustarAlturaMensagem();
+            } catch (error) {
+                console.error(error);
+                await window.playAlert('Nao foi possivel enviar a mensagem.');
+            } finally {
+                els.btnEnviarMensagem.disabled = false;
+            }
+        }
+
+        async function alternarStatusAberto() {
+            const item = obterSolicitacaoAberta();
+            if (!item) return;
+            const realizado = texto(item.status || 'pendente').toLowerCase() === 'realizado';
+            if (realizado) {
+                const ok = await window.playConfirm('Reabrir este pedido?', {
+                    primaryLabel: 'Reabrir',
+                    secondaryLabel: 'Cancelar'
+                });
+                if (!ok) return;
+                await dbAtualizarStatusWhatsPlay(item.firebaseUrl, 'pendente', estado.usuarioNome);
+                item.status = 'pendente';
+                item.realizadoEm = null;
+                item.realizadoPor = null;
+                estado.tab = 'pendente';
+                atualizarTabs();
+                renderChat();
+                return;
+            }
+
+            if (!estado.isGestor) return;
+
+            const ok = await window.playConfirm('Marcar este pedido como feito?', {
+                primaryLabel: 'Marcar feito',
+                secondaryLabel: 'Cancelar'
+            });
+            if (!ok) return;
+            await dbMarcarWhatsPlayRealizada(item.firebaseUrl, estado.usuarioNome);
+            item.status = 'realizado';
+            item.realizadoEm = new Date().toISOString();
+            item.realizadoPor = estado.usuarioNome;
+            estado.tab = 'realizado';
+            atualizarTabs();
+            renderChat();
+        }
+
+        function atualizarTabs() {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('ativo', btn.dataset.tab === estado.tab);
+            });
+            els.app.classList.toggle('modo-realizado', estado.tab === 'realizado');
+            renderLista();
+        }
+
+        function abrirSolicitacao(id) {
+            estado.solicitacaoAbertaId = id;
+            renderChat();
+            mostrarView('chat', { registrarHistorico: true });
+        }
+
+        function ajustarAlturaMensagem() {
+            const campo = els.campoMensagem;
+            campo.style.height = 'auto';
+            campo.style.height = `${Math.min(campo.scrollHeight, 112)}px`;
+        }
+
+        function atualizarBloqueioFormulario() {
+            const tituloPreenchido = !!texto(els.campoTitulo.value);
+            els.campoDescricao.disabled = !tituloPreenchido;
+            els.btnSalvarSolicitacao.disabled = !tituloPreenchido;
+            if (!tituloPreenchido) {
+                els.campoDescricao.value = '';
+            }
+        }
+
+        function limparFormularioSolicitacao() {
+            els.formSolicitacao.reset();
+            atualizarBloqueioFormulario();
+        }
+
+        function voltarParaListaWhatsPlay() {
+            if (estado.viewAtual !== 'lista' && history.state?.whatsplayView) {
+                history.back();
+                return;
+            }
+            mostrarView('lista');
+        }
+
+        function voltarFormParaLista() {
+            limparFormularioSolicitacao();
+            voltarParaListaWhatsPlay();
+        }
+
+        function irParaIndex() {
+            window.location.href = 'index.html';
+        }
+
+        function registrarEventos() {
+            document.getElementById('btnVoltarForm').addEventListener('click', irParaIndex);
+            document.getElementById('btnCancelarForm').addEventListener('click', voltarFormParaLista);
+            document.getElementById('btnVoltarChat').addEventListener('click', irParaIndex);
+            els.btnNovo.addEventListener('click', () => {
+                limparFormularioSolicitacao();
+                mostrarView('form', { registrarHistorico: true });
+                setTimeout(() => els.campoTitulo.focus(), 0);
+            });
+            els.formSolicitacao.addEventListener('submit', criarSolicitacao);
+            els.campoTitulo.addEventListener('input', atualizarBloqueioFormulario);
+            els.formMensagem.addEventListener('submit', enviarMensagem);
+            els.btnConcluir.addEventListener('click', alternarStatusAberto);
+            els.campoMensagem.addEventListener('input', ajustarAlturaMensagem);
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    estado.tab = btn.dataset.tab || 'pendente';
+                    atualizarTabs();
+                });
+            });
+
+            els.listaSolicitacoes.addEventListener('click', event => {
+                const card = event.target.closest('.card');
+                if (card?.dataset.id) abrirSolicitacao(card.dataset.id);
+            });
+
+            window.addEventListener('popstate', () => {
+                if (estado.viewAtual === 'form') {
+                    limparFormularioSolicitacao();
+                }
+                if (estado.viewAtual !== 'lista') {
+                    mostrarView('lista');
+                }
+            });
+        }
+
+        async function iniciar() {
+            await verificarAutenticacao();
+            await carregarPerfilUsuario();
+            registrarEventos();
+            estado.unsubscribe = dbEscutarWhatsPlaySolicitacoes(lista => {
+                estado.solicitacoes = Array.isArray(lista) ? lista : [];
+                renderLista();
+                if (estado.solicitacaoAbertaId) renderChat();
+            });
+        }
+
+        window.addEventListener('beforeunload', () => {
+            if (typeof estado.unsubscribe === 'function') estado.unsubscribe();
+        });
+
+        setInterval(() => {
+            renderLista();
+            if (estado.solicitacaoAbertaId) renderChat();
+        }, 60000);
+
+        iniciar().catch(async error => {
+            console.error(error);
+            if (window.playAlert) await window.playAlert('Nao foi possivel abrir o WhatsApp Play.');
+        });
+    </script>
+</body>
+</html>

@@ -663,6 +663,157 @@ export async function dbExcluirPedido(id) {
     }
 }
 
+/* --- FUNCOES PARA WHATSPLAY --- */
+
+const WHATSPLAY_ROOT = 'whatsplay_solicitacoes';
+
+function _normalizarTextoWhatsPlay(valor) {
+    return String(valor || '').trim();
+}
+
+function _normalizarStatusWhatsPlay(status) {
+    const valor = _normalizarTextoWhatsPlay(status).toLowerCase();
+    return valor === 'realizado' ? 'realizado' : 'pendente';
+}
+
+function _montarMensagemWhatsPlay(dados = {}, timestamp = new Date().toISOString()) {
+    return {
+        texto: _normalizarTextoWhatsPlay(dados.texto),
+        autor: _normalizarTextoWhatsPlay(dados.autor),
+        autorId: _normalizarTextoWhatsPlay(dados.autorId || dados.autor),
+        autorPerfil: _normalizarTextoWhatsPlay(dados.autorPerfil),
+        timestamp
+    };
+}
+
+export function dbEscutarWhatsPlaySolicitacoes(callback) {
+    return onValue(ref(db, WHATSPLAY_ROOT), (snapshot) => {
+        const data = snapshot.val() || {};
+        const lista = Object.keys(data).map(key => ({
+            firebaseUrl: key,
+            ...data[key]
+        })).sort((a, b) => {
+            const dataA = Date.parse(a.atualizadoEm || a.criadoEm || '') || 0;
+            const dataB = Date.parse(b.atualizadoEm || b.criadoEm || '') || 0;
+            return dataB - dataA;
+        });
+        callback(lista);
+    });
+}
+
+export async function dbCriarWhatsPlaySolicitacao(dados = {}) {
+    const titulo = _normalizarTextoWhatsPlay(dados.titulo);
+    const descricao = _normalizarTextoWhatsPlay(dados.descricao);
+    const textoInicial = descricao || titulo;
+    const autor = _normalizarTextoWhatsPlay(dados.autor);
+    const agora = new Date().toISOString();
+
+    if (!titulo || !autor) {
+        throw new Error('Dados obrigatorios ausentes para criar solicitacao WhatsApp Play.');
+    }
+
+    const novaRef = push(ref(db, WHATSPLAY_ROOT));
+    const mensagemRef = push(ref(db, `${WHATSPLAY_ROOT}/${novaRef.key}/mensagens`));
+    const mensagem = _montarMensagemWhatsPlay({
+        texto: textoInicial,
+        autor,
+        autorId: dados.autorId || autor,
+        autorPerfil: dados.autorPerfil
+    }, agora);
+
+    await set(novaRef, {
+        titulo,
+        descricao,
+        status: 'pendente',
+        criadoPor: autor,
+        criadoPorId: _normalizarTextoWhatsPlay(dados.autorId || autor),
+        criadoPorPerfil: _normalizarTextoWhatsPlay(dados.autorPerfil),
+        criadoEm: agora,
+        atualizadoEm: agora,
+        realizadoEm: null,
+        realizadoPor: null,
+        ultimaMensagem: textoInicial,
+        ultimaMensagemPor: autor,
+        ultimaMensagemPorId: _normalizarTextoWhatsPlay(dados.autorId || autor),
+        ultimaMensagemEm: agora,
+        mensagens: {
+            [mensagemRef.key]: mensagem
+        }
+    });
+
+    return novaRef.key;
+}
+
+export async function dbEnviarMensagemWhatsPlay(solicitacaoId, dados = {}) {
+    const id = _normalizarTextoWhatsPlay(solicitacaoId);
+    const texto = _normalizarTextoWhatsPlay(dados.texto);
+    const autor = _normalizarTextoWhatsPlay(dados.autor);
+    if (!id || !texto || !autor) {
+        throw new Error('Dados obrigatorios ausentes para enviar mensagem WhatsApp Play.');
+    }
+
+    const agora = new Date().toISOString();
+    const mensagemRef = push(ref(db, `${WHATSPLAY_ROOT}/${id}/mensagens`));
+    const mensagem = _montarMensagemWhatsPlay({
+        texto,
+        autor,
+        autorId: dados.autorId || autor,
+        autorPerfil: dados.autorPerfil
+    }, agora);
+
+    await update(ref(db), {
+        [`${WHATSPLAY_ROOT}/${id}/mensagens/${mensagemRef.key}`]: mensagem,
+        [`${WHATSPLAY_ROOT}/${id}/ultimaMensagem`]: texto,
+        [`${WHATSPLAY_ROOT}/${id}/ultimaMensagemPor`]: autor,
+        [`${WHATSPLAY_ROOT}/${id}/ultimaMensagemPorId`]: _normalizarTextoWhatsPlay(dados.autorId || autor),
+        [`${WHATSPLAY_ROOT}/${id}/ultimaMensagemEm`]: agora,
+        [`${WHATSPLAY_ROOT}/${id}/atualizadoEm`]: agora
+    });
+
+    return mensagemRef.key;
+}
+
+export async function dbMarcarWhatsPlayRealizada(solicitacaoId, nomeGestor) {
+    const id = _normalizarTextoWhatsPlay(solicitacaoId);
+    const gestor = _normalizarTextoWhatsPlay(nomeGestor);
+    if (!id || !gestor) {
+        throw new Error('Dados obrigatorios ausentes para concluir solicitacao WhatsApp Play.');
+    }
+
+    const agora = new Date().toISOString();
+    await update(ref(db, `${WHATSPLAY_ROOT}/${id}`), {
+        status: 'realizado',
+        realizadoEm: agora,
+        realizadoPor: gestor,
+        atualizadoEm: agora
+    });
+}
+
+export async function dbAtualizarStatusWhatsPlay(solicitacaoId, status, nomeUsuario) {
+    const id = _normalizarTextoWhatsPlay(solicitacaoId);
+    const usuario = _normalizarTextoWhatsPlay(nomeUsuario);
+    if (!id || !usuario) {
+        throw new Error('Dados obrigatorios ausentes para atualizar solicitacao WhatsApp Play.');
+    }
+
+    const agora = new Date().toISOString();
+    const statusNormalizado = _normalizarStatusWhatsPlay(status);
+    const patch = {
+        status: statusNormalizado,
+        atualizadoEm: agora
+    };
+
+    if (statusNormalizado === 'realizado') {
+        patch.realizadoEm = agora;
+        patch.realizadoPor = usuario;
+    } else {
+        patch.realizadoEm = null;
+        patch.realizadoPor = null;
+    }
+
+    await update(ref(db, `${WHATSPLAY_ROOT}/${id}`), patch);
+}
+
 /* --- FUNÇÕES PARA ATENDIMENTO --- */
 
 // [NOVO] Helper para converter Base64 em Blob para upload
