@@ -819,6 +819,7 @@
             usuarioId: '',
             usuarioPerfil: '',
             isGestor: false,
+            isEstoque: false,
             tab: 'pendente',
             solicitacoes: [],
             solicitacaoAbertaId: '',
@@ -833,6 +834,7 @@
             viewChat: document.getElementById('viewChat'),
             contadorLista: document.getElementById('contadorLista'),
             listaSolicitacoes: document.getElementById('listaSolicitacoes'),
+            btnNovoLabel: document.querySelector('.btn-novo-label'),
             btnNovo: document.getElementById('btnNovo'),
             formSolicitacao: document.getElementById('formSolicitacao'),
             campoTitulo: document.getElementById('campoTitulo'),
@@ -951,6 +953,9 @@
             estado.usuarioPerfil = texto(usuario.nivel_completo || usuario.perfil || usuario.cargo);
             const perfilNormalizado = normalizar(estado.usuarioPerfil);
             estado.isGestor = perfilNormalizado.includes('gestao') || perfilNormalizado.includes('gestor') || normalizar(usuario.cargo) === 'socio';
+            estado.isEstoque = perfilNormalizado.includes('estoque');
+            els.btnNovo.style.display = estado.isEstoque ? 'none' : 'inline-flex';
+            els.btnNovoLabel.style.display = estado.isEstoque ? 'none' : 'block';
         }
 
         function mostrarView(nome, opcoes = {}) {
@@ -1291,6 +1296,7 @@
             document.getElementById('btnCancelarForm').addEventListener('click', voltarFormParaLista);
             document.getElementById('btnVoltarChat').addEventListener('click', irParaIndex);
             els.btnNovo.addEventListener('click', () => {
+                if (estado.isEstoque) return;
                 limparFormularioSolicitacao();
                 mostrarView('form', { registrarHistorico: true });
                 setTimeout(() => els.campoTitulo.focus(), 0);

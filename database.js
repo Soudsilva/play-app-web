@@ -2672,23 +2672,35 @@ function _parsePercentualRemuneracao(valor) {
     return Number.isFinite(num) ? num : 0;
 }
 
+function _formatarMesAnoBrasiliaRemuneracao(data) {
+    if (!(data instanceof Date) || Number.isNaN(data.getTime())) return '';
+    const partes = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric',
+        month: '2-digit'
+    }).formatToParts(data);
+    const mapa = {};
+    partes.forEach(parte => {
+        if (parte.type !== 'literal') mapa[parte.type] = parte.value;
+    });
+    return mapa.year && mapa.month ? `${mapa.year}-${mapa.month}` : '';
+}
+
 function _obterMesAnoRemuneracao(valor) {
     if (!valor && valor !== 0) return '';
     if (typeof valor === 'number') {
         const data = new Date(valor);
-        if (Number.isNaN(data.getTime())) return '';
-        return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+        return _formatarMesAnoBrasiliaRemuneracao(data);
     }
     const texto = String(valor).trim();
-    if (/^\d{4}-\d{2}/.test(texto)) return texto.slice(0, 7);
+    if (/^\d{4}-\d{2}$/.test(texto)) return texto;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return texto.slice(0, 7);
     const data = new Date(texto);
-    if (Number.isNaN(data.getTime())) return '';
-    return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+    return _formatarMesAnoBrasiliaRemuneracao(data);
 }
 
 function _mesAnoAtualRemuneracao() {
-    const data = new Date();
-    return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+    return _formatarMesAnoBrasiliaRemuneracao(new Date());
 }
 
 function _obterSaldoParcialRemuneracao(financeiro) {

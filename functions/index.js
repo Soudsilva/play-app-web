@@ -23,6 +23,106 @@ const MEDIA_VENDAS_METADATA_PATH = "metadata/media_de_vendas_versao";
 const COBRANCAS_DATAVERSE_ROOT = "cobrancas_dataverse";
 const FOTO_PADRAO_MANUTENCAO = "assets/img/logo.png";
 
+function nomeParaEmailAuth(nome) {
+  const base = String(nome || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, ".")
+    .replace(/\.+/g, ".")
+    .replace(/^\.|\.$/g, "");
+  return base ? `${base}@play.internal` : "";
+}
+
+function normalizarSenhaAuth(senha) {
+  let valor = String(senha || "");
+  while (valor.length < 6) valor += "@";
+  return valor;
+}
+
+async function obterUsuarioAuthPorEmail(email) {
+  try {
+    return await admin.auth().getUserByEmail(email);
+  } catch (error) {
+    if (error?.code === "auth/user-not-found") return null;
+    throw error;
+  }
+}
+
+async function excluirUsuarioAuthPorEmail(email) {
+  const usuario = await obterUsuarioAuthPorEmail(email);
+  if (!usuario) return false;
+  await admin.auth().deleteUser(usuario.uid);
+  return true;
+}
+
+async function sincronizarUsuarioAuthColaborador(before, after) {
+  const nomeAnterior = String(before?.nome || "").trim();
+  const nomeAtual = String(after?.nome || "").trim();
+  const senhaAtual = String(after?.senha || "").trim();
+  const emailAnterior = nomeParaEmailAuth(nomeAnterior);
+  const emailAtual = nomeParaEmailAuth(nomeAtual);
+
+  if (!after) {
+    if (emailAnterior) {
+      const removido = await excluirUsuarioAuthPorEmail(emailAnterior);
+      logger.info("Login de colaborador removido do Auth.", {
+        email: emailAnterior,
+        removido,
+      });
+    }
+    return;
+  }
+
+  if (!nomeAtual || !senhaAtual || !emailAtual) {
+    logger.warn("Colaborador sem nome/senha para sincronizar Auth.", {
+      nome: nomeAtual,
+      email: emailAtual,
+    });
+    return;
+  }
+
+  const dadosAuth = {
+    email: emailAtual,
+    displayName: nomeAtual,
+    password: normalizarSenhaAuth(senhaAtual),
+    disabled: false,
+  };
+
+  const usuarioAtual = await obterUsuarioAuthPorEmail(emailAtual);
+  if (usuarioAtual) {
+    await admin.auth().updateUser(usuarioAtual.uid, dadosAuth);
+    logger.info("Login de colaborador atualizado no Auth.", {
+      email: emailAtual,
+      uid: usuarioAtual.uid,
+    });
+    if (emailAnterior && emailAnterior !== emailAtual) {
+      await excluirUsuarioAuthPorEmail(emailAnterior);
+    }
+    return;
+  }
+
+  if (emailAnterior && emailAnterior !== emailAtual) {
+    const usuarioAnterior = await obterUsuarioAuthPorEmail(emailAnterior);
+    if (usuarioAnterior) {
+      await admin.auth().updateUser(usuarioAnterior.uid, dadosAuth);
+      logger.info("Login de colaborador renomeado no Auth.", {
+        emailAnterior,
+        emailAtual,
+        uid: usuarioAnterior.uid,
+      });
+      return;
+    }
+  }
+
+  const criado = await admin.auth().createUser(dadosAuth);
+  logger.info("Login de colaborador criado no Auth.", {
+    email: emailAtual,
+    uid: criado.uid,
+  });
+}
+
 function dataBrasiliaISOData(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo",
@@ -570,6 +670,18 @@ function obterAlvosDeposito(usuarioParam, before, after) {
   });
   return [...alvos.values()];
 }
+
+exports.sincronizarAuthColaborador = onValueWritten(
+  {
+    ref: "/colaboradores/{colaboradorId}",
+    region: "us-central1",
+  },
+  async (event) => {
+    const before = event.data.before.exists() ? event.data.before.val() : null;
+    const after = event.data.after.exists() ? event.data.after.val() : null;
+    await sincronizarUsuarioAuthColaborador(before, after);
+  },
+);
 
 async function recalcularResumoDepositosMes(usuario, anoMes) {
   const db = admin.database();
