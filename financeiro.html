@@ -48,7 +48,7 @@
             position: sticky;
             top: 0;
             z-index: 30;
-            min-height: 74px;
+            min-height: 78px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -104,6 +104,33 @@
             text-align: center;
             overflow: hidden;
             white-space: nowrap;
+        }
+
+        .btn-faltas {
+            position: absolute;
+            left: 14px;
+            top: 11px;
+            width: 40px;
+            height: 40px;
+            border: 1.5px solid #ffeb3b;
+            border-radius: 999px;
+            background: #142d68;
+            color: #ffeb3b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 0 0 4px rgba(255,235,59,0.08);
+        }
+
+        .btn-faltas svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .btn-faltas:active {
+            transform: scale(0.92);
         }
 
         .btn-home {
@@ -391,6 +418,232 @@
             letter-spacing: -0.5px;
         }
 
+        .faltas-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: #06163d;
+        }
+
+        .faltas-modal.aberto {
+            display: flex;
+        }
+
+        .faltas-box {
+            width: 100%;
+            max-width: 408px;
+            max-height: calc(100vh - 36px);
+            overflow: auto;
+            border: 1.5px solid #ffeb3b;
+            border-radius: 14px;
+            background: #102b68;
+            color: #fff;
+        }
+
+        .faltas-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 14px 10px;
+            border-bottom: 1px solid #34518f;
+        }
+
+        .faltas-titulo {
+            flex: 1;
+            color: #ffeb3b;
+            font-size: 19px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .faltas-body {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 14px;
+        }
+
+        .faltas-campo {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .faltas-label {
+            color: #ffeb3b;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .faltas-select {
+            width: 100%;
+            min-height: 42px;
+            border: 1.5px solid #6b87c8;
+            border-radius: 10px;
+            background: #173d8f;
+            color: #fff;
+            padding: 9px 12px;
+            font-size: 16px;
+            font-weight: 700;
+            outline: none;
+        }
+
+        .faltas-select option {
+            background: #0f2a66;
+            color: #fff;
+        }
+
+        .faltas-calendario-head {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            border: 1px solid #6b87c8;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .faltas-dias {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 7px;
+        }
+
+        .faltas-dia-semana {
+            color: #ffeb3b;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .faltas-dia {
+            min-height: 40px;
+            border: 1.5px solid #6b87c8;
+            border-radius: 8px;
+            background: #173d8f;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .faltas-dia.selecionado {
+            border-color: #ffeb3b;
+            background: #ffeb3b;
+            color: #102b68;
+        }
+
+        .faltas-dia.com-falta {
+            position: relative;
+            border-color: #ffeb3b;
+        }
+
+        .faltas-dia.presente {
+            border-color: #20c46b;
+        }
+
+        .faltas-dia.bloqueado {
+            background: #163064;
+            border-color: #3f5f9f;
+            color: #d8e2ff;
+            cursor: default;
+        }
+
+        .faltas-dia.bloqueado.presente {
+            border-color: #20c46b;
+        }
+
+        .faltas-dia.com-falta::before,
+        .faltas-dia.com-falta::after {
+            content: "";
+            position: absolute;
+            left: 11px;
+            right: 11px;
+            top: 50%;
+            height: 2px;
+            border-radius: 999px;
+            background: #ff2a2a;
+            pointer-events: none;
+            transform-origin: center;
+        }
+
+        .faltas-dia.com-falta::before {
+            transform: translateY(-50%) rotate(25deg);
+        }
+
+        .faltas-dia.com-falta::after {
+            transform: translateY(-50%) rotate(-25deg);
+        }
+
+        .faltas-dia.com-falta.selecionado::before,
+        .faltas-dia.com-falta.selecionado::after {
+            background: #d91f1f;
+        }
+
+        .faltas-dia:active {
+            transform: scale(0.98);
+        }
+
+        .faltas-dia-placeholder {
+            min-height: 40px;
+        }
+
+        .faltas-info {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 1.35;
+            text-align: center;
+        }
+
+        .faltas-info-calendario {
+            grid-column: 1 / -1;
+        }
+
+        .faltas-rodape {
+            display: flex;
+            gap: 10px;
+            padding: 0 14px 14px;
+        }
+
+        .faltas-btn-primario,
+        .faltas-btn-secundario {
+            width: 100%;
+            min-height: 44px;
+            border: 1.5px solid #6b87c8;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .faltas-btn-primario {
+            background: #ffeb3b;
+            border-color: #ffeb3b;
+            color: #102b68;
+        }
+
+        .faltas-btn-secundario {
+            background: #18336f;
+            color: #fff;
+        }
+
+        .faltas-btn-primario:disabled {
+            background: #d6c739;
+            border-color: #d6c739;
+            color: #102b68;
+            cursor: default;
+        }
+
     </style>
 </head>
 <body>
@@ -398,9 +651,17 @@
         <header class="topo">
             <div class="titulo-topo">Financeiro</div>
             <div class="total-mes-linha">
-                <span class="total-mes-label">Produ&ccedil;&atilde;o Geral do M&ecirc;s</span>
+                <span class="total-mes-label">Produ&ccedil;&atilde;o do M&ecirc;s</span>
                 <div id="totalMesTopo" class="total-mes-topo" aria-label="Total produzido no mes">0</div>
             </div>
+            <button id="btnAbrirFaltas" class="btn-faltas" type="button" aria-label="Informar falta">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <line x1="18" y1="8" x2="23" y2="13"></line>
+                    <line x1="23" y1="8" x2="18" y2="13"></line>
+                </svg>
+            </button>
             <button class="btn-home" type="button" aria-label="Ir para a tela inicial" onclick="window.location.href='index.html'">
                 <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" alt="Home">
             </button>
@@ -424,10 +685,32 @@
         <div id="rodapeResumo" class="filtro-total-box">0,00</div>
     </div>
 
+    <div id="faltasModal" class="faltas-modal" aria-hidden="true">
+        <div class="faltas-box" role="dialog" aria-modal="true" aria-labelledby="faltasTitulo">
+            <div class="faltas-head">
+                <div id="faltasTitulo" class="faltas-titulo">Controle de faltas</div>
+            </div>
+            <div class="faltas-body">
+                <div class="faltas-campo">
+                    <label class="faltas-label" for="faltasColaboradorSelect">Colaborador</label>
+                    <select id="faltasColaboradorSelect" class="faltas-select"></select>
+                </div>
+                <div class="faltas-campo">
+                    <div id="faltasCalendarioTitulo" class="faltas-calendario-head">Dias úteis</div>
+                    <div id="faltasCalendario" class="faltas-dias"></div>
+                </div>
+            </div>
+            <div class="faltas-rodape">
+                <button id="btnInformarFalta" class="faltas-btn-primario" type="button">Informar falta</button>
+                <button id="btnFecharFaltas" class="faltas-btn-secundario" type="button">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="assets/js/play-dialogs.js"></script>
     <script type="module">
         import { verificarAutenticacao } from './auth.js';
-        import { dbEscutarColaboradores, dbEscutarEstoque, dbEscutarHistoricoBalancoCompleto } from './database.js';
+        import { dbEscutarColaboradores, dbEscutarEstoque, dbEscutarHistoricoBalancoCompleto, dbEscutarRemuneracaoMensal, dbInformarFaltaRemuneracao } from './database.js';
 
         document.body.style.visibility = 'visible';
         await verificarAutenticacao();
@@ -442,6 +725,13 @@
             historico: [],
             colaboradorLogado: null,
             registros: [],
+            remuneracaoMensal: [],
+            mesRemuneracaoEscutado: '',
+            pararEscutaRemuneracao: null,
+            colaboradoresProducaoEquipamentos: [],
+            faltaDataSelecionada: '',
+            faltasHistoricoAtivo: false,
+            fechandoFaltasPorHistorico: false,
             mapaValores: {},
             mapaValoresPorId: {},
             anoSelecionado: '',
@@ -460,6 +750,13 @@
         const totalMesTopo = document.getElementById('totalMesTopo');
 
         const rodapeResumo = document.getElementById('rodapeResumo');
+        const btnAbrirFaltas = document.getElementById('btnAbrirFaltas');
+        const faltasModal = document.getElementById('faltasModal');
+        const btnInformarFalta = document.getElementById('btnInformarFalta');
+        const btnFecharFaltas = document.getElementById('btnFecharFaltas');
+        const faltasColaboradorSelect = document.getElementById('faltasColaboradorSelect');
+        const faltasCalendarioTitulo = document.getElementById('faltasCalendarioTitulo');
+        const faltasCalendario = document.getElementById('faltasCalendario');
 
         let _msgInterval = null;
         let _spinnerAtivo = false;
@@ -511,6 +808,10 @@
             return normalizarTexto(valor)
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function normalizarChaveUsuario(valor) {
+            return String(valor || '').trim().replace(/[.#$/[\]]/g, '_');
         }
 
         function parseNumero(valor) {
@@ -566,6 +867,10 @@
             const partes = partesDataSaoPaulo(iso);
             if (!partes) return 'Sem data';
             return `${partes.dia}/${partes.mes}/${partes.ano} ${partes.hora}:${partes.minuto}`;
+        }
+
+        function formatarDataCurta(ano, mes, dia) {
+            return `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${ano}`;
         }
 
         function obterChaveMesAno(iso) {
@@ -695,12 +1000,224 @@
             }, 0);
         }
 
+        function obterRegistroRemuneracaoColaboradorLogado() {
+            const nome = String(estado.colaboradorLogado?.nome || localStorage.getItem('usuarioLogado') || '').trim();
+            if (!nome) return null;
+
+            const chave = normalizarChaveUsuario(nome);
+            const nomeNorm = normalizarNomeComparacao(nome);
+            return (Array.isArray(estado.remuneracaoMensal) ? estado.remuneracaoMensal : []).find((registro) => {
+                return String(registro?.usuarioKey || '').trim() === chave
+                    || normalizarNomeComparacao(registro?.nome || '') === nomeNorm;
+            }) || null;
+        }
+
+        function obterRegistroRemuneracaoPorNome(nomeColaborador) {
+            const nome = String(nomeColaborador || '').trim();
+            if (!nome) return null;
+
+            const chave = normalizarChaveUsuario(nome);
+            const nomeNorm = normalizarNomeComparacao(nome);
+            return (Array.isArray(estado.remuneracaoMensal) ? estado.remuneracaoMensal : []).find((registro) => {
+                return String(registro?.usuarioKey || '').trim() === chave
+                    || normalizarNomeComparacao(registro?.nome || '') === nomeNorm;
+            }) || null;
+        }
+
+        function dataTemFaltaInformada(dataValor) {
+            const registro = obterRegistroRemuneracaoPorNome(faltasColaboradorSelect.value);
+            const datas = registro?.faltas?.datas && typeof registro.faltas.datas === 'object'
+                ? registro.faltas.datas
+                : {};
+            return datas[dataValor] === true;
+        }
+
         function calcularRemuneracaoEquipamentos(totalProduzido) {
             const colaborador = estado.colaboradorLogado;
             if (colaborador?.producaoEquipamentos !== true) return 0;
             const percentual = parseNumero(colaborador?.bonusManutencao);
             if (percentual <= 0) return 0;
-            return totalProduzido * (percentual / 100);
+            const valorIntegral = totalProduzido * (percentual / 100);
+            const descontoFaltas = parseNumero(obterRegistroRemuneracaoColaboradorLogado()?.faltas?.desconto);
+            return Math.max(0, valorIntegral - descontoFaltas);
+        }
+
+        function atualizarEscutaRemuneracaoMensal() {
+            const mesAno = `${estado.anoSelecionado}-${estado.mesSelecionado}`;
+            if (!/^\d{4}-\d{2}$/.test(mesAno)) return;
+            if (estado.mesRemuneracaoEscutado === mesAno) return;
+
+            if (typeof estado.pararEscutaRemuneracao === 'function') {
+                estado.pararEscutaRemuneracao();
+            }
+
+            estado.mesRemuneracaoEscutado = mesAno;
+            estado.remuneracaoMensal = [];
+            estado.pararEscutaRemuneracao = dbEscutarRemuneracaoMensal(mesAno, (lista) => {
+                estado.remuneracaoMensal = Array.isArray(lista) ? lista : [];
+                if (faltasModal.classList.contains('aberto')) renderizarPainelFaltas();
+                renderizar();
+            });
+        }
+
+        function obterDiasUteisMes(ano, mes) {
+            const anoNumero = Number(ano);
+            const mesNumero = Number(mes);
+            if (!anoNumero || !mesNumero) return [];
+
+            const dias = [];
+            const ultimoDia = new Date(anoNumero, mesNumero, 0).getDate();
+            for (let dia = 1; dia <= ultimoDia; dia += 1) {
+                const data = new Date(anoNumero, mesNumero - 1, dia);
+                const diaSemana = data.getDay();
+                if (diaSemana !== 0 && diaSemana !== 6) {
+                    dias.push({ dia, diaSemana });
+                }
+            }
+            return dias;
+        }
+
+        function obterHojeSaoPauloValor() {
+            const partes = partesDataSaoPaulo(new Date().toISOString());
+            if (!partes) return '';
+            return `${partes.ano}-${partes.mes}-${partes.dia}`;
+        }
+
+        function deslocarDataValor(dataValor, dias) {
+            const partes = String(dataValor || '').split('-').map(Number);
+            if (partes.length !== 3 || partes.some(numero => !Number.isFinite(numero))) return '';
+            const data = new Date(partes[0], partes[1] - 1, partes[2]);
+            data.setDate(data.getDate() + Number(dias || 0));
+            const ano = data.getFullYear();
+            const mes = String(data.getMonth() + 1).padStart(2, '0');
+            const dia = String(data.getDate()).padStart(2, '0');
+            return `${ano}-${mes}-${dia}`;
+        }
+
+        function dataPodeSerSelecionada(dataValor) {
+            const hojeValor = obterHojeSaoPauloValor();
+            if (!hojeValor) return false;
+            const limiteInicial = deslocarDataValor(hojeValor, -2);
+            return dataValor >= limiteInicial && dataValor <= hojeValor;
+        }
+
+        function renderizarColaboradoresFaltas() {
+            if (estado.colaboradoresProducaoEquipamentos.length === 0) {
+                faltasColaboradorSelect.innerHTML = '<option value="">Nenhum colaborador com Prod. Equip.</option>';
+                faltasColaboradorSelect.disabled = true;
+                return;
+            }
+
+            faltasColaboradorSelect.disabled = false;
+            faltasColaboradorSelect.innerHTML = estado.colaboradoresProducaoEquipamentos
+                .map((colaborador) => {
+                    const nome = String(colaborador?.nome || '').trim();
+                    return `<option value="${escaparHtml(nome)}">${escaparHtml(nome)}</option>`;
+                })
+                .join('');
+        }
+
+        function renderizarCalendarioFaltas() {
+            const ano = estado.anoSelecionado;
+            const mes = estado.mesSelecionado;
+            const indiceMes = Number(mes) - 1;
+            const nomeMes = MESES[indiceMes] || mes || '';
+            faltasCalendarioTitulo.textContent = nomeMes && ano ? `${nomeMes} de ${ano}` : 'Dias úteis';
+
+            const cabecalho = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex']
+                .map((dia) => `<div class="faltas-dia-semana">${dia}</div>`)
+                .join('');
+
+            const dias = obterDiasUteisMes(ano, mes);
+            if (dias.length === 0) {
+                faltasCalendario.innerHTML = `${cabecalho}<div class="faltas-info faltas-info-calendario">Nenhum dia útil para exibir.</div>`;
+                return;
+            }
+
+            const primeiroDiaUtil = dias[0];
+            const deslocamento = Math.max(0, primeiroDiaUtil.diaSemana - 1);
+            const placeholders = Array.from({ length: deslocamento }, () => '<div class="faltas-dia-placeholder"></div>').join('');
+            const hojeValor = obterHojeSaoPauloValor();
+            const botoes = dias.map(({ dia }) => {
+                const dataValor = `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                const selecionado = estado.faltaDataSelecionada === dataValor ? ' selecionado' : '';
+                const temFalta = dataTemFaltaInformada(dataValor);
+                const comFalta = temFalta ? ' com-falta' : '';
+                const presente = !temFalta && hojeValor && dataValor < hojeValor ? ' presente' : '';
+                const bloqueado = dataPodeSerSelecionada(dataValor) ? '' : ' bloqueado';
+                return `<button class="faltas-dia${selecionado}${comFalta}${presente}${bloqueado}" type="button" data-falta-data="${dataValor}">${dia}</button>`;
+            }).join('');
+
+            faltasCalendario.innerHTML = cabecalho + placeholders + botoes;
+        }
+
+        function renderizarPainelFaltas() {
+            renderizarColaboradoresFaltas();
+            renderizarCalendarioFaltas();
+        }
+
+        function abrirFaltas() {
+            if (faltasModal.classList.contains('aberto')) return;
+            renderizarPainelFaltas();
+            faltasModal.classList.add('aberto');
+            faltasModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            try {
+                window.history.pushState({ modalFaltas: true }, '', window.location.href);
+                estado.faltasHistoricoAtivo = true;
+            } catch (_) {
+                estado.faltasHistoricoAtivo = false;
+            }
+        }
+
+        function fecharFaltas(atualizarHistorico = true) {
+            const estavaAberto = faltasModal.classList.contains('aberto');
+            faltasModal.classList.remove('aberto');
+            faltasModal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            if (estavaAberto && atualizarHistorico && estado.faltasHistoricoAtivo && !estado.fechandoFaltasPorHistorico) {
+                estado.fechandoFaltasPorHistorico = true;
+                window.history.back();
+            }
+            if (!atualizarHistorico) {
+                estado.faltasHistoricoAtivo = false;
+                estado.fechandoFaltasPorHistorico = false;
+            }
+        }
+
+        async function informarFalta() {
+            const nomeColaborador = String(faltasColaboradorSelect.value || '').trim();
+            const dataFalta = String(estado.faltaDataSelecionada || '').trim();
+            const mesAno = `${estado.anoSelecionado}-${estado.mesSelecionado}`;
+
+            if (!nomeColaborador) {
+                await window.playAlert('Selecione o colaborador que faltou.');
+                return;
+            }
+            if (!dataFalta) {
+                await window.playAlert('Selecione o dia da falta no calendário.');
+                return;
+            }
+            if (!dataPodeSerSelecionada(dataFalta)) {
+                await window.playAlert('Só é possível informar falta de hoje ou de até 2 dias atrás.');
+                return;
+            }
+
+            btnInformarFalta.disabled = true;
+            const textoOriginal = btnInformarFalta.textContent;
+            btnInformarFalta.textContent = 'Informando...';
+
+            try {
+                await dbInformarFaltaRemuneracao(mesAno, nomeColaborador, dataFalta);
+                const [, mes, dia] = dataFalta.split('-');
+                await window.playAlert(`Falta informada para ${nomeColaborador} em ${formatarDataCurta(estado.anoSelecionado, mes, dia)}.`);
+            } catch (erro) {
+                console.error('Erro ao informar falta:', erro);
+                await window.playAlert('Não foi possível informar a falta. Tente novamente.');
+            } finally {
+                btnInformarFalta.disabled = false;
+                btnInformarFalta.textContent = textoOriginal;
+            }
         }
 
         function renderizar() {
@@ -709,6 +1226,7 @@
                 return;
             }
             pararSpinner();
+            atualizarEscutaRemuneracaoMensal();
 
             const totalProduzido = totalProduzidoMesTodos();
             totalMesTopo.textContent = totalProduzido.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -759,13 +1277,46 @@
 
         filtroAno.addEventListener('change', () => {
             estado.anoSelecionado = filtroAno.value;
+            estado.faltaDataSelecionada = '';
             sincronizarFiltros();
             renderizar();
+            if (faltasModal.classList.contains('aberto')) renderizarPainelFaltas();
         });
 
         filtroMes.addEventListener('change', () => {
             estado.mesSelecionado = filtroMes.value;
+            estado.faltaDataSelecionada = '';
             renderizar();
+            if (faltasModal.classList.contains('aberto')) renderizarPainelFaltas();
+        });
+
+        btnAbrirFaltas.addEventListener('click', abrirFaltas);
+        btnInformarFalta.addEventListener('click', informarFalta);
+        btnFecharFaltas.addEventListener('click', fecharFaltas);
+        faltasColaboradorSelect.addEventListener('change', renderizarCalendarioFaltas);
+        faltasModal.addEventListener('click', (event) => {
+            if (event.target === faltasModal) fecharFaltas();
+        });
+        window.addEventListener('popstate', () => {
+            if (!estado.faltasHistoricoAtivo) return;
+            if (faltasModal.classList.contains('aberto')) {
+                fecharFaltas(false);
+                return;
+            }
+            estado.faltasHistoricoAtivo = false;
+            estado.fechandoFaltasPorHistorico = false;
+        });
+        faltasCalendario.addEventListener('click', (event) => {
+            const botao = event.target.closest('[data-falta-data]');
+            if (!botao) return;
+            const dataClicada = botao.dataset.faltaData || '';
+            if (!dataPodeSerSelecionada(dataClicada)) {
+                estado.faltaDataSelecionada = '';
+                renderizarCalendarioFaltas();
+                return;
+            }
+            estado.faltaDataSelecionada = estado.faltaDataSelecionada === dataClicada ? '' : dataClicada;
+            renderizarCalendarioFaltas();
         });
 
         dbEscutarEstoque((lista) => {
@@ -781,11 +1332,20 @@
         });
 
         dbEscutarColaboradores((lista) => {
+            const colaboradores = Array.isArray(lista) ? lista : [];
             const usuarioAtual = normalizarNomeComparacao(localStorage.getItem('usuarioLogado') || '');
-            estado.colaboradorLogado = (Array.isArray(lista) ? lista : []).find((colaborador) => {
+            estado.colaboradorLogado = colaboradores.find((colaborador) => {
                 return normalizarNomeComparacao(colaborador?.nome || '') === usuarioAtual;
             }) || null;
+            estado.colaboradoresProducaoEquipamentos = colaboradores
+                .filter((colaborador) => {
+                    return colaborador?.producaoEquipamentos === true
+                        && parseNumero(colaborador?.bonusManutencao) > 0
+                        && String(colaborador?.nome || '').trim();
+                })
+                .sort((a, b) => String(a?.nome || '').localeCompare(String(b?.nome || ''), 'pt-BR'));
             estado.prontoColaboradores = true;
+            if (faltasModal.classList.contains('aberto')) renderizarPainelFaltas();
             renderizar();
         });
 

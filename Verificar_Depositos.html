@@ -1487,11 +1487,16 @@
         ['prestacao_servico', 'Prestação serviço']
     ];
 
-    function obterDetalhesRemuneracaoSalario(perfis) {
+    function obterDetalhesRemuneracaoSalario(registro) {
+        const perfis = registro?.perfis || {};
+        const descontoFaltas = Math.max(0, Number(registro?.faltas?.desconto || 0));
         return PERFIS_REMUNERACAO_SALARIOS
             .map(([chave, label]) => {
                 const perfil = perfis?.[chave] || {};
-                const valor = Number(perfil.valor || 0);
+                const valorOriginal = Number(perfil.valor || 0);
+                const valor = chave === 'producao_equipamentos'
+                    ? Math.max(0, valorOriginal - descontoFaltas)
+                    : valorOriginal;
                 return {
                     label,
                     valor
@@ -1524,7 +1529,7 @@
                 return {
                     ...usuario,
                     valor: Number(registro.total || 0),
-                    detalhes: obterDetalhesRemuneracaoSalario(registro.perfis || {})
+                    detalhes: obterDetalhesRemuneracaoSalario(registro)
                 };
             })
             .filter(item => item.valor > 0 && !confirmacaoSalarioUsuario(item.chave))

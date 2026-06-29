@@ -31,3 +31,4 @@ statusBalancoPendenteIndex === true E essa  variável vira true quando o resumo 
 o estilo das mensagens padrão são.. procure: play-dialogs.js. 
 Sempre me diga o que entendeu antes de implementar qualquer coisa.
 As permissões, por padrão, vem desse local localStorage.cache_colaboradores
+Nao crie cliente, usuario, colaborador, rota, dado de teste ou qualquer registro no Firebase/localStorage sem autorizacao clara e explicita do usuario.

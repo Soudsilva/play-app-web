@@ -1533,11 +1533,16 @@
         return `${num.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`;
     }
 
-    function obterDetalhesRemuneracaoPag(perfis) {
+    function obterDetalhesRemuneracaoPag(registro) {
+        const perfis = registro?.perfis || {};
+        const descontoFaltas = Math.max(0, Number(registro?.faltas?.desconto || 0));
         return PERFIS_REMUNERACAO_PAG
             .map(([chave, label]) => {
                 const perfil = perfis?.[chave] || {};
-                const valor = Number(perfil.valor || 0);
+                const valorOriginal = Number(perfil.valor || 0);
+                const valor = chave === 'producao_equipamentos'
+                    ? Math.max(0, valorOriginal - descontoFaltas)
+                    : valorOriginal;
                 const percentual = formatarPercentualPerfilPag(perfil.percentual);
                 return {
                     chave,
@@ -1550,6 +1555,7 @@
 
     function obterResumoRemuneracaoMensal(registro) {
         const perfis = registro?.perfis || {};
+        const descontoFaltas = Math.max(0, Number(registro?.faltas?.desconto || 0));
         const financeiro = (
             obterValorPerfil(perfis, 'comissao_producao') +
             obterValorPerfil(perfis, 'comissao_global') +
@@ -1559,7 +1565,7 @@
             obterValorPerfil(perfis, 'bonus_producao')
         );
         const producao = (
-            obterValorPerfil(perfis, 'producao_equipamentos') +
+            Math.max(0, obterValorPerfil(perfis, 'producao_equipamentos') - descontoFaltas) +
             obterValorPerfil(perfis, 'producao_pecas') +
             obterValorPerfil(perfis, 'prestacao_servico')
         );
@@ -1570,7 +1576,7 @@
             financeiro,
             producao,
             subtitulo: qtd,
-            detalhes: obterDetalhesRemuneracaoPag(perfis)
+            detalhes: obterDetalhesRemuneracaoPag(registro)
         };
     }
 

@@ -2783,6 +2783,52 @@ function _somarPerfisRemuneracao(perfis) {
     return Object.values(perfis || {}).reduce((soma, item) => soma + _parseNumeroRemuneracao(item?.valor), 0);
 }
 
+function _obterDiasUteisMesAnoRemuneracao(mesAno) {
+    const partes = String(mesAno || '').match(/^(\d{4})-(\d{2})$/);
+    if (!partes) return 0;
+
+    const ano = Number(partes[1]);
+    const mes = Number(partes[2]);
+    if (!ano || !mes) return 0;
+
+    let total = 0;
+    const ultimoDia = new Date(ano, mes, 0).getDate();
+    for (let dia = 1; dia <= ultimoDia; dia += 1) {
+        const diaSemana = new Date(ano, mes - 1, dia).getDay();
+        if (diaSemana !== 0 && diaSemana !== 6) total += 1;
+    }
+    return total;
+}
+
+function _normalizarFaltasRemuneracao(faltas, mesAno) {
+    const datasOrigem = faltas?.datas && typeof faltas.datas === 'object' ? faltas.datas : {};
+    const datas = {};
+    Object.keys(datasOrigem).forEach(data => {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(data) && data.startsWith(`${mesAno}-`) && datasOrigem[data] === true) {
+            datas[data] = true;
+        }
+    });
+
+    return {
+        ...(faltas && typeof faltas === 'object' ? faltas : {}),
+        quantidade: Object.keys(datas).length,
+        datas
+    };
+}
+
+function _calcularDescontoFaltasProducaoEquipamentos(valorIntegral, faltas, mesAno) {
+    const valor = _parseNumeroRemuneracao(valorIntegral);
+    if (valor <= 0) return 0;
+
+    const faltasNormalizadas = _normalizarFaltasRemuneracao(faltas, mesAno);
+    const quantidade = _parseNumeroRemuneracao(faltasNormalizadas.quantidade);
+    const diasUteis = _obterDiasUteisMesAnoRemuneracao(mesAno);
+    if (quantidade <= 0 || diasUteis <= 0) return 0;
+
+    const faltasConsideradas = Math.min(quantidade, diasUteis);
+    return Math.round(valor * (faltasConsideradas / diasUteis));
+}
+
 async function _tentarRecalcularRemuneracoes() {
     try {
         await dbRecalcularRemuneracoes();
@@ -2800,7 +2846,8 @@ export async function dbRecalcularRemuneracoes() {
             historicoSnap,
             historicoBalancoSnap,
             estoqueSnap,
-            fluxoSnap
+            fluxoSnap,
+            remuneracaoAtualSnap
         ] = await Promise.all([
             get(ref(db, 'colaboradores')),
             get(ref(db, 'clientes')),
@@ -2808,7 +2855,8 @@ export async function dbRecalcularRemuneracoes() {
             get(ref(db, 'historico_estoque')),
             get(ref(db, 'movimentacao_balanco_historico')),
             get(ref(db, 'estoque')),
-            get(ref(db, 'fluxo_caixa'))
+            get(ref(db, 'fluxo_caixa')),
+            get(ref(db, 'remuneracao/mensal'))
         ]);
 
         const colaboradoresData = colaboradoresSnap.exists() ? (colaboradoresSnap.val() || {}) : {};
@@ -2818,6 +2866,7 @@ export async function dbRecalcularRemuneracoes() {
         const historicoBalancoData = historicoBalancoSnap.exists() ? (historicoBalancoSnap.val() || {}) : {};
         const estoqueData = estoqueSnap.exists() ? (estoqueSnap.val() || {}) : {};
         const fluxoCaixa = fluxoSnap.exists() ? (fluxoSnap.val() || {}) : {};
+        const remuneracaoAtualData = remuneracaoAtualSnap.exists() ? (remuneracaoAtualSnap.val() || {}) : {};
 
         const colaboradores = Object.keys(colaboradoresData).map(key => ({ firebaseUrl: key, ...colaboradoresData[key] }));
         const clientes = Object.keys(clientesData).map(key => ({ firebaseUrl: key, ...clientesData[key] }));
@@ -2862,6 +2911,9 @@ export async function dbRecalcularRemuneracoes() {
         historicoBalanco.forEach(item => {
             const mesAno = _obterMesAnoRemuneracao(item?.timestamp || item?.data || item?.criado_em);
             if (mesAno) meses.add(mesAno);
+        });
+        Object.keys(remuneracaoAtualData || {}).forEach(mesAno => {
+            if (/^\d{4}-\d{2}$/.test(mesAno)) meses.add(mesAno);
         });
 
         const mesesOrdenados = [...meses].sort();
@@ -3024,7 +3076,15 @@ export async function dbRecalcularRemuneracoes() {
                     });
                 }
 
-                const total = Math.round(_somarPerfisRemuneracao(perfis));
+                const faltasAtuais = _normalizarFaltasRemuneracao(remuneracaoAtualData?.[mesAno]?.[usuarioKey]?.faltas, mesAno);
+                const valorIntegralEquipamentos = _parseNumeroRemuneracao(perfis?.producao_equipamentos?.valor);
+                const descontoFaltas = _calcularDescontoFaltasProducaoEquipamentos(valorIntegralEquipamentos, faltasAtuais, mesAno);
+                const temFaltas = _parseNumeroRemuneracao(faltasAtuais.quantidade) > 0;
+                if (temFaltas) {
+                    faltasAtuais.desconto = descontoFaltas;
+                }
+
+                const total = Math.max(0, Math.round(_somarPerfisRemuneracao(perfis) - descontoFaltas));
                 if (total > 0 || Object.keys(perfis).length > 0) {
                     registrosMes[usuarioKey] = {
                         nome,
@@ -3032,8 +3092,24 @@ export async function dbRecalcularRemuneracoes() {
                         perfis,
                         atualizadoEm
                     };
+                    if (temFaltas) {
+                        registrosMes[usuarioKey].faltas = faltasAtuais;
+                    }
                 }
             }
+
+            const faltasMesAtual = remuneracaoAtualData?.[mesAno] || {};
+            Object.keys(faltasMesAtual).forEach(usuarioKey => {
+                const faltasAtuais = _normalizarFaltasRemuneracao(faltasMesAtual?.[usuarioKey]?.faltas, mesAno);
+                if (_parseNumeroRemuneracao(faltasAtuais.quantidade) <= 0 || registrosMes[usuarioKey]) return;
+                faltasAtuais.desconto = 0;
+                registrosMes[usuarioKey] = {
+                    nome: String(faltasMesAtual?.[usuarioKey]?.nome || usuarioKey).trim(),
+                    total: 0,
+                    faltas: faltasAtuais,
+                    atualizadoEm
+                };
+            });
 
             remuneracaoMensal[mesAno] = registrosMes;
         }
@@ -3131,6 +3207,46 @@ export function dbEscutarRemuneracaoMensal(mesAno, callback) {
         const data = snapshot.exists() ? (snapshot.val() || {}) : {};
         callback(Object.keys(data).map(key => ({ usuarioKey: key, ...data[key] })));
     });
+}
+
+export async function dbInformarFaltaRemuneracao(mesAno, nomeUsuario, dataFalta) {
+    const mes = String(mesAno || '').trim();
+    const nome = String(nomeUsuario || '').trim();
+    const data = String(dataFalta || '').trim();
+    const chaveUsuario = _normalizarChaveUsuario(nome);
+
+    if (!/^\d{4}-\d{2}$/.test(mes)) {
+        throw new Error("Mes de remuneracao invalido.");
+    }
+    if (!chaveUsuario) {
+        throw new Error("Colaborador invalido.");
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data) || !data.startsWith(`${mes}-`)) {
+        throw new Error("Data da falta invalida para o mes selecionado.");
+    }
+
+    const registroRef = ref(db, `remuneracao/mensal/${mes}/${chaveUsuario}`);
+    await runTransaction(registroRef, (registroAtual) => {
+        const registro = registroAtual && typeof registroAtual === 'object' ? registroAtual : {};
+        const datasAtuais = registro?.faltas?.datas && typeof registro.faltas.datas === 'object'
+            ? registro.faltas.datas
+            : {};
+        const datas = {
+            ...datasAtuais,
+            [data]: true
+        };
+
+        return {
+            ...registro,
+            nome: String(registro.nome || nome).trim(),
+            faltas: {
+                quantidade: Object.keys(datas).filter(chave => datas[chave] === true).length,
+                datas,
+                desconto: _parseNumeroRemuneracao(registro?.faltas?.desconto)
+            }
+        };
+    });
+    await dbRecalcularRemuneracoes();
 }
 
 const CONFIRMACOES_SALARIO_DEPOSITO_ROOT = 'confirmacoes_salario_deposito';
