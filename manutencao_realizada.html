@@ -271,6 +271,16 @@
             cursor: pointer;
             background: rgba(255,255,255,0.05);
         }
+        .area-foto.foto-equip-retirado {
+            position: relative;
+        }
+        .area-foto.foto-equip-retirado .retirada-foto-menu {
+            top: 50%;
+            bottom: auto;
+            left: 50%;
+            right: auto;
+            transform: translate(-50%, -50%);
+        }
         .preview-img {
             max-width: 100%;
             max-height: 200px;
@@ -1302,10 +1312,15 @@ function renderizarFotosEquipamentosRetirados() {
         card.className = 'sub-card-foto';
         card.innerHTML = `
             <div class="titulo-sub-foto">Foto: ${nomeSeguro.toUpperCase()}</div>
-            <div class="area-foto" onclick="abrirSeletorFoto('inputFotoEquipRetirado_${slotKeySeguro}')">
+            <div class="area-foto foto-equip-retirado" onclick="toggleMenuFotoEquipRetirado('${slotKeySeguro}', event)">
                 <span id="textoFotoEquipRetirado_${slotKeySeguro}" style="font-size:14px;">Toque para adicionar</span>
                 <img id="imgPreviewEquipRetirado_${slotKeySeguro}" class="preview-img" alt="Foto retirada de ${nomeSeguro}">
-                <input type="file" id="inputFotoEquipRetirado_${slotKeySeguro}" class="input-foto-equip-retirado" data-slot-key="${slotKeySeguro}" data-nome-exibicao="${nomeSeguro}" accept="image/*" style="display:none;" onchange="mostrarPreviewFotoManutencao(this, 'imgPreviewEquipRetirado_${slotKeySeguro}', 'textoFotoEquipRetirado_${slotKeySeguro}')">
+                <div class="retirada-foto-menu" id="menuFotoEquipRetirado_${slotKeySeguro}" onclick="event.stopPropagation()">
+                    <div class="retirada-foto-menu-box">
+                        <label class="retirada-foto-menu-item"><span>&#128247;</span><span>Câmera</span><input type="file" id="inputFotoEquipRetiradoCamera_${slotKeySeguro}" accept="image/*" capture="environment" onchange="mostrarPreviewFotoManutencao(this, 'imgPreviewEquipRetirado_${slotKeySeguro}', 'textoFotoEquipRetirado_${slotKeySeguro}'); fecharMenuFotoEquipRetirado('${slotKeySeguro}')"></label>
+                        <label class="retirada-foto-menu-item"><span>&#128444;&#65039;</span><span>Galeria</span><input type="file" id="inputFotoEquipRetirado_${slotKeySeguro}" class="input-foto-equip-retirado" data-slot-key="${slotKeySeguro}" data-nome-exibicao="${nomeSeguro}" accept="image/*" onchange="mostrarPreviewFotoManutencao(this, 'imgPreviewEquipRetirado_${slotKeySeguro}', 'textoFotoEquipRetirado_${slotKeySeguro}'); fecharMenuFotoEquipRetirado('${slotKeySeguro}')"></label>
+                    </div>
+                </div>
             </div>
         `;
         container.appendChild(card);
@@ -1914,6 +1929,11 @@ dbEscutarClientes((lista) => {
 
 document.addEventListener('click', (evento) => {
     document.querySelectorAll('.retirada-foto-input').forEach(wrap => {
+        if (!wrap.contains(evento.target)) {
+            wrap.querySelectorAll('.retirada-foto-menu.aberto').forEach(menu => menu.classList.remove('aberto'));
+        }
+    });
+    document.querySelectorAll('#containerFotosEquipamentosRetirados .foto-equip-retirado').forEach(wrap => {
         if (!wrap.contains(evento.target)) {
             wrap.querySelectorAll('.retirada-foto-menu.aberto').forEach(menu => menu.classList.remove('aberto'));
         }
@@ -2963,6 +2983,21 @@ function sincronizarAcoesMaquinaUI() {
 window.abrirSeletorFoto = function(inputId) {
     const input = document.getElementById(inputId);
     if (input) input.click();
+};
+
+window.fecharMenuFotoEquipRetirado = function(slotKey) {
+    const menu = document.getElementById(`menuFotoEquipRetirado_${slotKey}`);
+    if (menu) menu.classList.remove('aberto');
+};
+
+window.toggleMenuFotoEquipRetirado = function(slotKey, event) {
+    if (event) event.stopPropagation();
+    const menu = document.getElementById(`menuFotoEquipRetirado_${slotKey}`);
+    if (!menu) return;
+    document.querySelectorAll('#containerFotosEquipamentosRetirados .retirada-foto-menu.aberto').forEach(el => {
+        if (el !== menu) el.classList.remove('aberto');
+    });
+    menu.classList.toggle('aberto');
 };
 
 window.mostrarPreviewFotoManutencao = function(input, imgId, textoId) {
