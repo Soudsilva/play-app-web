@@ -98,6 +98,10 @@
             width: 100%;
         }
 
+        .botao .texto-producao-maquinas {
+            font-size: 21px;
+        }
+
         .botao:hover { background: #3c5f9f; }
         .botao:active { transform: translateY(2px); background: #355792; transition: 0.05s; }
         .botao.manutencao-bloqueada,
@@ -360,7 +364,7 @@
 
         <div class="botao" id="btnProducaoMaquinasGestor" onclick="abrirTela('producao_maquinas_gestor')" style="display: none;">
             <span class="icone">&#128736;</span>
-            <span>Produ&ccedil;&atilde;o M&aacute;quinas</span>
+            <span class="texto-producao-maquinas">Produ&ccedil;&atilde;o M&aacute;quinas</span>
         </div>
 
         <div class="botao" id="btnFluxoCaixa" onclick="abrirTela('fluxo_caixa')" style="display: none;">
