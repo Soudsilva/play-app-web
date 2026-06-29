@@ -358,6 +358,11 @@
             <span>Financeiro</span>
         </div>
 
+        <div class="botao" id="btnProducaoMaquinasGestor" onclick="abrirTela('producao_maquinas_gestor')" style="display: none;">
+            <span class="icone">&#128736;</span>
+            <span>Produ&ccedil;&atilde;o M&aacute;quinas</span>
+        </div>
+
         <div class="botao" id="btnFluxoCaixa" onclick="abrirTela('fluxo_caixa')" style="display: none;">
             <span class="icone">&#128184;</span>
             <span>Fluxo de Caixa</span>
@@ -697,6 +702,10 @@
             window.location.href = 'Pagamentos_Gestor.html';
             return;
         }
+        if (tela === 'producao_maquinas_gestor') {
+            window.location.href = 'financeiro.html?modo=gestor';
+            return;
+        }
         if (tela === 'financeiro') {
             const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
             const u = listaColaboradores.find(c => String(c?.nome || '').trim() === nomeLogado);
@@ -744,6 +753,7 @@
             pix: document.getElementById('btnPix'),
             fluxoCaixa: document.getElementById('btnFluxoCaixa'),
             pagamentosGestor: document.getElementById('btnPagamentosGestor'),
+            producaoMaquinasGestor: document.getElementById('btnProducaoMaquinasGestor'),
             representante: document.getElementById('btnRepresentante'),
             verificarRotas: document.getElementById('btnVerificarRotas'),
             configAutomaticas: document.getElementById('btnConfigAutomaticas'),
@@ -851,6 +861,7 @@
             btns.verificacoesGerais.style.display = 'flex';
             btns.depositos.style.display = 'flex';
             btns.importarDataverse.style.display = perfil.includes('gestao_3') ? 'flex' : 'none';
+            btns.producaoMaquinasGestor.style.display = 'flex';
 
             btns.rotas.style.display = 'none';
             btns.verificarRotas.style.display = 'flex';

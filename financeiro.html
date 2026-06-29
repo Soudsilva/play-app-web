@@ -162,6 +162,45 @@
             padding: 14px 12px 0;
         }
 
+        .seletor-gestor {
+            display: none;
+            flex-direction: column;
+            gap: 7px;
+            border: 1.5px solid #6b87c8;
+            border-radius: 10px;
+            background: #102b68;
+            padding: 10px;
+        }
+
+        .seletor-gestor.visivel {
+            display: flex;
+        }
+
+        .seletor-gestor-label {
+            color: #ffeb3b;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .seletor-gestor-select {
+            width: 100%;
+            min-height: 42px;
+            border: 1.5px solid #6b87c8;
+            border-radius: 10px;
+            background: #173d8f;
+            color: #fff;
+            padding: 9px 12px;
+            font-size: 16px;
+            font-weight: 700;
+            outline: none;
+        }
+
+        .seletor-gestor-select option {
+            background: #0f2a66;
+            color: #fff;
+        }
+
 
         .lista-cards {
             display: flex;
@@ -668,6 +707,10 @@
         </header>
 
         <main class="conteudo">
+            <section id="seletorGestorProducao" class="seletor-gestor">
+                <label class="seletor-gestor-label" for="gestorColaboradorSelect">Colaborador</label>
+                <select id="gestorColaboradorSelect" class="seletor-gestor-select"></select>
+            </section>
 
             <section id="listaFinanceiro" class="lista-cards">
                 <div class="estado-carregando">
@@ -720,10 +763,12 @@
             'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
         ];
         const TIMEZONE = 'America/Sao_Paulo';
+        const MODO_GESTOR = new URLSearchParams(window.location.search).get('modo') === 'gestor';
 
         const estado = {
             historico: [],
             colaboradorLogado: null,
+            colaboradorGestorSelecionado: '',
             registros: [],
             remuneracaoMensal: [],
             mesRemuneracaoEscutado: '',
@@ -750,6 +795,8 @@
         const totalMesTopo = document.getElementById('totalMesTopo');
 
         const rodapeResumo = document.getElementById('rodapeResumo');
+        const seletorGestorProducao = document.getElementById('seletorGestorProducao');
+        const gestorColaboradorSelect = document.getElementById('gestorColaboradorSelect');
         const btnAbrirFaltas = document.getElementById('btnAbrirFaltas');
         const faltasModal = document.getElementById('faltasModal');
         const btnInformarFalta = document.getElementById('btnInformarFalta');
@@ -1001,7 +1048,11 @@
         }
 
         function obterRegistroRemuneracaoColaboradorLogado() {
-            const nome = String(estado.colaboradorLogado?.nome || localStorage.getItem('usuarioLogado') || '').trim();
+            const nome = String(
+                MODO_GESTOR
+                    ? estado.colaboradorGestorSelecionado
+                    : (estado.colaboradorLogado?.nome || localStorage.getItem('usuarioLogado') || '')
+            ).trim();
             if (!nome) return null;
 
             const chave = normalizarChaveUsuario(nome);
@@ -1033,7 +1084,9 @@
         }
 
         function calcularRemuneracaoEquipamentos(totalProduzido) {
-            const colaborador = estado.colaboradorLogado;
+            const colaborador = MODO_GESTOR
+                ? estado.colaboradoresProducaoEquipamentos.find(item => String(item?.nome || '').trim() === estado.colaboradorGestorSelecionado)
+                : estado.colaboradorLogado;
             if (colaborador?.producaoEquipamentos !== true) return 0;
             const percentual = parseNumero(colaborador?.bonusManutencao);
             if (percentual <= 0) return 0;
@@ -1109,10 +1162,40 @@
             }
 
             faltasColaboradorSelect.disabled = false;
+            const colaboradorSelecionado = MODO_GESTOR ? estado.colaboradorGestorSelecionado : String(faltasColaboradorSelect.value || '').trim();
             faltasColaboradorSelect.innerHTML = estado.colaboradoresProducaoEquipamentos
                 .map((colaborador) => {
                     const nome = String(colaborador?.nome || '').trim();
-                    return `<option value="${escaparHtml(nome)}">${escaparHtml(nome)}</option>`;
+                    const selected = nome && nome === colaboradorSelecionado ? ' selected' : '';
+                    return `<option value="${escaparHtml(nome)}"${selected}>${escaparHtml(nome)}</option>`;
+                })
+                .join('');
+        }
+
+        function renderizarSeletorGestor() {
+            if (!MODO_GESTOR) {
+                seletorGestorProducao.classList.remove('visivel');
+                return;
+            }
+
+            seletorGestorProducao.classList.add('visivel');
+            if (estado.colaboradoresProducaoEquipamentos.length === 0) {
+                gestorColaboradorSelect.innerHTML = '<option value="">Nenhum colaborador com Prod. Equip.</option>';
+                gestorColaboradorSelect.disabled = true;
+                estado.colaboradorGestorSelecionado = '';
+                return;
+            }
+
+            gestorColaboradorSelect.disabled = false;
+            if (!estado.colaboradorGestorSelecionado || !estado.colaboradoresProducaoEquipamentos.some(item => String(item?.nome || '').trim() === estado.colaboradorGestorSelecionado)) {
+                estado.colaboradorGestorSelecionado = String(estado.colaboradoresProducaoEquipamentos[0]?.nome || '').trim();
+            }
+
+            gestorColaboradorSelect.innerHTML = estado.colaboradoresProducaoEquipamentos
+                .map((colaborador) => {
+                    const nome = String(colaborador?.nome || '').trim();
+                    const selected = nome === estado.colaboradorGestorSelecionado ? ' selected' : '';
+                    return `<option value="${escaparHtml(nome)}"${selected}>${escaparHtml(nome)}</option>`;
                 })
                 .join('');
         }
@@ -1227,6 +1310,7 @@
             }
             pararSpinner();
             atualizarEscutaRemuneracaoMensal();
+            renderizarSeletorGestor();
 
             const totalProduzido = totalProduzidoMesTodos();
             totalMesTopo.textContent = totalProduzido.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -1290,6 +1374,11 @@
             if (faltasModal.classList.contains('aberto')) renderizarPainelFaltas();
         });
 
+        gestorColaboradorSelect.addEventListener('change', () => {
+            estado.colaboradorGestorSelecionado = String(gestorColaboradorSelect.value || '').trim();
+            renderizar();
+        });
+
         btnAbrirFaltas.addEventListener('click', abrirFaltas);
         btnInformarFalta.addEventListener('click', informarFalta);
         btnFecharFaltas.addEventListener('click', fecharFaltas);
@@ -1344,6 +1433,7 @@
                         && String(colaborador?.nome || '').trim();
                 })
                 .sort((a, b) => String(a?.nome || '').localeCompare(String(b?.nome || ''), 'pt-BR'));
+            renderizarSeletorGestor();
             estado.prontoColaboradores = true;
             if (faltasModal.classList.contains('aberto')) renderizarPainelFaltas();
             renderizar();
