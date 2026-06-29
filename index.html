@@ -629,6 +629,11 @@
         return valor.includes('gestao') || valor.includes('gestor');
     }
 
+    function perfilEhGestaoNivel3(perfil) {
+        const valor = normalizarTextoIndex(perfil).replace(/\s+/g, '_');
+        return valor.includes('gestao_3');
+    }
+
     function normalizarTextoIndex(valor) {
         return String(valor || '')
             .normalize('NFD')
@@ -707,6 +712,10 @@
             return;
         }
         if (tela === 'producao_maquinas_gestor') {
+            const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
+            const u = listaColaboradores.find(c => String(c?.nome || '').trim() === nomeLogado);
+            const perfil = u ? (u.nivel_completo || "") : "";
+            if (!perfilEhGestaoNivel3(perfil)) return;
             window.location.href = 'financeiro.html?modo=gestor';
             return;
         }
@@ -766,6 +775,7 @@
 
         // Por padrÃ£o, garante que o bloco de GestÃ£o nÃ£o vai deixar "espaÃ§o vazio" no menu.
         btns.blocoGestao.style.display = 'block';
+        btns.producaoMaquinasGestor.style.display = 'none';
 
         // 1. PERFIL ESTOQUE
         if (perfil.includes('estoque')) {
@@ -864,8 +874,8 @@
             btns.verificarEnvios.style.display = 'none';
             btns.verificacoesGerais.style.display = 'flex';
             btns.depositos.style.display = 'flex';
-            btns.importarDataverse.style.display = perfil.includes('gestao_3') ? 'flex' : 'none';
-            btns.producaoMaquinasGestor.style.display = 'flex';
+            btns.importarDataverse.style.display = perfilEhGestaoNivel3(perfil) ? 'flex' : 'none';
+            btns.producaoMaquinasGestor.style.display = perfilEhGestaoNivel3(perfil) ? 'flex' : 'none';
 
             btns.rotas.style.display = 'none';
             btns.verificarRotas.style.display = 'flex';
@@ -891,11 +901,11 @@
         }
 
         // Verificar Rotas: apenas Gestão Nível 3
-        btns.verificarRotas.style.display = perfil.includes('gestao_3') ? 'flex' : 'none';
-        btns.configAutomaticas.style.display = perfil.includes('gestao_3') ? 'flex' : 'none';
+        btns.verificarRotas.style.display = perfilEhGestaoNivel3(perfil) ? 'flex' : 'none';
+        btns.configAutomaticas.style.display = perfilEhGestaoNivel3(perfil) ? 'flex' : 'none';
 
         // GESTOR NÍVEL 3: botão Financeiro (Pagamentos_Gestor), sem Fluxo de Caixa
-        if (perfil.includes('gestao_3')) {
+        if (perfilEhGestaoNivel3(perfil)) {
             btns.pagamentosGestor.style.display = 'flex';
             btns.fluxoCaixa.style.display = 'none';
         }

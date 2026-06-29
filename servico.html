@@ -351,6 +351,91 @@
             line-height: 1.2;
             text-align: center;
         }
+        .pix-servico-adicoes {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .pix-servico-adicao-card {
+            display: grid;
+            grid-template-columns: 74px minmax(0, 1fr);
+            gap: 10px;
+            align-items: center;
+            background: #123f64;
+            border: 1px solid #38bdf8;
+            border-radius: 12px;
+            padding: 8px;
+        }
+        .pix-servico-adicao-card.sem-foto {
+            grid-template-columns: minmax(0, 1fr);
+        }
+        .pix-servico-adicao-foto {
+            position: relative;
+            width: 74px;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #475569;
+            background: #0f172a;
+            cursor: zoom-in;
+        }
+        .pix-servico-adicao-foto img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .pix-servico-adicao-foto .pix-servico-foto-label {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: 0;
+            padding: 3px 4px;
+            background: #000000;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.2;
+            text-align: center;
+        }
+        .pix-servico-adicao-info {
+            min-width: 0;
+            color: #ffffff;
+            font-weight: 700;
+        }
+        .pix-servico-adicao-tipo {
+            color: #93c5fd;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.15;
+            text-transform: uppercase;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .pix-servico-adicao-titulo {
+            font-size: 17px;
+            line-height: 1.2;
+            margin-bottom: 5px;
+        }
+        .pix-servico-adicao-linha {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 14px;
+            line-height: 1.25;
+            padding-top: 3px;
+        }
+        .pix-servico-adicao-linha span {
+            color: #cbd5e1;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .pix-servico-adicao-linha strong {
+            color: #ffffff;
+            text-align: right;
+        }
         .pix-servico-lista {
             display: flex;
             flex-direction: column;
@@ -1148,7 +1233,45 @@
         return null;
     }
 
-    function montarDestaquePixServico(itens) {
+    function montarPixAdicionadoServico(item) {
+        const nome = String(item?.nome || 'Maquina').trim();
+        const pix = String(item?.pix || '-').trim() || '-';
+        const contador = String(item?.contador || '').trim();
+        const responsavel = String(item?.por || '').trim();
+        const fotoThumbUrl = String(item?.fotoThumbUrl || '').trim();
+        const fotoFullUrl = String(item?.fotoFullUrl || fotoThumbUrl).trim();
+        const fotoHtml = fotoThumbUrl
+            ? `<div class="pix-servico-adicao-foto" onclick="window.verFoto(this.dataset.full)" data-full="${escHtml(fotoFullUrl)}">
+                   <img src="${escHtml(fotoThumbUrl)}" alt="${escHtml(nome)}" loading="lazy">
+                   <div class="pix-servico-foto-label">${escHtml(nome)}</div>
+               </div>`
+            : '';
+
+        return `
+            <div class="pix-servico-adicao-card${fotoHtml ? '' : ' sem-foto'}">
+                ${fotoHtml}
+                <div class="pix-servico-adicao-info">
+                    <div class="pix-servico-adicao-tipo">M&aacute;quina instalada</div>
+                    <div class="pix-servico-adicao-titulo">${escHtml(nome)}</div>
+                    <div class="pix-servico-adicao-tipo">Pix instalado</div>
+                    <div class="pix-servico-adicao-linha"><span>Pix</span><strong>${escHtml(pix)}</strong></div>
+                    ${contador ? `<div class="pix-servico-adicao-linha"><span>Contador</span><strong>${escHtml(contador)}</strong></div>` : ''}
+                    ${responsavel ? `<div class="pix-servico-adicao-linha"><span>Feito por</span><strong>${escHtml(responsavel)}</strong></div>` : ''}
+                </div>
+            </div>`;
+    }
+
+    function montarDestaquePixServico(itens, opcoes = {}) {
+        const somentePix = opcoes.somentePix === true;
+        const adicionados = (Array.isArray(itens) ? itens : [])
+            .filter(item => item?.tipo === 'adicao' && String(item?.nome || '').trim());
+        if (!somentePix && adicionados.length > 0) {
+            return `
+                <div class="pix-servico-adicoes">
+                    ${adicionados.map(item => montarPixAdicionadoServico(item)).join('')}
+                </div>`;
+        }
+
         const resumo = obterResumoDestaquePix(itens);
         if (!resumo) return '';
         const responsavel = (Array.isArray(itens) ? itens : [])
@@ -1206,6 +1329,8 @@
     }
 
     function montarDestaqueMaquinaRetiradaServico(ev) {
+        if (ev?.somentePix) return '';
+
         const retiradas = Array.isArray(ev?.equipRetiradas) ? ev.equipRetiradas : [];
         const itens = retiradas
             .map(item => {
@@ -1300,6 +1425,140 @@
             .join(' ');
     }
 
+    function extrairClienteCadastroPixServico(registro) {
+        const identificacao = String(registro?.identificacao || '').trim();
+        const clienteFallback = String(registro?.cliente || '').trim();
+        const match = identificacao.match(/^N\.\s*([^-]+)\s*-\s*(.+)$/i);
+        if (match) {
+            return {
+                numero: String(match[1] || '').trim(),
+                nome: String(match[2] || '').trim() || clienteFallback
+            };
+        }
+        return {
+            numero: '',
+            nome: clienteFallback || identificacao || 'Cliente'
+        };
+    }
+
+    function montarEventoCadastroPixConfirmado(registro, tipoEvento) {
+        const numeroPix = String(registro?.numero_pix || '').trim();
+        const equipamento = String(registro?.equipamento || '').trim();
+        const dataEvento = String(tipoEvento === 'retirada'
+            ? registro?.data_retirada || ''
+            : registro?.data || '').trim();
+        if (!numeroPix || !dataEvento) return null;
+
+        const cliente = extrairClienteCadastroPixServico(registro);
+        const percentual = Number(registro?.percentual_comissao_cliente || 0);
+        const percentualTxt = Number.isInteger(percentual)
+            ? `${percentual}%`
+            : `${percentual.toFixed(2).replace('.', ',')}%`;
+        const responsavel = String(tipoEvento === 'retirada'
+            ? registro?.tecnico_retirada || registro?.tecnico || ''
+            : registro?.tecnico || '').trim() || '-';
+
+        const pixItem = tipoEvento === 'retirada'
+            ? {
+                tipo: 'retirada',
+                nome: equipamento || 'Pix',
+                pix: numeroPix,
+                por: responsavel,
+                dataEvento,
+                contadorAnterior: String(registro?.contador_anterior_retirada || registro?.contador || '').trim(),
+                contadorAtual: String(registro?.contador_atual_retirada || '').trim(),
+                valorTotal: Number(registro?.valor_bruto_cliente || 0),
+                valorComissao: Number(registro?.valor_comissao_cliente || 0),
+                percentualTxt,
+                fotoThumbUrl: String(registro?.foto_contador_retirada_thumb || registro?.foto_contador_retirada || '').trim(),
+                fotoFullUrl: String(registro?.foto_contador_retirada || registro?.foto_contador_retirada_thumb || '').trim(),
+                mostrarResumoRetirada: registro?.retirou_trocou_contador === true
+            }
+            : {
+                tipo: 'adicao',
+                nome: equipamento || 'Pix',
+                pix: numeroPix,
+                por: responsavel,
+                dataEvento,
+                contador: String(registro?.contador || '').trim(),
+                fotoThumbUrl: String(registro?.foto_contador_instalacao_thumb || registro?.foto_contador_instalacao || '').trim(),
+                fotoFullUrl: String(registro?.foto_contador_instalacao || registro?.foto_contador_instalacao_thumb || '').trim()
+            };
+
+        return {
+            tipo: 'pix-manutencao',
+            id: `cadastro_pix_${registro?.firebaseUrl || numeroPix}_${tipoEvento}`,
+            data: dataEvento,
+            clienteNome: cliente.nome,
+            clienteNumero: cliente.numero,
+            clienteRota: '',
+            clienteCidade: '',
+            tecnico: responsavel,
+            confirmedBy: responsavel,
+            dataConfirmacao: dataEvento,
+            confirmadoGestor: true,
+            semDesfazer: true,
+            somentePix: true,
+            equipColocadas: tipoEvento === 'adicao' ? [{ nome: equipamento || `Pix ${numeroPix}`, pix: numeroPix, qtd: '1' }] : [],
+            equipRetiradas: tipoEvento === 'retirada' ? [{ nome: equipamento || `Pix ${numeroPix}`, pix: numeroPix, qtd: '1' }] : [],
+            foto: '',
+            enderecoCliente: '',
+            enderecoMaquina: '',
+            pontoEncerrado: false,
+            pixItens: [pixItem],
+            buscaExtra: [
+                montarBuscaExtraPix([pixItem]),
+                registro?.cliente,
+                registro?.identificacao,
+                registro?.equipamento,
+                registro?.origem,
+                registro?.situacao
+            ].filter(Boolean).join(' ')
+        };
+    }
+
+    function cadastroPixAindaPendenteNoCliente(registro, tipoEvento) {
+        const clienteInfo = extrairClienteCadastroPixServico(registro);
+        const numeroCliente = String(clienteInfo?.numero || '').trim();
+        const nomeCliente = normalizarTextoBusca(clienteInfo?.nome || registro?.cliente || '');
+        const numeroPix = String(registro?.numero_pix || '').trim();
+        const equipamento = normalizarTextoBusca(registro?.equipamento || '');
+        if (!numeroPix) return false;
+
+        const cliente = _clientes.find(c => {
+            const mesmoNumero = numeroCliente && String(c?.numero || '').trim() === numeroCliente;
+            const mesmoNome = nomeCliente && normalizarTextoBusca(c?.nome || '') === nomeCliente;
+            return mesmoNumero || mesmoNome;
+        });
+        if (!cliente) return false;
+
+        return normalizarEquipDetalhesCliente(cliente).some(item => {
+            const itemPix = String(item?.pix || item?.pixRetiradoPendente || '').trim();
+            const mesmoPix = itemPix === numeroPix;
+            const mesmoEquipamento = !equipamento || normalizarTextoBusca(item?.nome || '') === equipamento;
+            const pendente = item?.aguardandoConfirmacao === true
+                || String(item?.manutencaoPendente || '').trim()
+                || String(item?.pixRetiradoPendente || '').trim();
+            return mesmoPix && mesmoEquipamento && pendente;
+        });
+    }
+
+    function obterEventosCadastroPixConfirmados() {
+        const eventos = [];
+        _pixCadastros.forEach(registro => {
+            const instalacao = cadastroPixAindaPendenteNoCliente(registro, 'adicao')
+                ? null
+                : montarEventoCadastroPixConfirmado(registro, 'adicao');
+            if (instalacao) eventos.push(instalacao);
+
+            const retirada = cadastroPixAindaPendenteNoCliente(registro, 'retirada')
+                ? null
+                : montarEventoCadastroPixConfirmado(registro, 'retirada');
+            if (retirada) eventos.push(retirada);
+        });
+        return eventos.filter(ev => dentroDomes(ev.data));
+    }
+
     function formatarData(iso) {
         if (!iso) return '—';
         const d = new Date(iso);
@@ -1315,6 +1574,43 @@
         const d = new Date(iso);
         if (isNaN(d)) return '';
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function obterChaveDuplicidadePixServico(ev, item) {
+        const pix = normalizarPix(item?.pix);
+        if (!pix) return '';
+
+        const tipo = item?.tipo === 'retirada' ? 'retirada' : 'adicao';
+        const numeroCliente = String(ev?.clienteNumero || ev?.cliente?.numero || '').trim();
+        const nomeCliente = normalizarTextoBusca(ev?.clienteNome || ev?.cliente?.nome || '');
+        const clienteChave = numeroCliente ? `n:${numeroCliente}` : (nomeCliente ? `c:${nomeCliente}` : '');
+        const dia = dataLocalYMD(item?.dataEvento || ev?.data || ev?.dataCadastro || '');
+        if (!clienteChave || !dia) return '';
+
+        return `${tipo}|${pix}|${clienteChave}|${dia}`;
+    }
+
+    function obterChavesPixEventosServico(eventos) {
+        const chaves = new Set();
+        (Array.isArray(eventos) ? eventos : []).forEach(ev => {
+            (Array.isArray(ev?.pixItens) ? ev.pixItens : []).forEach(item => {
+                const chave = obterChaveDuplicidadePixServico(ev, item);
+                if (chave) chaves.add(chave);
+            });
+        });
+        return chaves;
+    }
+
+    function filtrarCadastrosPixDuplicadosServico(eventosCadastroPix, eventosReferencia) {
+        const chavesReferencia = obterChavesPixEventosServico(eventosReferencia);
+        if (chavesReferencia.size === 0) return eventosCadastroPix;
+
+        return (Array.isArray(eventosCadastroPix) ? eventosCadastroPix : []).filter(ev => {
+            return !(Array.isArray(ev?.pixItens) ? ev.pixItens : []).some(item => {
+                const chave = obterChaveDuplicidadePixServico(ev, item);
+                return chave && chavesReferencia.has(chave);
+            });
+        });
     }
 
     function rotuloData(ymd) {
@@ -1369,6 +1665,12 @@
 
     function atualizarBadgesAbas() {
         const eventosManutencao = obterEventosManutencaoPorAtendimentos();
+        const eventosManutencaoConfirmados = eventosManutencao
+            .filter(ev => ev.confirmadoGestor && dentroDomes(ev.data));
+        const eventosCadastroPixConfirmados = filtrarCadastrosPixDuplicadosServico(
+            obterEventosCadastroPixConfirmados(),
+            eventosManutencaoConfirmados
+        );
 
         // Pendentes: todos os meses
         const totalPendentes =
@@ -1377,8 +1679,9 @@
 
         // Confirmados: só o mês atual
         const totalConfirmados =
-            eventosManutencao.filter(ev => ev.confirmadoGestor && dentroDomes(ev.data)).length +
-            _clientes.filter(c => c.statusCadastro === 'aprovado' && dentroDomes(c.dataCadastro)).length;
+            eventosManutencaoConfirmados.length +
+            _clientes.filter(c => c.statusCadastro === 'aprovado' && dentroDomes(c.dataCadastro)).length +
+            eventosCadastroPixConfirmados.length;
 
         const bP = document.getElementById('badge-pendentes');
         const bC = document.getElementById('badge-confirmados');
@@ -1394,12 +1697,19 @@
 
         const eventosManutencao = obterEventosManutencaoPorAtendimentos()
             .filter(ev => (pendente ? !ev.confirmadoGestor : ev.confirmadoGestor) && dentroDomes(ev.data));
+        const eventosCadastroPixConfirmados = pendente
+            ? []
+            : filtrarCadastrosPixDuplicadosServico(obterEventosCadastroPixConfirmados(), eventosManutencao);
 
         // Novos pontos — pendentes (em_analise) ou confirmados (aprovado)
-        const statusAlvo = pendente ? 'em_analise' : 'aprovado';
         const eventosNovos = _clientes
-            .filter(c => c.statusCadastro === statusAlvo)
             .map(c => {
+                const statusCadastro = String(c?.statusCadastro || '').trim();
+                const deveExibir = pendente
+                    ? statusCadastro === 'em_analise'
+                    : statusCadastro === 'aprovado';
+                if (!deveExibir) return null;
+
                 const solicitacao = c.pontoNovoOrigemId
                     ? _manutencoes.find(m => m.firebaseUrl === c.pontoNovoOrigemId)
                     : null;
@@ -1429,9 +1739,10 @@
                     buscaExtra: montarBuscaExtraPix(itensPix)
                 };
             })
+            .filter(Boolean)
             .filter(ev => ev.pixItens.length > 0 ? dentroDomes(ev.data) : dentroDomes(ev.dataCadastro));
 
-        let todos = [...eventosManutencao, ...eventosNovos]
+        let todos = [...eventosManutencao, ...eventosNovos, ...eventosCadastroPixConfirmados]
             .sort((a, b) => {
                 const dataA = new Date(a.data || 0);
                 const dataB = new Date(b.data || 0);
@@ -1475,7 +1786,7 @@
 
     function cardPixCadastro(ev) {
         const rodape = ev.confirmado
-            ? podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
+            ? !ev.semDesfazer && podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
                 ? `<button class="btn-desfazer" onclick="window.desfazerNovoPonto('${ev.id}',this)">&#8617; Desfazer</button>`
                 : `<span class="confirmado-por">&#10003; Aprovado</span>`
             : `<button class="btn-gestor-confirmar" onclick="window.confirmarPixServico(this,'${ev.id}')">Confirmar</button>`;
@@ -1484,7 +1795,7 @@
             <div class="card pix-servico" id="card-${ev.id}">
                 <div class="pix-servico-origem-wrap"><div class="pix-servico-origem">${ev.pixItens.some(item => item.tipo === 'adicao' && item.nome) ? 'Maquina + Pix' : 'Pix'}</div></div>
                 <div class="pix-servico-cliente">&#128205; ${montarIdentificacaoPix(ev.clienteNumero, ev.clienteNome)}</div>
-                ${montarDestaquePixServico(ev.pixItens)}
+                ${montarDestaquePixServico(ev.pixItens, { somentePix: ev.somentePix })}
                 ${montarListaPixServico(ev.pixItens)}
                 ${montarFotosInstalacaoHtml(ev.fotosInstalacao)}
                 <div class="card-rodape" style="margin-top:12px;">
@@ -1530,12 +1841,13 @@
     function cardPixManutencao(ev, pendente) {
         const apenasRetirada = ev.pixItens.every(item => item.tipo === 'retirada');
         const apenasAdicao = ev.pixItens.every(item => item.tipo === 'adicao');
+        const temMaquinaComPix = !ev.somentePix && ev.pixItens.some(item => item.tipo === 'adicao' && String(item?.nome || '').trim());
         const origemClasse = apenasRetirada ? 'retirada' : (apenasAdicao ? 'adicao' : '');
-        const origemTexto = apenasRetirada ? 'Retirada' : (apenasAdicao ? 'Adicao' : 'Movimentacao');
+        const origemTexto = temMaquinaComPix ? 'Maquina + Pix' : (apenasRetirada ? 'Retirada' : (apenasAdicao ? 'Adicao' : 'Movimentacao'));
         const enderecosServico = montarHtmlEnderecosServico(ev, { modo: apenasRetirada ? 'retirada' : 'adicao' });
         const rodape = pendente
             ? `<button class="btn-ok" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`
-            : podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
+            : !ev.semDesfazer && podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
                 ? `<button class="btn-desfazer" onclick="window.desfazerManutencao('${ev.id}',this)">&#8617; Desfazer</button>`
                 : `<span class="confirmado-por">&#10003; ${ev.confirmedBy} &nbsp;&middot;&nbsp; ${formatarData(ev.dataConfirmacao)}</span>`;
 
@@ -1543,7 +1855,7 @@
             <div class="card pix-servico" id="card-${ev.id}">
                 <div class="pix-servico-origem ${origemClasse}">${origemTexto}</div>
                 <div class="pix-servico-cliente">&#128205; ${montarIdentificacaoPix(ev.clienteNumero, ev.clienteNome)}</div>
-                ${montarDestaquePixServico(ev.pixItens)}
+                ${montarDestaquePixServico(ev.pixItens, { somentePix: ev.somentePix })}
                 ${montarDestaqueMaquinaRetiradaServico(ev)}
                 ${montarListaPixServico(ev.pixItens)}
                 ${enderecosServico.html}
