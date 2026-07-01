@@ -218,9 +218,9 @@
         }
         .historico-filtros {
             display: grid;
-            grid-template-columns: 118px 1fr;
+            grid-template-columns: minmax(0, 1fr);
             gap: 8px;
-            align-items: center;
+            align-items: stretch;
         }
         .historico-filtros .input-busca {
             margin-bottom: 0;
@@ -238,6 +238,47 @@
             cursor: pointer;
             user-select: none;
             -webkit-user-select: none;
+        }
+        .historico-mes-nav {
+            display: grid;
+            grid-template-columns: 44px minmax(0, 1fr) 44px;
+            align-items: center;
+            gap: 6px;
+        }
+        .historico-mes-btn,
+        .historico-mes-centro {
+            height: 42px;
+            box-sizing: border-box;
+            border-radius: 10px;
+            border: 1.5px solid #7fa6ff;
+            background: #244d9b;
+            color: #ffffff;
+            font-weight: 700;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .historico-mes-centro {
+            font-size: 15px;
+            padding: 0 8px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .historico-mes-btn {
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+        }
+        .historico-mes-btn:active { background: #1b3f85; }
+        .historico-mes-btn:disabled {
+            color: #7fa6ff;
+            border-color: #3d63b8;
+            cursor: default;
         }
         .historico-responsavel-chip {
             display: none;
@@ -918,9 +959,7 @@
         <div class="historico-sticky">
             <div class="titulo-hist">Últimas Movimentações</div>
             <div class="historico-filtros">
-                <select id="mesHistorico" class="historico-mes-select" onchange="alterarMesHistorico(this.value)">
-                    <option value="">Mês</option>
-                </select>
+                <div id="mesHistorico" class="historico-mes-nav"></div>
                 <input type="text" id="filtroHistorico" class="input-busca" placeholder="Pesquisar no histórico..." oninput="filtrarHistorico()">
             </div>
             <div id="historicoResponsavelAtual" class="historico-responsavel-chip"></div>
@@ -983,6 +1022,7 @@
     let itensVisivelEstoque = false;
     let posseUsuarioVisivel = false;
     let mesHistoricoSelecionado = '';
+    let mesHistoricoSelecionadoManual = false;
     let responsavelHistoricoAtual = '';
     let unsubscribeHistoricoResponsavel = null;
     let unsubscribePosseUsuario = null;
@@ -1034,8 +1074,21 @@
     }
 
     function obterMesAtual() {
-        const agora = new Date();
-        return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
+        const partes = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            year: 'numeric',
+            month: '2-digit'
+        }).formatToParts(new Date());
+        const ano = partes.find(parte => parte.type === 'year')?.value;
+        const mes = partes.find(parte => parte.type === 'month')?.value;
+        return ano && mes ? `${ano}-${mes}` : '';
+    }
+
+    function obterMesesHistorico() {
+        const meses = new Set(historicoGlobal.map(obterAnoMesMovimentacao).filter(Boolean));
+        const mesAtual = obterMesAtual();
+        if (mesAtual) meses.add(mesAtual);
+        return [...meses].sort((a, b) => b.localeCompare(a));
     }
 
     function atualizarResponsavelHistoricoChip() {
@@ -1049,15 +1102,22 @@
 
     function atualizarMesesHistorico() {
         if (!mesHistoricoEl) return;
-        const meses = [...new Set(historicoGlobal.map(obterAnoMesMovimentacao).filter(Boolean))]
-            .sort((a, b) => b.localeCompare(a));
+        const meses = obterMesesHistorico();
         const mesAtual = obterMesAtual();
-        if (!mesHistoricoSelecionado || !meses.includes(mesHistoricoSelecionado)) {
-            mesHistoricoSelecionado = meses.includes(mesAtual) ? mesAtual : (meses[0] || '');
+        if (!mesHistoricoSelecionadoManual) {
+            mesHistoricoSelecionado = mesAtual;
+        } else if (!mesHistoricoSelecionado || !meses.includes(mesHistoricoSelecionado)) {
+            mesHistoricoSelecionado = mesAtual;
+            mesHistoricoSelecionadoManual = false;
         }
-        mesHistoricoEl.innerHTML = meses.length
-            ? meses.map(mes => `<option value="${escaparHtml(mes)}"${mes === mesHistoricoSelecionado ? ' selected' : ''}>${escaparHtml(rotuloAnoMes(mes))}</option>`).join('')
-            : '<option value="">Mês</option>';
+        const indice = meses.indexOf(mesHistoricoSelecionado);
+        const temAnterior = indice >= 0 && indice < meses.length - 1;
+        const temProximo = indice > 0;
+        mesHistoricoEl.innerHTML = `
+            <button class="historico-mes-btn" type="button" ${temAnterior ? '' : 'disabled'} onclick="event.stopPropagation(); window.navegarMesHistorico(1)">&#8249;</button>
+            <div class="historico-mes-centro">${escaparHtml(rotuloAnoMes(mesHistoricoSelecionado))}</div>
+            <button class="historico-mes-btn" type="button" ${temProximo ? '' : 'disabled'} onclick="event.stopPropagation(); window.navegarMesHistorico(-1)">&#8250;</button>
+        `;
     }
 
     function aplicarHistoricoRecebido(lista) {
@@ -1350,8 +1410,19 @@
 
     window.alterarMesHistorico = function(valor) {
         mesHistoricoSelecionado = String(valor || '');
+        mesHistoricoSelecionadoManual = true;
+        atualizarMesesHistorico();
         atualizarBotaoHistorico();
         filtrarHistorico();
+    };
+
+    window.navegarMesHistorico = function(delta) {
+        const meses = obterMesesHistorico();
+        if (!meses.length) return;
+        const idx = Math.max(0, meses.indexOf(mesHistoricoSelecionado));
+        const prox = Math.max(0, Math.min(meses.length - 1, idx + Number(delta || 0)));
+        if (meses[prox] === mesHistoricoSelecionado) return;
+        window.alterarMesHistorico(meses[prox]);
     };
 
     window.filtrarHistorico = function() {
