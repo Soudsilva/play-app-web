@@ -2564,10 +2564,75 @@ function _normalizarListaFluxoCaixa(data) {
     return Object.keys(data).map(key => ({ firebaseKey: key, ...data[key] }));
 }
 
+function _normalizarResumosMensaisFluxoCaixa(data) {
+    if (!data || typeof data !== 'object') return [];
+    return Object.keys(data)
+        .filter(anoMes => /^\d{4}-\d{2}$/.test(anoMes))
+        .map(anoMes => ({
+            anoMes,
+            saldoMes: Number(data[anoMes]?.saldoMes || 0)
+        }))
+        .sort((a, b) => a.anoMes.localeCompare(b.anoMes));
+}
+
 function _obterInicioJanelaFluxoCaixa(mesesRecentes = 3) {
     const totalMeses = Math.max(1, Number(mesesRecentes || 3));
     const agora = new Date();
     return new Date(agora.getFullYear(), agora.getMonth() - (totalMeses - 1), 1).getTime();
+}
+
+function _obterAnoMesFluxoCaixa(movimento) {
+    const valor = String(movimento?.data || '').trim();
+    if (/^\d{4}-\d{2}/.test(valor)) return valor.slice(0, 7);
+
+    const dataBase = valor || movimento?.criado_em || '';
+    if (!dataBase) return '';
+
+    const data = new Date(dataBase);
+    if (Number.isNaN(data.getTime())) return '';
+
+    const partes = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric',
+        month: '2-digit'
+    }).formatToParts(data);
+    const mapa = Object.fromEntries(partes.map(p => [p.type, p.value]));
+    return mapa.year && mapa.month ? `${mapa.year}-${mapa.month}` : '';
+}
+
+function _obterMesAnteriorFluxoCaixa(anoMes) {
+    const [anoRaw, mesRaw] = String(anoMes || '').split('-').map(Number);
+    if (!anoRaw || !mesRaw) return '';
+    const data = new Date(anoRaw, mesRaw - 2, 1);
+    return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+}
+
+async function _atualizarResumoMensalFluxoCaixa(chaveUsuario, movimento, opcoes = {}) {
+    const anoMes = _obterAnoMesFluxoCaixa(movimento);
+    if (!chaveUsuario || !anoMes) return;
+
+    const valor = Number(movimento?.valor || 0);
+    if (!Number.isFinite(valor) || valor <= 0) return;
+
+    const tipo = String(movimento?.tipo || '').trim();
+    const multiplicador = Number(opcoes?.multiplicador ?? 1);
+    const deltaBase = tipo === 'entrada' ? valor : -valor;
+    const delta = deltaBase * (Number.isFinite(multiplicador) ? multiplicador : 1);
+    const mesAnterior = _obterMesAnteriorFluxoCaixa(anoMes);
+    const anteriorSnap = mesAnterior
+        ? await get(ref(db, `fluxo_caixa/${chaveUsuario}/resumos_mensais/${mesAnterior}/saldoMes`))
+        : null;
+    const saldoAnterior = anteriorSnap?.exists() ? Number(anteriorSnap.val() || 0) : 0;
+
+    await runTransaction(
+        ref(db, `fluxo_caixa/${chaveUsuario}/resumos_mensais/${anoMes}`),
+        (atual) => {
+            const saldoBase = atual && Number.isFinite(Number(atual.saldoMes))
+                ? Number(atual.saldoMes)
+                : saldoAnterior;
+            return { saldoMes: saldoBase + delta };
+        }
+    );
 }
 
 export function dbEscutarFluxoCaixa(nomeUsuario, callback) {
@@ -2579,6 +2644,18 @@ export function dbEscutarFluxoCaixa(nomeUsuario, callback) {
 
     return onValue(ref(db, `fluxo_caixa/${chave}/movimentacoes`), (snapshot) => {
         callback(_normalizarListaFluxoCaixa(snapshot.val()));
+    });
+}
+
+export function dbEscutarResumosMensaisFluxoCaixa(nomeUsuario, callback) {
+    const chave = _normalizarChaveUsuario(nomeUsuario);
+    if (!chave) {
+        callback([]);
+        return () => {};
+    }
+
+    return onValue(ref(db, `fluxo_caixa/${chave}/resumos_mensais`), (snapshot) => {
+        callback(_normalizarResumosMensaisFluxoCaixa(snapshot.val()));
     });
 }
 
@@ -2609,11 +2686,14 @@ export async function dbListarFluxoCaixa(nomeUsuario, { mesesRecentes = 3 } = {}
     }
 }
 
-export async function dbSalvarMovimentoFluxoCaixa(nomeUsuario, movimento) {
+export async function dbSalvarMovimentoFluxoCaixa(nomeUsuario, movimento, opcoes = {}) {
     try {
         const chave = _normalizarChaveUsuario(nomeUsuario);
         if (!chave) throw new Error('USUARIO_INVALIDO_FLUXO_CAIXA');
         const novoRef = await push(ref(db, `fluxo_caixa/${chave}/movimentacoes`), movimento);
+        if (opcoes?.atualizarResumoMensal === true) {
+            await _atualizarResumoMensalFluxoCaixa(chave, movimento);
+        }
         await _tentarRecalcularRemuneracoes();
         return { firebaseKey: novoRef.key, ...movimento };
     } catch (error) {
@@ -2626,7 +2706,13 @@ export async function dbExcluirMovimentoFluxoCaixa(nomeUsuario, firebaseKey) {
     try {
         const chave = _normalizarChaveUsuario(nomeUsuario);
         if (!chave) throw new Error('USUARIO_INVALIDO_FLUXO_CAIXA');
-        await remove(ref(db, `fluxo_caixa/${chave}/movimentacoes/${firebaseKey}`));
+        const movRef = ref(db, `fluxo_caixa/${chave}/movimentacoes/${firebaseKey}`);
+        const movimentoSnap = await get(movRef);
+        const movimento = movimentoSnap.exists() ? movimentoSnap.val() : null;
+        await remove(movRef);
+        if (movimento) {
+            await _atualizarResumoMensalFluxoCaixa(chave, movimento, { multiplicador: -1 });
+        }
         await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("ERRO AO EXCLUIR MOVIMENTO DO FLUXO DE CAIXA:", error);
@@ -4715,14 +4801,45 @@ export async function dbSalvarDeposito(deposito) {
     try {
         const chave = _normalizarChaveUsuario(deposito.usuario);
         if (!chave) throw new Error('Usuario invalido para salvar deposito.');
-        await push(ref(db, `${DEPOSITOS_ROOT}/${chave}`), {
+        const dados = {
             ...deposito,
             status: deposito.status || 'aguardando_conferencia'
-        });
+        };
+        const novoRef = await push(ref(db, `${DEPOSITOS_ROOT}/${chave}`), dados);
+        return { ...dados, firebaseUrl: novoRef.key };
     } catch (error) {
         console.error("ERRO AO SALVAR DEPOSITO:", error);
         throw error;
     }
+}
+
+export async function dbSalvarResumoMensalDeposito(nomeUsuario, anoMes, saldoPendente) {
+    try {
+        const chave = _normalizarChaveUsuario(nomeUsuario);
+        const mes = String(anoMes || '').trim();
+        if (!chave || !/^\d{4}-\d{2}$/.test(mes)) throw new Error('Resumo mensal de deposito invalido.');
+        await set(ref(db, `${DEPOSITOS_ROOT}/${chave}/resumos_mensais/${mes}`), {
+            saldoPendente: Number(saldoPendente || 0)
+        });
+    } catch (error) {
+        console.error("ERRO AO SALVAR RESUMO MENSAL DEPOSITO:", error);
+        throw error;
+    }
+}
+
+export function dbEscutarResumosMensaisDepositos(nomeUsuario, callback) {
+    const chave = _normalizarChaveUsuario(nomeUsuario);
+    if (!chave) {
+        callback({});
+        return () => {};
+    }
+
+    return onValue(ref(db, `${DEPOSITOS_ROOT}/${chave}/resumos_mensais`), (snapshot) => {
+        callback(snapshot.val() || {});
+    }, (error) => {
+        console.error("ERRO AO ESCUTAR RESUMOS MENSAIS DEPOSITOS:", error);
+        callback({});
+    });
 }
 
 export async function dbExcluirDeposito(nomeUsuario, firebaseKey) {
@@ -4790,7 +4907,9 @@ export async function dbListarDepositos(nomeUsuario) {
         const snapshot = await get(ref(db, `${DEPOSITOS_ROOT}/${chave}`));
         if (snapshot.exists()) {
             const data = snapshot.val();
-            return Object.keys(data).map(key => ({ ...data[key], firebaseUrl: key }));
+            return Object.keys(data)
+                .filter(key => key !== 'resumos_mensais')
+                .map(key => ({ ...data[key], firebaseUrl: key }));
         }
     } catch (error) {
         console.error("ERRO AO LISTAR DEPOSITOS:", error);
@@ -4808,7 +4927,9 @@ export function dbEscutarDepositos(nomeUsuario, callback) {
     return onValue(ref(db, `${DEPOSITOS_ROOT}/${chave}`), (snapshot) => {
         const data = snapshot.val();
         const lista = data
-            ? Object.keys(data).map(key => ({ ...data[key], firebaseUrl: key }))
+            ? Object.keys(data)
+                .filter(key => key !== 'resumos_mensais')
+                .map(key => ({ ...data[key], firebaseUrl: key }))
             : [];
         callback(lista);
     });
@@ -4818,12 +4939,14 @@ export function dbEscutarTodosDepositos(callback) {
     return onValue(ref(db, DEPOSITOS_ROOT), (snapshot) => {
         const data = snapshot.val() || {};
         const lista = Object.entries(data).flatMap(([usuarioChave, depositosUsuario]) =>
-            Object.entries(depositosUsuario || {}).map(([firebaseUrl, deposito]) => ({
-                ...(deposito || {}),
-                firebaseUrl,
-                usuarioChave,
-                usuario: deposito?.usuario || usuarioChave
-            }))
+            Object.entries(depositosUsuario || {})
+                .filter(([firebaseUrl]) => firebaseUrl !== 'resumos_mensais')
+                .map(([firebaseUrl, deposito]) => ({
+                    ...(deposito || {}),
+                    firebaseUrl,
+                    usuarioChave,
+                    usuario: deposito?.usuario || usuarioChave
+                }))
         );
         callback(lista);
     }, (error) => {

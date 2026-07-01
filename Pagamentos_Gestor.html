@@ -710,6 +710,7 @@
         dbExcluirHistoricoBalanco,
         dbEscutarHistoricoBalancoCompleto,
         dbEscutarFluxoCaixa,
+        dbEscutarResumosMensaisFluxoCaixa,
         dbRecalcularRemuneracoes,
         dbEscutarMesesRemuneracao,
         dbEscutarRemuneracaoMensal,
@@ -732,6 +733,7 @@
         tipoAtual: 'gasto',
         categoriaAtual: CATEGORIA_GASTO_PADRAO,
         movimentacoes: [],
+        resumosMensais: [],
         salvando: false,
         exclusoesEmAndamento: new Set(),
         abaAtual: 'fluxo',
@@ -749,6 +751,7 @@
         remuneracaoMensalPag: [],
         remuneracaoProdutosPag: [],
         _unsubProducaoFluxo: null,
+        _unsubResumoFluxo: null,
         _unsubMesesRemuneracao: null,
         _unsubRemuneracaoMensal: null,
         _unsubRemuneracaoProdutos: null
@@ -849,8 +852,13 @@
             estado._unsubProducaoFluxo();
             estado._unsubProducaoFluxo = null;
         }
+        if (estado._unsubResumoFluxo) {
+            estado._unsubResumoFluxo();
+            estado._unsubResumoFluxo = null;
+        }
         estado.nomeUsuario = nome;
         estado.movimentacoes = [];
+        estado.resumosMensais = [];
         els.chipUsuario.classList.toggle('ativo', nome === nomeGestor);
 
         const colab = colaboradores.find(c => String(c.nome || '').trim() === nome);
@@ -867,6 +875,11 @@
 
         render();
         if (!nome) return;
+        estado._unsubResumoFluxo = dbEscutarResumosMensaisFluxoCaixa(nome, (resumos) => {
+            if (estado.nomeUsuario !== nome) return;
+            estado.resumosMensais = Array.isArray(resumos) ? resumos : [];
+            render();
+        });
         estado.movimentacoes = await dbListarFluxoCaixa(nome);
         render();
     }
@@ -1018,7 +1031,8 @@
     }
 
     function atualizarSaldo() {
-        const saldo = calcularSaldo(obterMovimentacoesFiltradas());
+        const ultimoResumo = estado.resumosMensais[estado.resumosMensais.length - 1] || null;
+        const saldo = Number(ultimoResumo?.saldoMes || 0);
         els.saldoAtual.textContent = 'R$ ' + Math.abs(saldo).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
         els.saldoAtual.className = 'saldo-valor' + (saldo < 0 ? ' negativo' : '');
         els.saldoContexto.textContent = saldo < 0
@@ -1026,15 +1040,20 @@
             : (saldo > 0 ? 'Dinheiro do caixa comigo' : '');
     }
 
+    function obterSaldoAtualResumo() {
+        const ultimoResumo = estado.resumosMensais[estado.resumosMensais.length - 1] || null;
+        return Number(ultimoResumo?.saldoMes || 0);
+    }
 
     function obterSaldoPorKey(listaBase = estado.movimentacoes) {
-        const ordenadas = [...listaBase].sort((a, b) => (a.criado_em || 0) - (b.criado_em || 0));
+        const ordenadas = [...listaBase].sort((a, b) => (b.criado_em || 0) - (a.criado_em || 0));
         const saldoPorKey = {};
-        let saldo = 0;
+        let saldo = obterSaldoAtualResumo();
 
         for (const item of ordenadas) {
-            saldo += item.tipo === 'entrada' ? Number(item.valor || 0) : -Number(item.valor || 0);
             saldoPorKey[item.firebaseKey] = saldo;
+            const efeito = item.tipo === 'entrada' ? Number(item.valor || 0) : -Number(item.valor || 0);
+            saldo -= efeito;
         }
 
         return saldoPorKey;
@@ -1200,7 +1219,9 @@
         atualizarFormulario();
 
         try {
-            const movimentoSalvo = await dbSalvarMovimentoFluxoCaixa(estado.nomeUsuario, movimento);
+            const movimentoSalvo = await dbSalvarMovimentoFluxoCaixa(estado.nomeUsuario, movimento, {
+                atualizarResumoMensal: true
+            });
             estado.movimentacoes = [
                 movimentoSalvo,
                 ...estado.movimentacoes.filter(item => item.firebaseKey !== movimentoSalvo.firebaseKey)

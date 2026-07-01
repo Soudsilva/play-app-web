@@ -418,6 +418,7 @@
     import {
         dbListarFluxoCaixa,
         dbEscutarFluxoCaixa,
+        dbEscutarResumosMensaisFluxoCaixa,
         dbSalvarMovimentoFluxoCaixa,
         dbExcluirMovimentoFluxoCaixa
     } from './database.js';
@@ -438,6 +439,7 @@
         tipoAtual: 'gasto',
         categoriaAtual: CATEGORIA_GASTO_PADRAO,
         movimentacoes: [],
+        resumosMensais: [],
         salvando: false,
         exclusoesEmAndamento: new Set()
     };
@@ -493,6 +495,11 @@
     dbEscutarFluxoCaixa(estado.nomeUsuario, (movimentacoes) => {
         estado.movimentacoes = movimentacoes;
         salvarCacheFluxoCaixa(estado.nomeUsuario, movimentacoes);
+        render();
+    });
+
+    dbEscutarResumosMensaisFluxoCaixa(estado.nomeUsuario, (resumos) => {
+        estado.resumosMensais = Array.isArray(resumos) ? resumos : [];
         render();
     });
 
@@ -650,7 +657,8 @@
     }
 
     function atualizarSaldo() {
-        const saldo = calcularSaldo(obterMovimentacoesFiltradas());
+        const ultimoResumo = estado.resumosMensais[estado.resumosMensais.length - 1] || null;
+        const saldo = Number(ultimoResumo?.saldoMes || 0);
         els.saldoAtual.textContent = 'R$ ' + Math.abs(saldo).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
         els.saldoAtual.className = 'saldo-valor' + (saldo < 0 ? ' negativo' : '');
         els.saldoContexto.textContent = saldo < 0
@@ -658,15 +666,20 @@
             : (saldo > 0 ? 'Dinheiro do caixa comigo' : '');
     }
 
+    function obterSaldoAtualResumo() {
+        const ultimoResumo = estado.resumosMensais[estado.resumosMensais.length - 1] || null;
+        return Number(ultimoResumo?.saldoMes || 0);
+    }
 
     function obterSaldoPorKey(listaBase = estado.movimentacoes) {
-        const ordenadas = [...listaBase].sort((a, b) => (a.criado_em || 0) - (b.criado_em || 0));
+        const ordenadas = [...listaBase].sort((a, b) => (b.criado_em || 0) - (a.criado_em || 0));
         const saldoPorKey = {};
-        let saldo = 0;
+        let saldo = obterSaldoAtualResumo();
 
         for (const item of ordenadas) {
-            saldo += item.tipo === 'entrada' ? Number(item.valor || 0) : -Number(item.valor || 0);
             saldoPorKey[item.firebaseKey] = saldo;
+            const efeito = item.tipo === 'entrada' ? Number(item.valor || 0) : -Number(item.valor || 0);
+            saldo -= efeito;
         }
 
         return saldoPorKey;
@@ -818,7 +831,9 @@
         atualizarFormulario();
 
         try {
-            const movimentoSalvo = await dbSalvarMovimentoFluxoCaixa(estado.nomeUsuario, movimento);
+            const movimentoSalvo = await dbSalvarMovimentoFluxoCaixa(estado.nomeUsuario, movimento, {
+                atualizarResumoMensal: true
+            });
             estado.movimentacoes = [
                 movimentoSalvo,
                 ...estado.movimentacoes.filter(item => item.firebaseKey !== movimentoSalvo.firebaseKey)

@@ -3598,6 +3598,8 @@ window.finalizarRegistro = async function() {
                         data: new Date().toISOString(),
                         criado_em: Date.now(),
                         origemAutomatica: true
+                    }, {
+                        atualizarResumoMensal: true
                     });
                     fluxoCaixaKey = movSalvo?.firebaseKey || null;
                 }
