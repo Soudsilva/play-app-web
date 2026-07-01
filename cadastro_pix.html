@@ -2927,6 +2927,10 @@ window.confirmarRetiradaCard = async function(clienteId, rowId, pixNum, pixKey) 
             exibirAvisoPadrao('O contador atual n\u00e3o pode ser menor que o contador anterior.');
             return;
         }
+        if (!dadosContador.fotoBase64) {
+            exibirAvisoPadrao('Adicione a foto do contador.');
+            return;
+        }
     }
 
     try {

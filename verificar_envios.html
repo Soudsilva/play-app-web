@@ -1018,6 +1018,7 @@
 
     function montarHtmlConversaContestacao(envio) {
         const mensagens = obterMensagensContestacao(envio?.contestacaoObservacao);
+        const mostrarEditar = !ehRegistroManutencao(envio);
         const htmlMensagens = mensagens.map((msg) => {
             const papel = msg.papel === 'usuario' ? 'usuario' : 'gestor';
             const autor = msg.autor || (papel === 'usuario' ? 'Usuário' : 'Gestor');
@@ -1036,8 +1037,7 @@
                 <div class="contestacao-resposta">
                     <textarea class="contestacao-resposta-texto" data-contestacao-resposta-id="${escaparHtml(envio.firebaseUrl)}" placeholder="Responder ao gestor..."></textarea>
                     <div class="contestacao-acoes-resposta">
-                        <button class="btn-acao btn-editar btn-editar-envio" type="button">Editar</button>
-                        <span class="contestacao-ou">Ou</span>
+                        ${mostrarEditar ? '<button class="btn-acao btn-editar btn-editar-envio" type="button">Editar</button><span class="contestacao-ou">Ou</span>' : ''}
                         <button class="btn-responder-contestacao" type="button" data-contestacao-responder-id="${escaparHtml(envio.firebaseUrl)}">Enviar resposta</button>
                     </div>
                 </div>
@@ -1981,7 +1981,7 @@
             const htmlAcoes = liberado ? `
                 <div class="envio-acoes">
                     ${htmlAvisoContestacao}
-                    ${estaContestado ? '' : `
+                    ${estaContestado || ehRegistroManutencao(envio) ? '' : `
                         <div class="acoes-linha">
                             <button class="btn-acao btn-editar btn-editar-envio">Editar</button>
                         </div>

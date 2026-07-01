@@ -123,6 +123,10 @@
         .botao.balanco-bloqueado .icone {
             color:#d8d8d8;
         }
+        .botao.rotas-contestacao-alerta {
+            border-color:#f59e0b;
+            box-shadow:0 0 0 1px #f59e0b;
+        }
 
         /* Botão Contratos & Acordos — exclusivo cargo Sócio */
         .botao-contrato {
@@ -496,6 +500,16 @@
     function atualizarEstadoBotaoManutencao() {
         const verificandoBalanco = usuarioAtendimentoNivel2Index && !statusBalancoCarregadoIndex;
         const bloqueado = usuarioAtendimentoNivel2Index && (verificandoBalanco || statusBalancoPendenteIndex);
+        const btnManutencao = document.getElementById('btnManutencao');
+        if (btnManutencao) btnManutencao.classList.remove('rotas-contestacao-alerta');
+        const btnGestao = document.getElementById('btnGestao');
+        if (btnGestao) {
+            btnGestao.classList.toggle('rotas-contestacao-alerta', usuarioAtendimentoNivel2Index && !bloqueado && contestacaoAtendimentoPendenteIndex);
+        }
+        const btnVerificarEnvios = document.getElementById('btnVerificarEnvios');
+        if (btnVerificarEnvios) {
+            btnVerificarEnvios.classList.toggle('rotas-contestacao-alerta', usuarioAtendimentoNivel2Index && !bloqueado && contestacaoAtendimentoPendenteIndex);
+        }
         [
             ['btnManutencao', 'manutencao-bloqueada'],
             ['btnClientes', 'balanco-bloqueado'],
@@ -558,6 +572,7 @@
                 String(resumo?.statusContestacao || '').trim().toLowerCase() === 'pendente' ||
                 Number(resumo?.totalPendentes || 0) > 0;
             atualizarEstadoBotaoRotas();
+            atualizarEstadoBotaoManutencao();
         });
     }
 
@@ -616,7 +631,16 @@
     };
 
     // Verificar Envios: colaboradores veem apenas os prÃ³prios envios
-    window.abrirEnvios = function() {
+    window.abrirEnvios = async function() {
+        if (usuarioAtendimentoNivel2Index) {
+            const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
+            const temContestacao = contestacaoAtendimentoPendenteIndex
+                || await dbExisteContestacaoAtendimentoDoUsuario(nomeLogado);
+            if (temContestacao) {
+                window.location.href = 'verificar_envios.html?contestacao=1';
+                return;
+            }
+        }
         window.location.href = 'verificar_envios.html';
     };
 
@@ -663,6 +687,23 @@
     window.abrirTela = async function(tela){
         if (tela === 'manutencao') {
             if (await balancoBloqueiaAcessoIndex()) return;
+            if (usuarioAtendimentoNivel2Index) {
+                const nomeLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
+                const temContestacao = contestacaoAtendimentoPendenteIndex
+                    || await dbExisteContestacaoAtendimentoDoUsuario(nomeLogado);
+                if (temContestacao) {
+                    const abrirContestacoes = window.playConfirm
+                        ? await window.playConfirm('Existe uma contestação pendente, ver agora?', {
+                            primaryLabel: 'Sim',
+                            secondaryLabel: 'Não'
+                        })
+                        : confirm('Existe uma contestação pendente, ver agora?');
+                    if (abrirContestacoes) {
+                        window.location.href = 'verificar_envios.html?contestacao=1';
+                    }
+                    return;
+                }
+            }
             window.location.href = 'manutencoes_solicitadas.html';
             return;
         }
@@ -688,8 +729,11 @@
             const temContestacao = await dbExisteContestacaoAtendimentoDoUsuario(nomeLogado);
             if (temContestacao) {
                 const abrirContestacoes = window.playConfirm
-                    ? await window.playConfirm('Existe contestação do gestor pendente. Você quer ver agora?')
-                    : confirm('Existe contestação do gestor pendente. Você quer ver agora?');
+                    ? await window.playConfirm('Existe uma contestação pendente, ver agora?', {
+                        primaryLabel: 'Sim',
+                        secondaryLabel: 'Não'
+                    })
+                    : confirm('Existe uma contestação pendente, ver agora?');
                 if (abrirContestacoes) {
                     window.location.href = 'verificar_envios.html?contestacao=1';
                 }
@@ -946,7 +990,7 @@
         }
 
         iniciarStatusBalancoIndex(nomeNormalizado);
-        iniciarResumoContestacaoAtendimentoIndex(perfil.includes('atendimento_1') ? nomeNormalizado : '');
+        iniciarResumoContestacaoAtendimentoIndex(perfil.includes('atendimento_1') || perfil.includes('atendimento_2') ? nomeNormalizado : '');
     }
 
     // Abre o menu imediatamente com dados do cache (se existir)

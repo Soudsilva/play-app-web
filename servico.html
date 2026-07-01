@@ -698,6 +698,110 @@
             opacity: 0.5;
             cursor: default;
         }
+        .card.contestado {
+            border-left-color: #f59e0b;
+        }
+        .servico-contestacao-resumo,
+        .servico-contestacao-form {
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            background: #4a2500;
+            border: 1px solid #f59e0b;
+        }
+        .servico-contestacao-titulo {
+            color: #fbbf24;
+            font-size: 15px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .servico-contestacao-msg {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 6px;
+        }
+        .servico-contestacao-msg.usuario {
+            background: #123f64;
+            border-color: #38bdf8;
+        }
+        .servico-contestacao-meta {
+            color: #fbbf24;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        .servico-contestacao-texto {
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 400;
+            line-height: 1.35;
+            text-align: center;
+            overflow-wrap: anywhere;
+        }
+        .servico-contestacao-campo {
+            width: 100%;
+            min-height: 78px;
+            box-sizing: border-box;
+            resize: vertical;
+            border-radius: 9px;
+            border: 1px solid #f59e0b;
+            background: #111827;
+            color: #ffffff;
+            padding: 10px;
+            font-size: 15px;
+            font-family: Arial, sans-serif;
+            outline: none;
+        }
+        .servico-contestacao-acoes {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .btn-contestar-servico,
+        .btn-contestacao-cancelar,
+        .btn-contestacao-salvar {
+            border-radius: 999px;
+            padding: 8px 16px;
+            font-size: 15px;
+            font-weight: 700;
+            font-family: Arial, sans-serif;
+            cursor: pointer;
+            border: 1px solid;
+        }
+        .btn-contestar-servico {
+            background: #92400e;
+            border-color: #f59e0b;
+            color: #ffffff;
+        }
+        .btn-contestar-servico.contestado {
+            background: #7f1d1d;
+            border-color: #fca5a5;
+        }
+        .btn-contestacao-cancelar {
+            background: #334155;
+            border-color: #64748b;
+            color: #ffffff;
+        }
+        .btn-contestacao-salvar {
+            background: #14532d;
+            border-color: #4ade80;
+            color: #ffffff;
+        }
+        .btn-contestacao-salvar:disabled,
+        .btn-contestar-servico:disabled {
+            background: #334155;
+            border-color: #64748b;
+            color: #e5e7eb;
+            cursor: default;
+        }
 
         .vazio { text-align: center; color: rgba(255,255,255,0.3); padding: 36px 0; font-size: 17px; }
         .carregando { text-align: center; color: rgba(255,255,255,0.3); padding: 36px 0; font-size: 15px; }
@@ -753,7 +857,9 @@
         dbEscutarCadastrosPix,
         dbEscutarAtendimentos,
         dbConfirmarGestorManutencao,
-        dbSalvarManutencao
+        dbSalvarManutencao,
+        dbContestarAtendimento,
+        dbRemoverContestacao
     } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
 
@@ -961,6 +1067,7 @@
                         tipo: 'adicao',
                         nome: item.nome,
                         pix: pixAtual,
+                        somentePix: String(registro?.origem || '').trim() === 'adicionei_pix',
                         por: item.manutencaoPendentePor || item.tecnico || cliente?.cadastradoPor || '-',
                         dataEvento: obterDataEventoPixCadastro('adicao', registro, item),
                         contador: String(registro?.contador || item.contador || '').trim(),
@@ -1183,6 +1290,9 @@
                 confirmedBy: manutencaoBanco.confirmedBy || 'Gestor',
                 dataConfirmacao: manutencaoBanco.dataConfirmacaoGestor || '',
                 confirmadoGestor: manutencaoBanco.confirmadoGestor === true,
+                contestado: atendimento.contestado === true,
+                contestadoPor: atendimento.contestadoPor || '',
+                contestacaoObservacao: atendimento.contestacaoObservacao || null,
                 equipColocadas: adicionados,
                 equipRetiradas: retiradosDetalhes.length ? retiradosDetalhes : retirados,
                 foto: manutencaoBanco.fotoSolicitacao || manutencaoBanco.fotoSolicitacaoThumb || '',
@@ -1263,6 +1373,24 @@
 
     function montarDestaquePixServico(itens, opcoes = {}) {
         const somentePix = opcoes.somentePix === true;
+        if (somentePix) {
+            const item = (Array.isArray(itens) ? itens : []).find(valor => valor?.tipo === 'adicao' && normalizarPix(valor?.pix));
+            if (item) {
+                const pix = normalizarPix(item.pix) || '-';
+                const contador = String(item?.contador || '').trim();
+                const responsavel = String(item?.por || '').trim();
+                const titulo = contador ? `Pix ${pix} contador ${contador}` : `Pix ${pix}`;
+                return `
+                    <div class="pix-servico-destaque">
+                        <div class="pix-servico-destaque-texto">
+                            <div class="pix-servico-destaque-info">Pix instalado</div>
+                            <div class="pix-servico-destaque-titulo">${escHtml(titulo)}</div>
+                            ${responsavel ? `<div class="pix-servico-destaque-responsavel"><span>Servi&ccedil;o feito por:</span> ${escHtml(responsavel)}</div>` : ''}
+                        </div>
+                    </div>`;
+            }
+        }
+
         const adicionados = (Array.isArray(itens) ? itens : [])
             .filter(item => item?.tipo === 'adicao' && String(item?.nome || '').trim());
         if (!somentePix && adicionados.length > 0) {
@@ -1569,6 +1697,71 @@
 
     const MESES_ROTULO = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
+    function obterAtendimentoServicoPorId(id) {
+        const chave = String(id || '').trim();
+        if (!chave) return null;
+        return _atendimentos.find(item => String(item?.firebaseUrl || '').trim() === chave) || null;
+    }
+
+    function obterMensagensContestacaoServico(contestacaoObservacao) {
+        if (!contestacaoObservacao) return [];
+        if (typeof contestacaoObservacao === 'string') {
+            const texto = contestacaoObservacao.trim();
+            return texto ? [{ autor: 'Gestor', papel: 'gestor', texto, timestamp: '' }] : [];
+        }
+        const mensagens = contestacaoObservacao?.mensagens || {};
+        return Object.keys(mensagens)
+            .map((key) => ({ id: key, ...(mensagens[key] || {}) }))
+            .filter((msg) => String(msg.texto || '').trim())
+            .sort((a, b) => {
+                const dataA = new Date(a.timestamp || 0).getTime() || 0;
+                const dataB = new Date(b.timestamp || 0).getTime() || 0;
+                return dataA - dataB;
+            });
+    }
+
+    function montarHtmlConversaContestacaoServico(contestacaoObservacao, titulo = 'Conversa da duvida') {
+        const mensagens = obterMensagensContestacaoServico(contestacaoObservacao);
+        if (mensagens.length === 0) return '';
+        const htmlMensagens = mensagens.map((msg) => {
+            const papel = msg.papel === 'usuario' ? 'usuario' : 'gestor';
+            const autor = msg.autor || (papel === 'usuario' ? 'Usuario' : 'Gestor');
+            const data = formatarData(msg.timestamp);
+            return `
+                <div class="servico-contestacao-msg ${papel}">
+                    <div class="servico-contestacao-meta">${escHtml(autor)}${data ? ` - ${escHtml(data)}` : ''}</div>
+                    <div class="servico-contestacao-texto">${escHtml(msg.texto)}</div>
+                </div>`;
+        }).join('');
+
+        return `
+            <div class="servico-contestacao-resumo">
+                <div class="servico-contestacao-titulo">${escHtml(titulo)}</div>
+                ${htmlMensagens}
+            </div>`;
+    }
+
+    function montarBotoesManutencaoServico(ev, pendente, htmlConfirmado) {
+        if (!pendente) return htmlConfirmado;
+        if (!ev?.atendimentoId) {
+            return `<button class="btn-ok" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`;
+        }
+        const atendimentoId = escHtml(ev.atendimentoId);
+        if (ev.contestado) {
+            return `
+                <button class="btn-contestar-servico contestado" data-atendimento-id="${atendimentoId}" onclick="window.removerDuvidaServico(this.dataset.atendimentoId,this)">Remover</button>
+                <button class="btn-ok" type="button" disabled>Duvida enviada</button>`;
+        }
+        return `
+            <button class="btn-contestar-servico" data-atendimento-id="${atendimentoId}" onclick="window.abrirDuvidaServico(this.dataset.atendimentoId,this)">Tirar duvida</button>
+            <button class="btn-ok" data-servico-ok="1" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`;
+    }
+
+    function montarContestacaoPendenteServico(ev, pendente) {
+        if (!pendente || !ev?.contestado) return '';
+        return montarHtmlConversaContestacaoServico(ev.contestacaoObservacao, 'Duvida enviada ao tecnico');
+    }
+
     function dataLocalYMD(iso) {
         if (!iso) return '';
         const d = new Date(iso);
@@ -1736,6 +1929,7 @@
                     foto,
                     fotosInstalacao: itensPix.length > 0 ? [] : fotosInstalacao,
                     pixItens: itensPix,
+                    somentePix: itensPix.length > 0 && itensPix.every(item => item.tipo === 'retirada' || item.somentePix === true),
                     buscaExtra: montarBuscaExtraPix(itensPix)
                 };
             })
@@ -1845,20 +2039,21 @@
         const origemClasse = apenasRetirada ? 'retirada' : (apenasAdicao ? 'adicao' : '');
         const origemTexto = temMaquinaComPix ? 'Maquina + Pix' : (apenasRetirada ? 'Retirada' : (apenasAdicao ? 'Adicao' : 'Movimentacao'));
         const enderecosServico = montarHtmlEnderecosServico(ev, { modo: apenasRetirada ? 'retirada' : 'adicao' });
-        const rodape = pendente
-            ? `<button class="btn-ok" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`
-            : !ev.semDesfazer && podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
+        const rodapeConfirmado = !ev.semDesfazer && podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
                 ? `<button class="btn-desfazer" onclick="window.desfazerManutencao('${ev.id}',this)">&#8617; Desfazer</button>`
                 : `<span class="confirmado-por">&#10003; ${ev.confirmedBy} &nbsp;&middot;&nbsp; ${formatarData(ev.dataConfirmacao)}</span>`;
+        const rodape = montarBotoesManutencaoServico(ev, pendente, rodapeConfirmado);
+        const contestacaoHtml = montarContestacaoPendenteServico(ev, pendente);
 
         return `
-            <div class="card pix-servico" id="card-${ev.id}">
+            <div class="card pix-servico${pendente && ev.contestado ? ' contestado' : ''}" id="card-${ev.id}">
                 <div class="pix-servico-origem ${origemClasse}">${origemTexto}</div>
                 <div class="pix-servico-cliente">&#128205; ${montarIdentificacaoPix(ev.clienteNumero, ev.clienteNome)}</div>
                 ${montarDestaquePixServico(ev.pixItens, { somentePix: ev.somentePix })}
                 ${montarDestaqueMaquinaRetiradaServico(ev)}
                 ${montarListaPixServico(ev.pixItens)}
                 ${enderecosServico.html}
+                ${contestacaoHtml}
                 <div class="card-rodape" style="margin-top:12px;">
                     <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
                     ${rodape}
@@ -1874,11 +2069,12 @@
             return `<div class="equip-item"><span class="dot add"></span>${nome}${qtd}</div>`;
         }).join('');
 
-        const rodape = pendente
-            ? `<button class="btn-ok" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`
-            : podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
+        const rodapeConfirmado = podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
                 ? `<button class="btn-desfazer" onclick="window.desfazerManutencao('${ev.id}',this)">↩ Desfazer</button>`
                 : `<span class="confirmado-por">&#10003; ${ev.confirmedBy} &nbsp;&middot;&nbsp; ${formatarData(ev.dataConfirmacao)}</span>`;
+
+        const rodape = montarBotoesManutencaoServico(ev, pendente, rodapeConfirmado);
+        const contestacaoHtml = montarContestacaoPendenteServico(ev, pendente);
 
         const fotoHtml = ev.foto
             ? `<img src="${ev.foto}" onclick="window.verFoto('${ev.foto}')" style="width:100%;border-radius:10px;margin:10px 0;object-fit:cover;max-height:200px;cursor:zoom-in;" />`
@@ -1908,7 +2104,7 @@
             : '';
 
         return `
-        <div class="card colocada${!pendente ? ' confirmado' : ''}" id="card-${ev.id}">
+        <div class="card colocada${!pendente ? ' confirmado' : ''}${pendente && ev.contestado ? ' contestado' : ''}" id="card-${ev.id}">
             <div class="card-tipo tipo-colocada">&#8593; M&aacute;quina Adicionada</div>
             <div class="card-cliente">N. ${ev.clienteNumero} ${ev.clienteNome}</div>
             <div class="card-detalhe">
@@ -1920,6 +2116,7 @@
             ${endCadastroHtml_add}
             ${endMaquinaHtml_add}
             ${btnRotaHtml_add}
+            ${contestacaoHtml}
             <div class="card-rodape" style="margin-top:${(endCadastroHtml_add || endMaquinaHtml_add) ? '12px' : '10px'}">
                 <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
                 ${rodape}
@@ -1937,11 +2134,12 @@
             return `<div class="equip-item"><span class="dot rem"></span><span class="equip-item-nome">${nome}</span>${qtdHtml}</div>`;
         }).join('');
 
-        const rodape = pendente
-            ? `<button class="btn-ok" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`
-            : podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
+        const rodapeConfirmado = podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
                 ? `<button class="btn-desfazer" onclick="window.desfazerManutencao('${ev.id}',this)">↩ Desfazer</button>`
                 : `<span class="confirmado-por">&#10003; ${ev.confirmedBy} &nbsp;&middot;&nbsp; ${formatarData(ev.dataConfirmacao)}</span>`;
+
+        const rodape = montarBotoesManutencaoServico(ev, pendente, rodapeConfirmado);
+        const contestacaoHtml = montarContestacaoPendenteServico(ev, pendente);
 
         const endCadastroHtml_ret = ev.enderecoCliente
             ? `<div style="margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.06);border-left:3px solid rgba(255,255,255,0.35);">
@@ -1967,7 +2165,7 @@
             : '';
 
         return `
-        <div class="card retirada${!pendente ? ' confirmado' : ''}" id="card-${ev.id}">
+        <div class="card retirada${!pendente ? ' confirmado' : ''}${pendente && ev.contestado ? ' contestado' : ''}" id="card-${ev.id}">
             <div class="card-tipo tipo-retirada">${ev.pontoEncerrado ? '&#9940; Ponto Encerrado' : '&#8595; M&aacute;quina Retirada'}</div>
             <div class="card-cliente">N. ${ev.clienteNumero} ${ev.clienteNome}</div>
             <div class="card-detalhe">
@@ -1978,6 +2176,7 @@
             ${endCadastroHtml_ret}
             ${endMaquinaHtml_ret}
             ${btnRotaHtml_ret}
+            ${contestacaoHtml}
             <div class="card-rodape" style="margin-top:${(endCadastroHtml_ret || endMaquinaHtml_ret) ? '12px' : '10px'}">
                 <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
                 ${rodape}
@@ -2040,8 +2239,113 @@
     }
 
     // ── AÇÕES ─────────────────────────────────────────────────────────────────
+    window.fecharDuvidaServico = function(panel) {
+        const box = panel || document.querySelector('.servico-contestacao-form');
+        if (!box) return;
+        const card = box.closest('.card');
+        const atendimentoId = box.dataset.atendimentoId || '';
+        const btnDuvida = card?.querySelector(`.btn-contestar-servico[data-atendimento-id="${CSS.escape(atendimentoId)}"]`);
+        const btnOk = card?.querySelector('.btn-ok[data-servico-ok="1"]');
+        if (btnDuvida) btnDuvida.style.display = '';
+        if (btnOk) btnOk.style.display = '';
+        box.remove();
+    };
+
+    window.abrirDuvidaServico = function(atendimentoId, btn) {
+        const id = String(atendimentoId || '').trim();
+        if (!id) return;
+        const card = btn?.closest('.card');
+        if (!card) return;
+
+        const existente = card.querySelector('.servico-contestacao-form');
+        if (existente) {
+            existente.querySelector('.servico-contestacao-campo')?.focus();
+            return;
+        }
+
+        const atendimento = obterAtendimentoServicoPorId(id);
+        const conversaAnterior = montarHtmlConversaContestacaoServico(atendimento?.contestacaoObservacao, 'Conversa anterior');
+        const panel = document.createElement('div');
+        panel.className = 'servico-contestacao-form';
+        panel.dataset.atendimentoId = id;
+        panel.innerHTML = `
+            ${conversaAnterior}
+            <div class="servico-contestacao-titulo">Qual e a duvida?</div>
+            <textarea class="servico-contestacao-campo" rows="3" placeholder="Digite a duvida para o tecnico..."></textarea>
+            <div class="servico-contestacao-acoes">
+                <button class="btn-contestacao-cancelar" type="button" onclick="window.fecharDuvidaServico(this.closest('.servico-contestacao-form'))">Cancelar</button>
+                <button class="btn-contestacao-salvar" type="button" data-atendimento-id="${escHtml(id)}" onclick="window.salvarDuvidaServico(this.dataset.atendimentoId,this)">Enviar duvida</button>
+            </div>
+        `;
+
+        const rodape = card.querySelector('.card-rodape');
+        card.insertBefore(panel, rodape || null);
+        if (btn) btn.style.display = 'none';
+        const btnOk = card.querySelector('.btn-ok[data-servico-ok="1"]');
+        if (btnOk) btnOk.style.display = 'none';
+        panel.querySelector('.servico-contestacao-campo')?.focus();
+    };
+
+    window.salvarDuvidaServico = async function(atendimentoId, btn) {
+        const id = String(atendimentoId || '').trim();
+        const panel = btn?.closest('.servico-contestacao-form');
+        const campo = panel?.querySelector('.servico-contestacao-campo');
+        const texto = String(campo?.value || '').trim();
+        if (!id) return;
+        if (!texto) {
+            if (window.playAlert) await window.playAlert('Digite a duvida para o tecnico.');
+            else alert('Digite a duvida para o tecnico.');
+            campo?.focus();
+            return;
+        }
+
+        const textoOriginal = btn?.textContent || 'Enviar duvida';
+        if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+        try {
+            await dbContestarAtendimento(id, _nomeUsuario || 'Gestor', texto);
+            if (window.playAlert) await window.playAlert('Duvida enviada ao tecnico.');
+            renderizar();
+        } catch (e) {
+            console.error(e);
+            if (window.playAlert) await window.playAlert('Erro ao enviar duvida: ' + (e.message || e));
+            else alert('Erro ao enviar duvida: ' + (e.message || e));
+            if (btn) { btn.disabled = false; btn.textContent = textoOriginal; }
+        }
+    };
+
+    window.removerDuvidaServico = async function(atendimentoId, btn) {
+        const id = String(atendimentoId || '').trim();
+        if (!id) return;
+        const confirmar = window.playConfirm
+            ? await window.playConfirm('Remover a duvida deste servico?', {
+                primaryLabel: 'Remover',
+                secondaryLabel: 'Cancelar'
+            })
+            : confirm('Remover a duvida deste servico?');
+        if (!confirmar) return;
+
+        const textoOriginal = btn?.textContent || 'Remover';
+        if (btn) { btn.disabled = true; btn.textContent = 'Removendo...'; }
+        try {
+            await dbRemoverContestacao(id);
+            renderizar();
+        } catch (e) {
+            console.error(e);
+            if (window.playAlert) await window.playAlert('Erro ao remover duvida: ' + (e.message || e));
+            else alert('Erro ao remover duvida: ' + (e.message || e));
+            if (btn) { btn.disabled = false; btn.textContent = textoOriginal; }
+        }
+    };
+
     window.okManutencao = async function(id, btn) {
         if (!id) return;
+        const evento = obterEventosManutencaoPorAtendimentos()
+            .find(ev => String(ev?.id || '').trim() === String(id || '').trim());
+        if (evento?.contestado) {
+            if (window.playAlert) await window.playAlert('Responda ou remova a duvida antes de confirmar este servico.');
+            else alert('Responda ou remova a duvida antes de confirmar este servico.');
+            return;
+        }
         const manut = _manutencoes.find(m => m.firebaseUrl === id);
         if (manut?.pontoEncerrado === true) {
             const confirmado = await window.playConfirm(
