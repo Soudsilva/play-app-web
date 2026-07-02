@@ -1,4 +1,4 @@
-Instruções do Projeto
+﻿Instruções do Projeto
 Para rótulos, títulos, texto de botões, texto de menus e outros textos de interface (UI) usados para navegação, desative a seleção de texto com CSS, como user-select: none; e -webkit-user-select: none;.
 Não aplique a regra de não selecionável a inputs, textareas ou conteúdos que o usuário possa precisar copiar.
 A menos que o usuário peça explicitamente, não use estilos de texto transparente. Evite opacity em textos e evite cores com alpha, como rgba(...) ou hsla(...).
@@ -32,3 +32,7 @@ o estilo das mensagens padrão são.. procure: play-dialogs.js.
 Sempre me diga o que entendeu antes de implementar qualquer coisa.
 As permissões, por padrão, vem desse local localStorage.cache_colaboradores
 Nao crie cliente, usuario, colaborador, rota, dado de teste ou qualquer registro no Firebase/localStorage sem autorizacao clara e explicita do usuario.
+É proibido escrever, criar, alterar ou apagar qualquer informação no Firebase sem minha confirmação exata e explícita antes da ação, incluindo o caminho/nó que será afetado e o conteúdo completo que será gravado, alterado ou removido.
+Essa regra vale para clientes, atendimentos, produtos, máquinas, usuários, colaboradores, rotas, permissões, dados de teste, dados temporários, históricos, configurações e qualquer outro registro.
+Não use o Firebase para testes de escrita sem autorização. Para validar telas ou fluxos, use somente leitura ou simulações locais que não gravem dados reais, a menos que eu aprove exatamente o que será escrito.
+Se uma implementação exigir mudança no Firebase, primeiro me informe o formato novo, os caminhos exatos, os dados que precisarão ser criados/alterados/apagados e aguarde minha autorização antes de executar qualquer escrita.

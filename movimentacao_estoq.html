@@ -1028,6 +1028,7 @@
     let unsubscribePosseUsuario = null;
     let unsubscribePixUsuario = null;
     const RESPONSAVEL_PIX_ESTOQUE = 'Fornecedor';
+    const ROTULO_PIX_ESTOQUE = 'Estoque';
 
     const tituloHistorico = document.querySelector('.titulo-hist');
     const filtroHistoricoEl = document.getElementById('filtroHistorico');
@@ -1052,6 +1053,11 @@
 
     function normalizarBusca(valor) {
         return String(valor || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function formatarResponsavelInterface(valor) {
+        const texto = String(valor || '').trim();
+        return texto === RESPONSAVEL_PIX_ESTOQUE ? ROTULO_PIX_ESTOQUE : texto;
     }
 
     function obterDataMovimentacao(mov) {
@@ -1094,7 +1100,7 @@
     function atualizarResponsavelHistoricoChip() {
         if (!historicoResponsavelAtualEl) return;
         historicoResponsavelAtualEl.innerHTML = responsavelHistoricoAtual
-            ? `<span class="historico-responsavel-label">Responsável selecionado</span><span class="historico-responsavel-nome">${escaparHtml(responsavelHistoricoAtual)}</span>`
+            ? `<span class="historico-responsavel-label">Responsável selecionado</span><span class="historico-responsavel-nome">${escaparHtml(formatarResponsavelInterface(responsavelHistoricoAtual))}</span>`
             : `<span class="historico-responsavel-label">Aguardando responsável</span><span class="historico-responsavel-nome">Selecione um responsável</span>`;
         historicoResponsavelAtualEl.classList.toggle('visivel', historicoVisivel);
         historicoResponsavelAtualEl.classList.toggle('todos', !responsavelHistoricoAtual);
@@ -1207,7 +1213,7 @@
     function renderizarPosseUsuario() {
         if (!conteudoPosseUsuarioEl) return;
         const responsavel = responsavelHistoricoAtual;
-        if (posseUsuarioNomeEl) posseUsuarioNomeEl.textContent = responsavel || 'Responsável';
+        if (posseUsuarioNomeEl) posseUsuarioNomeEl.textContent = formatarResponsavelInterface(responsavel) || 'Responsável';
 
         if (!responsavel) {
             conteudoPosseUsuarioEl.innerHTML = '<div class="posse-vazio">Selecione um responsável.</div>';
@@ -1246,7 +1252,7 @@
 
     function atualizarSecaoPosseUsuario() {
         const temResponsavel = !!responsavelHistoricoAtual;
-        const responsavelFornecedor = responsavelHistoricoAtual === 'Fornecedor';
+        const responsavelFornecedor = responsavelHistoricoAtual === RESPONSAVEL_PIX_ESTOQUE;
         const responsavelMaquina = responsavelHistoricoAtual === 'Máquina';
         const mostrarPosse = temResponsavel && !responsavelFornecedor && !responsavelMaquina;
         secaoItensEl?.classList.remove('oculta-por-posse');
@@ -1270,7 +1276,7 @@
 
         posseUsuarioAtual = [];
         pixUsuarioAtual = [];
-        if (!responsavelHistoricoAtual || responsavelHistoricoAtual === 'Fornecedor' || responsavelHistoricoAtual === 'Máquina') {
+        if (!responsavelHistoricoAtual || responsavelHistoricoAtual === RESPONSAVEL_PIX_ESTOQUE || responsavelHistoricoAtual === 'Máquina') {
             atualizarSecaoPosseUsuario();
             return;
         }
@@ -1479,6 +1485,11 @@
             
             const dataObj = new Date(mov.timestamp || mov.data || '');
             const dataFormatada = dataObj.toLocaleString('pt-BR');
+            const responsavelRotulo = formatarResponsavelInterface(mov.responsavel) || '-';
+            const registradoPorRotulo = formatarResponsavelInterface(mov.registradoPor);
+            const textoRegistradoPor = mov.registradoPor && mov.registradoPor !== mov.responsavel
+                ? `Registrado por: ${registradoPorRotulo}`
+                : '';
             
             const div = document.createElement('div');
             div.className = 'item-hist';
@@ -1491,14 +1502,14 @@
             div.innerHTML = `
                 <div class="hist-mov-topo">
                     <span class="hist-tipo-label" style="color:${metaTipo.cor}">${textoTipo}</span>
-                    <span class="hist-resp-label" style="color:white;font-weight:bold;">${mov.responsavel || '-'}</span>
+                    <span class="hist-resp-label" style="color:white;font-weight:bold;">${escaparHtml(responsavelRotulo)}</span>
                 </div>
                 <div class="hist-mov-linha">
                     <span class="hist-nome-item">${mov.itemNome}</span>
                     <span class="hist-dir ${classeCor}" style="margin:0;">${quantidade}</span>
                 </div>
                 <div class="hist-registro-rodape">
-                    <span>${mov.registradoPor && mov.registradoPor !== mov.responsavel ? `Registrado por: ${mov.registradoPor}` : ''}</span>
+                    <span>${escaparHtml(textoRegistradoPor)}</span>
                     <span>${dataFormatada}</span>
                 </div>
             `;
@@ -1692,11 +1703,22 @@
             input.focus();
             return;
         }
+        if (modoAtual === 'entrada' && responsavel === RESPONSAVEL_PIX_ESTOQUE && pixJaEstaEmPosse(valor)) {
+            const responsavelAtual = obterResponsavelPixEmPosse(valor);
+            const responsavelAtualRotulo = formatarResponsavelInterface(responsavelAtual);
+            await window.playAlert(responsavelAtual
+                ? `Pix ${valor} j\u00e1 est\u00e1 em posse de ${responsavelAtualRotulo}.`
+                : `Pix ${valor} j\u00e1 est\u00e1 registrado no estoque.`);
+            input.value = '';
+            input.focus();
+            return;
+        }
         if (modoAtual === 'saida' && pixJaEstaEmPosse(valor)) {
             const responsavelAtual = obterResponsavelPixEmPosse(valor);
             if (responsavelAtual === RESPONSAVEL_PIX_ESTOQUE) return;
+            const responsavelAtualRotulo = formatarResponsavelInterface(responsavelAtual);
             await window.playAlert(responsavelAtual
-                ? `Pix ${valor} já está em posse de ${responsavelAtual}.`
+                ? `Pix ${valor} já está em posse de ${responsavelAtualRotulo}.`
                 : `Pix ${valor} já está em posse de um usuário.`);
             input.value = '';
             input.focus();
@@ -1720,7 +1742,7 @@
             if (modoAtual === 'entrada') {
                 const optForn = document.createElement('option');
                 optForn.value = RESPONSAVEL_PIX_ESTOQUE;
-                optForn.innerText = RESPONSAVEL_PIX_ESTOQUE;
+                optForn.innerText = ROTULO_PIX_ESTOQUE;
                 select.appendChild(optForn);
             }
             colabsGlobal
@@ -1740,11 +1762,11 @@
             return;
         }
 
-        // Adiciona "Fornecedor" e usuário logado apenas se for ENTRADA
+        // Adiciona estoque e usuário logado apenas se for ENTRADA
         if (modoAtual === 'entrada') {
             const optForn = document.createElement('option');
-            optForn.value = "Fornecedor";
-            optForn.innerText = "Fornecedor";
+            optForn.value = RESPONSAVEL_PIX_ESTOQUE;
+            optForn.innerText = ROTULO_PIX_ESTOQUE;
             select.appendChild(optForn);
 
             if (nomeLogado && categoriaAtual !== 'produtos' && categoriaAtual !== 'materiais') {
@@ -1760,7 +1782,7 @@
 
         let listaFiltrada;
         if (modoAtual === 'entrada' && tipoMaterial) {
-            // Entrada de materiais: só Fornecedor (já adicionado acima)
+            // Entrada de materiais: só estoque (já adicionado acima)
             listaFiltrada = [];
         } else if (modoAtual === 'entrada' && tipoProduto) {
             // Entrada de produtos: apenas quem tem remuneração "Produção de Produtos"
@@ -1895,7 +1917,7 @@
             btn.innerText = "CONFIRMAR SAÍDA";
             btn.style.background = "#f44336";
         }
-        renderizarResponsaveis(); // Atualiza a lista para mostrar/esconder "Fornecedor"
+        renderizarResponsaveis(); // Atualiza a lista para mostrar/esconder estoque
         atualizarVisualModoPix();
     };
 
@@ -1919,7 +1941,7 @@
 
         if (modoAtual === 'entrada') {
             if (isPeca) {
-                const ehFornecedor = responsavel === 'Fornecedor';
+                const ehFornecedor = responsavel === RESPONSAVEL_PIX_ESTOQUE;
                 const responsavelEhEstoque = colabsGlobal.some(
                     c => c.nome === responsavel && c.nivel_completo && c.nivel_completo.startsWith('estoque')
                 );
@@ -1971,7 +1993,7 @@
                 movimento:     modoAtual === 'saida' ? qtdMovimento : -qtdMovimento,
                 descricao:     modoAtual === 'saida' ? 'Retirada de estoque' : 'Devolução ao estoque',
                 refId:         idItem,
-                controlarPosse: responsavel !== 'Fornecedor' && responsavel !== 'Máquina',
+                controlarPosse: responsavel !== RESPONSAVEL_PIX_ESTOQUE && responsavel !== 'Máquina',
                 isDefeitoEntry,
                 qtdDefeitoConsumida,
                 estoqueAntes,
@@ -2009,7 +2031,7 @@
     }
 
     function responsavelEhFornecedorOuEstoque(responsavel) {
-        if (responsavel === 'Fornecedor') return true;
+        if (responsavel === RESPONSAVEL_PIX_ESTOQUE) return true;
         return colabsGlobal.some(c =>
             c.nome === responsavel &&
             c.nivel_completo &&
@@ -2190,7 +2212,7 @@
             movimento:     modo === 'saida' ? qtdMovimento : -qtdMovimento,
             descricao:     modo === 'saida' ? 'Retirada de estoque' : 'Devolução ao estoque',
             refId:         idItem,
-            controlarPosse: responsavel !== 'Fornecedor' && responsavel !== 'Máquina',
+            controlarPosse: responsavel !== RESPONSAVEL_PIX_ESTOQUE && responsavel !== 'Máquina',
             isDefeitoEntry,
             qtdDefeitoConsumida,
             defeitoOperacao,
@@ -2538,8 +2560,9 @@
         if (modoAtual === 'saida' && pixJaEstaEmPosse(numeroPix)) {
             const responsavelAtual = obterResponsavelPixEmPosse(numeroPix);
             if (responsavelAtual !== RESPONSAVEL_PIX_ESTOQUE) {
+                const responsavelAtualRotulo = formatarResponsavelInterface(responsavelAtual);
                 await window.playAlert(responsavelAtual
-                    ? `Pix ${numeroPix} já está em posse de ${responsavelAtual}.`
+                    ? `Pix ${numeroPix} já está em posse de ${responsavelAtualRotulo}.`
                     : `Pix ${numeroPix} já está em posse de um usuário.`);
                 inputPix.value = '';
                 inputPix.focus();
@@ -2550,8 +2573,9 @@
             const responsavelEhFornecedor = responsavel === RESPONSAVEL_PIX_ESTOQUE;
             if (responsavelEhFornecedor && pixJaEstaEmPosse(numeroPix)) {
                 const responsavelAtual = obterResponsavelPixEmPosse(numeroPix);
+                const responsavelAtualRotulo = formatarResponsavelInterface(responsavelAtual);
                 await window.playAlert(responsavelAtual
-                    ? `Pix ${numeroPix} já está em posse de ${responsavelAtual}.`
+                    ? `Pix ${numeroPix} já está em posse de ${responsavelAtualRotulo}.`
                     : `Pix ${numeroPix} já está registrado no estoque.`);
                 inputPix.value = '';
                 inputPix.focus();
