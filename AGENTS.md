@@ -30,6 +30,7 @@ Use essas credenciais apenas para validação/testes do sistema.
 statusBalancoPendenteIndex === true E essa  variável vira true quando o resumo do balanço no Firebase vem assim:js contestacao_balanco/{usuario}/resumo_balanco/statusBalanco = "pendente"
 o estilo das mensagens padrão são.. procure: play-dialogs.js. 
 Sempre me diga o que entendeu antes de implementar qualquer coisa.
+Sempre que perceber que o pedido pode ficar incompleto, deixando algum fluxo relacionado sem cobertura ou exigindo uma decisão de produto/segurança, pergunte antes o que devo fazer.
 As permissões, por padrão, vem desse local localStorage.cache_colaboradores
 Nao crie cliente, usuario, colaborador, rota, dado de teste ou qualquer registro no Firebase/localStorage sem autorizacao clara e explicita do usuario.
 É proibido escrever, criar, alterar ou apagar qualquer informação no Firebase sem minha confirmação exata e explícita antes da ação, incluindo o caminho/nó que será afetado e o conteúdo completo que será gravado, alterado ou removido.

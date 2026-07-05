@@ -7,7 +7,8 @@ import {
     createUserWithEmailAndPassword,
     updateProfile,
     updatePassword,
-    updateEmail
+    updateEmail,
+    deleteUser
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { app } from './database.js';
 
@@ -170,4 +171,22 @@ export async function sincronizarContaColaborador({ nomeAnterior = '', senhaAnte
         nomeAtual: nomeAtualNormalizado,
         senhaAtual: senhaAtualNormalizada
     });
+}
+
+export async function excluirContaColaborador(nome, senha) {
+    const nomeNormalizado = normalizarNomeUsuario(nome);
+    const senhaNormalizada = String(senha || '').trim();
+
+    if (!nomeNormalizado || !senhaNormalizada) {
+        throw new Error('Nome e senha do colaborador são obrigatórios para excluir o login.');
+    }
+
+    const { authSec, encerrar } = criarAuthSecundario('del');
+    try {
+        const email = nomeParaEmail(nomeNormalizado);
+        const cred = await signInWithEmailAndPassword(authSec, email, normalizarSenha(senhaNormalizada));
+        await deleteUser(cred.user);
+    } finally {
+        await encerrar();
+    }
 }
