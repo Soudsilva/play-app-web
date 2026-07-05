@@ -153,7 +153,7 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
-  import { verificarAutenticacao } from './auth.js';
+  import { verificarAutenticacao, sincronizarContaColaborador } from './auth.js';
   verificarAutenticacao();
   import { dbEscutarColaboradores, dbSalvarColaborador, dbExcluirColaborador, dbAtualizarOrdemColaborador } from './database.js';
 
@@ -520,6 +520,7 @@
   document.getElementById('formColaborador').onsubmit = async function(e) {
       e.preventDefault();
       const idEdicao = document.getElementById('idEdicao').value;
+      const colaboradorExistente = idEdicao ? listaColaboradores.find(c => c.firebaseUrl === idEdicao) : null;
       const dados = {
           nome: document.getElementById('nomeColaborador').value.trim(),
           cargo: document.getElementById('cargoColaborador').value,
@@ -543,9 +544,8 @@
       if (!idEdicao) {
           dados.comissaoHistorico = [{ valor: dados.comissao, inicio: mesAtual }];
       } else {
-          const existente = listaColaboradores.find(c => c.firebaseUrl === idEdicao);
-          const historico = Array.isArray(existente?.comissaoHistorico) ? [...existente.comissaoHistorico] : [];
-          if (existente?.comissao !== dados.comissao) {
+          const historico = Array.isArray(colaboradorExistente?.comissaoHistorico) ? [...colaboradorExistente.comissaoHistorico] : [];
+          if (colaboradorExistente?.comissao !== dados.comissao) {
               const idx = historico.findIndex(h => h.inicio === mesAtual);
               if (idx >= 0) historico[idx].valor = dados.comissao;
               else historico.push({ valor: dados.comissao, inicio: mesAtual });
@@ -566,6 +566,21 @@
       }
 
       try {
+          const btnSalvar = document.getElementById('btnSalvar');
+          btnSalvar.disabled = true;
+          btnSalvar.innerText = idEdicao ? "Atualizando..." : "Salvando...";
+
+          const nomeAlterado = !!idEdicao && String(colaboradorExistente?.nome || '').trim() !== dados.nome;
+          const senhaAlterada = !!idEdicao && String(colaboradorExistente?.senha || '').trim() !== dados.senha;
+          if (!idEdicao || nomeAlterado || senhaAlterada) {
+              await sincronizarContaColaborador({
+                  nomeAnterior: colaboradorExistente?.nome || '',
+                  senhaAnterior: colaboradorExistente?.senha || '',
+                  nomeAtual: dados.nome,
+                  senhaAtual: dados.senha
+              });
+          }
+
           if (!idEdicao) {
               dados.dataCadastro = new Date().toISOString();
               await dbSalvarColaborador(dados, null);
@@ -577,10 +592,15 @@
           document.getElementById('idEdicao').value = "";
           document.getElementById('btnSalvar').innerText = "+ Salvar Dados";
           document.getElementById('btnSalvar').style.background = "#4caf50";
+          document.getElementById('btnSalvar').disabled = false;
           document.getElementById('nivelAcesso').value = "gestao";
           document.getElementById('nivelNumero').value = "1";
       } catch (err) {
           console.error("Erro:", err);
+          const btnSalvar = document.getElementById('btnSalvar');
+          btnSalvar.disabled = false;
+          btnSalvar.innerText = idEdicao ? "Atualizar na Nuvem" : "+ Salvar Dados";
+          btnSalvar.style.background = idEdicao ? "#ff9800" : "#4caf50";
           await window.playAlert('Não foi possível salvar o colaborador. Tente novamente.');
       }
   };

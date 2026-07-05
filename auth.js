@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
     getAuth,
     signInWithEmailAndPassword,
@@ -6,7 +6,8 @@ import {
     onAuthStateChanged,
     createUserWithEmailAndPassword,
     updateProfile,
-    updatePassword
+    updatePassword,
+    updateEmail
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { app } from './database.js';
 
@@ -34,6 +35,19 @@ export function normalizarSenha(senha) {
     let s = senha;
     while (s.length < 6) s += '@';
     return s;
+}
+
+function criarAuthSecundario(prefixo) {
+    const sufixo = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const appSec = initializeApp(app.options, `${prefixo}-${sufixo}`);
+    const authSec = getAuth(appSec);
+    return {
+        authSec,
+        encerrar: async () => {
+            await signOut(authSec).catch(() => {});
+            await deleteApp(appSec).catch(() => {});
+        }
+    };
 }
 
 // Faz login com nome + senha. Salva o nome no localStorage para o site reconhecer.
@@ -78,27 +92,82 @@ export function verificarAutenticacao() {
 
 // Cria conta Firebase para novo colaborador sem derrubar a sessão do admin.
 export async function criarContaColaborador(nome, senha) {
-    const appSec = initializeApp(app.options, 'cad-' + Date.now());
-    const authSec = getAuth(appSec);
+    const { authSec, encerrar } = criarAuthSecundario('cad');
     try {
         const nomeNormalizado = normalizarNomeUsuario(nome);
         const email = nomeParaEmail(nomeNormalizado);
         const cred = await createUserWithEmailAndPassword(authSec, email, normalizarSenha(senha));
         await updateProfile(cred.user, { displayName: nomeNormalizado });
     } finally {
-        await signOut(authSec).catch(() => {});
+        await encerrar();
     }
 }
 
 // Atualiza a senha do Firebase Auth de um colaborador existente sem derrubar a sessão do admin.
 export async function atualizarSenhaColaborador(nome, senhaAntiga, senhaNova) {
-    const appSec = initializeApp(app.options, 'pwd-' + Date.now());
-    const authSec = getAuth(appSec);
+    const { authSec, encerrar } = criarAuthSecundario('pwd');
     try {
         const email = nomeParaEmail(normalizarNomeUsuario(nome));
         const cred = await signInWithEmailAndPassword(authSec, email, normalizarSenha(senhaAntiga));
         await updatePassword(cred.user, normalizarSenha(senhaNova));
     } finally {
-        await signOut(authSec).catch(() => {});
+        await encerrar();
     }
+}
+
+async function atualizarContaColaboradorComLogin({ nomeLogin, senhaLogin, nomeAtual, senhaAtual }) {
+    const nomeLoginNormalizado = normalizarNomeUsuario(nomeLogin);
+    const nomeAtualNormalizado = normalizarNomeUsuario(nomeAtual);
+    const emailLogin = nomeParaEmail(nomeLoginNormalizado);
+    const emailAtual = nomeParaEmail(nomeAtualNormalizado);
+    const { authSec, encerrar } = criarAuthSecundario('sync');
+
+    try {
+        const cred = await signInWithEmailAndPassword(authSec, emailLogin, normalizarSenha(senhaLogin));
+        if (emailLogin !== emailAtual) {
+            await updateEmail(cred.user, emailAtual);
+        }
+        await updateProfile(cred.user, { displayName: nomeAtualNormalizado });
+        await updatePassword(cred.user, normalizarSenha(senhaAtual));
+    } finally {
+        await encerrar();
+    }
+}
+
+export async function sincronizarContaColaborador({ nomeAnterior = '', senhaAnterior = '', nomeAtual, senhaAtual }) {
+    const nomeAtualNormalizado = normalizarNomeUsuario(nomeAtual);
+    const senhaAtualNormalizada = String(senhaAtual || '').trim();
+    const nomeAnteriorNormalizado = normalizarNomeUsuario(nomeAnterior);
+    const senhaAnteriorNormalizada = String(senhaAnterior || '').trim();
+
+    if (!nomeAtualNormalizado || !senhaAtualNormalizada) {
+        throw new Error('Nome e senha do colaborador são obrigatórios para criar o login.');
+    }
+
+    if (!nomeAnteriorNormalizado) {
+        try {
+            await criarContaColaborador(nomeAtualNormalizado, senhaAtualNormalizada);
+            return;
+        } catch (error) {
+            if (error?.code !== 'auth/email-already-in-use') throw error;
+            await atualizarContaColaboradorComLogin({
+                nomeLogin: nomeAtualNormalizado,
+                senhaLogin: senhaAtualNormalizada,
+                nomeAtual: nomeAtualNormalizado,
+                senhaAtual: senhaAtualNormalizada
+            });
+            return;
+        }
+    }
+
+    if (!senhaAnteriorNormalizada) {
+        throw new Error('Senha anterior do colaborador não encontrada para atualizar o login.');
+    }
+
+    await atualizarContaColaboradorComLogin({
+        nomeLogin: nomeAnteriorNormalizado,
+        senhaLogin: senhaAnteriorNormalizada,
+        nomeAtual: nomeAtualNormalizado,
+        senhaAtual: senhaAtualNormalizada
+    });
 }
