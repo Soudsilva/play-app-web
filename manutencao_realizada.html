@@ -3688,15 +3688,18 @@ window.finalizarRegistro = async function() {
             || (camposExtras.equipamentosRetiradosDetalhes && camposExtras.equipamentosRetiradosDetalhes.length)
         );
 
+        const manterClienteEmRecuperacao = camposExtras.pontoEncerrado === true;
+        const statusRecuperacaoCliente = manterClienteEmRecuperacao ? true : null;
+
         if (foiConcluido && clienteSnapshotAtendimento.id) {
-            await dbSalvarCliente({ emRecuperacao: null }, clienteSnapshotAtendimento.id);
+            await dbSalvarCliente({ emRecuperacao: statusRecuperacaoCliente }, clienteSnapshotAtendimento.id);
         }
 
         if (foiConcluido && clienteSnapshotAtendimento.id && manutencaoAfetaRecuperacao) {
             await dbSincronizarClienteRecuperacaoSessaoRotas(
-                { ...clienteSnapshotAtendimento, firebaseUrl: clienteSnapshotAtendimento.id, emRecuperacao: null },
+                { ...clienteSnapshotAtendimento, firebaseUrl: clienteSnapshotAtendimento.id, emRecuperacao: statusRecuperacaoCliente },
                 clienteSnapshotAtendimento.id,
-                null
+                statusRecuperacaoCliente
             );
         } else if (!foiConcluido && clienteSnapshotAtendimento.id && manutencaoAfetaRecuperacao) {
             await dbSincronizarClienteRecuperacaoSessaoRotas(

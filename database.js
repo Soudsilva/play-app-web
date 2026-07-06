@@ -2268,6 +2268,9 @@ export async function dbAplicarPendenciasManutencaoCliente(firebaseUrlCliente, p
             valorEncerramento: payload?.pontoEncerrado ? String(payload?.valorEncerramento || '') : (clienteAtual?.valorEncerramento || ''),
             dataEncerramento: payload?.pontoEncerrado ? agoraIso : (clienteAtual?.dataEncerramento || '')
         };
+        if (payload?.pontoEncerrado) {
+            patch.emRecuperacao = true;
+        }
 
         await update(clienteRef, patch);
         await _atualizarVersaoClientes();
@@ -2314,6 +2317,7 @@ export async function dbReverterEncerramentoCliente(firebaseUrlCliente, equipame
         await update(clienteRef, {
             encerrado: false,
             aguardandoRevisao: false,
+            emRecuperacao: null,
             valorEncerramento: '',
             dataEncerramento: '',
             equipDetalhes: equipamentos,
@@ -2336,6 +2340,7 @@ export async function dbMarcarClienteEncerrado(firebaseUrlCliente, valorCobrado)
         await update(ref(db, `clientes/${firebaseUrlCliente}`), {
             encerrado: true,
             aguardandoRevisao: true,
+            emRecuperacao: true,
             valorEncerramento: valorCobrado || '',
             dataEncerramento: new Date().toISOString()
         });
