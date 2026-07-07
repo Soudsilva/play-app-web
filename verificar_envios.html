@@ -716,6 +716,9 @@
     function renderizarPendenciasLocais(mensagem = '') {
         const box = document.getElementById('pendenciasEnvio');
         if (!box) return;
+        box.classList.remove('visivel');
+        box.innerHTML = '';
+        return;
         const fotosFirebasePendentes = obterFotosPendentesFirebaseDoUsuario();
         const fotosComArquivoLocal = contarFotosPendentesComArquivoLocal(fotosFirebasePendentes);
         const fotosSemArquivoLocal = Math.max(fotosFirebasePendentes.length - fotosComArquivoLocal, 0);
@@ -2092,7 +2095,7 @@
         marcarEnviosCarregados('clientes');
     });
 
-    tentarReenviarPendenciasSeOnline().catch(() => {});
+    carregarPendenciasLocais().catch(() => {});
     window.addEventListener('online', () => {
         reenviarPendenciasLocais().catch(() => {});
     });
