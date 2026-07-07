@@ -583,6 +583,8 @@
 
     // Pega quem estÃ¡ logado no celular no momento
     const usuarioLogado = localStorage.getItem('usuarioLogado');
+    const TODOS_USUARIOS = '__todos__';
+    let nomesUsuariosCarregados = [];
     let atendimentosSalvos = [];
     let cadastrosPixSalvos = [];
     let historicoEstoqueSalvo = [];
@@ -816,6 +818,7 @@
     }
 
     function pertenceAoUsuario(envio) {
+        if (usuarioSelecionado === TODOS_USUARIOS) return true;
         const usuario = normalizarTexto(usuarioSelecionado);
         if (!usuario) return false;
 
@@ -903,9 +906,10 @@
     }
 
     function obterEventosCadastroPixDoEnvio(envio) {
+        const modoTodos = usuarioSelecionado === TODOS_USUARIOS;
         const usuario = normalizarTexto(usuarioSelecionado);
         const dataEnvio = obterDataLocalYMD(envio?.data);
-        if (!usuario || !dataEnvio) return [];
+        if ((!modoTodos && !usuario) || !dataEnvio) return [];
 
         const eventos = [];
         cadastrosPixSalvos.forEach(registro => {
@@ -913,8 +917,12 @@
 
             const numeroPix = String(registro?.numero_pix || '').trim();
             const local = obterTextoLocalCadastroPix(registro, envio?.cliente || null);
+            const tecnicoInstalacao = normalizarTexto(registro?.tecnico);
+            const tecnicoRetirada = normalizarTexto(registro?.tecnico_retirada);
+            const combinaInstalacao = modoTodos ? !!tecnicoInstalacao : tecnicoInstalacao === usuario;
+            const combinaRetirada = modoTodos ? !!tecnicoRetirada : tecnicoRetirada === usuario;
 
-            if (normalizarTexto(registro?.tecnico) === usuario && obterDataLocalYMD(registro?.data) === dataEnvio) {
+            if (combinaInstalacao && obterDataLocalYMD(registro?.data) === dataEnvio) {
                 eventos.push({
                     chave: `inst_${registro.firebaseUrl || ''}_${numeroPix}_${registro.data || ''}`,
                     tipo: 'colocou',
@@ -925,7 +933,7 @@
                 });
             }
 
-            if (normalizarTexto(registro?.tecnico_retirada) === usuario && obterDataLocalYMD(registro?.data_retirada) === dataEnvio) {
+            if (combinaRetirada && obterDataLocalYMD(registro?.data_retirada) === dataEnvio) {
                 eventos.push({
                     chave: `ret_${registro.firebaseUrl || ''}_${numeroPix}_${registro.data_retirada || ''}`,
                     tipo: 'retirou',
@@ -979,8 +987,9 @@
     }
 
     function obterCadastrosPixAvulsosDoUsuario() {
+        const modoTodos = usuarioSelecionado === TODOS_USUARIOS;
         const usuario = normalizarTexto(usuarioSelecionado);
-        if (!usuario) return [];
+        if (!modoTodos && !usuario) return [];
 
         const itens = [];
         cadastrosPixSalvos.forEach(registro => {
@@ -989,8 +998,10 @@
 
             const tecnicoInstalacao = normalizarTexto(registro?.tecnico);
             const tecnicoRetirada = normalizarTexto(registro?.tecnico_retirada);
+            const combinaInstalacao = modoTodos ? !!tecnicoInstalacao : tecnicoInstalacao === usuario;
+            const combinaRetirada = modoTodos ? !!tecnicoRetirada : tecnicoRetirada === usuario;
 
-            if (tecnicoInstalacao === usuario && registro?.data && dataDentroMesSelecionado(registro.data) && !existeAtendimentoParaCadastroPix(registro, 'colocou', registro.data)) {
+            if (combinaInstalacao && registro?.data && dataDentroMesSelecionado(registro.data) && !existeAtendimentoParaCadastroPix(registro, 'colocou', registro.data)) {
                 itens.push({
                     tipoLinhaTempo: 'cadastro_pix',
                     eventoTipo: 'colocou',
@@ -1000,7 +1011,7 @@
                 });
             }
 
-            if (tecnicoRetirada === usuario && registro?.data_retirada && dataDentroMesSelecionado(registro.data_retirada) && !existeAtendimentoParaCadastroPix(registro, 'retirou', registro.data_retirada)) {
+            if (combinaRetirada && registro?.data_retirada && dataDentroMesSelecionado(registro.data_retirada) && !existeAtendimentoParaCadastroPix(registro, 'retirou', registro.data_retirada)) {
                 itens.push({
                     tipoLinhaTempo: 'cadastro_pix',
                     eventoTipo: 'retirou',
@@ -1131,11 +1142,12 @@
     }
 
     function obterCadastrosClienteDoUsuario() {
+        const modoTodos = usuarioSelecionado === TODOS_USUARIOS;
         const usuario = normalizarTexto(usuarioSelecionado);
-        if (!usuario) return [];
+        if (!modoTodos && !usuario) return [];
 
         return clientesSalvos
-            .filter(item => normalizarTexto(item?.cadastradoPor) === usuario)
+            .filter(item => modoTodos ? !!item?.cadastradoPor : normalizarTexto(item?.cadastradoPor) === usuario)
             .filter(item => {
                 if (!termoBusca) return true;
                 const campos = [
@@ -1787,8 +1799,11 @@
             return;
         }
 
+        nomesUsuariosCarregados = nomes;
+
         selectUsuario.innerHTML = [
             '<option value="">Selecione o usuário</option>',
+            `<option value="${TODOS_USUARIOS}">Todos</option>`,
             ...nomes.map(nome => `<option value="${escaparHtml(nome)}">${escaparHtml(nome)}</option>`)
         ]
             .join('');
@@ -1812,6 +1827,20 @@
                 totalApos: entry.totalApos != null ? Number(entry.totalApos) : null
             });
         });
+    }
+
+    function rotuloUsuarioSelecionado() {
+        return usuarioSelecionado === TODOS_USUARIOS ? 'Todos' : usuarioSelecionado;
+    }
+
+    function mesclarPorFirebaseUrl(listas) {
+        const porId = new Map();
+        let semIdSeq = 0;
+        listas.flat().forEach(item => {
+            const chave = item?.firebaseUrl || `__sem_id_${semIdSeq++}`;
+            porId.set(chave, item);
+        });
+        return [...porId.values()];
     }
 
     function itemNoMes(item, campos) {
@@ -1846,7 +1875,7 @@
                 .filter(item => itemNoMes(item, ['timestamp', 'data', 'criado_em']))
         );
         filtroStatus.textContent = usuarioSelecionado && selectMes.value
-            ? `${usuarioSelecionado} - ${labelMes(selectMes.value)}`
+            ? `${rotuloUsuarioSelecionado()} - ${labelMes(selectMes.value)}`
             : 'Nenhum mês encontrado para este usuário.';
         renderizarEnvios();
     }
@@ -1950,26 +1979,26 @@
         renderizarEnvios();
 
         try {
-            const [
-                atendimentos,
-                cadastrosPix,
-                historicoEstoque,
-                historicoBalanco,
-                clientesCadastrados
-            ] = await Promise.all([
-                dbListarAtendimentosDoUsuarioNoPeriodo(usuarioSelecionado, '', ''),
-                dbListarCadastrosPixDoUsuarioNoPeriodo(usuarioSelecionado, '', ''),
-                dbListarHistoricoEstoqueDoUsuarioNoPeriodo(usuarioSelecionado, '', ''),
-                dbListarHistoricoBalancoDoUsuarioNoPeriodo(usuarioSelecionado, '', ''),
-                dbListarClientesCadastradosPorUsuarioNoPeriodo(usuarioSelecionado, '', '')
-            ]);
+            const nomesParaBuscar = usuarioSelecionado === TODOS_USUARIOS
+                ? nomesUsuariosCarregados
+                : [usuarioSelecionado];
+
+            const resultadosPorUsuario = await Promise.all(
+                nomesParaBuscar.map(nome => Promise.all([
+                    dbListarAtendimentosDoUsuarioNoPeriodo(nome, '', ''),
+                    dbListarCadastrosPixDoUsuarioNoPeriodo(nome, '', ''),
+                    dbListarHistoricoEstoqueDoUsuarioNoPeriodo(nome, '', ''),
+                    dbListarHistoricoBalancoDoUsuarioNoPeriodo(nome, '', ''),
+                    dbListarClientesCadastradosPorUsuarioNoPeriodo(nome, '', '')
+                ]))
+            );
 
             dadosUsuarioCarregados = {
-                atendimentos,
-                cadastrosPix,
-                historicoEstoque,
-                historicoBalanco,
-                clientesCadastrados
+                atendimentos: mesclarPorFirebaseUrl(resultadosPorUsuario.map(r => r[0])),
+                cadastrosPix: mesclarPorFirebaseUrl(resultadosPorUsuario.map(r => r[1])),
+                historicoEstoque: mesclarPorFirebaseUrl(resultadosPorUsuario.map(r => r[2])),
+                historicoBalanco: mesclarPorFirebaseUrl(resultadosPorUsuario.map(r => r[3])),
+                clientesCadastrados: mesclarPorFirebaseUrl(resultadosPorUsuario.map(r => r[4]))
             };
 
             const manutencaoIds = dadosUsuarioCarregados.atendimentos
