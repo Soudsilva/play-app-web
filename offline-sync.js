@@ -130,6 +130,24 @@ export async function removerPendente(id) {
     });
 }
 
+async function marcarPendenteComAtendimentoServidor(item, atendimentoId) {
+    const id = item?.id;
+    const idServidor = String(atendimentoId || '').trim();
+    if (!id || !idServidor) return;
+
+    const db = await abrirDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(PENDENTES, 'readwrite');
+        tx.objectStore(PENDENTES).put({
+            ...item,
+            atendimentoServidorId: idServidor,
+            sincronizadoParcialEm: new Date().toISOString()
+        });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
 export async function contarPendentes() {
     try {
         const db = await abrirDB();
@@ -274,7 +292,11 @@ export async function sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAt
                 }
             }
 
-            const atendimentoId = await dbSalvarAtendimento(d);
+            const atendimentoServidorId = String(item?.atendimentoServidorId || '').trim();
+            const atendimentoId = await dbSalvarAtendimento(d, atendimentoServidorId || null);
+            if (!atendimentoServidorId && atendimentoId) {
+                await marcarPendenteComAtendimentoServidor(item, atendimentoId);
+            }
             if (typeof dbSincronizarProdutosAtendimentoNoHistorico === 'function') {
                 await dbSincronizarProdutosAtendimentoNoHistorico(atendimentoId, d);
             }

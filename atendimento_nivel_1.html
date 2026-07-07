@@ -2062,6 +2062,57 @@ function obterIdAtendimentoEmEdicao() {
         }
     }
 
+    function prepararAtendimentoOfflineComFotosBase64(dadosAtendimento, fotosPendentesUpload) {
+        const fotosPendentes = Array.isArray(fotosPendentesUpload) ? fotosPendentesUpload : [];
+        if (fotosPendentes.length === 0) return dadosAtendimento;
+
+        const dadosOffline = JSON.parse(JSON.stringify(dadosAtendimento));
+        if (!dadosOffline.fotos) dadosOffline.fotos = {};
+        if (!Array.isArray(dadosOffline.fotos.maquinas)) dadosOffline.fotos.maquinas = [];
+        if (!Array.isArray(dadosOffline.fotos.pix)) dadosOffline.fotos.pix = [];
+
+        fotosPendentes.forEach((foto) => {
+            const base64 = String(foto?.base64 || '').trim();
+            if (!base64.startsWith('data:')) return;
+
+            if (foto.tipo === 'ficha') {
+                dadosOffline.fotos.ficha = base64;
+                dadosOffline.fotos.fichaThumb = null;
+                dadosOffline.fotos.fichaPendente = false;
+                dadosOffline.fotos.fichaLocalId = null;
+                return;
+            }
+
+            const indice = Number(foto.indice);
+            if (!Number.isInteger(indice) || indice < 0) return;
+
+            if (foto.tipo === 'maquina') {
+                dadosOffline.fotos.maquinas[indice] = {
+                    ...(dadosOffline.fotos.maquinas[indice] || {}),
+                    url: base64,
+                    thumbUrl: null,
+                    uploadPendente: false,
+                    fotoLocalId: null
+                };
+                return;
+            }
+
+            if (foto.tipo === 'pix') {
+                dadosOffline.fotos.pix[indice] = {
+                    ...(dadosOffline.fotos.pix[indice] || {}),
+                    url: base64,
+                    thumbUrl: null,
+                    uploadPendente: false,
+                    fotoLocalId: null
+                };
+            }
+        });
+
+        dadosOffline.fotosPendentes = false;
+        delete dadosOffline.fotosPendentesAtualizadoEm;
+        return dadosOffline;
+    }
+
     window.salvarAtendimento = async function() { // [ALTERADO] para async
         const btn = document.querySelector('.btn-finalizar');
         if (envioAtendimentoEmAndamento || btn?.disabled) return;
@@ -2327,7 +2378,7 @@ function obterIdAtendimentoEmEdicao() {
                     await window.playAlert("📵 Sem internet — não é possível editar um atendimento já enviado.\nConecte-se e tente novamente.");
                     return;
                 }
-                await enfileirarAtendimento(dadosAtendimento);
+                await enfileirarAtendimento(prepararAtendimentoOfflineComFotosBase64(dadosAtendimento, fotosPendentesUpload));
             } else {
                 const atendimentoSalvoId = await dbSalvarAtendimento(dadosAtendimento, atendimentoEmEdicaoId || null);
                 if (fotosPendentesUpload.length > 0) {
