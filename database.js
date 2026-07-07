@@ -20,6 +20,7 @@ import {
     orderByChild,
     equalTo,
     startAt,
+    endAt,
     limitToLast,
     runTransaction
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -262,6 +263,32 @@ export async function dbListarClientesCadastradosPorUsuarioNoPeriodo(nomeUsuario
         return todos
             .filter(item => String(item?.cadastradoPor || '').trim().toLowerCase() === nomeNorm)
             .filter(dentroDoPeriodo);
+    }
+}
+
+// Igual à função acima, mas sem restringir por usuário: usada pela tela de Verificações
+// Gerais no modo "Todos", pra trazer só o período escolhido em vez do histórico inteiro
+// de cada colaborador.
+export async function dbListarClientesCadastradosPorPeriodo(inicioIso, fimIso) {
+    const inicioMs = Date.parse(inicioIso || '');
+    const fimMs = Date.parse(fimIso || '');
+    const dentroDoPeriodo = (item) => {
+        const dataMs = Date.parse(item?.dataCadastro || item?.timestamp || item?.criado_em || '');
+        if (!Number.isFinite(dataMs)) return false;
+        if (Number.isFinite(inicioMs) && dataMs < inicioMs) return false;
+        if (Number.isFinite(fimMs) && dataMs >= fimMs) return false;
+        return true;
+    };
+
+    try {
+        const snapshot = await get(query(ref(db, 'clientes'), orderByChild('dataCadastro'), startAt(inicioIso), endAt(fimIso)));
+        if (!snapshot.exists()) return [];
+        const data = snapshot.val() || {};
+        return Object.keys(data).map(key => ({ firebaseUrl: key, ...data[key] }));
+    } catch (error) {
+        console.warn("FALHA NA BUSCA INDEXADA DE CLIENTES CADASTRADOS POR PERIODO. USANDO FALLBACK LOCAL:", error);
+        const todos = await _obterListaClientesAtualizada();
+        return todos.filter(dentroDoPeriodo);
     }
 }
 
@@ -1457,6 +1484,32 @@ export async function dbListarAtendimentosDoUsuarioNoPeriodo(nomeUsuario, inicio
     return lista.filter(dentroDoPeriodo);
 }
 
+// Igual à função acima, mas sem restringir por usuário: usada pela tela de Verificações
+// Gerais no modo "Todos", pra trazer só o período escolhido em vez do histórico inteiro
+// de cada colaborador.
+export async function dbListarAtendimentosPorPeriodo(inicioIso, fimIso) {
+    const inicioMs = Date.parse(inicioIso || '');
+    const fimMs = Date.parse(fimIso || '');
+    const dentroDoPeriodo = (item) => {
+        const dataMs = Date.parse(item?.data || item?.timestamp || item?.criado_em || '');
+        if (!Number.isFinite(dataMs)) return false;
+        if (Number.isFinite(inicioMs) && dataMs < inicioMs) return false;
+        if (Number.isFinite(fimMs) && dataMs >= fimMs) return false;
+        return true;
+    };
+
+    try {
+        const snapshot = await get(query(ref(db, 'atendimentos'), orderByChild('data'), startAt(inicioIso), endAt(fimIso)));
+        if (!snapshot.exists()) return [];
+        const data = snapshot.val() || {};
+        return Object.keys(data).map(key => ({ ...data[key], firebaseUrl: key }));
+    } catch (error) {
+        console.warn("FALHA NA BUSCA INDEXADA DE ATENDIMENTOS POR PERIODO. USANDO FALLBACK LOCAL:", error);
+        const todos = await dbListarAtendimentos();
+        return todos.filter(dentroDoPeriodo);
+    }
+}
+
 export async function dbListarHistoricoEstoqueDoUsuarioNoPeriodo(nomeUsuario, inicioIso, fimIso) {
     const nome = String(nomeUsuario || '').trim();
     if (!nome) return [];
@@ -1485,6 +1538,32 @@ export async function dbListarHistoricoEstoqueDoUsuarioNoPeriodo(nomeUsuario, in
         return todos
             .filter(item => String(item?.responsavel || '').trim().toLowerCase() === nomeNorm)
             .filter(dentroDoPeriodo);
+    }
+}
+
+// Igual à função acima, mas sem restringir por usuário: usada pela tela de Verificações
+// Gerais no modo "Todos", pra trazer só o período escolhido em vez do histórico inteiro
+// de cada colaborador.
+export async function dbListarHistoricoEstoquePorPeriodo(inicioIso, fimIso) {
+    const inicioMs = Date.parse(inicioIso || '');
+    const fimMs = Date.parse(fimIso || '');
+    const dentroDoPeriodo = (item) => {
+        const dataMs = Date.parse(item?.data || item?.timestamp || item?.criado_em || '');
+        if (!Number.isFinite(dataMs)) return false;
+        if (Number.isFinite(inicioMs) && dataMs < inicioMs) return false;
+        if (Number.isFinite(fimMs) && dataMs >= fimMs) return false;
+        return true;
+    };
+
+    try {
+        const snapshot = await get(query(ref(db, 'historico_estoque'), orderByChild('data'), startAt(inicioIso), endAt(fimIso)));
+        if (!snapshot.exists()) return [];
+        const data = snapshot.val() || {};
+        return Object.keys(data).map(key => ({ firebaseUrl: key, ...data[key] }));
+    } catch (error) {
+        console.warn("FALHA NA BUSCA INDEXADA DO HISTORICO DE ESTOQUE POR PERIODO. USANDO FALLBACK LOCAL:", error);
+        const todos = await dbListarHistorico();
+        return todos.filter(dentroDoPeriodo);
     }
 }
 
@@ -3528,6 +3607,82 @@ export async function dbListarCadastrosPixDoUsuarioNoPeriodo(nomeUsuario, inicio
             ].some(valor => String(valor || '').trim().toLowerCase() === nomeNorm))
             .filter(dentroDoPeriodo);
     }
+}
+
+// Igual à função acima, mas sem restringir por usuário: usada pela tela de Verificações
+// Gerais no modo "Todos", pra trazer só o período escolhido em vez do histórico inteiro
+// de cada colaborador.
+export async function dbListarCadastrosPixPorPeriodo(inicioIso, fimIso) {
+    const inicioMs = Date.parse(inicioIso || '');
+    const fimMs = Date.parse(fimIso || '');
+    const dentroDoPeriodo = (item) => {
+        const datas = [item?.data, item?.data_retirada, item?.timestamp, item?.criado_em]
+            .map(valor => Date.parse(valor || ''))
+            .filter(Number.isFinite);
+        if (datas.length === 0) return false;
+        return datas.some(dataMs => {
+            if (Number.isFinite(inicioMs) && dataMs < inicioMs) return false;
+            if (Number.isFinite(fimMs) && dataMs >= fimMs) return false;
+            return true;
+        });
+    };
+
+    const porId = new Map();
+    const consultas = [
+        query(ref(db, 'cadastros_pix'), orderByChild('data'), startAt(inicioIso), endAt(fimIso)),
+        query(ref(db, 'cadastros_pix'), orderByChild('data_retirada'), startAt(inicioIso), endAt(fimIso))
+    ];
+
+    try {
+        const snapshots = await Promise.all(consultas.map(q => get(q)));
+        snapshots.forEach(snapshot => {
+            const data = snapshot.exists() ? (snapshot.val() || {}) : {};
+            Object.keys(data).forEach(key => porId.set(key, { firebaseUrl: key, ...data[key] }));
+        });
+        return [...porId.values()];
+    } catch (error) {
+        console.warn("FALHA NA BUSCA INDEXADA DE CADASTROS PIX POR PERIODO. USANDO FALLBACK LOCAL:", error);
+        const snapshot = await get(ref(db, 'cadastros_pix'));
+        const data = snapshot.exists() ? (snapshot.val() || {}) : {};
+        return Object.keys(data)
+            .map(key => ({ firebaseUrl: key, ...data[key] }))
+            .filter(dentroDoPeriodo);
+    }
+}
+
+// Lê as 4 coleções usadas pela tela de Verificações Gerais por inteiro (sem filtro)
+// e devolve os meses (YYYY-MM) que realmente têm algum registro, do mais recente pro
+// mais antigo. É uma varredura completa (mesmo custo de antes de existir a busca por
+// período), por isso só é chamada uma vez, sob demanda, quando o usuário abre o
+// seletor de mês — nunca no carregamento automático da página.
+export async function dbObterMesesComDados() {
+    const consultas = [
+        { colecao: 'atendimentos', campos: ['data'] },
+        { colecao: 'historico_estoque', campos: ['data'] },
+        { colecao: 'clientes', campos: ['dataCadastro'] },
+        { colecao: 'cadastros_pix', campos: ['data', 'data_retirada'] }
+    ];
+
+    const meses = new Set();
+    const registrarMes = (valor) => {
+        const data = new Date(valor || '');
+        if (Number.isNaN(data.getTime())) return;
+        meses.add(`${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`);
+    };
+
+    try {
+        await Promise.all(consultas.map(async ({ colecao, campos }) => {
+            const snapshot = await get(ref(db, colecao));
+            if (!snapshot.exists()) return;
+            Object.values(snapshot.val() || {}).forEach(item => {
+                campos.forEach(campo => registrarMes(item?.[campo]));
+            });
+        }));
+    } catch (error) {
+        console.warn("FALHA AO BUSCAR MESES COM DADOS:", error);
+    }
+
+    return [...meses].sort().reverse();
 }
 
 /* =============================================================================

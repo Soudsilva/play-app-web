@@ -543,7 +543,7 @@
     </div>
 
     <div id="listaEnvios">
-        <p class="sem-envios">Selecione o mês e o usuário para carregar as movimentações.</p>
+        <p class="sem-envios">Selecione o usuário para carregar as movimentações.</p>
     </div>
 </div>
 
@@ -568,12 +568,13 @@
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
     import {
-        dbListarAtendimentosDoUsuarioNoPeriodo,
-        dbListarCadastrosPixDoUsuarioNoPeriodo,
-        dbListarClientesCadastradosPorUsuarioNoPeriodo,
+        dbListarAtendimentosPorPeriodo,
+        dbListarCadastrosPixPorPeriodo,
+        dbListarClientesCadastradosPorPeriodo,
         dbListarColaboradores,
+        dbObterMesesComDados,
         dbListarHistoricoBalancoDoUsuarioNoPeriodo,
-        dbListarHistoricoEstoqueDoUsuarioNoPeriodo,
+        dbListarHistoricoEstoquePorPeriodo,
         dbListarManutencoesPorIds,
         dbExcluirAtendimento,
         dbReverterEncerramentoCliente,
@@ -1083,7 +1084,10 @@
     }
 
     function obterMovimentosEstoqueDoUsuario() {
+        const modoTodos = usuarioSelecionado === TODOS_USUARIOS;
+        const usuario = normalizarTexto(usuarioSelecionado);
         return historicoEstoqueSalvo
+            .filter(item => modoTodos ? true : normalizarTexto(item?.responsavel) === usuario)
             .filter(item => {
                 if (!termoBusca) return true;
                 const campos = [
@@ -1334,7 +1338,7 @@
         atualizarResumoContestacoes();
 
         if (!usuarioSelecionado || !selectMes?.value) {
-            container.innerHTML = '<p class="sem-envios">Selecione o mês e o usuário para carregar as movimentações.</p>';
+            container.innerHTML = '<p class="sem-envios">Selecione o usuário para carregar as movimentações.</p>';
             return;
         }
 
@@ -1672,12 +1676,6 @@
     const selectUsuario = document.getElementById('selectUsuario');
     const filtroStatus = document.getElementById('filtroStatus');
 
-    function chaveMesDeData(valor) {
-        const data = new Date(valor || '');
-        if (Number.isNaN(data.getTime())) return '';
-        return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
-    }
-
     function labelMes(chaveMes) {
         const [ano, mes] = String(chaveMes || '').split('-').map(Number);
         if (!ano || !mes) return '';
@@ -1689,43 +1687,43 @@
         return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
     }
 
-    function limparMeses(mensagem = 'Mês', desabilitar = false) {
-        selectMes.innerHTML = `<option value="">${mensagem}</option>`;
-        selectMes.value = '';
-        selectMes.disabled = desabilitar;
-    }
-
-    function adicionarMes(conjunto, valor) {
-        const chave = chaveMesDeData(valor);
-        if (chave) conjunto.add(chave);
-    }
-
-    function popularMesesExistentes() {
-        const meses = new Set();
-
-        dadosUsuarioCarregados.atendimentos.forEach(item => adicionarMes(meses, item?.data || item?.timestamp || item?.criado_em));
-        dadosUsuarioCarregados.historicoEstoque.forEach(item => adicionarMes(meses, item?.data || item?.timestamp || item?.criado_em));
-        dadosUsuarioCarregados.historicoBalanco.forEach(item => adicionarMes(meses, item?.timestamp || item?.data || item?.criado_em));
-        dadosUsuarioCarregados.clientesCadastrados.forEach(item => adicionarMes(meses, item?.dataCadastro || item?.timestamp || item?.criado_em));
-        dadosUsuarioCarregados.cadastrosPix.forEach(item => {
-            adicionarMes(meses, item?.data);
-            adicionarMes(meses, item?.data_retirada);
-            adicionarMes(meses, item?.timestamp || item?.criado_em);
-        });
-
-        const ordenados = [...meses].sort().reverse();
-        if (ordenados.length === 0) {
-            limparMeses('Sem mês', true);
-            return;
-        }
-
-        selectMes.innerHTML = [
-            '<option value="">Selecione o mês</option>',
-            ...ordenados.map(chave => `<option value="${chave}">${labelMes(chave)}</option>`)
-        ].join('');
-        const atual = chaveMesAtual();
-        selectMes.value = ordenados.includes(atual) ? atual : '';
+    function popularMesesFixos() {
+        selectMes.innerHTML = `<option value="${chaveMesAtual()}">${labelMes(chaveMesAtual())}</option>`;
+        selectMes.value = chaveMesAtual();
         selectMes.disabled = false;
+    }
+
+    let mesesReaisCarregando = false;
+    let mesesReaisCarregados = false;
+
+    // Só busca a lista real de meses com dado quando o usuário interage com o campo
+    // (é uma varredura completa das 4 coleções, então evitamos disparar isso sozinho
+    // no carregamento da página). Roda uma única vez por sessão da tela.
+    async function carregarListaMesesReal() {
+        if (mesesReaisCarregados || mesesReaisCarregando) return;
+        mesesReaisCarregando = true;
+
+        const valorAtual = selectMes.value;
+        try {
+            const meses = await dbObterMesesComDados();
+            if (meses.length > 0) {
+                selectMes.innerHTML = meses.map(chave => `<option value="${chave}">${labelMes(chave)}</option>`).join('');
+                selectMes.value = meses.includes(valorAtual) ? valorAtual : meses[0];
+                mesesReaisCarregados = true;
+            }
+        } catch (erro) {
+            console.warn('Erro ao buscar meses com dados:', erro);
+        } finally {
+            mesesReaisCarregando = false;
+        }
+    }
+
+    function calcularLimitesMes(chaveMes) {
+        const [ano, mes] = String(chaveMes || '').split('-').map(Number);
+        if (!ano || !mes) return null;
+        const inicio = new Date(ano, mes - 1, 1, 0, 0, 0, 0);
+        const fim = new Date(ano, mes, 1, 0, 0, 0, 0);
+        return { inicioIso: inicio.toISOString(), fimIso: fim.toISOString() };
     }
 
     function obterColaboradoresCache() {
@@ -1843,18 +1841,25 @@
         return [...porId.values()];
     }
 
-    function itemNoMes(item, campos) {
-        if (!selectMes.value) return false;
-        return campos.some(campo => chaveMesDeData(item?.[campo]) === selectMes.value);
+    function limparDadosCarregados() {
+        dadosUsuarioCarregados = {
+            atendimentos: [],
+            cadastrosPix: [],
+            historicoEstoque: [],
+            historicoBalanco: [],
+            clientesCadastrados: []
+        };
+        atendimentosSalvos = [];
+        cadastrosPixSalvos = [];
+        historicoEstoqueSalvo = [];
+        manutencoesSalvas = [];
+        clientesSalvos = [];
+        mapaMovimentacoesPorAtendimento = {};
     }
 
-    function aplicarFiltroMesCarregado() {
+    async function carregarDadosDoPeriodo() {
         if (!usuarioSelecionado || !selectMes.value) {
-            atendimentosSalvos = [];
-            cadastrosPixSalvos = [];
-            historicoEstoqueSalvo = [];
-            clientesSalvos = [];
-            mapaMovimentacoesPorAtendimento = {};
+            limparDadosCarregados();
             filtroStatus.textContent = usuarioSelecionado
                 ? 'Selecione o mês para carregar as movimentações.'
                 : '';
@@ -1862,22 +1867,68 @@
             return;
         }
 
-        atendimentosSalvos = dadosUsuarioCarregados.atendimentos
-            .filter(item => itemNoMes(item, ['data', 'timestamp', 'criado_em']));
-        cadastrosPixSalvos = dadosUsuarioCarregados.cadastrosPix
-            .filter(item => itemNoMes(item, ['data', 'data_retirada', 'timestamp', 'criado_em']));
-        historicoEstoqueSalvo = dadosUsuarioCarregados.historicoEstoque
-            .filter(item => itemNoMes(item, ['data', 'timestamp', 'criado_em']));
-        clientesSalvos = dadosUsuarioCarregados.clientesCadastrados
-            .filter(item => itemNoMes(item, ['dataCadastro', 'timestamp', 'criado_em']));
-        atualizarMapaMovimentacoesBalanco(
-            dadosUsuarioCarregados.historicoBalanco
-                .filter(item => itemNoMes(item, ['timestamp', 'data', 'criado_em']))
-        );
-        filtroStatus.textContent = usuarioSelecionado && selectMes.value
-            ? `${rotuloUsuarioSelecionado()} - ${labelMes(selectMes.value)}`
-            : 'Nenhum mês encontrado para este usuário.';
+        const limites = calcularLimitesMes(selectMes.value);
+        if (!limites) {
+            limparDadosCarregados();
+            filtroStatus.textContent = 'Mês inválido.';
+            renderizarEnvios();
+            return;
+        }
+
+        carregandoMovimentacoes = true;
+        filtroStatus.textContent = 'Carregando movimentações...';
+        selectUsuario.disabled = true;
+        selectMes.disabled = true;
         renderizarEnvios();
+
+        try {
+            const modoTodos = usuarioSelecionado === TODOS_USUARIOS;
+            const nomesParaBalanco = modoTodos ? nomesUsuariosCarregados : [usuarioSelecionado];
+
+            const [
+                atendimentos,
+                cadastrosPix,
+                historicoEstoque,
+                clientesCadastrados,
+                historicoBalancoPorUsuario
+            ] = await Promise.all([
+                dbListarAtendimentosPorPeriodo(limites.inicioIso, limites.fimIso),
+                dbListarCadastrosPixPorPeriodo(limites.inicioIso, limites.fimIso),
+                dbListarHistoricoEstoquePorPeriodo(limites.inicioIso, limites.fimIso),
+                dbListarClientesCadastradosPorPeriodo(limites.inicioIso, limites.fimIso),
+                Promise.all(nomesParaBalanco.map(nome => dbListarHistoricoBalancoDoUsuarioNoPeriodo(nome, limites.inicioIso, limites.fimIso)))
+            ]);
+
+            dadosUsuarioCarregados = {
+                atendimentos,
+                cadastrosPix,
+                historicoEstoque,
+                historicoBalanco: mesclarPorFirebaseUrl(historicoBalancoPorUsuario),
+                clientesCadastrados
+            };
+
+            atendimentosSalvos = dadosUsuarioCarregados.atendimentos;
+            cadastrosPixSalvos = dadosUsuarioCarregados.cadastrosPix;
+            historicoEstoqueSalvo = dadosUsuarioCarregados.historicoEstoque;
+            clientesSalvos = dadosUsuarioCarregados.clientesCadastrados;
+            atualizarMapaMovimentacoesBalanco(dadosUsuarioCarregados.historicoBalanco);
+
+            const manutencaoIds = dadosUsuarioCarregados.atendimentos
+                .map(item => String(item?.manutencao?.id || '').trim())
+                .filter(Boolean);
+            manutencoesSalvas = await dbListarManutencoesPorIds(manutencaoIds);
+
+            filtroStatus.textContent = `${rotuloUsuarioSelecionado()} - ${labelMes(selectMes.value)}`;
+        } catch (erro) {
+            console.error('Erro ao carregar verificacoes gerais:', erro);
+            limparDadosCarregados();
+            filtroStatus.textContent = 'Erro ao carregar dados.';
+        } finally {
+            carregandoMovimentacoes = false;
+            selectUsuario.disabled = false;
+            selectMes.disabled = false;
+            renderizarEnvios();
+        }
     }
 
     function removerAtendimentoCarregado(id) {
@@ -1950,92 +2001,34 @@
         await excluirEnvioGestor(botaoExcluir.dataset.excluirId, botaoExcluir);
     });
 
-    async function carregarMesesDoUsuario() {
+    function aoMudarUsuario() {
         usuarioSelecionado = String(selectUsuario.value || '').trim();
         if (!usuarioSelecionado) {
             filtroStatus.textContent = '';
-            limparMeses();
-            dadosUsuarioCarregados = {
-                atendimentos: [],
-                cadastrosPix: [],
-                historicoEstoque: [],
-                historicoBalanco: [],
-                clientesCadastrados: []
-            };
-            atendimentosSalvos = [];
-            cadastrosPixSalvos = [];
-            historicoEstoqueSalvo = [];
-            manutencoesSalvas = [];
-            clientesSalvos = [];
-            mapaMovimentacoesPorAtendimento = {};
+            limparDadosCarregados();
             renderizarEnvios();
             return;
         }
-
-        carregandoMovimentacoes = true;
-        filtroStatus.textContent = 'Carregando meses...';
-        selectUsuario.disabled = true;
-        limparMeses('Carregando', true);
-        renderizarEnvios();
-
-        try {
-            const nomesParaBuscar = usuarioSelecionado === TODOS_USUARIOS
-                ? nomesUsuariosCarregados
-                : [usuarioSelecionado];
-
-            const resultadosPorUsuario = await Promise.all(
-                nomesParaBuscar.map(nome => Promise.all([
-                    dbListarAtendimentosDoUsuarioNoPeriodo(nome, '', ''),
-                    dbListarCadastrosPixDoUsuarioNoPeriodo(nome, '', ''),
-                    dbListarHistoricoEstoqueDoUsuarioNoPeriodo(nome, '', ''),
-                    dbListarHistoricoBalancoDoUsuarioNoPeriodo(nome, '', ''),
-                    dbListarClientesCadastradosPorUsuarioNoPeriodo(nome, '', '')
-                ]))
-            );
-
-            dadosUsuarioCarregados = {
-                atendimentos: mesclarPorFirebaseUrl(resultadosPorUsuario.map(r => r[0])),
-                cadastrosPix: mesclarPorFirebaseUrl(resultadosPorUsuario.map(r => r[1])),
-                historicoEstoque: mesclarPorFirebaseUrl(resultadosPorUsuario.map(r => r[2])),
-                historicoBalanco: mesclarPorFirebaseUrl(resultadosPorUsuario.map(r => r[3])),
-                clientesCadastrados: mesclarPorFirebaseUrl(resultadosPorUsuario.map(r => r[4]))
-            };
-
-            const manutencaoIds = dadosUsuarioCarregados.atendimentos
-                .map(item => String(item?.manutencao?.id || '').trim())
-                .filter(Boolean);
-            manutencoesSalvas = await dbListarManutencoesPorIds(manutencaoIds);
-            popularMesesExistentes();
-            filtroStatus.textContent = 'Selecione o mês para carregar as movimentações.';
-        } catch (erro) {
-            console.error('Erro ao carregar verificacoes gerais:', erro);
-            dadosUsuarioCarregados = {
-                atendimentos: [],
-                cadastrosPix: [],
-                historicoEstoque: [],
-                historicoBalanco: [],
-                clientesCadastrados: []
-            };
-            mapaMovimentacoesPorAtendimento = {};
-            limparMeses('Erro', true);
-            filtroStatus.textContent = 'Erro ao carregar dados.';
-        } finally {
-            carregandoMovimentacoes = false;
-            selectUsuario.disabled = false;
-            aplicarFiltroMesCarregado();
-        }
+        carregarDadosDoPeriodo();
     }
 
-    selectMes.addEventListener('change', aplicarFiltroMesCarregado);
-    selectMes.addEventListener('focus', () => {
-        if (!usuarioSelecionado) filtroStatus.textContent = 'Selecione o usuário primeiro.';
+    selectMes.addEventListener('change', () => {
+        if (!usuarioSelecionado) {
+            filtroStatus.textContent = 'Selecione o usuário primeiro.';
+            return;
+        }
+        carregarDadosDoPeriodo();
     });
-    selectMes.addEventListener('pointerdown', () => {
-        if (!usuarioSelecionado) filtroStatus.textContent = 'Selecione o usuário primeiro.';
+    selectMes.addEventListener('focus', async () => {
+        const valorAntes = selectMes.value;
+        await carregarListaMesesReal();
+        if (usuarioSelecionado && selectMes.value !== valorAntes) {
+            carregarDadosDoPeriodo();
+        }
     });
-    selectUsuario.addEventListener('change', carregarMesesDoUsuario);
+    selectUsuario.addEventListener('change', aoMudarUsuario);
 
-    limparMeses();
+    popularMesesFixos();
     carregarUsuarios();
 
 </script>
