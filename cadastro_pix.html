@@ -1220,11 +1220,34 @@ import {
     dbRemoverPixEmPosse,
     storageSalvarFotoComThumb
 } from './database.js';
+import {
+    enfileirarPixPossePendente,
+    removerPixPossePendente,
+    sincronizarPixPossePendentes
+} from './offline-sync.js';
 
 verificarAutenticacao();
 
 const db   = getDatabase(app);
 const PATH = 'cadastros_pix';
+
+function montarIdPendenciaPixPosse(usuario, numeroPix, clienteId, dataEvento) {
+    return ['retirada_pix_cliente', usuario, numeroPix, clienteId, dataEvento]
+        .map(parte => String(parte || '').trim().replace(/[^a-zA-Z0-9_-]+/g, '_'))
+        .filter(Boolean)
+        .join('__');
+}
+
+async function tentarSincronizarPixPossePendentes() {
+    try {
+        await sincronizarPixPossePendentes(dbAdicionarPixEmPosse);
+    } catch (erro) {
+        console.warn('Falha ao sincronizar pendencias locais de Pix em posse:', erro);
+    }
+}
+
+tentarSincronizarPixPossePendentes();
+window.addEventListener('online', tentarSincronizarPixPossePendentes);
 
 // Estado em memÃ³ria
 window._pixData            = {};
@@ -3026,16 +3049,39 @@ window.confirmarRetiradaCard = async function(clienteId, rowId, pixNum, pixKey) 
             throw new Error(descreverErroFirebase(erroVersao, 'Falha ao atualizar a vers\u00e3o dos clientes.'));
         }
 
+        const pendenciaPixPosseId = montarIdPendenciaPixPosse(usuarioLogado, pixNum, clienteId, dataRetirada);
+        const dadosPixPosse = {
+            responsavel: usuarioLogado,
+            retiradoPor: usuarioLogado,
+            cliente: String(cliente.nome || '').trim(),
+            equipamento: nomeEquipamento,
+            origem: 'retirada_pix',
+            origemRegistro: 'retirada_pix_cliente',
+            tipo: 'pix_em_posse',
+            timestamp: dataRetirada,
+            atualizadoEm: dataRetirada
+        };
+
         try {
-            await dbAdicionarPixEmPosse(usuarioLogado, pixNum, {
-                cliente: String(cliente.nome || '').trim(),
-                equipamento: nomeEquipamento,
-                origem: 'retirada_pix',
-                atualizadoEm: dataRetirada
+            await enfileirarPixPossePendente({
+                id: pendenciaPixPosseId,
+                usuario: usuarioLogado,
+                numeroPix: String(pixNum || '').trim(),
+                clienteId,
+                dadosExtras: dadosPixPosse
             });
-        } catch (erroPossePix) {
-            console.warn('Falha ao lanÃ§ar Pix no balanÃ§o:', erroPossePix);
+        } catch (erroFilaPixPosse) {
+            console.warn('Falha ao guardar pendencia local de Pix em posse:', erroFilaPixPosse);
         }
+
+        try {
+            await dbAdicionarPixEmPosse(usuarioLogado, pixNum, dadosPixPosse);
+            await removerPixPossePendente(pendenciaPixPosseId);
+        } catch (erroPossePix) {
+            console.warn('Pix retirado registrado, mas a posse ficara pendente para sincronizar:', erroPossePix);
+        }
+
+        tentarSincronizarPixPossePendentes();
 
         delete _retiradaContadorFotos[pixKey];
 

@@ -6,11 +6,12 @@
  */
 
 const DB_NAME   = 'play-offline';
-const DB_VER    = 3;
+const DB_VER    = 4;
 const CLIENTES  = 'clientes_cache';
 const ESTOQUE   = 'estoque_cache';
 const PENDENTES = 'atendimentos_pendentes';
 const FOTOS_PENDENTES = 'fotos_upload_pendentes';
+const PIX_POSSE_PENDENTES = 'pix_posse_pendentes';
 
 function abrirDB() {
     return new Promise((resolve, reject) => {
@@ -25,6 +26,8 @@ function abrirDB() {
                 db.createObjectStore(PENDENTES, { keyPath: 'id', autoIncrement: true });
             if (!db.objectStoreNames.contains(FOTOS_PENDENTES))
                 db.createObjectStore(FOTOS_PENDENTES, { keyPath: 'id' });
+            if (!db.objectStoreNames.contains(PIX_POSSE_PENDENTES))
+                db.createObjectStore(PIX_POSSE_PENDENTES, { keyPath: 'id' });
         };
         req.onsuccess = () => resolve(req.result);
         req.onerror  = () => reject(req.error);
@@ -157,6 +160,55 @@ export async function contarPendentes() {
             req.onerror   = () => reject(req.error);
         });
     } catch(e) { return 0; }
+}
+
+export async function enfileirarPixPossePendente(pendencia) {
+    const id = String(pendencia?.id || '').trim();
+    if (!id) throw new Error('Pendencia de Pix em posse sem id local.');
+    const db = await abrirDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(PIX_POSSE_PENDENTES, 'readwrite');
+        tx.objectStore(PIX_POSSE_PENDENTES).put({
+            ...pendencia,
+            id,
+            criadoEm: pendencia?.criadoEm || new Date().toISOString(),
+            tentativas: Number(pendencia?.tentativas || 0)
+        });
+        tx.oncomplete = () => resolve(id);
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+export async function listarPixPossePendentes() {
+    try {
+        const db = await abrirDB();
+        return new Promise((resolve, reject) => {
+            const req = db.transaction(PIX_POSSE_PENDENTES, 'readonly').objectStore(PIX_POSSE_PENDENTES).getAll();
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => reject(req.error);
+        });
+    } catch(e) { return []; }
+}
+
+export async function removerPixPossePendente(id) {
+    const chave = String(id || '').trim();
+    if (!chave) return;
+    const db = await abrirDB();
+    return new Promise((resolve, reject) => {
+        const req = db.transaction(PIX_POSSE_PENDENTES, 'readwrite').objectStore(PIX_POSSE_PENDENTES).delete(chave);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function incrementarTentativaPixPossePendente(item) {
+    const id = String(item?.id || '').trim();
+    if (!id) return;
+    await enfileirarPixPossePendente({
+        ...item,
+        tentativas: Number(item?.tentativas || 0) + 1,
+        ultimaTentativaEm: new Date().toISOString()
+    });
 }
 
 export async function salvarFotoPendenteUpload(foto) {
@@ -333,6 +385,38 @@ export async function sincronizarFotosPendentes(storageSalvarFotoComThumb, dbAtu
             falhas++;
             await incrementarTentativaFotoPendente(foto?.id).catch(() => {});
             console.warn('offline-sync: falha ao sincronizar foto pendente', foto?.id, e);
+            break;
+        }
+    }
+
+    return { ok, falhas, total: pendentes.length };
+}
+
+export async function sincronizarPixPossePendentes(dbAdicionarPixEmPosse) {
+    if (!navigator.onLine || typeof dbAdicionarPixEmPosse !== 'function') {
+        return { ok: 0, falhas: 0, total: 0 };
+    }
+
+    const pendentes = await listarPixPossePendentes();
+    let ok = 0;
+    let falhas = 0;
+
+    for (const item of pendentes) {
+        try {
+            const usuario = String(item?.usuario || item?.responsavel || '').trim();
+            const numeroPix = String(item?.numeroPix || item?.numero_pix || '').trim();
+            if (!usuario || !numeroPix) {
+                await removerPixPossePendente(item.id);
+                continue;
+            }
+
+            await dbAdicionarPixEmPosse(usuario, numeroPix, item?.dadosExtras || {});
+            await removerPixPossePendente(item.id);
+            ok++;
+        } catch(e) {
+            falhas++;
+            await incrementarTentativaPixPossePendente(item).catch(() => {});
+            console.warn('offline-sync: falha ao sincronizar Pix em posse pendente', item?.id, e);
             break;
         }
     }
