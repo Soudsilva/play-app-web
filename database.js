@@ -4329,6 +4329,7 @@ export async function dbSincronizarItensCadastroClienteNoHistorico(clienteId, cl
                 refId: produto.itemId,
                 atendimentoRefId: idRef,
                 controlarPosse: true,
+                ignorarValidacaoPosse: true,
                 isDefeitoEntry: false,
                 qtdDefeitoConsumida: 0
             });
@@ -4365,6 +4366,7 @@ export async function dbSincronizarItensCadastroClienteNoHistorico(clienteId, cl
                 atendimentoRefId: idRef,
                 tecnicoResponsavel: maquina.tecnicoResponsavel,
                 controlarPosse: true,
+                ignorarValidacaoPosse: true,
                 isDefeitoEntry: false,
                 qtdDefeitoConsumida: 0
             });
