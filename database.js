@@ -2719,6 +2719,34 @@ async function _atualizarResumoMensalFluxoCaixa(chaveUsuario, movimento, opcoes 
     );
 }
 
+function _obterImpactoMovimentoFluxoCaixa(movimento) {
+    const valor = Number(movimento?.valor || 0);
+    if (!Number.isFinite(valor) || valor <= 0) return 0;
+    return String(movimento?.tipo || '').trim() === 'entrada' ? valor : -valor;
+}
+
+async function _ajustarRemuneracaoAcumuladaProdutos(nomeUsuario, delta) {
+    const chaveUsuario = _normalizarChaveUsuario(nomeUsuario);
+    const valorDelta = Number(delta || 0);
+    if (!chaveUsuario || !Number.isFinite(valorDelta) || valorDelta === 0) return false;
+
+    const resultado = await runTransaction(
+        ref(db, `remuneracao/acumulado/producao_produtos/${chaveUsuario}`),
+        (atual) => {
+            const registroAtual = atual && typeof atual === 'object' ? atual : {};
+            const valorAtual = Number(registroAtual.valor || 0);
+            return {
+                ...registroAtual,
+                nome: String(registroAtual.nome || nomeUsuario || '').trim(),
+                valor: Number(((Number.isFinite(valorAtual) ? valorAtual : 0) + valorDelta).toFixed(2)),
+                atualizadoEm: Date.now()
+            };
+        }
+    );
+
+    return resultado?.committed === true;
+}
+
 export function dbEscutarFluxoCaixa(nomeUsuario, callback) {
     const chave = _normalizarChaveUsuario(nomeUsuario);
     if (!chave) {
@@ -2778,7 +2806,9 @@ export async function dbSalvarMovimentoFluxoCaixa(nomeUsuario, movimento, opcoes
         if (opcoes?.atualizarResumoMensal === true) {
             await _atualizarResumoMensalFluxoCaixa(chave, movimento);
         }
-        await _tentarRecalcularRemuneracoes();
+        if (opcoes?.atualizarAcumuladoProducao === true) {
+            await _ajustarRemuneracaoAcumuladaProdutos(nomeUsuario, _obterImpactoMovimentoFluxoCaixa(movimento));
+        }
         return { firebaseKey: novoRef.key, ...movimento };
     } catch (error) {
         console.error("ERRO AO SALVAR MOVIMENTO DO FLUXO DE CAIXA:", error);
@@ -2786,7 +2816,7 @@ export async function dbSalvarMovimentoFluxoCaixa(nomeUsuario, movimento, opcoes
     }
 }
 
-export async function dbExcluirMovimentoFluxoCaixa(nomeUsuario, firebaseKey) {
+export async function dbExcluirMovimentoFluxoCaixa(nomeUsuario, firebaseKey, opcoes = {}) {
     try {
         const chave = _normalizarChaveUsuario(nomeUsuario);
         if (!chave) throw new Error('USUARIO_INVALIDO_FLUXO_CAIXA');
@@ -2796,8 +2826,10 @@ export async function dbExcluirMovimentoFluxoCaixa(nomeUsuario, firebaseKey) {
         await remove(movRef);
         if (movimento) {
             await _atualizarResumoMensalFluxoCaixa(chave, movimento, { multiplicador: -1 });
+            if (opcoes?.atualizarAcumuladoProducao === true) {
+                await _ajustarRemuneracaoAcumuladaProdutos(nomeUsuario, -_obterImpactoMovimentoFluxoCaixa(movimento));
+            }
         }
-        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("ERRO AO EXCLUIR MOVIMENTO DO FLUXO DE CAIXA:", error);
         throw error;
@@ -2809,7 +2841,6 @@ export async function dbExcluirTodosMovimentosFluxoCaixa(nomeUsuario) {
         const chave = _normalizarChaveUsuario(nomeUsuario);
         if (!chave) throw new Error('USUARIO_INVALIDO_FLUXO_CAIXA');
         await remove(ref(db, `fluxo_caixa/${chave}/movimentacoes`));
-        await _tentarRecalcularRemuneracoes();
     } catch (error) {
         console.error("ERRO AO EXCLUIR TODOS OS MOVIMENTOS DO FLUXO DE CAIXA:", error);
         throw error;
@@ -3016,7 +3047,6 @@ export async function dbRecalcularRemuneracoes() {
             historicoSnap,
             historicoBalancoSnap,
             estoqueSnap,
-            fluxoSnap,
             remuneracaoAtualSnap
         ] = await Promise.all([
             get(ref(db, 'colaboradores')),
@@ -3025,7 +3055,6 @@ export async function dbRecalcularRemuneracoes() {
             get(ref(db, 'historico_estoque')),
             get(ref(db, 'movimentacao_balanco_historico')),
             get(ref(db, 'estoque')),
-            get(ref(db, 'fluxo_caixa')),
             get(ref(db, 'remuneracao/mensal'))
         ]);
 
@@ -3035,7 +3064,6 @@ export async function dbRecalcularRemuneracoes() {
         const historicoData = historicoSnap.exists() ? (historicoSnap.val() || {}) : {};
         const historicoBalancoData = historicoBalancoSnap.exists() ? (historicoBalancoSnap.val() || {}) : {};
         const estoqueData = estoqueSnap.exists() ? (estoqueSnap.val() || {}) : {};
-        const fluxoCaixa = fluxoSnap.exists() ? (fluxoSnap.val() || {}) : {};
         const remuneracaoAtualData = remuneracaoAtualSnap.exists() ? (remuneracaoAtualSnap.val() || {}) : {};
 
         const colaboradores = Object.keys(colaboradoresData).map(key => ({ firebaseUrl: key, ...colaboradoresData[key] }));
@@ -3050,8 +3078,6 @@ export async function dbRecalcularRemuneracoes() {
         const mapaClientesRepresentante = _criarMapaClientesRepresentante(clientes);
         const mapaValoresEstoque = {};
         const mapaValoresEstoquePorChave = {};
-        const mapaValoresProdutos = {};
-        const mapaValoresProdutosPorChave = {};
         const mapaValoresPecas = {};
 
         estoque.forEach(item => {
@@ -3061,11 +3087,6 @@ export async function dbRecalcularRemuneracoes() {
             mapaValoresEstoque[_normalizarNomeRemuneracao(nome)] = valor;
             const chaveEstoque = String(item?.firebaseUrl || '').trim();
             if (chaveEstoque) mapaValoresEstoquePorChave[chaveEstoque] = valor;
-            if (item?.categoria === 'produtos') {
-                mapaValoresProdutos[nome] = valor;
-                const chaveProduto = chaveEstoque;
-                if (chaveProduto) mapaValoresProdutosPorChave[chaveProduto] = valor;
-            }
             if (item?.categoria === 'peca') mapaValoresPecas[nome] = valor;
         });
 
@@ -3284,55 +3305,15 @@ export async function dbRecalcularRemuneracoes() {
             remuneracaoMensal[mesAno] = registrosMes;
         }
 
-        const acumuladoProdutos = {};
-        colaboradores
-            .filter(colab => colab?.producaoProdutos === true)
-            .forEach(colab => {
-                const nome = String(colab?.nome || '').trim();
-                if (!nome) return;
-
-                const usuarioKey = _normalizarChaveUsuario(nome);
-                const nomeNorm = _normalizarNomeRemuneracao(nome);
-                let valorProducao = 0;
-
-                historicoBalanco.forEach(item => {
-                    if (item?.cancelado) return;
-                    if (String(item?.tipo || '').trim() !== 'entrada_estoque') return;
-                    if (String(item?.origemRegistro || '').trim() !== 'entrada_estoque') return;
-                    if (String(item?.categoria || '').trim() !== 'produtos') return;
-                    if (_normalizarNomeRemuneracao(item?.responsavel) !== nomeNorm) return;
-                    const nomeProduto = String(item?.itemNome || '').trim();
-                    const itemChave = String(item?.itemChave || item?.refId || '').trim();
-                    const valorUnit = _parseNumeroRemuneracao(item?.valorUnitario)
-                        || _parseNumeroRemuneracao(mapaValoresProdutosPorChave[itemChave])
-                        || _parseNumeroRemuneracao(mapaValoresProdutos[nomeProduto]);
-                    valorProducao += valorUnit * Math.abs(_parseNumeroRemuneracao(item?.movimento));
-                });
-
-                const fluxoUsuario = fluxoCaixa?.[usuarioKey]?.movimentacoes || {};
-                const valorFluxo = Object.values(fluxoUsuario).reduce((soma, mov) => {
-                    const valor = _parseNumeroRemuneracao(mov?.valor);
-                    return soma + (mov?.tipo === 'entrada' ? valor : -valor);
-                }, 0);
-
-                acumuladoProdutos[usuarioKey] = {
-                    nome,
-                    valor: Math.round(valorProducao + valorFluxo),
-                    atualizadoEm
-                };
-            });
-
         await Promise.all([
             set(ref(db, 'remuneracao/mensal'), remuneracaoMensal),
             set(ref(db, 'remuneracao/meses'), mesesOrdenados),
-            set(ref(db, 'remuneracao/acumulado/producao_produtos'), acumuladoProdutos),
             set(ref(db, 'remuneracao/atualizadoEm'), atualizadoEm)
         ]);
 
         return {
             mensal: remuneracaoMensal,
-            meses: mesesOrdenados,
-            acumulado: acumuladoProdutos
+            meses: mesesOrdenados
         };
     } catch (error) {
         console.error("ERRO AO RECALCULAR REMUNERAÇÕES:", error);
@@ -3468,6 +3449,20 @@ export function dbEscutarRemuneracaoAcumuladaProdutos(callback) {
     return onValue(ref(db, 'remuneracao/acumulado/producao_produtos'), (snapshot) => {
         const data = snapshot.exists() ? (snapshot.val() || {}) : {};
         callback(Object.keys(data).map(key => ({ usuarioKey: key, ...data[key] })));
+    });
+}
+
+export function dbEscutarRemuneracaoAcumuladaProdutoUsuario(nomeUsuario, callback) {
+    const chaveUsuario = _normalizarChaveUsuario(nomeUsuario);
+    if (!chaveUsuario) {
+        callback({ usuarioKey: '', nome: String(nomeUsuario || '').trim(), valor: 0 });
+        return () => {};
+    }
+
+    return onValue(ref(db, `remuneracao/acumulado/producao_produtos/${chaveUsuario}`), (snapshot) => {
+        callback(snapshot.exists()
+            ? { usuarioKey: chaveUsuario, ...(snapshot.val() || {}) }
+            : { usuarioKey: chaveUsuario, nome: String(nomeUsuario || '').trim(), valor: 0 });
     });
 }
 
@@ -4031,6 +4026,12 @@ export async function dbSalvarHistoricoBalanco(entrada, opcoes = {}) {
         if (entrada?.controlarPosse !== false || String(entrada?.tipo || '').trim() === 'balanco_aprovado') {
             await dbAtualizarResumoBalanco(entrada.responsavel);
         }
+        if (opcoes?.atualizarAcumuladoProducao === true) {
+            await _ajustarRemuneracaoAcumuladaProdutos(
+                entrada.responsavel,
+                Math.abs(movimento) * valorUnitario
+            );
+        }
         if (recalcular) await _tentarRecalcularRemuneracoes();
         return novoRef?.key || null;
     } catch (e) {
@@ -4408,6 +4409,16 @@ export async function dbExcluirHistoricoBalanco(id, responsavel, opcoes = {}) {
             cancelado: true,
             canceladoEm: new Date().toISOString()
         });
+        if (opcoes?.atualizarAcumuladoProducao === true) {
+            const valorUnitario = await _obterValorUnitarioHistoricoBalanco(
+                entrada,
+                entrada?.itemChave || entrada?.refId || ''
+            );
+            await _ajustarRemuneracaoAcumuladaProdutos(
+                entrada.responsavel || responsavel,
+                -(Math.abs(_obterMovimentacaoHistoricoBalanco(entrada)) * valorUnitario)
+            );
+        }
         if (recalcular) await _tentarRecalcularRemuneracoes();
     } catch (e) {
         console.error('ERRO AO EXCLUIR MOVIMENTAÇÃO BALANÇO HISTÓRICO:', e);

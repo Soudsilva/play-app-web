@@ -1055,6 +1055,20 @@
         return String(valor || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     }
 
+    function responsavelTemProducaoProdutos(responsavel) {
+        const nomeNormalizado = normalizarBusca(responsavel).trim();
+        return !!nomeNormalizado && colabsGlobal.some(colab =>
+            colab?.producaoProdutos === true &&
+            normalizarBusca(colab?.nome).trim() === nomeNormalizado
+        );
+    }
+
+    function deveAtualizarAcumuladoProducao(item, responsavel, modo) {
+        return modo === 'entrada' &&
+            String(item?.categoria || '').trim() === 'produtos' &&
+            responsavelTemProducaoProdutos(responsavel);
+    }
+
     function formatarResponsavelInterface(valor) {
         const texto = String(valor || '').trim();
         return texto === RESPONSAVEL_PIX_ESTOQUE ? ROTULO_PIX_ESTOQUE : texto;
@@ -1978,9 +1992,10 @@
         };
 
         const estoqueAntes = parseInt(itemOriginal.quantidade) || 0;
+        const atualizarAcumuladoProducao = deveAtualizarAcumuladoProducao(itemOriginal, responsavel, modoAtual);
 
         try {
-            await dbSalvarItemEstoque(itemParaSalvar, idItem);
+            await dbSalvarItemEstoque(itemParaSalvar, idItem, { recalcular: !atualizarAcumuladoProducao });
             await dbSalvarHistoricoBalanco({
                 responsavel:   responsavel,
                 registradoPor: String(localStorage.getItem('usuarioLogado') || '').trim(),
@@ -1998,6 +2013,9 @@
                 qtdDefeitoConsumida,
                 estoqueAntes,
                 estoqueDepois: novaQtd
+            }, {
+                recalcular: !atualizarAcumuladoProducao,
+                atualizarAcumuladoProducao
             });
 
             alert("Sucesso! Novo saldo: " + novaQtd);
@@ -2198,6 +2216,7 @@
         };
 
         const estoqueAntes = parseInt(itemOriginal.quantidade) || 0;
+        const atualizarAcumuladoProducao = deveAtualizarAcumuladoProducao(itemOriginal, responsavel, modo);
 
         await dbSalvarItemEstoque(itemParaSalvar, idItem, { recalcular: false });
         await dbSalvarHistoricoBalanco({
@@ -2218,7 +2237,10 @@
             defeitoOperacao,
             estoqueAntes,
             estoqueDepois: novaQtd
-        }, { recalcular: false });
+        }, {
+            recalcular: false,
+            atualizarAcumuladoProducao
+        });
 
         mapaEstoque.set(idItem, { ...itemParaSalvar, firebaseUrl: idItem });
         const idx = listaGlobal.findIndex(i => i.firebaseUrl === idItem);
@@ -2256,10 +2278,15 @@
             definirEstadoSalvando(true);
             const mapaEstoque = new Map(listaGlobal.map(item => [item.firebaseUrl, { ...item }]));
             let ultimoSaldo = 0;
+            let exigeRecalculoRemuneracoes = false;
             for (const pendente of itensPendentes) {
+                const itemAtual = obterItemEstoqueAtual(pendente.idItem, mapaEstoque);
+                if (!deveAtualizarAcumuladoProducao(itemAtual, pendente.responsavel, pendente.modo)) {
+                    exigeRecalculoRemuneracoes = true;
+                }
                 ultimoSaldo = await salvarItemMovimentacaoPendente(pendente, mapaEstoque);
             }
-            await dbRecalcularRemuneracoes();
+            if (exigeRecalculoRemuneracoes) await dbRecalcularRemuneracoes();
 
             const totalSalvo = itensPendentes.length;
             itensPendentes = [];
@@ -2506,7 +2533,12 @@
             definirEstadoSalvando(true);
             const mapaEstoque = new Map(listaGlobal.map(item => [item.firebaseUrl, { ...item }]));
             let ultimoSaldo = 0;
+            let exigeRecalculoRemuneracoes = false;
             for (const linha of linhas) {
+                const itemAtual = obterItemEstoqueAtual(linha.idItem, mapaEstoque);
+                if (!deveAtualizarAcumuladoProducao(itemAtual, responsavel, modoAtual)) {
+                    exigeRecalculoRemuneracoes = true;
+                }
                 ultimoSaldo = await salvarItemMovimentacaoPendente({
                     idItem: linha.idItem,
                     qtdMovimento: linha.qtdMovimento,
@@ -2514,7 +2546,7 @@
                     modo: modoAtual
                 }, mapaEstoque);
             }
-            await dbRecalcularRemuneracoes();
+            if (exigeRecalculoRemuneracoes) await dbRecalcularRemuneracoes();
 
             document.getElementById('containerMovimentacaoItens').innerHTML = '';
             categoriaAtualLinhasMovimentacao = '';
@@ -2849,6 +2881,9 @@
 
         const ehEntradaHistorico = mov.tipo === 'entrada_estoque';
         const qtdMovimento = Math.abs(Number(mov.movimento ?? 0) || 0);
+        const atualizarAcumuladoProducao = ehEntradaHistorico &&
+            String(mov.origemRegistro || '').trim() === 'entrada_estoque' &&
+            deveAtualizarAcumuladoProducao(mov, mov.responsavel, 'entrada');
 
         if (usaControleDefeitoRev && ehEntradaHistorico) {
             if (mov.defeitoOperacao === 'conversao_ok') {
@@ -2875,8 +2910,11 @@
             
             // 2. Remove do histórico único e grava o cancelamento no próprio movimentacao_balanco_historico
             if(mov.firebaseUrl && mov.responsavel) {
-               await dbExcluirHistoricoBalanco(mov.firebaseUrl, mov.responsavel, { recalcular: false });
-               await dbRecalcularRemuneracoes();
+               await dbExcluirHistoricoBalanco(mov.firebaseUrl, mov.responsavel, {
+                   recalcular: false,
+                   atualizarAcumuladoProducao
+               });
+               if (!atualizarAcumuladoProducao) await dbRecalcularRemuneracoes();
             } else {
                alert("Erro de identificação do registro. Atualizando...");
                window.location.reload();

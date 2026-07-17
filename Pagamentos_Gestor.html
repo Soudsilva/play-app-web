@@ -844,6 +844,7 @@
 
     estado._unsubRemuneracaoProdutos = dbEscutarRemuneracaoAcumuladaProdutos((lista) => {
         estado.remuneracaoProdutosPag = Array.isArray(lista) ? lista : [];
+        if (estaEmModoProducao()) atualizarProdTotal();
         if (estado.abaAtual === 'pagamentos') renderPagamentos();
     });
 
@@ -1220,7 +1221,8 @@
 
         try {
             const movimentoSalvo = await dbSalvarMovimentoFluxoCaixa(estado.nomeUsuario, movimento, {
-                atualizarResumoMensal: true
+                atualizarResumoMensal: true,
+                atualizarAcumuladoProducao: estaEmModoProducao()
             });
             estado.movimentacoes = [
                 movimentoSalvo,
@@ -1253,7 +1255,9 @@
         render();
 
         try {
-            await dbExcluirMovimentoFluxoCaixa(estado.nomeUsuario, firebaseKey);
+            await dbExcluirMovimentoFluxoCaixa(estado.nomeUsuario, firebaseKey, {
+                atualizarAcumuladoProducao: estaEmModoProducao()
+            });
             estado.movimentacoes = estado.movimentacoes.filter(i => i.firebaseKey !== firebaseKey);
             sincronizarFluxoProducaoCache();
             render();
@@ -1268,14 +1272,10 @@
     }
 
     function atualizarProdTotal() {
-        let total = 0;
-        estado.entradasProducao.forEach(e => {
-            const valorUnit = obterValorUnitarioProducao(e, estado.mapaValoresProd);
-            total += valorUnit * obterQtdProducao(e);
-        });
-        estado.movimentacoes.forEach(m => {
-            total += m.tipo === 'entrada' ? Number(m.valor || 0) : -Number(m.valor || 0);
-        });
+        const registro = estado.remuneracaoProdutosPag.find(item =>
+            normalizarPag(item?.nome) === normalizarPag(estado.nomeUsuario)
+        );
+        const total = Number(registro?.valor || 0);
         const el = document.getElementById('prodTotal');
         el.textContent = (total < 0 ? '- ' : '') + formatarMoeda(Math.abs(total));
         el.style.color = total < 0 ? '#ef9a9a' : '#ffeb3b';
@@ -1485,10 +1485,15 @@
 
         try {
             if (tipo === 'producao') {
-                await dbExcluirHistoricoBalanco(key, estado.nomeUsuario);
+                await dbExcluirHistoricoBalanco(key, estado.nomeUsuario, {
+                    recalcular: false,
+                    atualizarAcumuladoProducao: true
+                });
                 estado.entradasProducao = estado.entradasProducao.filter(e => e.firebaseUrl !== key);
             } else {
-                await dbExcluirMovimentoFluxoCaixa(estado.nomeUsuario, key);
+                await dbExcluirMovimentoFluxoCaixa(estado.nomeUsuario, key, {
+                    atualizarAcumuladoProducao: true
+                });
                 estado.movimentacoes = estado.movimentacoes.filter(m => m.firebaseKey !== key);
                 sincronizarFluxoProducaoCache();
             }
@@ -1621,6 +1626,7 @@
     function normalizarPag(v) { return String(v || '').trim().toLowerCase(); }
 
     function ehEntradaProducaoProduto(item) {
+        if (item?.cancelado) return false;
         const tipo = String(item?.tipo || '').trim();
         const origem = String(item?.origemRegistro || '').trim();
         const categoria = String(item?.categoria || item?.itemCategoria || '').trim();

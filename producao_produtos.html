@@ -228,7 +228,7 @@
 
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
-import { app, dbEscutarFluxoCaixa, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
+import { app, dbEscutarFluxoCaixa, dbEscutarHistoricoBalancoDoUsuario, dbEscutarRemuneracaoAcumuladaProdutoUsuario } from './database.js';
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const db = getDatabase(app);
@@ -244,6 +244,7 @@ let usuarioLogado = '';
 let todasEntradas = [];
 let movimentosFluxo = [];
 let mapaValoresProdutos = {};
+let saldoAcumuladoProducao = 0;
 let anoSelecionado = '';
 let mesSelecionado = '';
 
@@ -291,6 +292,11 @@ function inicializar() {
     dbEscutarFluxoCaixa(usuarioLogado, (movimentos) => {
         movimentosFluxo = Array.isArray(movimentos) ? movimentos : [];
         atualizarDropdowns();
+        render();
+    });
+
+    dbEscutarRemuneracaoAcumuladaProdutoUsuario(usuarioLogado, (registro) => {
+        saldoAcumuladoProducao = Number(registro?.valor || 0);
         render();
     });
 
@@ -417,22 +423,13 @@ function atualizarMeses() {
 
 // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function render() {
-    // Total base = todas as entradas de produção (acumulado geral)
-    let totalProduzido = 0;
     let totalUnidades = 0;
     todasEntradas.forEach(e => {
-        const valorUnit = obterValorUnitarioProduto(e);
         const qtd = obterQuantidadeProducao(e);
-        totalProduzido += valorUnit * qtd;
         totalUnidades += qtd;
     });
 
-    const ajusteFluxo = movimentosFluxo.reduce((total, mov) => {
-        const valor = Number(mov?.valor || 0);
-        if (!Number.isFinite(valor)) return total;
-        return total + (mov?.tipo === 'entrada' ? valor : -valor);
-    }, 0);
-    const totalLiquido = totalProduzido + ajusteFluxo;
+    const totalLiquido = Number.isFinite(saldoAcumuladoProducao) ? saldoAcumuladoProducao : 0;
 
     const saldoValorEl = document.getElementById('saldoValor');
     saldoValorEl.textContent = (totalLiquido < 0 ? '- ' : '') + formatarReais(Math.abs(totalLiquido));
