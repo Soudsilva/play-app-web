@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Produção</title>
+    <style>
+        :root {
+            --azul: #0d2c69;
+            --azul-card: #173a76;
+            --azul-topo: #315790;
+            --amarelo: #ffed00;
+            --verde: #3bd074;
+            --borda: rgba(255, 237, 0, 0.34);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--azul);
+            color: white;
+            font-family: Arial, Helvetica, sans-serif;
+            visibility: hidden;
+        }
+        button, input, select { font: inherit; }
+        .cabecalho {
+            position: sticky;
+            top: 0;
+            z-index: 6;
+            background: rgba(8,34,85,0.98);
+            border-top: 1px solid var(--amarelo);
+            border-bottom: 1px solid rgba(255,237,0,0.25);
+        }
+        .cabecalho-interno {
+            position: relative;
+            max-width: 760px;
+            margin: auto;
+            min-height: 56px;
+            padding: 8px 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        h1 {
+            margin: 0;
+            color: var(--amarelo);
+            font-size: clamp(18px, 5.1vw, 22px);
+            text-align: center;
+            white-space: nowrap;
+        }
+        .btn-home {
+            position: absolute;
+            top: 50%;
+            right: 14px;
+            transform: translateY(-50%);
+            width: 38px;
+            height: 38px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.12);
+            color: #ffffff;
+            display: grid;
+            place-items: center;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .btn-home svg { width: 20px; height: 20px; fill: #ffffff; }
+        main { max-width: 760px; margin: auto; padding: 12px 12px 96px; }
+        .resumo {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, rgba(49,87,144,0.95), rgba(22,57,117,0.95));
+            border: 1px solid var(--borda);
+        }
+        .resumo span { display: block; color: var(--amarelo); font-size: 11px; font-weight: 800; text-transform: uppercase; }
+        .resumo p { margin: 4px 0 0; font-size: 12px; opacity: 0.8; }
+        .resumo strong { color: var(--amarelo); font-size: 28px; white-space: nowrap; }
+        .filtros { display: grid; grid-template-columns: 1fr 1.35fr; gap: 9px; margin-bottom: 14px; }
+        .filtro-colaborador-gestor { display: none; margin-bottom: 9px; }
+        .filtro-colaborador-gestor.visivel { display: block; }
+        select, input[type="text"] {
+            width: 100%;
+            min-height: 45px;
+            padding: 0 12px;
+            border-radius: 11px;
+            border: 1px solid rgba(255,255,255,0.25);
+            background: rgba(8,34,81,0.94);
+            color: white;
+            outline: none;
+        }
+        select:focus, input:focus { border-color: var(--amarelo); }
+        option { color: #111; }
+        .lista { display: grid; gap: 12px; }
+        .card {
+            overflow: hidden;
+            border-radius: 17px;
+            border: 1px solid var(--borda);
+            background: var(--azul-card);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.14);
+        }
+        .card-topo {
+            min-height: 48px;
+            padding: 9px 13px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: var(--azul-topo);
+        }
+        .produtor { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+        .avatar { width: 30px; height: 30px; border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; display: grid; place-items: center; }
+        .data { color: var(--amarelo); font-size: 10px; font-weight: 800; text-align: right; }
+        .card-corpo { display: grid; grid-template-columns: 104px 1fr; gap: 13px; padding: 13px; }
+        .foto-card { width: 104px; height: 104px; border-radius: 12px; object-fit: cover; background: #071d45; cursor: pointer; }
+        .dados { min-width: 0; }
+        .linha { margin: 3px 0 9px; font-size: 13px; }
+        .rotulo { color: var(--amarelo); font-size: 10px; text-transform: uppercase; font-weight: 800; margin-right: 5px; }
+        .equipamento { font-size: 17px; font-weight: 900; }
+        .composicao-card { color: #c7d5ef; font-size: 11px; line-height: 1.35; }
+        .composicao-detalhes {
+            display: grid;
+            gap: 7px;
+            margin: 11px 0 14px;
+            padding: 10px;
+            border-radius: 11px;
+            background: rgba(255,255,255,0.06);
+        }
+        .componente-detalhe {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            font-size: 12px;
+        }
+        .componente-detalhe span { color: #d6e0f3; }
+        .componente-detalhe strong { color: var(--amarelo); white-space: nowrap; }
+        .saldo {
+            min-height: 48px;
+            padding: 8px 11px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 11px;
+            border: 1px solid rgba(255,237,0,0.38);
+            background: rgba(255,237,0,0.06);
+        }
+        .saldo span { color: var(--amarelo); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .saldo strong { color: var(--amarelo); font-size: 23px; }
+        .acoes-card { display: flex; justify-content: flex-end; padding: 0 13px 13px; gap: 8px; }
+        .btn {
+            min-height: 40px;
+            padding: 0 14px;
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.09);
+            color: white;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .btn-rateio { color: #062554; background: var(--amarelo); border-color: var(--amarelo); }
+        .vazio, .carregando { text-align: center; padding: 42px 16px; opacity: 0.78; }
+        .modal-fundo {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            padding: 16px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 12, 38, 0.78);
+            backdrop-filter: blur(4px);
+        }
+        .modal-fundo.aberto { display: flex; }
+        .modal {
+            width: min(560px, 100%);
+            max-height: 92vh;
+            overflow: auto;
+            border-radius: 18px;
+            background: #12336c;
+            border: 1px solid var(--borda);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+        }
+        .modal-topo { position: sticky; top: 0; z-index: 2; padding: 13px 15px; display: flex; align-items: center; justify-content: space-between; background: #264b87; }
+        .modal-topo h2 { margin: 0; color: var(--amarelo); font-size: 17px; }
+        .fechar { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); color: white; background: transparent; cursor: pointer; }
+        .modal-conteudo { padding: 14px; }
+        .foto-grande { width: 100%; max-height: 360px; object-fit: contain; border-radius: 13px; background: #071d45; }
+        .participantes { display: grid; gap: 7px; margin: 14px 0; }
+        .participante { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,0.07); }
+        .participante strong { color: var(--amarelo); }
+        .rateio-form { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.17); }
+        .rateio-form label { display: block; margin: 0 0 6px; color: var(--amarelo); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .rateio-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 9px; }
+        .rateio-ajuda { margin: 8px 0 13px; font-size: 11px; line-height: 1.4; opacity: 0.75; }
+        .btn-salvar { width: 100%; min-height: 48px; color: #062554; background: var(--amarelo); border: 0; border-radius: 11px; font-weight: 900; cursor: pointer; }
+        .btn-salvar:disabled { opacity: 0.5; cursor: wait; }
+        .estorno-area { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.17); }
+        .btn-estorno { width: 100%; min-height: 44px; border: 1px solid rgba(255,255,255,0.34); border-radius: 11px; color: white; background: rgba(255,255,255,0.09); font-weight: 900; cursor: pointer; }
+        .btn-estorno:disabled { color: rgba(255,255,255,0.58); background: rgba(255,255,255,0.05); cursor: not-allowed; }
+        .estorno-form { display: grid; gap: 9px; }
+        .estorno-form[hidden] { display: none; }
+        .estorno-form label { color: var(--amarelo); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .estorno-ajuda { margin: 0; font-size: 11px; line-height: 1.4; color: #d8e3f6; }
+        .estorno-bloqueado { margin: 8px 0 0; font-size: 11px; text-align: center; color: #d8e3f6; }
+        .acesso-negado { text-align: center; margin-top: 28px; padding: 28px 15px; border: 1px solid var(--borda); border-radius: 16px; }
+        .acesso-negado h2 { color: var(--amarelo); }
+        @media (max-width: 520px) {
+            .card-corpo { grid-template-columns: 82px 1fr; gap: 10px; padding: 11px; }
+            .foto-card { width: 82px; height: 92px; }
+            .equipamento { font-size: 15px; }
+            .saldo strong { font-size: 20px; }
+            .rateio-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="cabecalho">
+        <div class="cabecalho-interno">
+            <h1>Produção</h1>
+            <a class="btn-home" href="index.html" aria-label="Voltar ao menu" title="Voltar ao menu">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+            </a>
+        </div>
+    </header>
+
+    <main id="conteudo">
+        <section class="resumo">
+            <div><span>Produção do mês</span><p id="nomeUsuario">Carregando colaborador...</p></div>
+            <strong id="totalMes">R$ 0</strong>
+        </section>
+        <div class="filtro-colaborador-gestor" id="filtroColaboradorGestorWrap">
+            <select id="filtroColaboradorGestor" aria-label="Colaborador"></select>
+        </div>
+        <div class="filtros">
+            <select id="filtroAno" aria-label="Ano"></select>
+            <select id="filtroMes" aria-label="Mês"></select>
+        </div>
+        <section class="lista" id="listaProducoes"><div class="carregando">Carregando produções...</div></section>
+    </main>
+
+    <div class="modal-fundo" id="modalDetalhe" aria-hidden="true">
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+            <div class="modal-topo">
+                <h2 id="modalTitulo">Detalhes da produção</h2>
+                <button class="fechar" id="btnFecharModal" type="button" aria-label="Fechar">×</button>
+            </div>
+            <div class="modal-conteudo" id="modalConteudo"></div>
+        </section>
+    </div>
+
+    <script src="assets/js/play-dialogs.js"></script>
+    <script type="module">
+        import { verificarAutenticacao } from './auth.js';
+        import { dbListarColaboradores } from './database.js';
+        import {
+            dbEscutarMesesProducaoUsuario,
+            dbEscutarProducoesUsuarioMes,
+            dbEscutarTotalProducaoUsuarioMes,
+            dbObterValidacaoProducaoEquipamento,
+            dbCompartilharValorProducaoEquipamento,
+            dbEstornarRateioProducaoEquipamento,
+            obterCompetenciaAtualProducaoEquipamentos
+        } from './database-producao-equipamentos.js';
+
+        const NOMES_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        const nomeUsuario = document.getElementById('nomeUsuario');
+        const totalMes = document.getElementById('totalMes');
+        const filtroColaboradorGestorWrap = document.getElementById('filtroColaboradorGestorWrap');
+        const filtroColaboradorGestor = document.getElementById('filtroColaboradorGestor');
+        const filtroAno = document.getElementById('filtroAno');
+        const filtroMes = document.getElementById('filtroMes');
+        const listaProducoes = document.getElementById('listaProducoes');
+        const modalDetalhe = document.getElementById('modalDetalhe');
+        const modalConteudo = document.getElementById('modalConteudo');
+
+        let colaboradores = [];
+        let usuarioLogado = null;
+        let usuarioAtual = null;
+        let ehGestorNivel3 = false;
+        let competenciaSelecionada = obterCompetenciaAtualProducaoEquipamentos();
+        let mesesDisponiveis = [];
+        let producoesAtuais = [];
+        let pararMeses = null;
+        let pararProducoes = null;
+        let pararTotal = null;
+        let validacaoAberta = null;
+
+        function normalizarNome(valor) {
+            return String(valor || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function escaparHtml(valor) {
+            return String(valor || '')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function formatarMoeda(valor) {
+            return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function formatarData(valor) {
+            const data = new Date(Number(valor || 0));
+            if (Number.isNaN(data.getTime())) return 'Sem data';
+            return new Intl.DateTimeFormat('pt-BR', {
+                timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            }).format(data);
+        }
+
+        function numeroEntrada(valor) {
+            const texto = String(valor || '').trim().replace(/\./g, '').replace(',', '.');
+            const numero = Number(texto);
+            return Number.isFinite(numero) ? Math.round(numero * 100) / 100 : 0;
+        }
+
+        async function alertar(mensagem) {
+            if (window.playAlert) return window.playAlert(mensagem);
+            window.alert(mensagem);
+        }
+
+        async function confirmar(mensagem, opcoes = {}) {
+            if (window.playConfirm) return window.playConfirm(mensagem, opcoes);
+            return window.confirm(mensagem);
+        }
+
+        function competenciaDosFiltros() {
+            return `${filtroAno.value}-${filtroMes.value}`;
+        }
+
+        function preencherFiltros() {
+            const atual = obterCompetenciaAtualProducaoEquipamentos();
+            const competencias = [...new Set([atual, competenciaSelecionada, ...mesesDisponiveis].filter(Boolean))];
+            const anos = [...new Set(competencias.map((item) => item.slice(0, 4)))].sort((a, b) => b.localeCompare(a));
+            const [anoSelecionado, mesSelecionado] = competenciaSelecionada.split('-');
+            filtroAno.innerHTML = anos.map((ano) => `<option value="${ano}"${ano === anoSelecionado ? ' selected' : ''}>${ano}</option>`).join('');
+            filtroMes.innerHTML = NOMES_MESES.map((nome, indice) => {
+                const mes = String(indice + 1).padStart(2, '0');
+                return `<option value="${mes}"${mes === mesSelecionado ? ' selected' : ''}>${escaparHtml(nome)}</option>`;
+            }).join('');
+        }
+
+        function encerrarEscutasDoMes() {
+            if (typeof pararProducoes === 'function') pararProducoes();
+            if (typeof pararTotal === 'function') pararTotal();
+            pararProducoes = null;
+            pararTotal = null;
+        }
+
+        function escutarMesSelecionado() {
+            encerrarEscutasDoMes();
+            competenciaSelecionada = competenciaDosFiltros();
+            listaProducoes.innerHTML = '<div class="carregando">Carregando produções...</div>';
+            totalMes.textContent = formatarMoeda(0);
+            pararProducoes = dbEscutarProducoesUsuarioMes(usuarioAtual.firebaseUrl, competenciaSelecionada, (lista) => {
+                producoesAtuais = Array.isArray(lista) ? lista : [];
+                renderizarProducoes();
+            }, (erro) => {
+                listaProducoes.innerHTML = `<div class="vazio">${escaparHtml(erro?.message || 'Não foi possível carregar as produções.')}</div>`;
+            });
+            pararTotal = dbEscutarTotalProducaoUsuarioMes(usuarioAtual.firebaseUrl, competenciaSelecionada, (total) => {
+                totalMes.textContent = formatarMoeda(total?.valor || 0);
+            }, (erro) => {
+                console.warn('Não foi possível carregar o total mensal:', erro);
+            });
+        }
+
+        function obterComposicaoRegistro(registro) {
+            const composicao = registro?.equipamento?.composicao;
+            if (Array.isArray(composicao)) return composicao.filter(Boolean);
+            if (composicao && typeof composicao === 'object') return Object.values(composicao).filter(Boolean);
+            return [];
+        }
+
+        function htmlDetalhesComposicao(registro) {
+            const composicao = obterComposicaoRegistro(registro);
+            if (composicao.length === 0) return '';
+            return `
+                <div class="composicao-detalhes">
+                    ${composicao.map((item) => {
+                        const quantidade = Number(item?.quantidade || 0);
+                        const valorUnitario = Number(item?.valorUnitario || 0);
+                        const valorTotal = Number(item?.valorTotal || (quantidade * valorUnitario));
+                        return `<div class="componente-detalhe">
+                            <span>${escaparHtml(item?.nome || 'Máquina')} · ${quantidade} × ${escaparHtml(formatarMoeda(valorUnitario))}</span>
+                            <strong>${escaparHtml(formatarMoeda(valorTotal))}</strong>
+                        </div>`;
+                    }).join('')}
+                </div>`;
+        }
+
+        function renderizarProducoes() {
+            if (producoesAtuais.length === 0) {
+                listaProducoes.innerHTML = '<div class="vazio">Nenhuma produção destinada a você neste mês.</div>';
+                return;
+            }
+            listaProducoes.innerHTML = producoesAtuais.map((item) => {
+                const podeRatear = !ehGestorNivel3 && item.produtorOriginalId === usuarioAtual.firebaseUrl;
+                return `
+                    <article class="card">
+                        <div class="card-topo">
+                            <div class="produtor"><span class="avatar">👤</span>${escaparHtml(item.produtorOriginalNome)}</div>
+                            <div class="data">▣ ${escaparHtml(formatarData(item.criadoEm))}</div>
+                        </div>
+                        <div class="card-corpo">
+                            <img class="foto-card" data-detalhe-id="${escaparHtml(item.validacaoId)}" src="${escaparHtml(item.fotoThumbUrl || 'assets/img/logo.png')}" alt="Foto de ${escaparHtml(item.equipamentoNome)}">
+                            <div class="dados">
+                                <div class="linha"><span class="rotulo">Equip.</span><span class="equipamento">${escaparHtml(item.equipamentoNome)}</span></div>
+                                ${item.composicaoResumo ? `<div class="linha composicao-card"><span class="rotulo">Composição</span>${escaparHtml(item.composicaoResumo)}</div>` : ''}
+                                <div class="linha"><span class="rotulo">Qtd.</span>${Number(item.quantidade || 1)}</div>
+                                <div class="linha"><span class="rotulo">Testado por</span>${escaparHtml(item.validadoPorNome)}</div>
+                                <div class="saldo"><span>Valor do serviço</span><strong>${escaparHtml(formatarMoeda(item.valor))}</strong></div>
+                            </div>
+                        </div>
+                        <div class="acoes-card">
+                            <button class="btn" type="button" data-detalhe-id="${escaparHtml(item.validacaoId)}">Ver detalhes</button>
+                            ${podeRatear ? `<button class="btn btn-rateio" type="button" data-rateio-id="${escaparHtml(item.validacaoId)}">Compartilhar valor</button>` : ''}
+                        </div>
+                    </article>`;
+            }).join('');
+        }
+
+        function listaParticipantesHtml(registro) {
+            const participantes = Object.entries(registro?.participantes || {})
+                .map(([id, item]) => ({ id, ...item }))
+                .sort((a, b) => Number(b.valor || 0) - Number(a.valor || 0));
+            return participantes.map((item) => `
+                <div class="participante"><span>${escaparHtml(item.nome)}</span><strong>${escaparHtml(formatarMoeda(item.valor))}</strong></div>
+            `).join('') || '<div class="vazio">Nenhum participante informado.</div>';
+        }
+
+        function renderizarModal(registro, abrirRateio = false) {
+            validacaoAberta = registro;
+            const podeRatear = !ehGestorNivel3 && registro?.produtorOriginal?.colaboradorId === usuarioAtual.firebaseUrl;
+            const produtorOriginalId = registro?.produtorOriginal?.colaboradorId;
+            const valorRecebido = Number(registro?.participantes?.[usuarioAtual?.firebaseUrl]?.valor || 0);
+            const ehDestinatario = !ehGestorNivel3
+                && usuarioLogado?.firebaseUrl === usuarioAtual?.firebaseUrl
+                && usuarioAtual?.firebaseUrl !== produtorOriginalId
+                && valorRecebido > 0;
+            const mesVigente = registro?.competencia === obterCompetenciaAtualProducaoEquipamentos();
+            const destinatarios = colaboradores
+                .filter((item) => item?.producaoEquipamentos === true)
+                .filter((item) => item.firebaseUrl !== usuarioAtual.firebaseUrl)
+                .filter((item) => String(item?.nome || '').trim())
+                .sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
+            const rateioHtml = podeRatear ? `
+                <form class="rateio-form" id="formRateio">
+                    <div class="rateio-grid">
+                        <div>
+                            <label for="destinatarioRateio">Colaborador</label>
+                            <select id="destinatarioRateio" required>
+                                <option value="">Selecione</option>
+                                ${destinatarios.map((item) => `<option value="${escaparHtml(item.firebaseUrl)}">${escaparHtml(item.nome)}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="valorRateio">Valor a compartilhar</label>
+                            <input id="valorRateio" type="text" inputmode="decimal" placeholder="0,00" required>
+                        </div>
+                    </div>
+                    <p class="rateio-ajuda" id="rateioAjuda">O valor informado será acrescentado ao saldo atual do colaborador.</p>
+                    <button class="btn-salvar" id="btnSalvarRateio" type="submit">Salvar compartilhamento</button>
+                </form>` : '';
+            const estornoHtml = ehDestinatario ? `
+                <div class="estorno-area">
+                    <button class="btn-estorno" id="btnAbrirEstorno" type="button"${mesVigente ? '' : ' disabled'}>Estorno</button>
+                    ${mesVigente ? `
+                        <form class="estorno-form" id="formEstorno" hidden>
+                            <label for="valorEstorno">Valor que deseja devolver</label>
+                            <input id="valorEstorno" type="text" inputmode="decimal" placeholder="0,00" required>
+                            <p class="estorno-ajuda">Disponível para devolução: ${escaparHtml(formatarMoeda(valorRecebido))}. O valor será devolvido para ${escaparHtml(registro?.produtorOriginal?.nome)}.</p>
+                            <button class="btn-salvar" id="btnDevolverValor" type="submit">Devolver</button>
+                        </form>`
+                        : '<p class="estorno-bloqueado">Estornos ficam disponíveis somente no mês vigente.</p>'}
+                </div>` : '';
+            modalConteudo.innerHTML = `
+                <img class="foto-grande" src="${escaparHtml(registro?.foto?.url || registro?.foto?.thumbUrl || 'assets/img/logo.png')}" alt="Foto de ${escaparHtml(registro?.equipamento?.nome)}">
+                <div class="linha" style="margin-top:14px"><span class="rotulo">Equipamento</span><span class="equipamento">${escaparHtml(registro?.equipamento?.nome)}</span></div>
+                ${registro?.equipamento?.composicaoResumo ? `<div class="linha"><span class="rotulo">Composição</span>${escaparHtml(registro.equipamento.composicaoResumo)}</div>` : ''}
+                ${htmlDetalhesComposicao(registro)}
+                <div class="linha"><span class="rotulo">Valor total</span>${escaparHtml(formatarMoeda(registro?.equipamento?.valorTotal))}</div>
+                <div class="linha"><span class="rotulo">Produzido por</span>${escaparHtml(registro?.produtorOriginal?.nome)}</div>
+                <div class="linha"><span class="rotulo">Testado por</span>${escaparHtml(registro?.validadoPor?.nome)}</div>
+                <div class="participantes">${listaParticipantesHtml(registro)}</div>
+                ${rateioHtml}
+                ${estornoHtml}`;
+            modalDetalhe.classList.add('aberto');
+            modalDetalhe.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+
+            if (podeRatear) {
+                const select = document.getElementById('destinatarioRateio');
+                const input = document.getElementById('valorRateio');
+                select.addEventListener('change', () => {
+                    const atual = Number(registro?.participantes?.[select.value]?.valor || 0);
+                    input.value = '';
+                    document.getElementById('rateioAjuda').textContent = atual > 0
+                        ? `Este colaborador já possui ${formatarMoeda(atual)} neste equipamento. O novo valor será acrescentado.`
+                        : 'Informe o valor que deseja compartilhar com este colaborador.';
+                });
+                document.getElementById('formRateio').addEventListener('submit', salvarRateio);
+                if (abrirRateio) setTimeout(() => select.focus(), 0);
+            }
+            if (ehDestinatario && mesVigente) {
+                const botaoAbrirEstorno = document.getElementById('btnAbrirEstorno');
+                const formEstorno = document.getElementById('formEstorno');
+                botaoAbrirEstorno.addEventListener('click', () => {
+                    botaoAbrirEstorno.hidden = true;
+                    formEstorno.hidden = false;
+                    setTimeout(() => document.getElementById('valorEstorno')?.focus(), 0);
+                });
+                formEstorno.addEventListener('submit', salvarEstorno);
+            }
+        }
+
+        async function abrirDetalhe(validacaoId, abrirRateio = false) {
+            modalConteudo.innerHTML = '<div class="carregando">Carregando detalhes...</div>';
+            modalDetalhe.classList.add('aberto');
+            modalDetalhe.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            try {
+                const registro = await dbObterValidacaoProducaoEquipamento(validacaoId);
+                if (!registro) throw new Error('Produção não encontrada.');
+                renderizarModal(registro, abrirRateio);
+            } catch (erro) {
+                modalConteudo.innerHTML = `<div class="vazio">${escaparHtml(erro?.message || 'Não foi possível carregar os detalhes.')}</div>`;
+            }
+        }
+
+        async function salvarRateio(evento) {
+            evento.preventDefault();
+            const select = document.getElementById('destinatarioRateio');
+            const input = document.getElementById('valorRateio');
+            const botao = document.getElementById('btnSalvarRateio');
+            const destinatario = colaboradores.find((item) => item.firebaseUrl === select.value && item?.producaoEquipamentos === true);
+            if (!destinatario) {
+                await alertar('Selecione um colaborador com Produção de Equipamentos.');
+                return;
+            }
+            const valorCompartilhado = numeroEntrada(input.value);
+            if (valorCompartilhado <= 0) {
+                await alertar('Informe um valor maior que zero para compartilhar.');
+                return;
+            }
+            botao.disabled = true;
+            botao.textContent = 'Salvando...';
+            try {
+                await dbCompartilharValorProducaoEquipamento({
+                    validacaoId: validacaoAberta.id,
+                    produtorId: usuarioAtual.firebaseUrl,
+                    destinatario: { id: destinatario.firebaseUrl, nome: destinatario.nome },
+                    valorCompartilhado,
+                    realizadoPor: { id: usuarioAtual.firebaseUrl, nome: usuarioAtual.nome }
+                });
+                const atualizado = await dbObterValidacaoProducaoEquipamento(validacaoAberta.id);
+                renderizarModal(atualizado, true);
+                const novoSaldo = Number(atualizado?.participantes?.[destinatario.firebaseUrl]?.valor || 0);
+                await alertar(`${formatarMoeda(valorCompartilhado)} compartilhado com ${destinatario.nome}. Novo saldo: ${formatarMoeda(novoSaldo)}.`);
+            } catch (erro) {
+                console.error('Erro ao compartilhar produção:', erro);
+                await alertar(erro?.message || 'Não foi possível salvar o compartilhamento.');
+                botao.disabled = false;
+                botao.textContent = 'Salvar compartilhamento';
+            }
+        }
+
+        async function salvarEstorno(evento) {
+            evento.preventDefault();
+            const input = document.getElementById('valorEstorno');
+            const botao = document.getElementById('btnDevolverValor');
+            const valor = numeroEntrada(input?.value);
+            const valorDisponivel = Number(validacaoAberta?.participantes?.[usuarioAtual?.firebaseUrl]?.valor || 0);
+            if (valor <= 0) {
+                await alertar('Informe um valor maior que zero para devolver.');
+                input?.focus();
+                return;
+            }
+            if (valor > valorDisponivel) {
+                await alertar(`Você pode devolver no máximo ${formatarMoeda(valorDisponivel)}.`);
+                input?.focus();
+                return;
+            }
+
+            const confirmou = await confirmar(
+                `Devolver ${formatarMoeda(valor)} para ${validacaoAberta?.produtorOriginal?.nome || 'o remetente'}?`,
+                { confirmLabel: 'Devolver', cancelLabel: 'Cancelar' }
+            );
+            if (!confirmou) return;
+
+            const nomeRemetente = validacaoAberta?.produtorOriginal?.nome || 'o remetente';
+            const validacaoId = validacaoAberta.id;
+            botao.disabled = true;
+            botao.textContent = 'Devolvendo...';
+            try {
+                await dbEstornarRateioProducaoEquipamento({
+                    validacaoId,
+                    destinatario: { id: usuarioAtual.firebaseUrl, nome: usuarioAtual.nome },
+                    valor,
+                    realizadoPor: { id: usuarioLogado.firebaseUrl, nome: usuarioLogado.nome }
+                });
+            } catch (erro) {
+                console.error('Erro ao devolver valor da produção:', erro);
+                await alertar(erro?.message || 'Não foi possível devolver o valor.');
+                botao.disabled = false;
+                botao.textContent = 'Devolver';
+                return;
+            }
+
+            const atualizado = await dbObterValidacaoProducaoEquipamento(validacaoId).catch((erro) => {
+                console.warn('Valor devolvido, mas não foi possível recarregar os detalhes:', erro);
+                return null;
+            });
+            if (atualizado?.participantes?.[usuarioAtual.firebaseUrl]?.valor > 0) {
+                renderizarModal(atualizado);
+            } else {
+                fecharModal();
+            }
+            await alertar(`${formatarMoeda(valor)} devolvido para ${nomeRemetente}.`);
+        }
+
+        function fecharModal() {
+            modalDetalhe.classList.remove('aberto');
+            modalDetalhe.setAttribute('aria-hidden', 'true');
+            modalConteudo.innerHTML = '';
+            validacaoAberta = null;
+            document.body.style.overflow = '';
+        }
+
+        function mostrarAcessoNegado() {
+            document.getElementById('conteudo').innerHTML = `
+                <section class="acesso-negado">
+                    <h2>Acesso restrito</h2>
+                    <p>Esta tela é exclusiva para Produção de Equipamentos e Gestão 3.</p>
+                    <a class="btn" href="index.html" style="display:inline-grid;place-items:center;text-decoration:none;margin-top:14px">Voltar ao início</a>
+                </section>`;
+        }
+
+        function iniciarEscutasDoUsuario() {
+            if (typeof pararMeses === 'function') pararMeses();
+            pararMeses = null;
+            encerrarEscutasDoMes();
+            mesesDisponiveis = [];
+            competenciaSelecionada = obterCompetenciaAtualProducaoEquipamentos();
+            nomeUsuario.textContent = usuarioAtual?.nome || 'Sem colaborador';
+            preencherFiltros();
+            escutarMesSelecionado();
+            pararMeses = dbEscutarMesesProducaoUsuario(usuarioAtual.firebaseUrl, (meses) => {
+                mesesDisponiveis = Array.isArray(meses) ? meses : [];
+                preencherFiltros();
+            }, (erro) => console.warn('Não foi possível carregar os meses:', erro));
+        }
+
+        async function iniciar() {
+            await verificarAutenticacao();
+            colaboradores = await dbListarColaboradores();
+            colaboradores = Array.isArray(colaboradores) ? colaboradores : [];
+            const nomeLogadoNormalizado = normalizarNome(localStorage.getItem('usuarioLogado'));
+            usuarioLogado = colaboradores.find((item) => normalizarNome(item?.nome) === nomeLogadoNormalizado) || null;
+            ehGestorNivel3 = String(usuarioLogado?.nivel_completo || '').includes('gestao_3');
+            if (usuarioLogado?.producaoEquipamentos !== true && !ehGestorNivel3) {
+                mostrarAcessoNegado();
+                return;
+            }
+
+            if (ehGestorNivel3) {
+                const produtores = colaboradores
+                    .filter((item) => item?.producaoEquipamentos === true)
+                    .filter((item) => String(item?.nome || '').trim())
+                    .sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
+                if (produtores.length === 0) {
+                    nomeUsuario.textContent = 'Nenhum colaborador com Produção de Equipamentos';
+                    listaProducoes.innerHTML = '<div class="vazio">Cadastre um colaborador com essa remuneração para consultar a produção.</div>';
+                    totalMes.textContent = formatarMoeda(0);
+                    return;
+                }
+                filtroColaboradorGestorWrap.classList.add('visivel');
+                filtroColaboradorGestor.innerHTML = produtores.map((item) =>
+                    `<option value="${escaparHtml(item.firebaseUrl)}">${escaparHtml(item.nome)}</option>`
+                ).join('');
+                usuarioAtual = produtores[0];
+            } else {
+                usuarioAtual = usuarioLogado;
+            }
+
+            iniciarEscutasDoUsuario();
+        }
+
+        filtroAno.addEventListener('change', () => {
+            competenciaSelecionada = competenciaDosFiltros();
+            preencherFiltros();
+            escutarMesSelecionado();
+        });
+        filtroMes.addEventListener('change', escutarMesSelecionado);
+        filtroColaboradorGestor.addEventListener('change', () => {
+            if (!ehGestorNivel3) return;
+            const selecionado = colaboradores.find((item) => item.firebaseUrl === filtroColaboradorGestor.value && item?.producaoEquipamentos === true);
+            if (!selecionado) return;
+            usuarioAtual = selecionado;
+            iniciarEscutasDoUsuario();
+        });
+        listaProducoes.addEventListener('click', (evento) => {
+            const rateio = evento.target.closest('[data-rateio-id]');
+            const detalhe = evento.target.closest('[data-detalhe-id]');
+            if (rateio) abrirDetalhe(rateio.dataset.rateioId, true);
+            else if (detalhe) abrirDetalhe(detalhe.dataset.detalheId, false);
+        });
+        document.getElementById('btnFecharModal').addEventListener('click', fecharModal);
+        modalDetalhe.addEventListener('click', (evento) => { if (evento.target === modalDetalhe) fecharModal(); });
+        document.addEventListener('keydown', (evento) => { if (evento.key === 'Escape' && modalDetalhe.classList.contains('aberto')) fecharModal(); });
+        window.addEventListener('beforeunload', () => {
+            if (typeof pararMeses === 'function') pararMeses();
+            encerrarEscutasDoMes();
+        });
+
+        iniciar().catch(async (erro) => {
+            console.error('Erro ao abrir financeiro de produção:', erro);
+            document.body.style.visibility = 'visible';
+            await alertar(erro?.message || 'Não foi possível abrir a tela financeira.');
+        });
+    </script>
+</body>
+</html>

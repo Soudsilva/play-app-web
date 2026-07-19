@@ -371,6 +371,11 @@
             <span class="texto-producao-maquinas">Produ&ccedil;&atilde;o M&aacute;quinas</span>
         </div>
 
+        <div class="botao" id="btnFinanceiroProducaoEquipamentosGestor" onclick="window.location.href='financeiro_producao_equipamentos.html'" style="display: none;">
+            <span class="icone">&#128176;</span>
+            <span>Financeiro Produ&ccedil;&atilde;o</span>
+        </div>
+
         <div class="botao" id="btnFluxoCaixa" onclick="abrirTela('fluxo_caixa')" style="display: none;">
             <span class="icone">&#128184;</span>
             <span>Fluxo de Caixa</span>
@@ -811,6 +816,7 @@
             fluxoCaixa: document.getElementById('btnFluxoCaixa'),
             pagamentosGestor: document.getElementById('btnPagamentosGestor'),
             producaoMaquinasGestor: document.getElementById('btnProducaoMaquinasGestor'),
+            financeiroProducaoEquipamentosGestor: document.getElementById('btnFinanceiroProducaoEquipamentosGestor'),
             representante: document.getElementById('btnRepresentante'),
             verificarRotas: document.getElementById('btnVerificarRotas'),
             configAutomaticas: document.getElementById('btnConfigAutomaticas'),
@@ -820,6 +826,7 @@
         // Por padrÃ£o, garante que o bloco de GestÃ£o nÃ£o vai deixar "espaÃ§o vazio" no menu.
         btns.blocoGestao.style.display = 'block';
         btns.producaoMaquinasGestor.style.display = 'none';
+        btns.financeiroProducaoEquipamentosGestor.style.display = 'none';
 
         // 1. PERFIL ESTOQUE
         if (perfil.includes('estoque')) {
@@ -906,7 +913,6 @@
             btns.whatsplay.style.display = 'flex';
             btns.servico.style.display = 'none';
             btns.financeiro.style.display = 'none';
-
         // 3. PERFIL GESTÃO
         } else {
             btns.atendimento.style.display = 'flex';
@@ -951,6 +957,8 @@
         // GESTOR NÍVEL 3: botão Financeiro (Pagamentos_Gestor), sem Fluxo de Caixa
         if (perfilEhGestaoNivel3(perfil)) {
             btns.pagamentosGestor.style.display = 'flex';
+            btns.maquinasEstoque.style.display = 'flex';
+            btns.financeiroProducaoEquipamentosGestor.style.display = 'flex';
             btns.fluxoCaixa.style.display = 'none';
         }
 
@@ -970,6 +978,11 @@
         // Remuneração "Produção de Produtos": exibe o botão Financeiro para qualquer perfil
         if (usuario?.producaoProdutos) {
             btns.financeiro.style.display = 'flex';
+        }
+
+        // Remuneração "Produção de Equipamentos": acesso ao novo financeiro de produção.
+        if (usuario?.producaoEquipamentos && !perfil.includes('estoque')) {
+            btns.financeiroProducaoEquipamentosGestor.style.display = 'flex';
         }
 
         // Remuneração "Comissão Global": exibe o botão Balanço para qualquer perfil

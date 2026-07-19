@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Avaliação de Produção</title>
+    <style>
+        :root {
+            --azul: #0d2c69;
+            --azul-card: #193d7a;
+            --azul-claro: #315b99;
+            --amarelo: #ffeb00;
+            --verde: #36c66b;
+            --texto: #ffffff;
+            --borda: rgba(255, 235, 0, 0.34);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--azul);
+            color: var(--texto);
+            font-family: Arial, Helvetica, sans-serif;
+            visibility: hidden;
+        }
+        button, input, select { font: inherit; }
+        .topo {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: rgba(8, 34, 85, 0.98);
+            border-top: 1px solid var(--amarelo);
+            border-bottom: 1px solid rgba(255, 235, 0, 0.25);
+        }
+        .topo-conteudo {
+            position: relative;
+            max-width: 760px;
+            margin: auto;
+            min-height: 56px;
+            padding: 8px 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .topo h1 {
+            margin: 0;
+            color: var(--amarelo);
+            font-size: clamp(18px, 5.1vw, 22px);
+            text-align: center;
+            white-space: nowrap;
+        }
+        .btn-home {
+            position: absolute;
+            top: 50%;
+            right: 14px;
+            transform: translateY(-50%);
+            width: 38px;
+            height: 38px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.12);
+            color: #ffffff;
+            display: grid;
+            place-items: center;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .btn-home svg { width: 20px; height: 20px; fill: #ffffff; }
+        main { max-width: 760px; margin: auto; padding: 14px 14px 34px; }
+        .painel {
+            background: linear-gradient(180deg, rgba(49,91,153,0.75), rgba(20,54,112,0.95));
+            border: 1px solid var(--borda);
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.16);
+        }
+        .painel + .painel { margin-top: 16px; }
+        .titulo-secao { margin: 0 0 14px; color: var(--amarelo); font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .campo { margin-bottom: 14px; }
+        .campo label { display: block; margin-bottom: 6px; color: var(--amarelo); font-size: 11px; font-weight: 700; text-align: center; text-transform: uppercase; }
+        select, input[type="text"] {
+            width: 100%;
+            min-height: 46px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.28);
+            background: rgba(5,31,78,0.86);
+            color: white;
+            padding: 0 12px;
+            outline: none;
+        }
+        select:focus, input:focus { border-color: var(--amarelo); }
+        option { color: #111; }
+        .maquina-avaliada {
+            position: relative;
+            overflow: hidden;
+            min-height: 64px;
+            padding: 13px 15px 13px 18px;
+            display: grid;
+            gap: 10px;
+            background:
+                radial-gradient(130% 120% at 0% 0%, rgba(54,198,107,0.15), transparent 58%),
+                linear-gradient(180deg, rgba(13,47,108,0.95), rgba(5,26,66,0.96));
+            border: 1px solid rgba(255,255,255,0.16);
+            border-radius: 14px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        /* Faixa de destaque à esquerda: verde vivo no topo, esvaindo para baixo. */
+        .maquina-avaliada::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #3ee07f, rgba(54,198,107,0.18));
+        }
+        .maquina-avaliada-nome {
+            min-width: 0;
+            display: block;
+            color: white;
+            font-size: clamp(21px, 6vw, 26px);
+            letter-spacing: 0.2px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.35);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .maquina-avaliada-linha {
+            min-width: 0;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.10);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .maquina-avaliada-valor {
+            flex: 0 0 auto;
+            color: var(--amarelo);
+            font-size: clamp(20px, 5.6vw, 24px);
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            text-shadow: 0 0 20px rgba(255,235,0,0.30);
+        }
+        .maquina-avaliada-qtd {
+            min-width: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            overflow: hidden;
+            padding: 5px 11px;
+            color: #ffe98a;
+            background: rgba(255,237,0,0.07);
+            border: 1px solid rgba(255,237,0,0.28);
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        /* Ponto pulsante: reforça que é um status pendente, sem roubar o amarelo do valor. */
+        .maquina-avaliada-qtd::before {
+            content: "";
+            flex: 0 0 auto;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--amarelo);
+            box-shadow: 0 0 0 3px rgba(255,235,0,0.16);
+            animation: pulso-aguardando 2s ease-in-out infinite;
+        }
+        @keyframes pulso-aguardando {
+            50% { opacity: 0.3; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .maquina-avaliada-qtd::before { animation: none; }
+        }
+        .opcoes-configuracao {
+            display: grid;
+            gap: 9px;
+        }
+        .opcao-configuracao {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            min-height: 62px;
+            padding: 11px 13px 11px 16px;
+            display: grid;
+            grid-template-columns: 22px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 11px;
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 13px;
+            background: linear-gradient(180deg, rgba(11,40,94,0.88), rgba(5,26,66,0.92));
+            color: white;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        }
+        .opcao-configuracao::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: rgba(255,255,255,0.12);
+            transition: background 0.15s ease;
+        }
+        .opcao-configuracao:hover,
+        .opcao-configuracao:focus-visible { border-color: var(--amarelo); outline: none; }
+        .opcao-configuracao.selecionada {
+            border-color: var(--verde);
+            background: linear-gradient(180deg, rgba(20,74,102,0.92), rgba(11,48,74,0.95));
+            box-shadow: 0 0 0 2px rgba(54,198,107,0.18), 0 6px 16px rgba(0,0,0,0.26);
+        }
+        .opcao-configuracao.selecionada::before {
+            background: linear-gradient(180deg, #3ee07f, rgba(54,198,107,0.2));
+        }
+        /* Brilho que varre a opção no momento em que ela é escolhida. */
+        .opcao-configuracao.selecionada::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.14) 50%, transparent 68%);
+            transform: translateX(-120%);
+            animation: brilho-selecao 0.7s ease-out;
+        }
+        @keyframes brilho-selecao {
+            to { transform: translateX(120%); }
+        }
+        .opcao-configuracao:disabled { opacity: 0.46; cursor: not-allowed; }
+        /* Marcador de escolha única: anel vazio, vira disco verde com ✓ ao selecionar. */
+        .opcao-configuracao-marca {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.32);
+            display: grid;
+            place-items: center;
+            font-size: 12px;
+            font-weight: 900;
+            line-height: 1;
+            color: transparent;
+            transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .opcao-configuracao.selecionada .opcao-configuracao-marca {
+            border-color: var(--verde);
+            background: var(--verde);
+            color: #06301a;
+            box-shadow: 0 0 0 4px rgba(54,198,107,0.18);
+        }
+        .opcao-configuracao-info { min-width: 0; }
+        .opcao-configuracao-nome {
+            display: block;
+            font-size: 14px;
+            font-weight: 800;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .opcao-configuracao.selecionada::after { animation: none; }
+        }
+        /* A composição em texto é o que diferencia os Racks entre si. */
+        .opcao-configuracao-resumo {
+            display: inline-flex;
+            align-items: center;
+            margin-top: 8px;
+            padding: 4px 11px;
+            border-radius: 999px;
+            background: var(--amarelo);
+            color: #09245a;
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 0.3px;
+        }
+        .opcao-configuracao-valor { color: var(--amarelo); font-size: 18px; font-weight: 900; white-space: nowrap; }
+        .campo-linha {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 112px;
+            gap: 10px;
+            align-items: end;
+        }
+        .foto-slot {
+            position: relative;
+            width: 100%;
+            height: 48px;
+            padding: 0;
+            border: 1px dashed rgba(255,255,255,0.45);
+            border-radius: 12px;
+            background: rgba(5,31,78,0.86);
+            color: white;
+            font-size: 19px;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .foto-slot:hover,
+        .foto-slot:focus-visible { border-color: var(--amarelo); outline: none; }
+        .foto-slot.com-foto { border: 2px solid rgba(54,198,107,0.75); }
+        .foto-slot img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .foto-slot img[hidden] { display: none; }
+        .foto-slot.com-foto img { animation: foto-pop 0.25s ease; }
+        @keyframes foto-pop {
+            from { transform: scale(0.75); opacity: 0.4; }
+        }
+        .foto-slot-check {
+            position: absolute;
+            right: 2px;
+            bottom: 2px;
+            z-index: 1;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--verde);
+            color: #04122d;
+            font-size: 11px;
+            font-weight: 900;
+            display: grid;
+            place-items: center;
+        }
+        .foto-slot-check[hidden] { display: none; }
+        .visor-foto {
+            position: fixed;
+            inset: 0;
+            z-index: 60;
+            display: grid;
+            place-items: center;
+            padding: 18px;
+            background: rgba(3,12,34,0.93);
+        }
+        .visor-foto[hidden] { display: none; }
+        .visor-foto img {
+            max-width: 100%;
+            max-height: 82vh;
+            border-radius: 14px;
+            box-shadow: 0 18px 48px rgba(0,0,0,0.6);
+        }
+        .visor-foto-fechar {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 42px;
+            height: 42px;
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            color: white;
+            font-size: 17px;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+        }
+        .visor-foto-trocar {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            min-height: 42px;
+            padding: 0 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: 12px;
+            background: rgba(8,34,85,0.92);
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .visor-foto-trocar[hidden] { display: none; }
+        .visor-foto-status {
+            position: absolute;
+            bottom: 16px;
+            left: 0;
+            right: 0;
+            margin: 0;
+            text-align: center;
+            font-size: 12px;
+            color: #cfe0ff;
+        }
+        .foto-menu-wrap {
+            position: relative;
+        }
+        .menu-foto {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            z-index: 20;
+            min-width: 158px;
+            overflow: hidden;
+            background: #0d2560;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 14px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        .menu-foto.aberto { display: block; }
+        .menu-foto .menu-foto-opcao {
+            position: relative;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 13px 20px;
+            color: white;
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: none;
+        }
+        .menu-foto .menu-foto-opcao + .menu-foto-opcao { border-top: 1px solid rgba(255,255,255,0.08); }
+        .menu-foto .menu-foto-opcao:hover { background: rgba(255,255,255,0.08); }
+        .menu-foto-opcao input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .foto-btn {
+            min-height: 43px;
+            border-radius: 11px;
+            border: 1px solid rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.09);
+            color: white;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .foto-btn input { display: none; }
+        .confirmacao {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            margin: 4px 0 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.08);
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+        .confirmacao input { width: 20px; height: 20px; flex: 0 0 auto; accent-color: var(--verde); }
+        .campo-invalido select,
+        .campo-invalido .foto-slot,
+        .campo-invalido .opcoes-configuracao,
+        .confirmacao.campo-invalido {
+            border-color: #ff7b7b;
+            box-shadow: 0 0 0 3px rgba(255, 90, 90, 0.22);
+            animation: sinalizar-pendencia 0.45s ease 2;
+        }
+        .campo-invalido .opcao-configuracao { border-color: #ff7b7b; }
+        @keyframes sinalizar-pendencia {
+            50% { transform: translateY(-2px); }
+        }
+        .status-formulario {
+            margin: 0 0 8px;
+            color: #c4cbd8;
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+        }
+        .status-formulario.pronto { color: #7fffb0; }
+        .btn-confirmar {
+            width: 100%;
+            min-height: 52px;
+            border: 0;
+            border-radius: 13px;
+            color: #e6e9ef;
+            background: #687386;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+        }
+        .btn-confirmar.pronto { color: #05224d; background: var(--amarelo); }
+        .btn-confirmar:not(.pronto):hover { background: #768195; }
+        .btn-confirmar:disabled { opacity: 0.48; cursor: wait; }
+        .lista { display: grid; gap: 10px; }
+        .card-historico {
+            width: 100%;
+            margin-top: 14px;
+            padding: 13px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 13px;
+            background: rgba(7,34,81,0.58);
+            color: white;
+            text-align: left;
+            cursor: pointer;
+        }
+        .card-historico:hover,
+        .card-historico:focus-visible { border-color: var(--amarelo); outline: none; }
+        .card-historico strong { display: block; color: var(--amarelo); font-size: 14px; }
+        .card-historico small { display: block; margin-top: 4px; color: #c8d3e8; font-size: 11px; }
+        .card-historico-seta { font-size: 22px; transition: transform 0.18s ease; }
+        .card-historico[aria-expanded="true"] .card-historico-seta { transform: rotate(90deg); }
+        .historico-conteudo {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255,255,255,0.13);
+        }
+        .historico-conteudo[hidden] { display: none; }
+        .historico-filtros {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 9px;
+            margin-bottom: 12px;
+        }
+        .historico-filtros label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--amarelo);
+            font-size: 10px;
+            font-weight: 700;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        .registro {
+            display: grid;
+            grid-template-columns: 72px 1fr auto auto;
+            gap: 11px;
+            align-items: center;
+            padding: 10px;
+            border-radius: 13px;
+            background: rgba(7,34,81,0.65);
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+        .registro img { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; background: #071d45; display: block; }
+        .registro-foto {
+            padding: 0;
+            border: 0;
+            border-radius: 10px;
+            background: transparent;
+            cursor: pointer;
+        }
+        .registro-foto:hover,
+        .registro-foto:focus-visible { outline: 2px solid var(--amarelo); outline-offset: 2px; }
+        .registro h3 { margin: 0 0 5px; font-size: 15px; }
+        .registro p { margin: 2px 0; font-size: 11px; opacity: 0.8; }
+        .registro strong { color: var(--amarelo); font-size: 17px; white-space: nowrap; }
+        .btn-excluir-validacao {
+            width: 38px;
+            height: 38px;
+            border: 1px solid rgba(255,255,255,0.24);
+            border-radius: 10px;
+            background: rgba(255, 87, 87, 0.14);
+            color: #ff8a8a;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+        }
+        .btn-excluir-validacao:hover,
+        .btn-excluir-validacao:focus-visible {
+            border-color: #ff8a8a;
+            background: rgba(255, 87, 87, 0.22);
+            outline: none;
+        }
+        .btn-excluir-validacao:disabled {
+            opacity: 0.55;
+            cursor: wait;
+        }
+        .vazio, .acesso-negado { text-align: center; padding: 28px 16px; opacity: 0.78; }
+        .acesso-negado h2 { color: var(--amarelo); }
+        @media (max-width: 480px) {
+            main { padding-left: 10px; padding-right: 10px; }
+            .painel { padding: 13px; }
+            .registro { grid-template-columns: 60px minmax(0, 1fr) auto; }
+            .registro img { width: 60px; height: 60px; }
+            .registro > :first-child { grid-row: 1 / 3; }
+            .registro > div { grid-column: 2 / 4; }
+            .registro strong { grid-column: 2; grid-row: 2; }
+            .btn-excluir-validacao { grid-column: 3; grid-row: 2; justify-self: end; }
+        }
+    </style>
+</head>
+<body>
+    <header class="topo">
+        <div class="topo-conteudo">
+            <h1>AVALIAÇÃO DE PRODUÇÃO</h1>
+            <a class="btn-home" href="index.html" aria-label="Voltar ao menu" title="Voltar ao menu">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+            </a>
+        </div>
+    </header>
+
+    <main id="conteudo">
+        <section class="painel" id="painelFormulario">
+            <form id="formValidacao" novalidate>
+                <div class="campo">
+                    <div class="maquina-avaliada" aria-label="Equipamento selecionado para avaliação">
+                        <strong class="maquina-avaliada-nome" id="equipamentoNome">Carregando...</strong>
+                        <div class="maquina-avaliada-linha">
+                            <span class="maquina-avaliada-qtd" id="equipamentoQuantidade"></span>
+                            <strong class="maquina-avaliada-valor" id="valorEquipamento">R$ 0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="campo" id="campoConfiguracao" hidden>
+                    <label>Configuração da montagem</label>
+                    <div class="opcoes-configuracao" id="opcoesConfiguracao" role="radiogroup" aria-label="Configuração da montagem"></div>
+                </div>
+
+                <div class="campo-linha">
+                    <div class="campo" id="campoProdutor">
+                        <label for="produtorSelect">Quem produziu</label>
+                        <select id="produtorSelect" required>
+                            <option value="">Carregando colaboradores...</option>
+                        </select>
+                    </div>
+                    <div class="campo" id="campoFoto">
+                        <label for="btnFotoSlot">Foto</label>
+                        <div class="foto-menu-wrap" id="fotoMenuWrap">
+                            <button class="foto-slot" id="btnFotoSlot" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="menuFoto" aria-label="Adicionar foto da máquina pronta">
+                                <span id="fotoVazia" aria-hidden="true">📷</span>
+                                <img id="fotoPreview" alt="Prévia da máquina testada" hidden>
+                                <span class="foto-slot-check" id="fotoCheck" hidden aria-hidden="true">✓</span>
+                            </button>
+                            <div class="menu-foto" id="menuFoto" role="menu" aria-label="Origem da foto">
+                                <label class="menu-foto-opcao" role="menuitem">
+                                    <span aria-hidden="true">📷</span>
+                                    <span>Câmera</span>
+                                    <input id="fotoCamera" type="file" accept="image/*" capture="environment" aria-label="Abrir câmera">
+                                </label>
+                                <label class="menu-foto-opcao" role="menuitem">
+                                    <span aria-hidden="true">🖼️</span>
+                                    <span>Galeria</span>
+                                    <input id="fotoGaleria" type="file" accept="image/*" aria-label="Escolher foto da galeria">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <label class="confirmacao" id="campoConfirmacao">
+                    <input id="testeConfirmado" type="checkbox" required>
+                    <span>Testei o equipamento, confirmei que está pronto e que o colaborador informado realizou a produção.</span>
+                </label>
+
+                <p class="status-formulario" id="statusFormulario">Complete os campos acima para aprovar</p>
+                <button class="btn-confirmar" id="btnConfirmar" type="submit">Aprovar produção</button>
+            </form>
+        </section>
+
+        <section class="painel" id="painelRecentes">
+            <h2 class="titulo-secao">Validações de hoje</h2>
+            <div class="lista" id="listaRecentes"><div class="vazio">Carregando...</div></div>
+            <button class="card-historico" id="btnHistorico" type="button" aria-expanded="false" aria-controls="conteudoHistorico">
+                <span>
+                    <strong>Ver validações do mês</strong>
+                    <small>Consultar dias e meses anteriores</small>
+                </span>
+                <span class="card-historico-seta" aria-hidden="true">›</span>
+            </button>
+            <div class="historico-conteudo" id="conteudoHistorico" hidden>
+                <div class="historico-filtros">
+                    <div>
+                        <label for="historicoAno">Ano</label>
+                        <select id="historicoAno"></select>
+                    </div>
+                    <div>
+                        <label for="historicoMes">Mês</label>
+                        <select id="historicoMes"></select>
+                    </div>
+                </div>
+                <div class="lista" id="listaHistorico"><div class="vazio">Selecione o período.</div></div>
+            </div>
+        </section>
+    </main>
+
+    <div class="visor-foto" id="visorFoto" hidden role="dialog" aria-modal="true" aria-label="Foto ampliada">
+        <button class="visor-foto-fechar" id="btnFecharVisor" type="button" aria-label="Fechar foto ampliada">✕</button>
+        <img id="visorFotoImg" alt="Foto ampliada da máquina">
+        <button class="visor-foto-trocar" id="btnTrocarFotoVisor" type="button" hidden><span aria-hidden="true">📷</span>Trocar foto</button>
+        <p class="visor-foto-status" id="visorFotoStatus" hidden>Carregando foto em alta qualidade...</p>
+    </div>
+
+    <script src="assets/js/play-dialogs.js"></script>
+    <script type="module">
+        import { verificarAutenticacao } from './auth.js';
+        import { dbListarColaboradores, dbListarEstoque } from './database.js';
+        import {
+            dbCriarValidacaoProducaoEquipamento,
+            dbExcluirValidacaoProducaoEquipamentoHoje,
+            dbEscutarSaldoTestadoEquipamentoMesAtual,
+            dbEscutarValidacoesProducaoMes,
+            dbObterFotoValidacaoProducao,
+            obterCompetenciaAtualProducaoEquipamentos
+        } from './database-producao-equipamentos.js';
+
+        const NOMES_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        const form = document.getElementById('formValidacao');
+        const equipamentoNome = document.getElementById('equipamentoNome');
+        const equipamentoQuantidade = document.getElementById('equipamentoQuantidade');
+        const campoConfiguracao = document.getElementById('campoConfiguracao');
+        const opcoesConfiguracao = document.getElementById('opcoesConfiguracao');
+        const produtorSelect = document.getElementById('produtorSelect');
+        const campoProdutor = document.getElementById('campoProdutor');
+        const campoFoto = document.getElementById('campoFoto');
+        const campoConfirmacao = document.getElementById('campoConfirmacao');
+        const testeConfirmado = document.getElementById('testeConfirmado');
+        const statusFormulario = document.getElementById('statusFormulario');
+        const valorEquipamento = document.getElementById('valorEquipamento');
+        const fotoMenuWrap = document.getElementById('fotoMenuWrap');
+        const btnFotoSlot = document.getElementById('btnFotoSlot');
+        const menuFoto = document.getElementById('menuFoto');
+        const fotoCamera = document.getElementById('fotoCamera');
+        const fotoGaleria = document.getElementById('fotoGaleria');
+        const fotoPreview = document.getElementById('fotoPreview');
+        const fotoVazia = document.getElementById('fotoVazia');
+        const fotoCheck = document.getElementById('fotoCheck');
+        const btnTrocarFotoVisor = document.getElementById('btnTrocarFotoVisor');
+        const visorFoto = document.getElementById('visorFoto');
+        const visorFotoImg = document.getElementById('visorFotoImg');
+        const visorFotoStatus = document.getElementById('visorFotoStatus');
+        const btnFecharVisor = document.getElementById('btnFecharVisor');
+        const painelRecentes = document.getElementById('painelRecentes');
+        const btnConfirmar = document.getElementById('btnConfirmar');
+        const listaRecentes = document.getElementById('listaRecentes');
+        const btnHistorico = document.getElementById('btnHistorico');
+        const conteudoHistorico = document.getElementById('conteudoHistorico');
+        const historicoAno = document.getElementById('historicoAno');
+        const historicoMes = document.getElementById('historicoMes');
+        const listaHistorico = document.getElementById('listaHistorico');
+
+        let colaboradores = [];
+        let estoqueAtual = [];
+        let maquinaSelecionada = null;
+        let configuracoesMontagem = [];
+        let configuracaoSelecionada = null;
+        let usuarioAtual = null;
+        let fotoArquivo = null;
+        let fotoPreviewUrl = '';
+        let pararRecentes = null;
+        let pararHistorico = null;
+        let pararSaldoMaquinaSelecionada = null;
+        let saldoTestadoMaquinaSelecionada = null;
+        let validacoesMesAtual = [];
+        let mesAtualCarregado = false;
+        let exclusaoEmAndamento = false;
+        const fotosCompletas = new Map();
+        let visorSessao = 0;
+
+        function normalizarNome(valor) {
+            return String(valor || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function escaparHtml(valor) {
+            return String(valor || '')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function formatarMoeda(valor) {
+            return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function obterTipoMaquinaPG(item) {
+            const nome = normalizarNome(item?.nome).replace(/\s+/g, ' ');
+            if (nome === 'maquina p') return 'P';
+            if (nome === 'maquina g') return 'G';
+            return '';
+        }
+
+        function obterItemMaquinaPorTipo(tipo) {
+            return estoqueAtual.find((item) =>
+                String(item?.categoria || '').trim() === 'maquina' && obterTipoMaquinaPG(item) === tipo
+            ) || null;
+        }
+
+        function criarConfiguracoesMontagem() {
+            const tipoOrigem = obterTipoMaquinaPG(maquinaSelecionada);
+            if (!tipoOrigem) return [];
+            const modelos = [
+                { codigo: 'p_simples', nome: 'Máquina P Simples', resumo: '1 P', origens: ['P'], itens: [{ tipo: 'P', quantidade: 1 }] },
+                { codigo: 'g_simples', nome: 'Máquina G Simples', resumo: '1 G', origens: ['G'], itens: [{ tipo: 'G', quantidade: 1 }] },
+                { codigo: 'dupla_p', nome: 'Dupla P', resumo: '2 P', origens: ['P'], itens: [{ tipo: 'P', quantidade: 2 }] },
+                { codigo: 'rack_4p', nome: 'Rack', resumo: '4 P', origens: ['P'], itens: [{ tipo: 'P', quantidade: 4 }] },
+                { codigo: 'rack_3p_1g', nome: 'Rack', resumo: '3 P + 1 G', origens: ['P', 'G'], itens: [{ tipo: 'P', quantidade: 3 }, { tipo: 'G', quantidade: 1 }] },
+                { codigo: 'rack_2p_2g', nome: 'Rack', resumo: '2 P + 2 G', origens: ['P', 'G'], itens: [{ tipo: 'P', quantidade: 2 }, { tipo: 'G', quantidade: 2 }] }
+            ];
+
+            return modelos.filter((modelo) => modelo.origens.includes(tipoOrigem)).map((modelo) => {
+                const componentes = modelo.itens.map(({ tipo, quantidade }) => {
+                    const item = obterItemMaquinaPorTipo(tipo);
+                    const valorUnitario = Number(item?.valorEquipamento || 0);
+                    return {
+                        tipo,
+                        equipamentoId: String(item?.firebaseUrl || ''),
+                        nome: String(item?.nome || `Máquina ${tipo}`),
+                        quantidade,
+                        valorUnitario,
+                        valorTotal: valorUnitario * quantidade,
+                        quantidadeEstoque: Number.parseInt(item?.quantidade || 0, 10) || 0
+                    };
+                });
+                const componentesValidos = componentes.every((item) => item.equipamentoId && item.valorUnitario > 0);
+                const estoqueDisponivel = componentes.every((item) => item.quantidadeEstoque >= item.quantidade);
+                return {
+                    ...modelo,
+                    componentes,
+                    valorTotal: componentes.reduce((total, item) => total + item.valorTotal, 0),
+                    disponivel: componentesValidos && estoqueDisponivel,
+                    motivoIndisponivel: !componentesValidos ? 'Valor ou máquina não cadastrada' : (!estoqueDisponivel ? 'Estoque insuficiente' : '')
+                };
+            });
+        }
+
+        function configuracaoMontagemObrigatoria() {
+            return Boolean(obterTipoMaquinaPG(maquinaSelecionada));
+        }
+
+        function renderizarConfiguracoesMontagem() {
+            opcoesConfiguracao.innerHTML = configuracoesMontagem.filter((configuracao) => configuracao.disponivel).map((configuracao) => `
+                <button class="opcao-configuracao${configuracaoSelecionada?.codigo === configuracao.codigo ? ' selecionada' : ''}"
+                        type="button"
+                        role="radio"
+                        aria-checked="${configuracaoSelecionada?.codigo === configuracao.codigo ? 'true' : 'false'}"
+                        aria-label="${escaparHtml(configuracao.nome)}, ${escaparHtml(configuracao.resumo)}, ${escaparHtml(formatarMoeda(configuracao.valorTotal))}"
+                        data-configuracao-codigo="${escaparHtml(configuracao.codigo)}">
+                    <span class="opcao-configuracao-marca" aria-hidden="true">✓</span>
+                    <span class="opcao-configuracao-info">
+                        <span class="opcao-configuracao-nome">${escaparHtml(configuracao.nome)}</span>
+                        <span class="opcao-configuracao-resumo">${escaparHtml(configuracao.resumo)}</span>
+                    </span>
+                    <span class="opcao-configuracao-valor">${escaparHtml(formatarMoeda(configuracao.valorTotal))}</span>
+                </button>
+            `).join('');
+        }
+
+        function selecionarConfiguracaoMontagem(codigo) {
+            const configuracao = configuracoesMontagem.find((item) => item.codigo === codigo && item.disponivel);
+            if (!configuracao) return;
+            configuracaoSelecionada = configuracao;
+            equipamentoNome.textContent = configuracao.nome;
+            equipamentoQuantidade.textContent = configuracao.resumo;
+            valorEquipamento.textContent = formatarMoeda(configuracao.valorTotal);
+            renderizarConfiguracoesMontagem();
+            atualizarEstadoFormulario();
+        }
+
+        function atualizarQuantidadeAguardandoAprovacao() {
+            if (!maquinaSelecionada || configuracaoMontagemObrigatoria()) return;
+            if (saldoTestadoMaquinaSelecionada === null) {
+                equipamentoQuantidade.textContent = 'Calculando...';
+                return;
+            }
+            const quantidadeEstoque = Number.parseInt(maquinaSelecionada?.quantidade || 0, 10) || 0;
+            const quantidadeAguardando = Math.max(0, quantidadeEstoque - saldoTestadoMaquinaSelecionada);
+            equipamentoQuantidade.textContent = `${quantidadeAguardando} aguardando`;
+            equipamentoQuantidade.setAttribute('aria-label', `${quantidadeAguardando} aguardando aprovação`);
+        }
+
+        function escutarSaldoDaMaquinaSelecionada() {
+            if (typeof pararSaldoMaquinaSelecionada === 'function') pararSaldoMaquinaSelecionada();
+            pararSaldoMaquinaSelecionada = null;
+            saldoTestadoMaquinaSelecionada = null;
+            atualizarQuantidadeAguardandoAprovacao();
+
+            const equipamentoId = String(maquinaSelecionada?.firebaseUrl || '').trim();
+            if (!equipamentoId) return;
+            pararSaldoMaquinaSelecionada = dbEscutarSaldoTestadoEquipamentoMesAtual(
+                equipamentoId,
+                (resumo) => {
+                    saldoTestadoMaquinaSelecionada = Number.parseInt(resumo?.saldoExibido || 0, 10) || 0;
+                    atualizarQuantidadeAguardandoAprovacao();
+                },
+                (erro) => {
+                    console.error('Não foi possível carregar a quantidade aguardando aprovação:', erro);
+                    saldoTestadoMaquinaSelecionada = null;
+                    equipamentoQuantidade.textContent = 'Aguardando indisponível';
+                }
+            );
+        }
+
+        function prepararConfiguracoesDaMaquina() {
+            configuracaoSelecionada = null;
+            configuracoesMontagem = criarConfiguracoesMontagem();
+            const exigeConfiguracao = configuracaoMontagemObrigatoria();
+            campoConfiguracao.hidden = !exigeConfiguracao;
+            if (!exigeConfiguracao) {
+                equipamentoNome.textContent = String(maquinaSelecionada?.nome || 'Máquina');
+                atualizarQuantidadeAguardandoAprovacao();
+                valorEquipamento.textContent = formatarMoeda(maquinaSelecionada?.valorEquipamento);
+                return;
+            }
+            equipamentoNome.textContent = String(maquinaSelecionada?.nome || 'Máquina');
+            equipamentoQuantidade.textContent = 'Escolha a montagem';
+            valorEquipamento.textContent = formatarMoeda(0);
+            renderizarConfiguracoesMontagem();
+        }
+
+        function obterEquipamentoParaValidacao() {
+            if (!configuracaoMontagemObrigatoria()) {
+                return {
+                    id: maquinaSelecionada?.firebaseUrl,
+                    nome: maquinaSelecionada?.nome,
+                    valorUnitario: maquinaSelecionada?.valorEquipamento
+                };
+            }
+            if (!configuracaoSelecionada) return null;
+            return {
+                id: `montagem_${configuracaoSelecionada.codigo}`,
+                codigoMontagem: configuracaoSelecionada.codigo,
+                nome: configuracaoSelecionada.nome,
+                composicaoResumo: configuracaoSelecionada.resumo,
+                valorUnitario: configuracaoSelecionada.valorTotal,
+                valorTotal: configuracaoSelecionada.valorTotal,
+                composicao: configuracaoSelecionada.componentes.map((item) => ({
+                    equipamentoId: item.equipamentoId,
+                    nome: item.nome,
+                    quantidade: item.quantidade,
+                    valorUnitario: item.valorUnitario
+                }))
+            };
+        }
+
+        function formatarData(valor) {
+            const data = new Date(Number(valor || 0));
+            if (Number.isNaN(data.getTime())) return 'Agora';
+            return new Intl.DateTimeFormat('pt-BR', {
+                timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            }).format(data);
+        }
+
+        async function alertar(mensagem) {
+            if (window.playAlert) return window.playAlert(mensagem);
+            window.alert(mensagem);
+        }
+
+        async function confirmar(mensagem, opcoes = {}) {
+            if (window.playConfirm) return window.playConfirm(mensagem, opcoes);
+            return window.confirm(mensagem);
+        }
+
+        function definirMenuFotoAberto(aberto) {
+            const deveAbrir = Boolean(aberto);
+            menuFoto.classList.toggle('aberto', deveAbrir);
+            btnFotoSlot.setAttribute('aria-expanded', deveAbrir ? 'true' : 'false');
+        }
+
+        function fecharMenuFoto() {
+            definirMenuFotoAberto(false);
+        }
+
+        function abrirVisorFoto(url, alt, carregando = false, permitirTroca = false) {
+            if (!url) return 0;
+            visorSessao += 1;
+            visorFotoImg.src = url;
+            visorFotoImg.alt = alt || 'Foto ampliada da máquina';
+            visorFotoStatus.hidden = !carregando;
+            btnTrocarFotoVisor.hidden = !permitirTroca;
+            visorFoto.hidden = false;
+            return visorSessao;
+        }
+
+        function fecharVisorFoto() {
+            visorSessao += 1;
+            visorFoto.hidden = true;
+            visorFotoImg.removeAttribute('src');
+            visorFotoStatus.hidden = true;
+            btnTrocarFotoVisor.hidden = true;
+        }
+
+        async function abrirFotoValidacao(validacaoId, thumbUrl, alt) {
+            const id = String(validacaoId || '').trim();
+            const fotoCacheada = id ? fotosCompletas.get(id) : '';
+            if (fotoCacheada) {
+                abrirVisorFoto(fotoCacheada, alt);
+                return;
+            }
+            const sessao = abrirVisorFoto(thumbUrl, alt, Boolean(id));
+            if (!id || !sessao) return;
+            try {
+                const url = await dbObterFotoValidacaoProducao(id);
+                if (url) fotosCompletas.set(id, url);
+                if (sessao !== visorSessao) return;
+                visorFotoStatus.hidden = true;
+                if (url) visorFotoImg.src = url;
+            } catch (erro) {
+                console.error('Não foi possível carregar a foto completa da validação:', erro);
+                if (sessao === visorSessao) visorFotoStatus.hidden = true;
+            }
+        }
+
+        function limparSinalizacoesPendentes() {
+            [campoConfiguracao, campoProdutor, campoFoto, campoConfirmacao].forEach((campo) => campo.classList.remove('campo-invalido'));
+        }
+
+        function atualizarEstadoFormulario() {
+            const configuracaoPreenchida = !configuracaoMontagemObrigatoria() || Boolean(configuracaoSelecionada);
+            const completo = Boolean(
+                maquinaSelecionada
+                && configuracaoPreenchida
+                && produtorSelect.value
+                && fotoArquivo
+                && testeConfirmado.checked
+            );
+            btnConfirmar.classList.toggle('pronto', completo);
+            statusFormulario.classList.toggle('pronto', completo);
+            statusFormulario.textContent = completo
+                ? 'Tudo pronto para aprovar'
+                : 'Complete os campos acima para aprovar';
+            if (configuracaoPreenchida) campoConfiguracao.classList.remove('campo-invalido');
+            if (produtorSelect.value) campoProdutor.classList.remove('campo-invalido');
+            if (fotoArquivo) campoFoto.classList.remove('campo-invalido');
+            if (testeConfirmado.checked) campoConfirmacao.classList.remove('campo-invalido');
+        }
+
+        async function sinalizarPendencia(campo, controle, mensagem) {
+            limparSinalizacoesPendentes();
+            campo.classList.add('campo-invalido');
+            campo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (controle && typeof controle.focus === 'function') controle.focus({ preventScroll: true });
+            await alertar(mensagem);
+        }
+
+        function selecionarFoto(arquivo) {
+            if (!arquivo) return;
+            if (!String(arquivo.type || '').startsWith('image/')) {
+                alertar('Selecione um arquivo de imagem válido.');
+                return;
+            }
+            fotoArquivo = arquivo;
+            if (fotoPreviewUrl) URL.revokeObjectURL(fotoPreviewUrl);
+            fotoPreviewUrl = URL.createObjectURL(arquivo);
+            fotoPreview.src = fotoPreviewUrl;
+            fotoPreview.hidden = false;
+            fotoVazia.hidden = true;
+            fotoCheck.hidden = false;
+            btnFotoSlot.classList.add('com-foto');
+            btnFotoSlot.setAttribute('aria-label', 'Ampliar foto da máquina pronta');
+            atualizarEstadoFormulario();
+        }
+
+        function limparFoto() {
+            fotoArquivo = null;
+            fotoCamera.value = '';
+            fotoGaleria.value = '';
+            if (fotoPreviewUrl) URL.revokeObjectURL(fotoPreviewUrl);
+            fotoPreviewUrl = '';
+            fotoPreview.removeAttribute('src');
+            fotoPreview.hidden = true;
+            fotoVazia.hidden = false;
+            fotoCheck.hidden = true;
+            btnFotoSlot.classList.remove('com-foto');
+            btnFotoSlot.setAttribute('aria-label', 'Adicionar foto da máquina pronta');
+            fecharMenuFoto();
+            atualizarEstadoFormulario();
+        }
+
+        function chaveDiaSaoPaulo(valor) {
+            const data = new Date(Number(valor));
+            if (Number.isNaN(data.getTime())) return '';
+            const partes = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'America/Sao_Paulo',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).formatToParts(data);
+            const mapa = {};
+            partes.forEach((parte) => {
+                if (parte.type !== 'literal') mapa[parte.type] = parte.value;
+            });
+            return mapa.year && mapa.month && mapa.day ? `${mapa.year}-${mapa.month}-${mapa.day}` : '';
+        }
+
+        function podeExcluirValidacaoHoje(item) {
+            return Boolean(
+                usuarioAtual?.firebaseUrl
+                && item?.validadoPorId === usuarioAtual.firebaseUrl
+                && chaveDiaSaoPaulo(item?.criadoEm) === chaveDiaSaoPaulo(Date.now())
+            );
+        }
+
+        function htmlValidacoes(lista, permitirExclusao = false) {
+            return lista.map((item) => {
+                const exibirLixeira = permitirExclusao && podeExcluirValidacaoHoje(item);
+                    const fotoHtml = item.fotoThumbUrl
+                    ? `<button class="registro-foto" type="button" data-ampliar-foto="${escaparHtml(item.validacaoId || item.id)}" aria-label="Ampliar foto de ${escaparHtml(item.equipamentoNome)}">
+                        <img src="${escaparHtml(item.fotoThumbUrl)}" alt="Foto de ${escaparHtml(item.equipamentoNome)}">
+                    </button>`
+                    : `<img src="assets/img/logo.png" alt="Foto de ${escaparHtml(item.equipamentoNome)}">`;
+                return `
+                <article class="registro${exibirLixeira ? ' tem-exclusao' : ''}">
+                    ${fotoHtml}
+                    <div>
+                        <h3>${escaparHtml(item.equipamentoNome)}</h3>
+                        ${item.composicaoResumo ? `<p>Composição: ${escaparHtml(item.composicaoResumo)}</p>` : ''}
+                        <p>Produção: ${escaparHtml(item.produtorOriginalNome)}</p>
+                        <p>Validado por ${escaparHtml(item.validadoPorNome)} · ${escaparHtml(formatarData(item.criadoEm))}</p>
+                    </div>
+                    <strong>${escaparHtml(formatarMoeda(item.valorTotal))}</strong>
+                    ${exibirLixeira ? `<button class="btn-excluir-validacao" type="button" data-excluir-validacao="${escaparHtml(item.validacaoId || item.id)}" aria-label="Excluir validação de ${escaparHtml(item.equipamentoNome)}">🗑</button>` : ''}
+                </article>
+            `;
+            }).join('');
+        }
+
+        function renderizarValidacoesHoje(listaMes) {
+            const hoje = chaveDiaSaoPaulo(Date.now());
+            const validacoesHoje = (Array.isArray(listaMes) ? listaMes : [])
+                .filter((item) => chaveDiaSaoPaulo(item?.criadoEm) === hoje);
+            listaRecentes.innerHTML = validacoesHoje.length > 0
+                ? htmlValidacoes(validacoesHoje, true)
+                : '<div class="vazio">Nenhuma máquina validada hoje.</div>';
+        }
+
+        function competenciaHistoricoSelecionada() {
+            return `${historicoAno.value}-${historicoMes.value}`;
+        }
+
+        function renderizarHistorico(lista) {
+            const validacoes = Array.isArray(lista) ? lista : [];
+            const nomeMes = NOMES_MESES[Math.max(0, Number(historicoMes.value || 1) - 1)];
+            listaHistorico.innerHTML = validacoes.length > 0
+                ? htmlValidacoes(validacoes)
+                : `<div class="vazio">Nenhuma validação em ${escaparHtml(nomeMes)} de ${escaparHtml(historicoAno.value)}.</div>`;
+        }
+
+        async function excluirValidacaoHoje(validacaoId, botao) {
+            if (exclusaoEmAndamento) return;
+            const id = String(validacaoId || '').trim();
+            if (!id) return;
+            const confirmado = await confirmar(
+                'Excluir esta validação de hoje? O valor da produção e a contagem testada serão desfeitos.',
+                { confirmLabel: 'Excluir', cancelLabel: 'Cancelar' }
+            );
+            if (!confirmado) return;
+
+            exclusaoEmAndamento = true;
+            if (botao) {
+                botao.disabled = true;
+                botao.textContent = '...';
+            }
+            try {
+                await dbExcluirValidacaoProducaoEquipamentoHoje(id, {
+                    id: usuarioAtual?.firebaseUrl,
+                    nome: usuarioAtual?.nome
+                });
+                await alertar('Validação excluída.');
+            } catch (erro) {
+                console.error('Erro ao excluir validação:', erro);
+                await alertar(erro?.message || 'Não foi possível excluir a validação.');
+                if (botao) {
+                    botao.disabled = false;
+                    botao.textContent = '🗑';
+                }
+            } finally {
+                exclusaoEmAndamento = false;
+            }
+        }
+
+        function encerrarHistorico() {
+            if (typeof pararHistorico === 'function') pararHistorico();
+            pararHistorico = null;
+        }
+
+        function escutarHistoricoSelecionado() {
+            encerrarHistorico();
+            const competencia = competenciaHistoricoSelecionada();
+            const competenciaAtual = obterCompetenciaAtualProducaoEquipamentos();
+            listaHistorico.innerHTML = '<div class="vazio">Carregando validações...</div>';
+            if (competencia === competenciaAtual) {
+                if (mesAtualCarregado) renderizarHistorico(validacoesMesAtual);
+                return;
+            }
+            pararHistorico = dbEscutarValidacoesProducaoMes(
+                competencia,
+                renderizarHistorico,
+                (erro) => {
+                    listaHistorico.innerHTML = `<div class="vazio">${escaparHtml(erro?.message || 'Não foi possível carregar o histórico.')}</div>`;
+                }
+            );
+        }
+
+        function preencherFiltrosHistorico() {
+            const [anoAtual, mesAtual] = obterCompetenciaAtualProducaoEquipamentos().split('-');
+            const numeroAnoAtual = Number(anoAtual);
+            historicoAno.innerHTML = Array.from({ length: 5 }, (_, indice) => numeroAnoAtual - indice)
+                .map((ano) => `<option value="${ano}">${ano}</option>`)
+                .join('');
+            historicoMes.innerHTML = NOMES_MESES.map((nome, indice) => {
+                const mes = String(indice + 1).padStart(2, '0');
+                return `<option value="${mes}"${mes === mesAtual ? ' selected' : ''}>${escaparHtml(nome)}</option>`;
+            }).join('');
+        }
+
+        function mostrarAcessoNegado() {
+            document.getElementById('conteudo').innerHTML = `
+                <section class="painel acesso-negado">
+                    <h2>Acesso restrito</h2>
+                    <p>Esta tela é exclusiva para Atendimento 2 e Gestão 3.</p>
+                    <a class="foto-btn" href="index.html" style="text-decoration:none; margin-top:16px">Voltar ao início</a>
+                </section>`;
+        }
+
+        function mostrarMaquinaIndisponivel() {
+            document.getElementById('conteudo').innerHTML = `
+                <section class="painel acesso-negado">
+                    <h2>Máquina não disponível</h2>
+                    <p>Escolha uma máquina disponível diretamente na tela Máquinas em Estoque.</p>
+                    <a class="foto-btn" href="maquinas_estoque_boa.html" style="text-decoration:none; margin-top:16px">Voltar para máquinas em estoque</a>
+                </section>`;
+        }
+
+        async function iniciar() {
+            await verificarAutenticacao();
+            const [listaColaboradores, listaEstoque] = await Promise.all([
+                dbListarColaboradores(),
+                dbListarEstoque()
+            ]);
+            colaboradores = Array.isArray(listaColaboradores) ? listaColaboradores : [];
+            estoqueAtual = Array.isArray(listaEstoque) ? listaEstoque : [];
+
+            const nomeLogado = normalizarNome(localStorage.getItem('usuarioLogado'));
+            usuarioAtual = colaboradores.find((item) => normalizarNome(item?.nome) === nomeLogado) || null;
+            const perfilAtual = normalizarNome(usuarioAtual?.nivel_completo).replace(/\s+/g, '_');
+            const podeAcessar = perfilAtual.includes('atendimento_2') || perfilAtual.includes('gestao_3');
+            if (!podeAcessar) {
+                mostrarAcessoNegado();
+                return;
+            }
+
+            const equipamentoId = String(new URLSearchParams(window.location.search).get('equipamento') || '').trim();
+            maquinaSelecionada = estoqueAtual.find((item) =>
+                String(item?.firebaseUrl || '') === equipamentoId
+                && String(item?.categoria || '').trim() === 'maquina'
+                && Number.parseInt(item?.quantidade || 0, 10) > 0
+                && Number(item?.valorEquipamento || 0) > 0
+            ) || null;
+            if (!maquinaSelecionada) {
+                mostrarMaquinaIndisponivel();
+                return;
+            }
+
+            prepararConfiguracoesDaMaquina();
+            escutarSaldoDaMaquinaSelecionada();
+            atualizarEstadoFormulario();
+
+            const produtores = colaboradores
+                .filter((item) => item?.producaoEquipamentos === true)
+                .filter((item) => String(item?.nome || '').trim())
+                .sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
+            produtorSelect.innerHTML = '<option value="">Responsável técnico</option>' + produtores.map((item) =>
+                `<option value="${escaparHtml(item.firebaseUrl)}">${escaparHtml(item.nome)}</option>`
+            ).join('');
+            if (produtores.length === 0) produtorSelect.innerHTML = '<option value="">Nenhum colaborador com Produção de Equipamentos</option>';
+
+            pararRecentes = dbEscutarValidacoesProducaoMes(
+                obterCompetenciaAtualProducaoEquipamentos(),
+                (lista) => {
+                    validacoesMesAtual = Array.isArray(lista) ? lista : [];
+                    mesAtualCarregado = true;
+                    renderizarValidacoesHoje(validacoesMesAtual);
+                    if (!conteudoHistorico.hidden && competenciaHistoricoSelecionada() === obterCompetenciaAtualProducaoEquipamentos()) {
+                        renderizarHistorico(validacoesMesAtual);
+                    }
+                },
+                (erro) => {
+                    mesAtualCarregado = true;
+                    listaRecentes.innerHTML = `<div class="vazio">${escaparHtml(erro?.message || 'Não foi possível carregar as validações de hoje.')}</div>`;
+                    if (!conteudoHistorico.hidden && competenciaHistoricoSelecionada() === obterCompetenciaAtualProducaoEquipamentos()) {
+                        listaHistorico.innerHTML = '<div class="vazio">Não foi possível carregar o histórico deste mês.</div>';
+                    }
+                }
+            );
+        }
+
+        btnFotoSlot.addEventListener('click', () => {
+            if (fotoArquivo && fotoPreviewUrl) {
+                abrirVisorFoto(fotoPreviewUrl, 'Foto da máquina pronta', false, true);
+                return;
+            }
+            definirMenuFotoAberto(!menuFoto.classList.contains('aberto'));
+        });
+        btnTrocarFotoVisor.addEventListener('click', () => {
+            fecharVisorFoto();
+            definirMenuFotoAberto(true);
+        });
+        opcoesConfiguracao.addEventListener('click', (evento) => {
+            const opcao = evento.target.closest('[data-configuracao-codigo]');
+            if (!opcao || opcao.disabled) return;
+            selecionarConfiguracaoMontagem(String(opcao.dataset.configuracaoCodigo || ''));
+        });
+        produtorSelect.addEventListener('change', atualizarEstadoFormulario);
+        testeConfirmado.addEventListener('change', atualizarEstadoFormulario);
+        fotoCamera.addEventListener('change', () => {
+            selecionarFoto(fotoCamera.files?.[0]);
+            fecharMenuFoto();
+        });
+        fotoGaleria.addEventListener('change', () => {
+            selecionarFoto(fotoGaleria.files?.[0]);
+            fecharMenuFoto();
+        });
+        document.addEventListener('click', (evento) => {
+            if (!fotoMenuWrap.contains(evento.target) && !visorFoto.contains(evento.target)) fecharMenuFoto();
+        });
+        document.addEventListener('keydown', (evento) => {
+            if (evento.key !== 'Escape') return;
+            if (!visorFoto.hidden) {
+                fecharVisorFoto();
+                return;
+            }
+            fecharMenuFoto();
+        });
+        btnFecharVisor.addEventListener('click', fecharVisorFoto);
+        visorFoto.addEventListener('click', (evento) => {
+            if (evento.target === visorFoto) fecharVisorFoto();
+        });
+        function tratarAmpliacaoFoto(evento) {
+            const botao = evento.target.closest('[data-ampliar-foto]');
+            if (!botao) return false;
+            const thumb = botao.querySelector('img');
+            abrirFotoValidacao(botao.dataset.ampliarFoto, thumb?.src || '', thumb?.alt || '');
+            return true;
+        }
+        listaHistorico.addEventListener('click', tratarAmpliacaoFoto);
+        btnHistorico.addEventListener('click', () => {
+            const abrir = conteudoHistorico.hidden;
+            conteudoHistorico.hidden = !abrir;
+            btnHistorico.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+            if (abrir) {
+                escutarHistoricoSelecionado();
+            } else {
+                encerrarHistorico();
+            }
+        });
+        historicoAno.addEventListener('change', () => {
+            if (!conteudoHistorico.hidden) escutarHistoricoSelecionado();
+        });
+        historicoMes.addEventListener('change', () => {
+            if (!conteudoHistorico.hidden) escutarHistoricoSelecionado();
+        });
+        listaRecentes.addEventListener('click', (evento) => {
+            const botao = evento.target.closest('[data-excluir-validacao]');
+            if (botao) {
+                excluirValidacaoHoje(botao.dataset.excluirValidacao, botao);
+                return;
+            }
+            tratarAmpliacaoFoto(evento);
+        });
+
+        form.addEventListener('submit', async (evento) => {
+            evento.preventDefault();
+            const maquina = maquinaSelecionada;
+            const equipamentoValidacao = obterEquipamentoParaValidacao();
+            const produtor = colaboradores.find((item) => item.firebaseUrl === produtorSelect.value && item?.producaoEquipamentos === true);
+            if (!maquina) {
+                await alertar('A máquina selecionada não está mais disponível. Volte para Máquinas em Estoque.');
+                return;
+            }
+            if (!equipamentoValidacao) {
+                await sinalizarPendencia(campoConfiguracao, opcoesConfiguracao.querySelector('.opcao-configuracao:not(:disabled)'), 'Selecione a configuração da montagem.');
+                return;
+            }
+            if (!produtor) {
+                await sinalizarPendencia(campoProdutor, produtorSelect, 'Selecione o responsável técnico.');
+                return;
+            }
+            if (!fotoArquivo) {
+                await sinalizarPendencia(campoFoto, btnFotoSlot, 'Adicione uma foto da máquina pronta.');
+                return;
+            }
+            if (!testeConfirmado.checked) {
+                await sinalizarPendencia(campoConfirmacao, testeConfirmado, 'Confirme que o equipamento foi testado e está pronto.');
+                return;
+            }
+
+            limparSinalizacoesPendentes();
+            btnConfirmar.disabled = true;
+            btnConfirmar.textContent = 'Enviando validação...';
+            try {
+                await dbCriarValidacaoProducaoEquipamento({
+                    equipamento: equipamentoValidacao,
+                    produtor: { id: produtor.firebaseUrl, nome: produtor.nome },
+                    validador: { id: usuarioAtual.firebaseUrl, nome: usuarioAtual.nome },
+                    fotoArquivo,
+                    quantidade: 1
+                });
+                form.reset();
+                limparFoto();
+                const montagemTexto = equipamentoValidacao.composicaoResumo ? ` (${equipamentoValidacao.composicaoResumo})` : '';
+                await alertar(`Produção de ${equipamentoValidacao.nome}${montagemTexto} confirmada para ${produtor.nome}.`);
+                painelRecentes.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (erro) {
+                console.error('Erro ao validar produção:', erro);
+                await alertar(erro?.message || 'Não foi possível confirmar a produção.');
+            } finally {
+                btnConfirmar.disabled = false;
+                btnConfirmar.textContent = 'Aprovar produção';
+                atualizarEstadoFormulario();
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (typeof pararRecentes === 'function') pararRecentes();
+            if (typeof pararSaldoMaquinaSelecionada === 'function') pararSaldoMaquinaSelecionada();
+            encerrarHistorico();
+            if (fotoPreviewUrl) URL.revokeObjectURL(fotoPreviewUrl);
+        });
+
+        preencherFiltrosHistorico();
+        atualizarEstadoFormulario();
+        iniciar().catch(async (erro) => {
+            console.error('Erro ao abrir teste de equipamentos:', erro);
+            document.body.style.visibility = 'visible';
+            await alertar(erro?.message || 'Não foi possível abrir a tela.');
+        });
+    </script>
+</body>
+</html>

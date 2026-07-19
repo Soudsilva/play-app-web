@@ -3795,6 +3795,15 @@ function _normalizarChavePosseItem(itemChave, itemNome) {
     return base.replace(/[.#$/[\]]/g, '_');
 }
 
+function _normalizarConsumosSaldosTestados(valor) {
+    if (!valor || typeof valor !== 'object' || Array.isArray(valor)) return {};
+    return Object.fromEntries(
+        Object.entries(valor)
+            .map(([competencia, quantidade]) => [String(competencia || '').trim(), Math.max(0, Math.trunc(Number(quantidade || 0)))])
+            .filter(([competencia, quantidade]) => /^\d{4}-\d{2}$/.test(competencia) && quantidade > 0)
+    );
+}
+
 function _ehProducaoEquipamentoRemuneravel(item) {
     const origem = String(item?.origemRegistro || '').trim();
     const tipo = String(item?.tipo || '').trim();
@@ -3973,6 +3982,7 @@ async function _obterValorUnitarioHistoricoBalanco(entrada, itemChave = '') {
 
 async function _salvarEntradaHistoricoBalanco(chaveUsuario, entrada, totais = {}) {
     const movimento = _obterMovimentacaoHistoricoBalanco(entrada);
+    const saldosTestadosConsumidos = _normalizarConsumosSaldosTestados(entrada?.saldosTestadosConsumidos);
     const timestampEntrada = String(entrada?.timestamp || entrada?.data || '').trim();
     const timestamp = timestampEntrada && !Number.isNaN(Date.parse(timestampEntrada))
         ? timestampEntrada
@@ -4003,7 +4013,8 @@ async function _salvarEntradaHistoricoBalanco(chaveUsuario, entrada, totais = {}
         ...(valorUnitario > 0 ? { valorUnitario } : {}),
         ...(entrada?.valorConferido != null ? { valorConferido: Number(entrada.valorConferido) } : {}),
         ...(entrada?.estoqueAntes != null ? { estoqueAntes: Number(entrada.estoqueAntes) } : {}),
-        ...(entrada?.estoqueDepois != null ? { estoqueDepois: Number(entrada.estoqueDepois) } : {})
+        ...(entrada?.estoqueDepois != null ? { estoqueDepois: Number(entrada.estoqueDepois) } : {}),
+        ...(Object.keys(saldosTestadosConsumidos).length > 0 ? { saldosTestadosConsumidos } : {})
     });
 }
 
@@ -4384,9 +4395,9 @@ export async function dbExcluirHistoricoBalanco(id, responsavel, opcoes = {}) {
         const chaveU = _normalizarChaveUsuario(responsavel);
         const entradaRef = ref(db, `movimentacao_balanco_historico/${chaveU}/${id}`);
         const snap = await get(entradaRef);
-        if (!snap.exists()) return;
+        if (!snap.exists()) return false;
         const entrada = snap.val();
-        if (entrada?.cancelado) return;
+        if (entrada?.cancelado) return false;
         const deveReverterPosse = entrada?.controlarPosse !== false;
 
         // Mantém o evento original como trilha e adiciona o reverso para corrigir o saldo atual.
@@ -4420,6 +4431,7 @@ export async function dbExcluirHistoricoBalanco(id, responsavel, opcoes = {}) {
             );
         }
         if (recalcular) await _tentarRecalcularRemuneracoes();
+        return true;
     } catch (e) {
         console.error('ERRO AO EXCLUIR MOVIMENTAÇÃO BALANÇO HISTÓRICO:', e);
         throw e;

@@ -1005,6 +1005,7 @@
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
     import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, dbLerPixEmPosse, dbSalvarHistoricoBalanco, dbEscutarHistoricoBalancoDoUsuario, dbEscutarPosseItensUsuario, dbEscutarPixEmPosse, dbExcluirHistoricoBalanco, dbRecalcularRemuneracoes, dbEscutarClientes, dbEscutarTodosPixEmPosse } from './database.js';
+    import { dbConsumirSaldosTestadosSaida, dbReverterSaldosTestadosSaida } from './database-producao-equipamentos.js';
 
     let listaGlobal = [];
     let historicoGlobal = [];
@@ -1067,6 +1068,33 @@
         return modo === 'entrada' &&
             String(item?.categoria || '').trim() === 'produtos' &&
             responsavelTemProducaoProdutos(responsavel);
+    }
+
+    function deveAtualizarSaldoTestado(item, modo) {
+        return modo === 'saida' && String(item?.categoria || '').trim() === 'maquina';
+    }
+
+    async function salvarHistoricoMovimentoComSaldoTestado(entrada, opcoes, item, quantidade, modo) {
+        const equipamentoId = String(item?.firebaseUrl || entrada?.itemChave || entrada?.refId || '').trim();
+        const atualizarSaldoTestado = deveAtualizarSaldoTestado(item, modo) && equipamentoId;
+        const saldosTestadosConsumidos = atualizarSaldoTestado
+            ? await dbConsumirSaldosTestadosSaida(equipamentoId, quantidade)
+            : {};
+        try {
+            return await dbSalvarHistoricoBalanco({
+                ...entrada,
+                ...(Object.keys(saldosTestadosConsumidos).length > 0 ? { saldosTestadosConsumidos } : {})
+            }, opcoes);
+        } catch (erro) {
+            if (Object.keys(saldosTestadosConsumidos).length > 0) {
+                try {
+                    await dbReverterSaldosTestadosSaida(equipamentoId, saldosTestadosConsumidos);
+                } catch (erroReversao) {
+                    console.error('Não foi possível reverter o saldo testado após falha no histórico:', erroReversao);
+                }
+            }
+            throw erro;
+        }
     }
 
     function formatarResponsavelInterface(valor) {
@@ -1996,7 +2024,7 @@
 
         try {
             await dbSalvarItemEstoque(itemParaSalvar, idItem, { recalcular: !atualizarAcumuladoProducao });
-            await dbSalvarHistoricoBalanco({
+            await salvarHistoricoMovimentoComSaldoTestado({
                 responsavel:   responsavel,
                 registradoPor: String(localStorage.getItem('usuarioLogado') || '').trim(),
                 itemId:        idItem,
@@ -2016,7 +2044,7 @@
             }, {
                 recalcular: !atualizarAcumuladoProducao,
                 atualizarAcumuladoProducao
-            });
+            }, itemOriginal, qtdMovimento, modoAtual);
 
             alert("Sucesso! Novo saldo: " + novaQtd);
             document.getElementById('qtdInput').value = "";
@@ -2219,7 +2247,7 @@
         const atualizarAcumuladoProducao = deveAtualizarAcumuladoProducao(itemOriginal, responsavel, modo);
 
         await dbSalvarItemEstoque(itemParaSalvar, idItem, { recalcular: false });
-        await dbSalvarHistoricoBalanco({
+        await salvarHistoricoMovimentoComSaldoTestado({
             responsavel:   responsavel,
             registradoPor: String(localStorage.getItem('usuarioLogado') || '').trim(),
             itemId:        idItem,
@@ -2240,7 +2268,7 @@
         }, {
             recalcular: false,
             atualizarAcumuladoProducao
-        });
+        }, itemOriginal, qtdMovimento, modo);
 
         mapaEstoque.set(idItem, { ...itemParaSalvar, firebaseUrl: idItem });
         const idx = listaGlobal.findIndex(i => i.firebaseUrl === idItem);
@@ -2910,10 +2938,18 @@
             
             // 2. Remove do histórico único e grava o cancelamento no próprio movimentacao_balanco_historico
             if(mov.firebaseUrl && mov.responsavel) {
-               await dbExcluirHistoricoBalanco(mov.firebaseUrl, mov.responsavel, {
+               const cancelamentoEfetivado = await dbExcluirHistoricoBalanco(mov.firebaseUrl, mov.responsavel, {
                    recalcular: false,
                    atualizarAcumuladoProducao
                });
+               if (
+                   cancelamentoEfetivado &&
+                   mov.tipo === 'saida_estoque' &&
+                   String(itemEstoque?.categoria || mov?.categoria || '').trim() === 'maquina' &&
+                   mov?.saldosTestadosConsumidos
+               ) {
+                   await dbReverterSaldosTestadosSaida(mov.refId, mov.saldosTestadosConsumidos);
+               }
                if (!atualizarAcumuladoProducao) await dbRecalcularRemuneracoes();
             } else {
                alert("Erro de identificação do registro. Atualizando...");

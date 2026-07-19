@@ -900,7 +900,11 @@
                 data: dataFinal,
                 status: 'aguardando_conferencia'
             });
-            await salvarResumoMensalDeposito(anoMesLocal(dataFinal), [...todosDepositos, depositoSalvo]);
+            const depositosParaResumo = [
+                ...todosDepositos.filter(deposito => deposito.firebaseUrl !== depositoSalvo.firebaseUrl),
+                depositoSalvo
+            ];
+            await salvarResumoMensalDeposito(anoMesLocal(dataFinal), depositosParaResumo);
             fotoEnvelopeBase64 = null;
             valorInput.value = '';
             const obsInput = document.getElementById('inputObsDep');

@@ -127,8 +127,56 @@
             gap: 10px;
         }
 
+        .lista-colunas {
+            margin: 12px 14px -6px;
+            padding: 0 16px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: end;
+            gap: 10px;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0;
+            text-transform: uppercase;
+        }
+
+        .lista-colunas[hidden] { display: none; }
+
+        .lista-colunas-badges {
+            position: relative;
+            padding-left: 14px;
+            border-left: 1px solid rgba(255,255,255,0.25);
+            display: grid;
+            grid-template-columns: 46px 46px;
+            column-gap: 16px;
+            text-align: center;
+        }
+
+        .lista-colunas-badges::after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            bottom: 0;
+            left: 68px;
+            width: 1px;
+            background: rgba(255,255,255,0.28);
+        }
+
+        .lista-colunas-badges span {
+            white-space: nowrap;
+        }
+
+        .lista-colunas-badges span:first-child {
+            color: #ffeb00;
+        }
+        .lista-colunas-badges span:last-child {
+            color: #63f59a;
+        }
+
         /* ── CARD ── */
         .card {
+            width: 100%;
             background: #0d2255;
             border-radius: 14px;
             border: 1px solid #1e3d8a;
@@ -140,6 +188,22 @@
             justify-content: space-between;
             gap: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+            color: inherit;
+            font: inherit;
+            text-align: left;
+        }
+
+        .card-acessivel {
+            cursor: pointer;
+            transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+        }
+
+        .card-acessivel:hover,
+        .card-acessivel:focus-visible {
+            background: #12306f;
+            border-color: #ffeb00;
+            outline: none;
+            transform: translateY(-1px);
         }
 
         .card-esquerda {
@@ -181,22 +245,62 @@
         }
 
         .card-qtd-badge {
-            flex-shrink: 0;
-            background: rgba(34,197,94,0.22);
-            color: #6ef09a;
-            font-size: 20px;
+            box-sizing: border-box;
+            background: rgba(255,235,0,0.07);
+            color: #d8ce68;
+            font-size: 17px;
             font-weight: bold;
-            min-width: 44px;
-            padding: 0 10px;
+            width: 46px;
+            padding: 0 4px;
             height: 44px;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 2px solid rgba(34,197,94,0.5);
+            border: 1px solid rgba(255,235,0,0.38);
         }
 
-        .card-qtd-badge.grande { font-size: 17px; }
+        .card-qtd-badge.grande { font-size: 15px; }
+
+        .card-badges {
+            position: relative;
+            flex-shrink: 0;
+            padding-left: 14px;
+            border-left: 1px solid rgba(255,255,255,0.25);
+            display: grid;
+            grid-template-columns: 46px 46px;
+            column-gap: 16px;
+            align-items: center;
+            justify-items: center;
+        }
+
+        .card-badges::after {
+            content: "";
+            position: absolute;
+            top: 6px;
+            bottom: 6px;
+            left: 68px;
+            width: 1px;
+            background: rgba(255,255,255,0.18);
+        }
+
+        .card-testado-badge {
+            box-sizing: border-box;
+            width: 46px;
+            height: 44px;
+            padding: 4px;
+            border: 2px solid rgba(34,197,94,0.58);
+            border-radius: 12px;
+            background: rgba(34,197,94,0.22);
+            color: #6ef09a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .card-testado-badge strong { font-size: 19px; }
 
         /* ── ESTADO VAZIO / CARREGANDO ── */
         .estado-lista {
@@ -234,6 +338,14 @@
         </div>
     </div>
 
+    <div class="lista-colunas" id="cabecalhoLista" hidden>
+        <span>Equipamento</span>
+        <div class="lista-colunas-badges">
+            <span>A testar</span>
+            <span>Testadas</span>
+        </div>
+    </div>
+
     <!-- LISTA -->
     <div class="lista" id="listaMaquinas">
         <div class="estado-lista">Carregando máquinas em estoque...</div>
@@ -242,14 +354,22 @@
 </div>
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
-    import { dbEscutarEstoque } from './database.js';
-
-    verificarAutenticacao();
+    import { dbEscutarEstoque, dbListarColaboradores } from './database.js';
+    import { dbEscutarSaldoTestadoEquipamentoMesAtual } from './database-producao-equipamentos.js';
 
     const listaEl   = document.getElementById('listaMaquinas');
     const bannerEl  = document.getElementById('bannerResumo');
     const totalEl   = document.getElementById('bannerTotal');
     const subEl     = document.getElementById('bannerSub');
+    const cabecalhoListaEl = document.getElementById('cabecalhoLista');
+    let podeVerificarProducao = false;
+    let ultimaListaEstoque = [];
+    const saldosTestadosPorEquipamento = new Map();
+    const escutasSaldosTestados = new Map();
+
+    function normalizarNome(valor) {
+        return String(valor || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
 
     function escaparHtml(valor) {
         return String(valor ?? '')
@@ -260,7 +380,36 @@
             .replace(/'/g, '&#39;');
     }
 
+    function encerrarEscutasSaldosTestados(excetoIds = new Set()) {
+        escutasSaldosTestados.forEach((parar, equipamentoId) => {
+            if (excetoIds.has(equipamentoId)) return;
+            parar?.();
+            escutasSaldosTestados.delete(equipamentoId);
+            saldosTestadosPorEquipamento.delete(equipamentoId);
+        });
+    }
+
+    function sincronizarEscutasSaldosTestados(maquinas) {
+        const idsAtuais = new Set((Array.isArray(maquinas) ? maquinas : [])
+            .map((item) => String(item?.firebaseUrl || '').trim())
+            .filter(Boolean));
+        encerrarEscutasSaldosTestados(idsAtuais);
+        idsAtuais.forEach((equipamentoId) => {
+            if (escutasSaldosTestados.has(equipamentoId)) return;
+            const parar = dbEscutarSaldoTestadoEquipamentoMesAtual(
+                equipamentoId,
+                (resumo) => {
+                    saldosTestadosPorEquipamento.set(equipamentoId, resumo);
+                    renderizarMaquinasBoas(ultimaListaEstoque);
+                },
+                (erro) => console.error(`Não foi possível carregar o saldo testado de ${equipamentoId}:`, erro)
+            );
+            escutasSaldosTestados.set(equipamentoId, parar);
+        });
+    }
+
     function renderizarMaquinasBoas(lista) {
+        ultimaListaEstoque = Array.isArray(lista) ? lista : [];
         const maquinasBoas = (Array.isArray(lista) ? lista : [])
             .filter(item => String(item?.categoria || '').trim() === 'maquina')
             .map(item => ({
@@ -270,33 +419,82 @@
             .filter(item => item.quantidadeBoa > 0)
             .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
+        sincronizarEscutasSaldosTestados(maquinasBoas);
+
         if (!maquinasBoas.length) {
             bannerEl.style.display = 'none';
+            cabecalhoListaEl.hidden = true;
             listaEl.innerHTML = '<div class="estado-lista">Nenhuma máquina boa em estoque.</div>';
             return;
         }
 
         const totalUnidades = maquinasBoas.reduce((s, m) => s + m.quantidadeBoa, 0);
         bannerEl.style.display  = 'flex';
+        cabecalhoListaEl.hidden = false;
         totalEl.textContent     = `${maquinasBoas.length} tipo${maquinasBoas.length > 1 ? 's' : ''}`;
         subEl.textContent       = `${totalUnidades} unidade${totalUnidades > 1 ? 's' : ''} prontas para uso`;
 
         listaEl.innerHTML = maquinasBoas.map(item => {
             const qtd        = item.quantidadeBoa;
-            const badgeClass = qtd >= 100 ? 'card-qtd-badge grande' : 'card-qtd-badge';
+            const qtdTestada = Number.parseInt(saldosTestadosPorEquipamento.get(String(item.firebaseUrl))?.saldoExibido || 0, 10) || 0;
+            const qtdATestar = Math.max(0, qtd - qtdTestada);
+            const badgeClass = qtdATestar >= 100 ? 'card-qtd-badge grande' : 'card-qtd-badge';
+            const tag = podeVerificarProducao ? 'button' : 'div';
+            const atributosAcesso = podeVerificarProducao
+                ? `type="button" data-equipamento-id="${escaparHtml(item.firebaseUrl)}" aria-label="Avaliar ${escaparHtml(item.nome || 'máquina')}"`
+                : '';
             return `
-            <div class="card">
+            <${tag} class="card${podeVerificarProducao ? ' card-acessivel' : ''}" ${atributosAcesso}>
                 <div class="card-esquerda">
                     <div class="card-info">
                         <span class="card-nome">${escaparHtml(item.nome || 'Máquina')}</span>
+                        ${podeVerificarProducao ? '<span class="card-rotulo">Toque para avaliar</span>' : ''}
                     </div>
                 </div>
-                <div class="${badgeClass}">${qtd}</div>
-            </div>`;
+                <div class="card-badges">
+                    <div class="${badgeClass}" title="Quantidade aguardando teste">${qtdATestar}</div>
+                    <div class="card-testado-badge" title="Saldo testado disponível" aria-label="${qtdTestada} testada${qtdTestada === 1 ? '' : 's'}"><strong>${qtdTestada}</strong></div>
+                </div>
+            </${tag}>`;
         }).join('');
     }
 
-    dbEscutarEstoque(renderizarMaquinasBoas);
+    listaEl.addEventListener('click', (evento) => {
+        const card = evento.target.closest('[data-equipamento-id]');
+        if (!podeVerificarProducao || !card || !listaEl.contains(card)) return;
+        const equipamentoId = String(card.dataset.equipamentoId || '').trim();
+        if (!equipamentoId) return;
+        window.location.href = `verificar_producao_equipamentos.html?equipamento=${encodeURIComponent(equipamentoId)}`;
+    });
+
+    async function iniciar() {
+        await verificarAutenticacao();
+        dbEscutarEstoque(renderizarMaquinasBoas);
+        try {
+            const colaboradores = await dbListarColaboradores();
+            const nomeLogado = normalizarNome(localStorage.getItem('usuarioLogado'));
+            const usuarioAtual = (Array.isArray(colaboradores) ? colaboradores : [])
+                .find((item) => normalizarNome(item?.nome) === nomeLogado);
+            const perfilAtual = normalizarNome(usuarioAtual?.nivel_completo).replace(/\s+/g, '_');
+            podeVerificarProducao = perfilAtual.includes('atendimento_2') || perfilAtual.includes('gestao_3');
+            if (ultimaListaEstoque.length > 0) renderizarMaquinasBoas(ultimaListaEstoque);
+        } catch (erro) {
+            console.error('Não foi possível conferir a permissão de avaliação:', erro);
+        }
+    }
+
+    iniciar().catch((erro) => {
+        console.error('Erro ao abrir máquinas em estoque:', erro);
+        bannerEl.style.display = 'none';
+        cabecalhoListaEl.hidden = true;
+        listaEl.innerHTML = '<div class="estado-lista">Não foi possível carregar as máquinas em estoque.</div>';
+    });
+    window.addEventListener('pagehide', () => encerrarEscutasSaldosTestados());
+    window.addEventListener('pageshow', (evento) => {
+        if (!evento.persisted || ultimaListaEstoque.length === 0) return;
+        encerrarEscutasSaldosTestados();
+        renderizarMaquinasBoas(ultimaListaEstoque);
+    });
 </script>
 </body>
 </html>
