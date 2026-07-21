@@ -790,6 +790,7 @@
     let currentFileInputId = null;
     let historicoBalancoEdicao = null;
     let unsubscribeHistoricoBalancoEdicao = null;
+    let saldoDevolucaoPixDisponivel = 0;
     const CHAVE_CLIENTE_MANUAL_SESSAO = 'atendimento_cliente_manual_numero';
 
     try {
@@ -1342,6 +1343,38 @@ function obterIdAtendimentoEmEdicao() {
         wrap.style.display = window.parseFormatted(input.value) > 0 ? 'flex' : 'none';
     }
 
+    function obterTotalPixBrutoTela() {
+        return Array.from(document.querySelectorAll('.valorPix'))
+            .reduce((total, input) => total + window.parseFormatted(input.value), 0);
+    }
+
+    function obterDevolucaoPixAplicada(pixBruto = obterTotalPixBrutoTela()) {
+        return Math.min(Math.max(saldoDevolucaoPixDisponivel, 0), Math.max(pixBruto, 0));
+    }
+
+    function atualizarSaldoDevolucaoPixExibido(pixBruto = obterTotalPixBrutoTela()) {
+        const input = document.getElementById('valorPixDevolvido');
+        const devolucaoAplicada = obterDevolucaoPixAplicada(pixBruto);
+        const saldoRestante = Math.max(saldoDevolucaoPixDisponivel - devolucaoAplicada, 0);
+
+        if (input) {
+            input.value = saldoRestante > 0 ? String(saldoRestante) : '';
+            formatarNumero(input, 8);
+        }
+        atualizarVisibilidadePixDevolucao();
+        return devolucaoAplicada;
+    }
+
+    function definirSaldoDevolucaoPixCliente(cliente) {
+        const saldoCliente = window.parseFormatted(cliente?.devolucao ?? '');
+        const atendimentoEdicao = obterIdAtendimentoEmEdicao()
+            ? (listaAtendimentos || []).find(item => item.firebaseUrl === obterIdAtendimentoEmEdicao())
+            : null;
+        const devolucaoJaConsumida = window.parseFormatted(atendimentoEdicao?.financeiro?.pixDevolvido ?? '');
+        saldoDevolucaoPixDisponivel = Math.max(saldoCliente + devolucaoJaConsumida, 0);
+        atualizarSaldoDevolucaoPixExibido();
+    }
+
     window.atualizarValorLinhaPix = function(linha) {
         if (!linha) return;
 
@@ -1508,6 +1541,10 @@ function obterIdAtendimentoEmEdicao() {
         const divResultado = document.getElementById('resultadoCliente');
         
         if (!termo) {
+            saldoDevolucaoPixDisponivel = 0;
+            const inputDevolucao = document.getElementById('valorPixDevolvido');
+            if (inputDevolucao) inputDevolucao.value = '';
+            atualizarVisibilidadePixDevolucao();
             divResultado.style.display = 'none';
             document.getElementById('idClienteSelecionado').value = "";
             atualizarVisibilidadeFluxoAtendimento(false);
@@ -1586,9 +1623,7 @@ function obterIdAtendimentoEmEdicao() {
             const containerFotosPix = document.getElementById('containerFotosPix');
             const containerFotosMaquinas = document.getElementById('containerFotosMaquinas');
             containerPix.innerHTML = ''; // Limpa as linhas existentes
-            document.getElementById('valorPixDevolvido').value = cliente.devolucao ?? '';
-            formatarNumero(document.getElementById('valorPixDevolvido'), 8);
-            atualizarVisibilidadePixDevolucao();
+            definirSaldoDevolucaoPixCliente(cliente);
             containerFotosMaquinas.innerHTML = ''; // Limpa as fotos das maquinas existentes
             containerFotosPix.innerHTML = ''; // Limpa as fotos pix existentes
 
@@ -1660,6 +1695,10 @@ function obterIdAtendimentoEmEdicao() {
             calcularTotais();
             salvarRascunho();
         } else {
+            saldoDevolucaoPixDisponivel = 0;
+            const inputDevolucao = document.getElementById('valorPixDevolvido');
+            if (inputDevolucao) inputDevolucao.value = '';
+            atualizarVisibilidadePixDevolucao();
             divResultado.className = 'card-cliente erro'; // Vermelho
             atualizarVisibilidadeFluxoAtendimento(false);
             const rotaDestaque = document.getElementById('rotaClienteDestaque');
@@ -1815,12 +1854,9 @@ function obterIdAtendimentoEmEdicao() {
 
     // --- CÁLCULOS FINANCEIROS ---
     window.calcularTotais = function() {
-        let vPixBruto = 0;
-        document.querySelectorAll('.valorPix').forEach(input => {
-            vPixBruto += window.parseFormatted(input.value);
-        });
-        const vPixDevolvido = window.parseFormatted(document.getElementById('valorPixDevolvido')?.value || '');
-        const vPixTotal = Math.max(vPixBruto - vPixDevolvido, 0);
+        const vPixBruto = obterTotalPixBrutoTela();
+        const vPixDevolvido = atualizarSaldoDevolucaoPixExibido(vPixBruto);
+        const vPixTotal = vPixBruto - vPixDevolvido;
         const vDin = window.parseFormatted(document.getElementById('valorDinheiro').value);
         const pct = parseFloat(document.getElementById('porcComissao').value) || 0;
 
@@ -2178,11 +2214,7 @@ function obterIdAtendimentoEmEdicao() {
 
             const dinheiroValor = window.parseFormatted(document.getElementById('valorDinheiro').value);
             const pixTotalBruto = pixLinhas.reduce((soma, item) => soma + Number(item.valor || 0), 0);
-            const pixDevolvido = window.parseFormatted(document.getElementById('valorPixDevolvido')?.value || '');
-            if (pixDevolvido > pixTotalBruto) {
-                desativarBloqueioEnvioAtendimento(btn);
-                return alert('O valor devolvido não pode ser maior que o total bruto de Pix.');
-            }
+            const pixDevolvido = obterDevolucaoPixAplicada(pixTotalBruto);
             const comissaoValor = window.parseFormatted(document.getElementById('valorComissao').value);
             const totalGeralValor = window.parseFormatted(document.getElementById('totalGeral').value);
             const financeiro = {
@@ -2587,9 +2619,7 @@ function obterIdAtendimentoEmEdicao() {
 
                 document.getElementById('valorDinheiro').value = dados.valorDinheiro ?? "";
                 formatarNumero(document.getElementById('valorDinheiro'), 8);
-                document.getElementById('valorPixDevolvido').value = dados.valorPixDevolvido ?? "";
-                formatarNumero(document.getElementById('valorPixDevolvido'), 8);
-                atualizarVisibilidadePixDevolucao();
+                atualizarSaldoDevolucaoPixExibido();
 
                 document.getElementById('porcComissao').value = dados.porcComissao ? String(dados.porcComissao).replace('%','').trim() + '%' : "";
                 calcularTotais(); // Atualiza os cálculos visuais
@@ -2693,6 +2723,7 @@ function obterIdAtendimentoEmEdicao() {
             document.getElementById('containerFotosPix').innerHTML = '';
             document.getElementById('containerFotosMaquinas').innerHTML = '';
             document.getElementById('areaPix').style.display = 'block';
+            saldoDevolucaoPixDisponivel = 0;
             document.getElementById('valorPixDevolvido').value = '';
             atualizarVisibilidadePixDevolucao();
             document.getElementById('containerPix').innerHTML = "";

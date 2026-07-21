@@ -542,7 +542,11 @@ export function dbEscutarMesesProducaoUsuario(colaboradorId, callback, callbackE
     }
     return onValue(ref(db, `${PRODUCAO_ROOT}/meses_por_usuario/${id}`), (snapshot) => {
         const meses = snapshot.exists()
-            ? Object.keys(snapshot.val() || {}).filter(validarCompetencia).sort((a, b) => b.localeCompare(a))
+            ? Object.entries(snapshot.val() || {})
+                .filter(([, ativo]) => ativo === true)
+                .map(([competencia]) => validarCompetencia(competencia))
+                .filter(Boolean)
+                .sort((a, b) => b.localeCompare(a))
             : [];
         callback(meses);
     }, (erro) => {

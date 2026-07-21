@@ -373,7 +373,7 @@
 
         <div class="botao" id="btnFinanceiroProducaoEquipamentosGestor" onclick="window.location.href='financeiro_producao_equipamentos.html'" style="display: none;">
             <span class="icone">&#128176;</span>
-            <span>Financeiro Produ&ccedil;&atilde;o</span>
+            <span>New Financeiro</span>
         </div>
 
         <div class="botao" id="btnFluxoCaixa" onclick="abrirTela('fluxo_caixa')" style="display: none;">
@@ -981,7 +981,7 @@
         }
 
         // Remuneração "Produção de Equipamentos": acesso ao novo financeiro de produção.
-        if (usuario?.producaoEquipamentos && !perfil.includes('estoque')) {
+        if (usuario?.producaoEquipamentos) {
             btns.financeiroProducaoEquipamentosGestor.style.display = 'flex';
         }
 

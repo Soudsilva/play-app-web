@@ -25,6 +25,18 @@ Regra geral de estrutura, busca e escalabilidade:
 - Centralize leituras, escritas, sincronizações e manutenção dos índices em funções claras no `database.js` ou na camada de dados correspondente. Evite espalhar caminhos Firebase e regras de sincronização por várias telas.
 - Antes de concluir uma nova estrutura, confira se ela permanece legível, documentada e simples de manter, sem trocar eficiência por uma organização difícil de compreender.
 
+Padrão obrigatório para filtros mensais em telas e estruturas novas:
+
+- Toda nova tela que exiba dados organizados por mês e ano deve usar o seletor de competência com setas laterais no formato visual `‹  Mês de AAAA  ›`, seguindo o padrão existente nas telas de movimentação de estoque e produção de equipamentos.
+- As setas devem navegar somente entre competências que realmente possuam informação. Meses vazios não devem ser exibidos nem percorridos.
+- Ao criar um novo nó com dados mensais, prepare desde o início um campo ou índice auxiliar leve de competências ativas, organizado conforme os filtros reais da tela, por exemplo por usuário e `AAAA-MM`, armazenando somente o necessário para montar o filtro, como `true`.
+- O nome e a posição desse campo auxiliar devem ser autoexplicativos e coerentes com a estrutura principal. Sempre que possível, mantenha-o dentro do nó funcional correspondente, sem criar uma raiz genérica ou desconectada.
+- A gravação principal deve ativar a competência no índice junto com o primeiro registro do mês, preferencialmente na mesma atualização multipath atômica. Registros seguintes do mesmo mês não devem causar regravações desnecessárias do marcador.
+- A tela deve ler primeiro apenas o pequeno índice de competências e, depois da seleção, consultar diretamente somente o recorte do usuário e mês escolhidos. Nunca leia todo o histórico apenas para descobrir quais meses existem.
+- Ao trocar mês, ano, usuário ou colaborador, encerre os listeners anteriores antes de abrir os listeners do novo recorte.
+- Se uma competência marcada como ativa não possuir mais registros válidos, remova-a do filtro ou marque-a como inativa, sem apagar ou modificar os dados principais sem autorização.
+- Se ainda não houver competências ativas, exiba o mês atual com as duas setas desativadas, preservando uma interface estável sem inventar registros.
+
 Padrão para saldos acumulados e resumos mensais:
 
 - Quando uma funcionalidade transportar saldo entre competências, mantenha um resumo consolidado por mês. O cálculo do mês atual deve consultar somente seus próprios movimentos e o resumo do mês imediatamente anterior; nunca deve reler todo o histórico.

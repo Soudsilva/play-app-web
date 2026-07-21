@@ -46,6 +46,9 @@ const db = getDatabase(app);
 const storage = getStorage(app);
 
 const CONTESTACAO_ATENDIMENTO_ROOT = 'contestacao_atendimento';
+const MOVIMENTACAO_BALANCO_HISTORICO_ROOT = 'movimentacao_balanco_historico';
+const MOVIMENTACOES_POR_USUARIO_MES_CAMPO = 'movimentacoesPorUsuarioEMes';
+const mesesMovimentacaoAtivosConhecidos = new Set();
 
 async function _carregarValorRealtimeServidor(caminho) {
     const path = String(caminho || '').replace(/^\/+|\/+$/g, '');
@@ -3070,9 +3073,11 @@ export async function dbRecalcularRemuneracoes() {
         const clientes = Object.keys(clientesData).map(key => ({ firebaseUrl: key, ...clientesData[key] }));
         const atendimentos = Object.keys(atendimentosData).map(key => ({ firebaseUrl: key, ...atendimentosData[key] }));
         const historico = Object.keys(historicoData).map(key => ({ firebaseUrl: key, ...historicoData[key] }));
-        const historicoBalanco = Object.entries(historicoBalancoData).flatMap(([usuarioKey, movimentos]) =>
-            Object.entries(movimentos || {}).map(([firebaseUrl, mov]) => ({ usuarioKey, firebaseUrl, ...mov }))
-        );
+        const historicoBalanco = Object.entries(historicoBalancoData)
+            .filter(([usuarioKey]) => usuarioKey !== MOVIMENTACOES_POR_USUARIO_MES_CAMPO)
+            .flatMap(([usuarioKey, movimentos]) =>
+                Object.entries(movimentos || {}).map(([firebaseUrl, mov]) => ({ usuarioKey, firebaseUrl, ...mov }))
+            );
         const estoque = Object.keys(estoqueData).map(key => ({ firebaseUrl: key, ...estoqueData[key] }));
 
         const mapaClientesRepresentante = _criarMapaClientesRepresentante(clientes);
@@ -3899,6 +3904,7 @@ async function _atualizarPosseItensUsuario(entrada, movimento) {
             || origemMovimento === 'manutencao'
             || origemMovimento === 'manutencao_adicao'
             || origemMovimento === 'entrada_estoque'
+            || (origemMovimento === 'retirada_estoque' && Number(movimento || 0) > 0)
             || origemMovimento === 'cadastro_cliente'
             || origemMovimento === 'reposicao_cliente';
         const quantidadeAtualBase = estadoAtual?.quantidade;
@@ -3988,7 +3994,7 @@ async function _salvarEntradaHistoricoBalanco(chaveUsuario, entrada, totais = {}
         ? timestampEntrada
         : new Date().toISOString();
     const valorUnitario = _parseNumeroRemuneracao(entrada?.valorUnitario);
-    return push(ref(db, `movimentacao_balanco_historico/${chaveUsuario}`), {
+    const registro = {
         timestamp,
         tipo: String(entrada.tipo || ''),
         origemRegistro: String(entrada.origemRegistro || entrada.tipo || '').trim(),
@@ -4015,7 +4021,52 @@ async function _salvarEntradaHistoricoBalanco(chaveUsuario, entrada, totais = {}
         ...(entrada?.estoqueAntes != null ? { estoqueAntes: Number(entrada.estoqueAntes) } : {}),
         ...(entrada?.estoqueDepois != null ? { estoqueDepois: Number(entrada.estoqueDepois) } : {}),
         ...(Object.keys(saldosTestadosConsumidos).length > 0 ? { saldosTestadosConsumidos } : {})
-    });
+    };
+    const competencia = _obterCompetenciaMovimentacao(timestamp);
+    const novoRef = push(ref(db, `movimentacao_balanco_historico/${chaveUsuario}`));
+    const id = String(novoRef.key || '').trim();
+    if (!id || !competencia) throw new Error('Não foi possível identificar a competência da movimentação.');
+
+    const tipoRegistro = String(registro.tipo || '').trim();
+    const origemRegistro = String(registro.origemRegistro || '').trim();
+    const ehMovimentacaoEstoque = tipoRegistro === 'entrada_estoque'
+        || tipoRegistro === 'saida_estoque'
+        || origemRegistro === 'entrada_estoque'
+        || origemRegistro === 'retirada_estoque';
+    if (!ehMovimentacaoEstoque || tipoRegistro === 'cancelamento') {
+        await set(novoRef, registro);
+        return novoRef;
+    }
+
+    const chaveMes = `${chaveUsuario}/${competencia}`;
+    let mesJaAtivo = mesesMovimentacaoAtivosConhecidos.has(chaveMes);
+    if (!mesJaAtivo) {
+        const marcadorSnap = await get(ref(db, `${MOVIMENTACAO_BALANCO_HISTORICO_ROOT}/${MOVIMENTACOES_POR_USUARIO_MES_CAMPO}/${chaveMes}`));
+        mesJaAtivo = marcadorSnap.val() === true;
+    }
+
+    const updates = {
+        [`${MOVIMENTACAO_BALANCO_HISTORICO_ROOT}/${chaveUsuario}/${id}`]: registro
+    };
+    if (!mesJaAtivo) {
+        updates[`${MOVIMENTACAO_BALANCO_HISTORICO_ROOT}/${MOVIMENTACOES_POR_USUARIO_MES_CAMPO}/${chaveMes}`] = true;
+    }
+    await update(ref(db), updates);
+    mesesMovimentacaoAtivosConhecidos.add(chaveMes);
+    return novoRef;
+}
+
+function _obterCompetenciaMovimentacao(valorData) {
+    const data = new Date(valorData || '');
+    if (!Number.isFinite(data.getTime())) return '';
+    const partes = new Intl.DateTimeFormat('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric',
+        month: '2-digit'
+    }).formatToParts(data);
+    const ano = partes.find(parte => parte.type === 'year')?.value;
+    const mes = partes.find(parte => parte.type === 'month')?.value;
+    return ano && mes ? `${ano}-${mes}` : '';
 }
 
 export async function dbSalvarHistoricoBalanco(entrada, opcoes = {}) {
@@ -4416,10 +4467,13 @@ export async function dbExcluirHistoricoBalanco(id, responsavel, opcoes = {}) {
             ignorarValidacaoPosse: true
         }, { recalcular: false });
 
-        await update(entradaRef, {
-            cancelado: true,
-            canceladoEm: new Date().toISOString()
-        });
+        const canceladoEm = new Date().toISOString();
+        const competenciaEntrada = _obterCompetenciaMovimentacao(entrada?.timestamp || entrada?.data);
+        const updatesCancelamento = {
+            [`movimentacao_balanco_historico/${chaveU}/${id}/cancelado`]: true,
+            [`movimentacao_balanco_historico/${chaveU}/${id}/canceladoEm`]: canceladoEm
+        };
+        await update(ref(db), updatesCancelamento);
         if (opcoes?.atualizarAcumuladoProducao === true) {
             const valorUnitario = await _obterValorUnitarioHistoricoBalanco(
                 entrada,
@@ -4469,6 +4523,57 @@ export function dbEscutarHistoricoBalancoDoUsuario(responsavel, callback) {
     });
 }
 
+export function dbEscutarMesesComMovimentacaoParaFiltro(responsavel, callback) {
+    const chaveU = _normalizarChaveUsuario(responsavel);
+    if (!chaveU) { callback([]); return () => {}; }
+    return onValue(ref(db, `${MOVIMENTACAO_BALANCO_HISTORICO_ROOT}/${MOVIMENTACOES_POR_USUARIO_MES_CAMPO}/${chaveU}`), (snap) => {
+        const valores = snap.exists() ? (snap.val() || {}) : {};
+        const prefixoUsuario = `${chaveU}/`;
+        [...mesesMovimentacaoAtivosConhecidos]
+            .filter(chave => chave.startsWith(prefixoUsuario))
+            .forEach(chave => mesesMovimentacaoAtivosConhecidos.delete(chave));
+        const meses = Object.entries(valores)
+            .filter(([, ativo]) => ativo === true)
+            .map(([competencia]) => competencia)
+            .filter(competencia => /^\d{4}-\d{2}$/.test(competencia))
+            .sort((a, b) => b.localeCompare(a));
+        meses.forEach(competencia => mesesMovimentacaoAtivosConhecidos.add(`${chaveU}/${competencia}`));
+        callback(meses);
+    });
+}
+
+export function dbEscutarHistoricoBalancoDoUsuarioPorMes(responsavel, competencia, callback) {
+    const chaveU = _normalizarChaveUsuario(responsavel);
+    const mes = String(competencia || '').trim();
+    if (!chaveU || !/^\d{4}-\d{2}$/.test(mes)) { callback([]); return () => {}; }
+    const [ano, numeroMes] = mes.split('-').map(Number);
+    const inicio = new Date(Date.UTC(ano, numeroMes - 1, 1, 3, 0, 0, 0)).toISOString();
+    const fim = new Date(Date.UTC(ano, numeroMes, 1, 3, 0, 0, 0) - 1).toISOString();
+    const consulta = query(
+        ref(db, `${MOVIMENTACAO_BALANCO_HISTORICO_ROOT}/${chaveU}`),
+        orderByChild('timestamp'),
+        startAt(inicio),
+        endAt(fim)
+    );
+    return onValue(consulta, (snap) => {
+        if (!snap.exists()) { callback([]); return; }
+        callback(
+            Object.entries(snap.val() || {})
+                .map(([id, valor]) => ({ id, firebaseUrl: id, ...valor }))
+                .sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')))
+        );
+    });
+}
+
+export async function dbMarcarMesSemMovimentacaoParaFiltro(responsavel, competencia) {
+    const chaveU = _normalizarChaveUsuario(responsavel);
+    const mes = String(competencia || '').trim();
+    if (!chaveU || !/^\d{4}-\d{2}$/.test(mes)) return false;
+    await set(ref(db, `${MOVIMENTACAO_BALANCO_HISTORICO_ROOT}/${MOVIMENTACOES_POR_USUARIO_MES_CAMPO}/${chaveU}/${mes}`), false);
+    mesesMovimentacaoAtivosConhecidos.delete(`${chaveU}/${mes}`);
+    return true;
+}
+
 export function dbEscutarHistoricoBalanco(callback) {
     return onValue(ref(db, 'movimentacao_balanco_historico'), (snap) => {
         if (!snap.exists()) { callback([]); return; }
@@ -4476,7 +4581,9 @@ export function dbEscutarHistoricoBalanco(callback) {
         const lista = [];
         const data = snap.val() || {};
 
-        Object.entries(data).forEach(([chaveUsuario, registros]) => {
+        Object.entries(data)
+            .filter(([chaveUsuario]) => chaveUsuario !== MOVIMENTACOES_POR_USUARIO_MES_CAMPO)
+            .forEach(([chaveUsuario, registros]) => {
             Object.entries(registros || {}).forEach(([id, valor]) => {
                 lista.push({ firebaseUrl: id, chaveUsuario, ...valor });
             });
@@ -4523,7 +4630,9 @@ export function dbEscutarHistoricoBalancoCompleto(callback) {
         const lista = [];
         const data = snap.val() || {};
 
-        Object.entries(data).forEach(([chaveUsuario, registros]) => {
+        Object.entries(data)
+            .filter(([chaveUsuario]) => chaveUsuario !== MOVIMENTACOES_POR_USUARIO_MES_CAMPO)
+            .forEach(([chaveUsuario, registros]) => {
             Object.entries(registros || {}).forEach(([id, valor]) => {
                 lista.push({ firebaseUrl: id, chaveUsuario, ...valor });
             });
@@ -4543,7 +4652,9 @@ export async function dbListarHistoricoBalancoCompleto() {
         const lista = [];
         const data = snap.val() || {};
 
-        Object.entries(data).forEach(([chaveUsuario, registros]) => {
+        Object.entries(data)
+            .filter(([chaveUsuario]) => chaveUsuario !== MOVIMENTACOES_POR_USUARIO_MES_CAMPO)
+            .forEach(([chaveUsuario, registros]) => {
             Object.entries(registros || {}).forEach(([id, valor]) => {
                 lista.push({ firebaseUrl: id, chaveUsuario, ...valor });
             });

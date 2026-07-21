@@ -1004,7 +1004,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, dbLerPixEmPosse, dbSalvarHistoricoBalanco, dbEscutarHistoricoBalancoDoUsuario, dbEscutarPosseItensUsuario, dbEscutarPixEmPosse, dbExcluirHistoricoBalanco, dbRecalcularRemuneracoes, dbEscutarClientes, dbEscutarTodosPixEmPosse } from './database.js';
+    import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, dbLerPixEmPosse, dbSalvarHistoricoBalanco, dbEscutarMesesComMovimentacaoParaFiltro, dbEscutarHistoricoBalancoDoUsuarioPorMes, dbMarcarMesSemMovimentacaoParaFiltro, dbEscutarPosseItensUsuario, dbEscutarPixEmPosse, dbExcluirHistoricoBalanco, dbRecalcularRemuneracoes, dbEscutarClientes, dbEscutarTodosPixEmPosse } from './database.js';
     import { dbConsumirSaldosTestadosSaida, dbReverterSaldosTestadosSaida } from './database-producao-equipamentos.js';
 
     let listaGlobal = [];
@@ -1024,8 +1024,10 @@
     let posseUsuarioVisivel = false;
     let mesHistoricoSelecionado = '';
     let mesHistoricoSelecionadoManual = false;
+    let mesesHistoricoAtivos = [];
     let responsavelHistoricoAtual = '';
     let unsubscribeHistoricoResponsavel = null;
+    let unsubscribeMesesHistorico = null;
     let unsubscribePosseUsuario = null;
     let unsubscribePixUsuario = null;
     const RESPONSAVEL_PIX_ESTOQUE = 'Fornecedor';
@@ -1133,10 +1135,9 @@
     }
 
     function obterMesesHistorico() {
-        const meses = new Set(historicoGlobal.map(obterAnoMesMovimentacao).filter(Boolean));
+        if (mesesHistoricoAtivos.length > 0) return [...mesesHistoricoAtivos];
         const mesAtual = obterMesAtual();
-        if (mesAtual) meses.add(mesAtual);
-        return [...meses].sort((a, b) => b.localeCompare(a));
+        return mesAtual ? [mesAtual] : [];
     }
 
     function atualizarResponsavelHistoricoChip() {
@@ -1153,9 +1154,9 @@
         const meses = obterMesesHistorico();
         const mesAtual = obterMesAtual();
         if (!mesHistoricoSelecionadoManual) {
-            mesHistoricoSelecionado = mesAtual;
+            mesHistoricoSelecionado = meses.includes(mesAtual) ? mesAtual : (meses[0] || mesAtual);
         } else if (!mesHistoricoSelecionado || !meses.includes(mesHistoricoSelecionado)) {
-            mesHistoricoSelecionado = mesAtual;
+            mesHistoricoSelecionado = meses.includes(mesAtual) ? mesAtual : (meses[0] || mesAtual);
             mesHistoricoSelecionadoManual = false;
         }
         const indice = meses.indexOf(mesHistoricoSelecionado);
@@ -1170,10 +1171,37 @@
 
     function aplicarHistoricoRecebido(lista) {
         historicoGlobal = (Array.isArray(lista) ? lista : []).filter(ehMovimentoEstoqueHistorico);
-        atualizarMesesHistorico();
         atualizarBotaoHistorico();
         atualizarResponsavelHistoricoChip();
         filtrarHistorico();
+    }
+
+    function atualizarLeituraHistoricoMesSelecionado() {
+        if (unsubscribeHistoricoResponsavel) {
+            unsubscribeHistoricoResponsavel();
+            unsubscribeHistoricoResponsavel = null;
+        }
+        aplicarHistoricoRecebido([]);
+        if (!responsavelHistoricoAtual || !mesHistoricoSelecionado || !mesesHistoricoAtivos.includes(mesHistoricoSelecionado)) return;
+
+        const responsavelLeitura = responsavelHistoricoAtual;
+        const competenciaLeitura = mesHistoricoSelecionado;
+        unsubscribeHistoricoResponsavel = dbEscutarHistoricoBalancoDoUsuarioPorMes(
+            responsavelLeitura,
+            competenciaLeitura,
+            async (lista) => {
+                if (responsavelLeitura !== responsavelHistoricoAtual || competenciaLeitura !== mesHistoricoSelecionado) return;
+                const movimentosEstoque = (Array.isArray(lista) ? lista : []).filter(ehMovimentoEstoqueHistorico);
+                aplicarHistoricoRecebido(movimentosEstoque);
+                if (movimentosEstoque.length === 0 && mesesHistoricoAtivos.includes(competenciaLeitura)) {
+                    try {
+                        await dbMarcarMesSemMovimentacaoParaFiltro(responsavelLeitura, competenciaLeitura);
+                    } catch (erro) {
+                        console.warn('Não foi possível desativar o mês vazio no filtro:', erro);
+                    }
+                }
+            }
+        );
     }
 
     function atualizarHistoricoPorResponsavelSelecionado() {
@@ -1191,12 +1219,26 @@
             unsubscribeHistoricoResponsavel();
             unsubscribeHistoricoResponsavel = null;
         }
+        if (unsubscribeMesesHistorico) {
+            unsubscribeMesesHistorico();
+            unsubscribeMesesHistorico = null;
+        }
+        mesesHistoricoAtivos = [];
+        mesHistoricoSelecionado = '';
+        mesHistoricoSelecionadoManual = false;
 
         if (responsavelHistoricoAtual) {
-            unsubscribeHistoricoResponsavel = dbEscutarHistoricoBalancoDoUsuario(responsavelHistoricoAtual, aplicarHistoricoRecebido);
+            const responsavelLeitura = responsavelHistoricoAtual;
+            unsubscribeMesesHistorico = dbEscutarMesesComMovimentacaoParaFiltro(responsavelLeitura, (meses) => {
+                if (responsavelLeitura !== responsavelHistoricoAtual) return;
+                mesesHistoricoAtivos = Array.isArray(meses) ? meses : [];
+                atualizarMesesHistorico();
+                atualizarLeituraHistoricoMesSelecionado();
+            });
             return;
         }
 
+        atualizarMesesHistorico();
         aplicarHistoricoRecebido([]);
     }
 
@@ -1461,7 +1503,7 @@
         mesHistoricoSelecionadoManual = true;
         atualizarMesesHistorico();
         atualizarBotaoHistorico();
-        filtrarHistorico();
+        atualizarLeituraHistoricoMesSelecionado();
     };
 
     window.navegarMesHistorico = function(delta) {

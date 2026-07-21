@@ -80,7 +80,23 @@
         .resumo span { display: block; color: var(--amarelo); font-size: 11px; font-weight: 800; text-transform: uppercase; }
         .resumo p { margin: 4px 0 0; font-size: 12px; opacity: 0.8; }
         .resumo strong { color: var(--amarelo); font-size: 28px; white-space: nowrap; }
-        .filtros { display: grid; grid-template-columns: 1fr 1.35fr; gap: 9px; margin-bottom: 14px; }
+        .filtros { display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px; gap: 6px; margin-bottom: 14px; }
+        .filtro-periodo-btn, .filtro-periodo-centro {
+            min-height: 42px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.35);
+            background: #315790;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .filtro-periodo-centro { padding: 0 8px; font-size: 15px; font-weight: 800; }
+        .filtro-periodo-btn { padding: 0; font-size: 24px; font-weight: 800; cursor: pointer; }
+        .filtro-periodo-btn:active { background: #24477e; }
+        .filtro-periodo-btn:disabled { color: #7994bf; border-color: rgba(255,255,255,0.15); cursor: default; }
         .filtro-colaborador-gestor { display: none; margin-bottom: 9px; }
         .filtro-colaborador-gestor.visivel { display: block; }
         select, input[type="text"] {
@@ -239,8 +255,9 @@
             <select id="filtroColaboradorGestor" aria-label="Colaborador"></select>
         </div>
         <div class="filtros">
-            <select id="filtroAno" aria-label="Ano"></select>
-            <select id="filtroMes" aria-label="Mês"></select>
+            <button class="filtro-periodo-btn" id="btnMesAnterior" type="button" aria-label="Mês anterior">&#8249;</button>
+            <div class="filtro-periodo-centro" id="filtroPeriodoAtual">Carregando...</div>
+            <button class="filtro-periodo-btn" id="btnMesProximo" type="button" aria-label="Próximo mês">&#8250;</button>
         </div>
         <section class="lista" id="listaProducoes"><div class="carregando">Carregando produções...</div></section>
     </main>
@@ -274,8 +291,9 @@
         const totalMes = document.getElementById('totalMes');
         const filtroColaboradorGestorWrap = document.getElementById('filtroColaboradorGestorWrap');
         const filtroColaboradorGestor = document.getElementById('filtroColaboradorGestor');
-        const filtroAno = document.getElementById('filtroAno');
-        const filtroMes = document.getElementById('filtroMes');
+        const btnMesAnterior = document.getElementById('btnMesAnterior');
+        const btnMesProximo = document.getElementById('btnMesProximo');
+        const filtroPeriodoAtual = document.getElementById('filtroPeriodoAtual');
         const listaProducoes = document.getElementById('listaProducoes');
         const modalDetalhe = document.getElementById('modalDetalhe');
         const modalConteudo = document.getElementById('modalConteudo');
@@ -331,20 +349,22 @@
             return window.confirm(mensagem);
         }
 
-        function competenciaDosFiltros() {
-            return `${filtroAno.value}-${filtroMes.value}`;
+        function rotuloCompetencia(competencia) {
+            const [ano, mes] = String(competencia || '').split('-').map(Number);
+            if (!ano || !mes) return 'Mês';
+            return `${NOMES_MESES[mes - 1] || mes} de ${ano}`;
         }
 
         function preencherFiltros() {
             const atual = obterCompetenciaAtualProducaoEquipamentos();
-            const competencias = [...new Set([atual, competenciaSelecionada, ...mesesDisponiveis].filter(Boolean))];
-            const anos = [...new Set(competencias.map((item) => item.slice(0, 4)))].sort((a, b) => b.localeCompare(a));
-            const [anoSelecionado, mesSelecionado] = competenciaSelecionada.split('-');
-            filtroAno.innerHTML = anos.map((ano) => `<option value="${ano}"${ano === anoSelecionado ? ' selected' : ''}>${ano}</option>`).join('');
-            filtroMes.innerHTML = NOMES_MESES.map((nome, indice) => {
-                const mes = String(indice + 1).padStart(2, '0');
-                return `<option value="${mes}"${mes === mesSelecionado ? ' selected' : ''}>${escaparHtml(nome)}</option>`;
-            }).join('');
+            const competencias = mesesDisponiveis.length > 0 ? mesesDisponiveis : [atual];
+            if (!competencias.includes(competenciaSelecionada)) {
+                competenciaSelecionada = competencias.includes(atual) ? atual : competencias[0];
+            }
+            const indice = competencias.indexOf(competenciaSelecionada);
+            filtroPeriodoAtual.textContent = rotuloCompetencia(competenciaSelecionada);
+            btnMesAnterior.disabled = indice < 0 || indice >= competencias.length - 1;
+            btnMesProximo.disabled = indice <= 0;
         }
 
         function encerrarEscutasDoMes() {
@@ -356,7 +376,6 @@
 
         function escutarMesSelecionado() {
             encerrarEscutasDoMes();
-            competenciaSelecionada = competenciaDosFiltros();
             listaProducoes.innerHTML = '<div class="carregando">Carregando produções...</div>';
             totalMes.textContent = formatarMoeda(0);
             pararProducoes = dbEscutarProducoesUsuarioMes(usuarioAtual.firebaseUrl, competenciaSelecionada, (lista) => {
@@ -654,7 +673,9 @@
             escutarMesSelecionado();
             pararMeses = dbEscutarMesesProducaoUsuario(usuarioAtual.firebaseUrl, (meses) => {
                 mesesDisponiveis = Array.isArray(meses) ? meses : [];
+                const competenciaAntes = competenciaSelecionada;
                 preencherFiltros();
+                if (competenciaSelecionada !== competenciaAntes) escutarMesSelecionado();
             }, (erro) => console.warn('Não foi possível carregar os meses:', erro));
         }
 
@@ -693,12 +714,19 @@
             iniciarEscutasDoUsuario();
         }
 
-        filtroAno.addEventListener('change', () => {
-            competenciaSelecionada = competenciaDosFiltros();
+        function navegarMes(delta) {
+            const competencias = mesesDisponiveis.length > 0
+                ? mesesDisponiveis
+                : [obterCompetenciaAtualProducaoEquipamentos()];
+            const indiceAtual = Math.max(0, competencias.indexOf(competenciaSelecionada));
+            const proximoIndice = Math.max(0, Math.min(competencias.length - 1, indiceAtual + delta));
+            if (competencias[proximoIndice] === competenciaSelecionada) return;
+            competenciaSelecionada = competencias[proximoIndice];
             preencherFiltros();
             escutarMesSelecionado();
-        });
-        filtroMes.addEventListener('change', escutarMesSelecionado);
+        }
+        btnMesAnterior.addEventListener('click', () => navegarMes(1));
+        btnMesProximo.addEventListener('click', () => navegarMes(-1));
         filtroColaboradorGestor.addEventListener('change', () => {
             if (!ehGestorNivel3) return;
             const selecionado = colaboradores.find((item) => item.firebaseUrl === filtroColaboradorGestor.value && item?.producaoEquipamentos === true);
