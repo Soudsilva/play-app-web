@@ -617,15 +617,25 @@ async function recalcularResumoDepositosTotal(usuario) {
   const usuarioKey = normalizarChaveUsuario(usuario);
   if (!usuarioKey) return;
 
-  const mesesSnap = await db.ref(`${DEPOSITOS_RESUMO_ROOT}/${usuarioKey}/meses`).get();
-  let saldoTotal = 0;
-  Object.values(mesesSnap.val() || {}).forEach((mes) => {
-    if (!mes || typeof mes !== "object") return;
-    const saldoMes = Number.isFinite(Number(mes.saldoMes)) ?
-      Number(mes.saldoMes) :
-      numero(mes.saldoAtendimentos) - numero(mes.totalDepositos);
-    saldoTotal += saldoMes;
-  });
+  const anoMesAtual = obterAnoMes(new Date());
+  const [anoAtual, mesAtual] = anoMesAtual.split("-").map(Number);
+  const dataMesAnterior = new Date(Date.UTC(anoAtual, mesAtual - 2, 1));
+  const anoMesAnterior = `${dataMesAnterior.getUTCFullYear()}-${
+    String(dataMesAnterior.getUTCMonth() + 1).padStart(2, "0")
+  }`;
+  const [mesAtualSnap, fechamentoAnteriorSnap] = await Promise.all([
+    db.ref(`${DEPOSITOS_RESUMO_ROOT}/${usuarioKey}/meses/${anoMesAtual}`).get(),
+    db.ref(
+      `depositos/${usuarioKey}/resumos_mensais/${anoMesAnterior}/saldoPendente`,
+    ).get(),
+  ]);
+  const resumoMesAtual = mesAtualSnap.val() || {};
+  const saldoMesAtual = Number.isFinite(Number(resumoMesAtual.saldoMes)) ?
+    Number(resumoMesAtual.saldoMes) :
+    numero(resumoMesAtual.saldoAtendimentos) -
+      numero(resumoMesAtual.totalDepositos);
+  const fechamentoAnterior = numero(fechamentoAnteriorSnap.val());
+  const saldoTotal = fechamentoAnterior + saldoMesAtual;
 
   const faltaDepositarTotal = Math.max(0, saldoTotal);
   await db.ref(`${DEPOSITOS_RESUMO_ROOT}/${usuarioKey}/resumo`).set({

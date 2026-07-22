@@ -94,3 +94,10 @@ Regra obrigatória para testes com dados de usuários:
 - Se o usuário `Pedro` não existir, não crie esse usuário e não grave dados de teste em nenhuma outra conta.
 - Para testar com qualquer usuário diferente de `Pedro`, ou para criar o próprio usuário `Pedro`, pare e peça autorização clara, específica e prévia do proprietário, informando o usuário, os caminhos e os dados que seriam gravados.
 - Nunca use nomes de colaboradores reais como destino temporário de workflows, testes automatizados, testes de interface, exemplos, placeholders ou validações manuais.
+
+Regra obrigatória de comunicação:
+
+- Seja sempre direto e objetivo nas respostas, explicações e atualizações.
+- Informe tudo que for realmente importante para a segurança, o resultado ou a decisão do proprietário, sem omitir riscos relevantes.
+- Evite repetir informações, criar explicações longas ou acrescentar detalhes que não ajudem a resolver a solicitação.
+- Quando houver um resultado numérico ou uma conclusão clara, apresente primeiro esse resultado de forma simples.
