@@ -6022,3 +6022,206 @@ export async function dbResponderAlteracaoContrato(pendingId, socio, decisao) {
         await remove(pendRef);
     }
 }
+
+/* ============================================================================
+   ARQUIVOS PARA IMPRESSAO - CHECKLISTS
+   No isolado: checklists/maquinas/{maquinaId}
+   Este bloco nao le, altera ou remove dados dos demais fluxos do sistema.
+   ============================================================================ */
+const CHECKLISTS_ROOT = 'checklists';
+const CHECKLIST_FOGUETE_ITENS_VERSAO = 1;
+
+const CHECKLIST_FOGUETE_ITENS_PADRAO = {
+    item_01: { descricao: 'Adesivo de SAC', ordem: 1 },
+    item_02: { descricao: 'Adesivo de preço', ordem: 2 },
+    item_03: { descricao: 'Adesivo de “Não é sorteio”', ordem: 3 },
+    item_04: { descricao: 'Adesivo SEM orelhas', ordem: 4 },
+    item_05: { descricao: '2 parafusos no botão', ordem: 5 },
+    item_06: { descricao: 'Iluminação interna e externa', ordem: 6 },
+    item_07: { descricao: 'Estrutura/gabinete sem avarias', ordem: 7 },
+    item_08: { descricao: 'Motor preso', ordem: 8 },
+    item_09: { descricao: 'Noteiro de cabeça para baixo', ordem: 9 },
+    item_10: { descricao: 'Arame da porta dobrado', ordem: 10 },
+    item_11: { descricao: 'Display regulado', ordem: 11 },
+    item_12: { descricao: 'Lona da cuba', ordem: 12 },
+    item_13: { descricao: 'Tampar buracos para não dar acesso à criança nas laterais da saída de bolinha', ordem: 13 },
+    item_14: { descricao: 'Conector do botão na horizontal, encaixe na esquerda', ordem: 14 },
+    item_15: { descricao: 'Portinha livre, sem prender, nem aberta nem fechada', ordem: 15 }
+};
+
+const CHECKLISTS_MAQUINAS_PADRAO = {
+    grua_g: {
+        nome: 'Grua G',
+        ativo: true,
+        ordem: 1,
+        itens: {}
+    },
+    foguete: {
+        nome: 'Foguete',
+        ativo: true,
+        ordem: 2,
+        itens: CHECKLIST_FOGUETE_ITENS_PADRAO,
+        versaoItensPadrao: CHECKLIST_FOGUETE_ITENS_VERSAO
+    }
+};
+
+function _normalizarNomeMaquinaChecklist(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+}
+
+export async function dbInicializarChecklistsPadrao() {
+    const maquinasRef = ref(db, `${CHECKLISTS_ROOT}/maquinas`);
+    const criadoEm = new Date().toISOString();
+
+    await runTransaction(maquinasRef, (maquinasAtuais) => {
+        const maquinas = maquinasAtuais && typeof maquinasAtuais === 'object'
+            ? { ...maquinasAtuais }
+            : {};
+        let precisaSalvar = false;
+
+        Object.entries(CHECKLISTS_MAQUINAS_PADRAO).forEach(([id, maquina]) => {
+            if (!maquinas[id]) {
+                maquinas[id] = {
+                    ...maquina,
+                    criadoEm,
+                    origem: 'padrao_sistema'
+                };
+                precisaSalvar = true;
+                return;
+            }
+
+            if (id !== 'foguete' || Number(maquinas[id].versaoItensPadrao || 0) >= CHECKLIST_FOGUETE_ITENS_VERSAO) {
+                return;
+            }
+
+            const itensAtuais = maquinas[id].itens && typeof maquinas[id].itens === 'object'
+                ? { ...maquinas[id].itens }
+                : {};
+            const descricoesAtuais = new Set(
+                Object.values(itensAtuais).map(item => _normalizarNomeMaquinaChecklist(item?.descricao))
+            );
+
+            Object.entries(CHECKLIST_FOGUETE_ITENS_PADRAO).forEach(([itemId, item]) => {
+                if (descricoesAtuais.has(_normalizarNomeMaquinaChecklist(item.descricao))) return;
+                let chaveItem = itemId;
+                while (itensAtuais[chaveItem]) chaveItem = `padrao_${chaveItem}`;
+                itensAtuais[chaveItem] = { ...item, origem: 'padrao_sistema' };
+            });
+
+            maquinas[id] = {
+                ...maquinas[id],
+                itens: itensAtuais,
+                versaoItensPadrao: CHECKLIST_FOGUETE_ITENS_VERSAO,
+                itensPadraoAtualizadosEm: criadoEm
+            };
+            precisaSalvar = true;
+        });
+
+        return precisaSalvar ? maquinas : undefined;
+    });
+}
+
+export function dbEscutarMaquinasChecklist(callback) {
+    const maquinasRef = ref(db, `${CHECKLISTS_ROOT}/maquinas`);
+    return onValue(maquinasRef, (snapshot) => {
+        const dados = snapshot.val() || {};
+        const lista = Object.entries(dados)
+            .map(([firebaseUrl, maquina]) => ({ firebaseUrl, ...(maquina || {}) }))
+            .filter(maquina => maquina.ativo !== false)
+            .sort((a, b) => {
+                const ordemA = Number(a.ordem || Number.MAX_SAFE_INTEGER);
+                const ordemB = Number(b.ordem || Number.MAX_SAFE_INTEGER);
+                if (ordemA !== ordemB) return ordemA - ordemB;
+                return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR');
+            });
+        callback(lista);
+    });
+}
+
+export async function dbAdicionarMaquinaChecklist(nome, criadoPor = '') {
+    const nomeLimpo = String(nome || '').replace(/\s+/g, ' ').trim();
+    if (nomeLimpo.length < 2 || nomeLimpo.length > 80) {
+        throw new Error('Informe um nome de maquina entre 2 e 80 caracteres.');
+    }
+
+    const maquinasRef = ref(db, `${CHECKLISTS_ROOT}/maquinas`);
+    const snapshot = await get(maquinasRef);
+    const maquinas = snapshot.val() || {};
+    const nomeNormalizado = _normalizarNomeMaquinaChecklist(nomeLimpo);
+    const maquinaDuplicada = Object.values(maquinas).some(maquina =>
+        _normalizarNomeMaquinaChecklist(maquina?.nome) === nomeNormalizado
+    );
+
+    if (maquinaDuplicada) {
+        throw new Error('Essa maquina ja esta cadastrada nos checklists.');
+    }
+
+    const ordens = Object.values(maquinas)
+        .map(maquina => Number(maquina?.ordem || 0))
+        .filter(Number.isFinite);
+    const novaRef = push(maquinasRef);
+    const dados = {
+        nome: nomeLimpo,
+        ativo: true,
+        ordem: (ordens.length ? Math.max(...ordens) : 0) + 1,
+        itens: {},
+        criadoEm: new Date().toISOString(),
+        criadoPor: String(criadoPor || '').trim(),
+        origem: 'cadastro_manual'
+    };
+
+    await set(novaRef, dados);
+    return { firebaseUrl: novaRef.key, ...dados };
+}
+
+function _validarChaveChecklist(chave, nomeCampo) {
+    const valor = String(chave || '').trim();
+    if (!valor || /[.#$\[\]\/]/.test(valor)) {
+        throw new Error(`${nomeCampo} inválido.`);
+    }
+    return valor;
+}
+
+export async function dbAdicionarItemChecklist(maquinaId, descricao, criadoPor = '') {
+    const idMaquina = _validarChaveChecklist(maquinaId, 'Identificador da máquina');
+    const descricaoLimpa = String(descricao || '').replace(/\s+/g, ' ').trim();
+    if (descricaoLimpa.length < 2 || descricaoLimpa.length > 240) {
+        throw new Error('Informe uma descrição entre 2 e 240 caracteres.');
+    }
+
+    const itensRef = ref(db, `${CHECKLISTS_ROOT}/maquinas/${idMaquina}/itens`);
+    const snapshot = await get(itensRef);
+    const itens = snapshot.val() || {};
+    const descricaoNormalizada = _normalizarNomeMaquinaChecklist(descricaoLimpa);
+    const itemDuplicado = Object.values(itens).some(item =>
+        _normalizarNomeMaquinaChecklist(item?.descricao) === descricaoNormalizada
+    );
+    if (itemDuplicado) {
+        throw new Error('Essa informação já existe no checklist.');
+    }
+
+    const ordens = Object.values(itens)
+        .map(item => Number(item?.ordem || 0))
+        .filter(Number.isFinite);
+    const novoRef = push(itensRef);
+    const dados = {
+        descricao: descricaoLimpa,
+        ordem: (ordens.length ? Math.max(...ordens) : 0) + 1,
+        criadoEm: new Date().toISOString(),
+        criadoPor: String(criadoPor || '').trim(),
+        origem: 'cadastro_manual'
+    };
+    await set(novoRef, dados);
+    return { firebaseUrl: novoRef.key, ...dados };
+}
+
+export async function dbExcluirItemChecklist(maquinaId, itemId) {
+    const idMaquina = _validarChaveChecklist(maquinaId, 'Identificador da máquina');
+    const idItem = _validarChaveChecklist(itemId, 'Identificador da informação');
+    await remove(ref(db, `${CHECKLISTS_ROOT}/maquinas/${idMaquina}/itens/${idItem}`));
+}

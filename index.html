@@ -346,6 +346,11 @@
             <span>Pedidos</span>
         </div>
 
+        <div class="botao" id="btnImpressao" onclick="window.location.href='arquivos_para_impressao.html'" style="display: none;">
+            <span class="icone">&#128424;</span>
+            <span>Impress&atilde;o</span>
+        </div>
+
         <div class="botao" id="btnWhatsPlay" onclick="window.location.href='whatsplay.html'">
             <span class="icone">&#128172;</span>
             <span>WhatsApp Play</span>
@@ -809,6 +814,7 @@
             cadastroItens: document.getElementById('btnCadastroItens'),
             movimentacao: document.getElementById('btnMovimentacao'),
             pedidos: document.getElementById('btnPedidos'),
+            impressao: document.getElementById('btnImpressao'),
             whatsplay: document.getElementById('btnWhatsPlay'),
             servico: document.getElementById('btnServico'),
             financeiro: document.getElementById('btnFinanceiro'),
@@ -995,6 +1001,9 @@
         if (taxaRepresentante > 0) {
             btns.representante.style.display = 'flex';
         }
+
+        // Arquivos para Impressao: temporariamente somente Gestao nivel 3.
+        btns.impressao.style.display = perfilEhGestaoNivel3(perfil) ? 'flex' : 'none';
 
         btns.contrato.style.display = usuarioEhSocio ? 'flex' : 'none';
 
