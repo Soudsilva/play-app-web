@@ -49,6 +49,7 @@ Padrão geral de navegação e cópia nas telas:
 
 - O aplicativo não deve criar botão próprio de voltar. A volta deve ser feita pelo botão nativo do celular/navegador.
 - Quando uma tela precisar oferecer retorno para a página inicial, use somente o botão de Home no padrão visual já existente: ícone de casa dentro de botão circular no topo, como no modelo usado no app.
+- O botão de Home deve ficar no lado direito do topo por padrão. Só use outra posição quando o proprietário do app solicitar explicitamente para uma tela específica.
 - Não permita seleção/cópia de textos, números ou dados nas telas por padrão. Use bloqueio visual/comportamental de seleção (`user-select: none` ou equivalente) quando adequado.
 - A cópia/seleção só deve ser permitida em campos, áreas ou telas explicitamente determinados pelo proprietário do app.
 

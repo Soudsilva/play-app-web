@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arquivos para Impressão - Play</title>
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
         :root {
             --azul: #173d8f;
             --azul-escuro: #0a245c;
@@ -34,19 +39,17 @@
             align-items: center;
             margin-bottom: 18px;
         }
-        .btn-voltar {
+        .btn-home {
             width: 44px;
             height: 44px;
             border: 1px solid rgba(255,255,255,.28);
             border-radius: 50%;
             background: rgba(255,255,255,.1);
             color: #fff;
-            font-size: 25px;
-            font-weight: bold;
         }
+        .btn-home svg { width: 22px; height: 22px; fill: currentColor; }
         .logo { width: 116px; max-height: 68px; object-fit: contain; justify-self: center; }
         h1 { margin: 6px 0 8px; text-align: center; color: var(--amarelo); font-size: clamp(26px, 5vw, 38px); }
-        .subtitulo { margin: 0 auto 26px; max-width: 650px; text-align: center; color: rgba(255,255,255,.78); line-height: 1.45; }
         .painel {
             padding: 22px;
             border: 1px solid rgba(255,255,255,.18);
@@ -74,32 +77,100 @@
         .cabecalho-secao {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
             gap: 12px;
             margin-bottom: 18px;
         }
-        .cabecalho-secao h2 { margin: 0; color: var(--amarelo); font-size: 25px; }
-        .btn-secundario, .btn-adicionar, .btn-imprimir {
+        .cabecalho-secao h2 { width: 100%; margin: 0; color: var(--amarelo); font-size: 25px; text-align: center; }
+        .btn-secundario, .btn-adicionar {
             border: 0;
             border-radius: 12px;
             padding: 12px 16px;
             font-weight: bold;
         }
         .btn-secundario { background: var(--branco-suave); color: #fff; border: 1px solid rgba(255,255,255,.2); }
-        .btn-adicionar, .btn-imprimir { background: var(--amarelo); color: var(--azul-escuro); }
-        .acoes-lista { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+        .btn-adicionar { background: var(--amarelo); color: var(--azul-escuro); }
         .grade-maquinas { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; }
         .card-maquina {
+            position: relative;
             min-height: 112px;
-            padding: 18px;
             border: 1px solid rgba(255,255,255,.24);
             border-radius: 16px;
             background: rgba(255,255,255,.1);
+            color: #fff;
+            overflow: hidden;
+        }
+        .card-maquina-abrir {
+            width: 100%;
+            min-height: 112px;
+            padding: 18px 54px 18px 18px;
+            border: 0;
+            background: transparent;
             color: #fff;
             text-align: left;
         }
         .card-maquina strong { display: block; margin-bottom: 8px; font-size: 21px; }
         .card-maquina small { color: rgba(255,255,255,.68); }
+        .acoes-maquina-card {
+            position: absolute;
+            top: 50%;
+            right: 9px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            transform: translateY(-50%);
+        }
+        .btn-excluir-maquina, .btn-editar-maquina {
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: rgba(255,255,255,.48);
+        }
+        .btn-excluir-maquina:hover, .btn-excluir-maquina:focus-visible {
+            background: rgba(179,38,30,.16);
+            color: #ffd8d5;
+        }
+        .btn-excluir-maquina:disabled { opacity: .35; cursor: default; }
+        .btn-editar-maquina:hover, .btn-editar-maquina:focus-visible {
+            background: rgba(255,255,255,.09);
+            color: rgba(255,255,255,.88);
+        }
+        .btn-excluir-maquina svg, .btn-editar-maquina svg {
+            width: 17px;
+            height: 17px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.7;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .adicionar-maquina-rodape { display: flex; justify-content: flex-start; margin-top: 14px; }
+        .btn-adicionar-maquina {
+            min-height: 48px;
+            display: inline-flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            background: transparent;
+            color: #fff;
+            font-weight: bold;
+        }
+        .btn-adicionar-maquina:hover, .btn-adicionar-maquina:focus-visible {
+            border-color: rgba(255,255,255,.2);
+            background: rgba(255,255,255,.08);
+        }
+        .btn-adicionar-maquina .icone-fliper { font-size: 30px; line-height: 1; }
+        .btn-adicionar-maquina span { font-size: 13px; }
         .estado { grid-column: 1 / -1; padding: 24px; text-align: center; color: rgba(255,255,255,.76); }
         .oculto { display: none !important; }
         .aviso-acesso { max-width: 560px; margin: 50px auto; text-align: center; }
@@ -125,7 +196,7 @@
             box-shadow: 0 20px 48px rgba(0,0,0,.42);
         }
         .modal-conteudo h2 { margin: 0 0 8px; color: var(--amarelo); }
-        .modal-conteudo label { display: block; margin: 18px 0 7px; font-weight: bold; }
+        .modal-conteudo label { display: block; margin: 18px 0 7px; font-weight: bold; text-align: center; }
         .modal-conteudo input {
             width: 100%;
             padding: 13px 14px;
@@ -138,7 +209,6 @@
         .modal-acoes { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
         .folha-container { margin-top: 20px; }
-        .folha-acoes { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
         .folha {
             width: 100%;
             min-height: 1020px;
@@ -147,49 +217,123 @@
             color: #111;
             box-shadow: 0 12px 30px rgba(0,0,0,.3);
         }
-        .folha-cabecalho { display: grid; grid-template-columns: 92px 1fr; gap: 18px; align-items: center; border-bottom: 2px solid #111; padding-bottom: 14px; }
-        .folha-logo { width: 86px; }
-        .folha h2 { margin: 0; text-align: center; font-size: 25px; text-transform: uppercase; }
-        .folha h3 { margin: 5px 0 0; text-align: center; font-size: 20px; }
-        .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 22px 0; }
-        .campo-linha { display: flex; align-items: flex-end; gap: 7px; min-height: 27px; }
-        .campo-linha span { white-space: nowrap; font-weight: bold; }
-        .linha-preencher { flex: 1; min-width: 40px; border-bottom: 1px solid #111; }
+        .folha-cabecalho { border-bottom: 2px solid #111; padding-bottom: 14px; margin-bottom: 22px; }
+        .folha h3 { margin: 0; text-align: center; font-size: 20px; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th, td { border: 1px solid #111; padding: 7px; }
         th { background: #ececec; font-size: 12px; text-transform: uppercase; }
-        td { height: 39px; }
-        .col-numero { width: 42px; text-align: center; }
+        td { height: 39px; vertical-align: middle; }
+        .col-descricao { white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
+        .conteudo-item-checklist { cursor: grab; }
+        #linhasChecklist tr.item-em-movimento { background: #dce7ff; opacity: .42; }
+        body.reordenando-checklist, body.reordenando-checklist .conteudo-item-checklist { cursor: grabbing; }
+        .item-checklist-flutuante {
+            position: fixed;
+            z-index: 2500;
+            max-width: calc(100vw - 20px);
+            padding: 7px;
+            border: 1px solid #7c96cb;
+            border-radius: 3px;
+            background: #fff;
+            color: #111;
+            box-shadow: 0 7px 16px rgba(0,0,0,.24);
+            font-size: 14px;
+            line-height: 1.25;
+            overflow-wrap: anywhere;
+            pointer-events: none;
+            transform: scale(1.01);
+        }
+        #linhasChecklist.ordenacao-salvando { pointer-events: none; opacity: .72; }
         .col-marca { width: 58px; text-align: center; }
-        .col-excluir { width: 72px; text-align: center; }
-        .marca-impressao { font-size: 20px; line-height: 1; }
+        .col-excluir { width: 52px; text-align: center; }
+        .marca-impressao { display: inline-block; font-size: 20px; line-height: 1; }
         .btn-excluir-linha {
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
             border: 0;
-            border-radius: 8px;
-            padding: 7px 9px;
-            background: #b3261e;
-            color: #fff;
-            font-size: 12px;
+            border-radius: 50%;
+            background: transparent;
+            color: #8f2923;
+        }
+        .btn-excluir-linha:hover, .btn-excluir-linha:focus-visible { background: #f7e5e3; }
+        .btn-excluir-linha:disabled { opacity: .45; cursor: default; }
+        .btn-excluir-linha svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .folha-edicao { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+        .btn-imprimir-icone {
+            width: 54px;
+            min-height: 54px;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 5px;
+            border: 0;
+            border-radius: 9px;
+            background: transparent;
+            color: var(--azul);
+            font-size: 11px;
             font-weight: bold;
         }
-        .folha-edicao { display: flex; justify-content: flex-end; margin-top: 14px; }
+        .btn-imprimir-icone:hover, .btn-imprimir-icone:focus-visible { background: #eef3ff; }
+        .btn-imprimir-icone svg {
+            width: 25px;
+            height: 25px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
         .assinaturas { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; margin-top: 70px; }
         .assinatura { padding-top: 8px; border-top: 1px solid #111; text-align: center; }
 
         @media (max-width: 620px) {
             .painel { padding: 17px; }
-            .cabecalho-secao { align-items: flex-start; flex-direction: column; }
-            .campos, .assinaturas { grid-template-columns: 1fr; }
-            .folha { min-width: 690px; }
-            .folha-container { overflow-x: auto; }
+            .cabecalho-secao { align-items: center; flex-direction: column; }
+            .assinaturas { grid-template-columns: 1fr; }
+            .folha-container { overflow-x: visible; }
+            .folha { min-width: 0; padding: 16px 10px; }
+            th, td { padding: 6px 4px; }
+            th { font-size: 10px; }
+            .col-marca { width: 46px; }
+            .col-excluir { width: 44px; }
         }
         @media print {
-            @page { size: A4 portrait; margin: 10mm; }
-            body { background: #fff; visibility: visible !important; }
-            .pagina > :not(#folhaContainer), .folha-acoes { display: none !important; }
+            @page { size: A4 portrait; margin: 6mm; }
+            html, body { width: auto; min-height: 0; }
+            body { background: #fff; visibility: visible !important; font-size: 10pt; }
+            .pagina > :not(#folhaContainer) { display: none !important; }
             .pagina { width: auto; min-height: auto; margin: 0; padding: 0; }
             #folhaContainer { display: block !important; margin: 0; overflow: visible; }
             .folha { width: 100%; min-width: 0; min-height: 0; padding: 0; box-shadow: none; }
+            .folha-cabecalho { padding-bottom: 3mm; margin-bottom: 4mm; }
+            .folha h3 { font-size: 15pt; line-height: 1.1; }
+            table { font-size: 14pt; }
+            thead { display: table-header-group; }
+            tr { break-inside: avoid; page-break-inside: avoid; }
+            th, td { height: auto; padding: 1.5mm 1.2mm; line-height: 1.15; }
+            th { font-size: 8pt; }
+            .col-marca { width: 12mm; }
+            .marca-impressao { font-size: 14pt; }
+            .assinaturas {
+                grid-template-columns: 1fr 1fr;
+                gap: 12mm;
+                margin-top: 12mm;
+                font-size: 9pt;
+            }
             .nao-imprimir { display: none !important; }
         }
     </style>
@@ -197,14 +341,17 @@
 <body>
     <main class="pagina">
         <header class="topo">
-            <button class="btn-voltar" type="button" onclick="window.location.href='index.html'" aria-label="Voltar ao início">‹</button>
-            <img class="logo" src="assets/img/logo.png" alt="Play">
             <span></span>
+            <img class="logo" src="assets/img/logo.png" alt="Play">
+            <button class="btn-home" type="button" onclick="window.location.href='index.html'" aria-label="Ir para a tela inicial" title="Início">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path>
+                </svg>
+            </button>
         </header>
 
         <section id="conteudoAutorizado" class="oculto">
             <h1>Arquivos para Impressão</h1>
-            <p class="subtitulo">Selecione o tipo de arquivo que deseja preparar e imprimir.</p>
 
             <div id="painelInicial" class="painel">
                 <button id="btnAbrirChecklists" class="atalho-principal" type="button">
@@ -215,14 +362,16 @@
 
             <section id="painelChecklists" class="painel oculto">
                 <div class="cabecalho-secao">
-                    <h2>Checklists por máquina</h2>
-                    <button id="btnVoltarArquivos" class="btn-secundario" type="button">Voltar</button>
-                </div>
-                <div class="acoes-lista">
-                    <button id="btnAdicionarMaquina" class="btn-adicionar" type="button">+ Adicionar máquina</button>
+                    <h2>Checklist</h2>
                 </div>
                 <div id="gradeMaquinas" class="grade-maquinas">
                     <div class="estado">Carregando máquinas...</div>
+                </div>
+                <div class="adicionar-maquina-rodape">
+                    <button id="btnAdicionarMaquina" class="btn-adicionar-maquina" type="button" aria-label="Adicionar máquina" title="Adicionar máquina">
+                        <span class="icone-fliper" aria-hidden="true">🕹️</span>
+                        <span>+ Adicionar</span>
+                    </button>
                 </div>
             </section>
         </section>
@@ -234,32 +383,15 @@
         </section>
 
         <section id="folhaContainer" class="folha-container oculto" aria-live="polite">
-            <div class="folha-acoes">
-                <button id="btnFecharFolha" class="btn-secundario" type="button">Voltar aos checklists</button>
-                <button id="btnImprimir" class="btn-imprimir" type="button">Imprimir checklist</button>
-            </div>
             <article class="folha">
                 <div class="folha-cabecalho">
-                    <img class="folha-logo" src="assets/img/logomenor.png" alt="Play">
-                    <div>
-                        <h2>Checklist de Máquina</h2>
-                        <h3 id="nomeMaquinaFolha"></h3>
-                    </div>
-                </div>
-                <div class="campos">
-                    <div class="campo-linha"><span>Data:</span><div class="linha-preencher"></div></div>
-                    <div class="campo-linha"><span>Responsável:</span><div class="linha-preencher"></div></div>
-                    <div class="campo-linha"><span>Nº da máquina:</span><div class="linha-preencher"></div></div>
-                    <div class="campo-linha"><span>Local:</span><div class="linha-preencher"></div></div>
+                    <h3 id="nomeMaquinaFolha"></h3>
                 </div>
                 <table aria-label="Itens do checklist">
                     <thead>
                         <tr>
-                            <th class="col-numero">Item</th>
                             <th>Verificação / observação</th>
                             <th class="col-marca">OK</th>
-                            <th class="col-marca">Ajuste</th>
-                            <th class="col-marca">N/A</th>
                             <th class="col-excluir nao-imprimir">Ação</th>
                         </tr>
                     </thead>
@@ -267,6 +399,15 @@
                 </table>
                 <div class="folha-edicao nao-imprimir">
                     <button id="btnAdicionarInformacao" class="btn-adicionar" type="button">+ Adicionar informação</button>
+                    <button id="btnImprimir" class="btn-imprimir-icone" type="button" aria-label="Imprimir checklist" title="Imprimir checklist">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M6 9V3h12v6"></path>
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                            <path d="M6 14h12v7H6z"></path>
+                            <path d="M18 12h.01"></path>
+                        </svg>
+                        <span>Imprimir</span>
+                    </button>
                 </div>
                 <div class="assinaturas">
                     <div class="assinatura">Responsável técnico</div>
@@ -279,7 +420,7 @@
     <div id="modalMaquina" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalMaquina">
         <form id="formMaquina" class="modal-conteudo">
             <h2 id="tituloModalMaquina">Adicionar máquina</h2>
-            <p>A nova máquina será incluída somente na área de checklists.</p>
+            <p id="textoModalMaquina">A nova máquina será incluída somente na área de checklists.</p>
             <label for="nomeNovaMaquina">Nome da máquina</label>
             <input id="nomeNovaMaquina" name="nome" type="text" maxlength="80" autocomplete="off" required>
             <div class="modal-acoes">
@@ -305,14 +446,16 @@
     <script src="assets/js/play-dialogs.js"></script>
     <script type="module">
         import { verificarAutenticacao } from './auth.js';
+        import { dbListarColaboradores } from './database.js';
         import {
-            dbListarColaboradores,
-            dbInicializarChecklistsPadrao,
             dbEscutarMaquinasChecklist,
             dbAdicionarMaquinaChecklist,
+            dbExcluirMaquinaChecklist,
+            dbRenomearMaquinaChecklist,
             dbAdicionarItemChecklist,
+            dbAtualizarOrdemItensChecklist,
             dbExcluirItemChecklist
-        } from './database.js';
+        } from './database_Checklist_fotos_e_Arquivos.js';
 
         const elementos = {
             conteudo: document.getElementById('conteudoAutorizado'),
@@ -322,6 +465,8 @@
             grade: document.getElementById('gradeMaquinas'),
             modal: document.getElementById('modalMaquina'),
             form: document.getElementById('formMaquina'),
+            tituloModal: document.getElementById('tituloModalMaquina'),
+            textoModal: document.getElementById('textoModalMaquina'),
             nome: document.getElementById('nomeNovaMaquina'),
             salvar: document.getElementById('btnSalvarMaquina'),
             folhaContainer: document.getElementById('folhaContainer'),
@@ -337,6 +482,8 @@
         let pararEscutaMaquinas = null;
         let maquinasAtuais = [];
         let maquinaSelecionadaId = '';
+        let maquinaEmEdicaoId = '';
+        let removerEventosOrdenacaoItensChecklist = null;
 
         function normalizar(valor) {
             return String(valor || '')
@@ -368,20 +515,48 @@
             }
 
             elementos.grade.innerHTML = maquinas.map(maquina => `
-                <button class="card-maquina" type="button" data-maquina-id="${escaparHtml(maquina.firebaseUrl)}">
-                    <strong>${escaparHtml(maquina.nome)}</strong>
-                    <small>Abrir modelo para impressão</small>
-                </button>
+                <div class="card-maquina">
+                    <button class="card-maquina-abrir" type="button" data-maquina-id="${escaparHtml(maquina.firebaseUrl)}">
+                        <strong>${escaparHtml(maquina.nome)}</strong>
+                        <small>Abrir modelo para impressão</small>
+                    </button>
+                    <div class="acoes-maquina-card">
+                        <button class="btn-excluir-maquina" type="button" data-excluir-maquina="${escaparHtml(maquina.firebaseUrl)}" data-maquina-nome="${escaparHtml(maquina.nome)}" aria-label="Excluir ${escaparHtml(maquina.nome)}" title="Excluir máquina">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3 6h18"></path>
+                                <path d="M8 6V4h8v2"></path>
+                                <path d="M19 6l-1 15H6L5 6"></path>
+                                <path d="M10 10v7M14 10v7"></path>
+                            </svg>
+                        </button>
+                        <button class="btn-editar-maquina" type="button" data-editar-maquina="${escaparHtml(maquina.firebaseUrl)}" data-maquina-nome="${escaparHtml(maquina.nome)}" aria-label="Editar nome de ${escaparHtml(maquina.nome)}" title="Editar nome">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             `).join('');
 
             if (maquinaSelecionadaId) renderizarFolhaSelecionada();
         }
 
-        function abrirListaChecklists() {
+        function exibirPainelInicial() {
+            maquinaSelecionadaId = '';
+            elementos.painelInicial.classList.remove('oculto');
+            elementos.painelChecklists.classList.add('oculto');
+            elementos.folhaContainer.classList.add('oculto');
+        }
+
+        function abrirListaChecklists({ registrarHistorico = true } = {}) {
             maquinaSelecionadaId = '';
             elementos.painelInicial.classList.add('oculto');
             elementos.painelChecklists.classList.remove('oculto');
             elementos.folhaContainer.classList.add('oculto');
+            if (registrarHistorico) {
+                history.pushState({ ...history.state, telaArquivosImpressao: 'checklists' }, '');
+            }
         }
 
         function obterItensOrdenados(maquina) {
@@ -396,6 +571,183 @@
                 });
         }
 
+        function encerrarOrdenacaoItensChecklist() {
+            if (typeof removerEventosOrdenacaoItensChecklist === 'function') {
+                removerEventosOrdenacaoItensChecklist();
+            }
+            removerEventosOrdenacaoItensChecklist = null;
+        }
+
+        function ativarOrdenacaoItensChecklist() {
+            encerrarOrdenacaoItensChecklist();
+            const linhas = elementos.linhasChecklist.querySelectorAll('tr[data-item-id]');
+            if (linhas.length < 2) return;
+
+            const container = elementos.linhasChecklist;
+            let movimento = null;
+
+            const obterIdsNaTela = () => Array.from(
+                container.querySelectorAll('tr[data-item-id]')
+            ).map(linha => linha.dataset.itemId).filter(Boolean);
+
+            const posicionarItemFlutuante = () => {
+                if (!movimento?.flutuante) return;
+                const margem = 10;
+                const largura = movimento.flutuante.offsetWidth;
+                const altura = movimento.flutuante.offsetHeight;
+                const esquerda = Math.max(
+                    margem,
+                    Math.min(movimento.xAtual - movimento.deslocamentoX, window.innerWidth - largura - margem)
+                );
+                const topo = Math.max(
+                    margem,
+                    Math.min(movimento.yAtual - movimento.deslocamentoY, window.innerHeight - altura - margem)
+                );
+                movimento.flutuante.style.left = `${esquerda}px`;
+                movimento.flutuante.style.top = `${topo}px`;
+            };
+
+            const criarItemFlutuante = () => {
+                if (!movimento || movimento.flutuante) return;
+                const flutuante = document.createElement('div');
+                flutuante.className = 'item-checklist-flutuante';
+                flutuante.textContent = movimento.texto;
+                flutuante.style.width = `${movimento.largura}px`;
+                document.body.appendChild(flutuante);
+                movimento.flutuante = flutuante;
+                posicionarItemFlutuante();
+            };
+
+            const limparMovimento = () => {
+                if (!movimento) return;
+                clearTimeout(movimento.temporizador);
+                movimento.flutuante?.remove();
+                movimento.linha.classList.remove('item-em-movimento');
+                document.body.classList.remove('reordenando-checklist');
+                movimento = null;
+            };
+
+            const iniciarMovimento = (evento, ponto) => {
+                if (container.classList.contains('ordenacao-salvando')) return;
+                const areaNome = evento.target.closest('.conteudo-item-checklist');
+                const linha = areaNome?.closest('tr[data-item-id]');
+                if (!linha) return;
+                const limitesNome = areaNome.getBoundingClientRect();
+
+                limparMovimento();
+                movimento = {
+                    linha,
+                    xInicial: ponto.clientX,
+                    yInicial: ponto.clientY,
+                    xAtual: ponto.clientX,
+                    yAtual: ponto.clientY,
+                    deslocamentoX: ponto.clientX - limitesNome.left,
+                    deslocamentoY: ponto.clientY - limitesNome.top,
+                    texto: areaNome.textContent.trim(),
+                    largura: Math.min(limitesNome.width, window.innerWidth - 20),
+                    flutuante: null,
+                    ativo: false,
+                    ordemInicial: obterIdsNaTela(),
+                    temporizador: setTimeout(() => {
+                        if (!movimento || movimento.linha !== linha) return;
+                        movimento.ativo = true;
+                        linha.classList.add('item-em-movimento');
+                        document.body.classList.add('reordenando-checklist');
+                        criarItemFlutuante();
+                    }, 320)
+                };
+            };
+
+            const moverLinha = (evento, ponto) => {
+                if (!movimento) return;
+                if (!movimento.ativo) {
+                    const distanciaX = Math.abs(ponto.clientX - movimento.xInicial);
+                    const distanciaY = Math.abs(ponto.clientY - movimento.yInicial);
+                    if (distanciaX > 9 || distanciaY > 9) limparMovimento();
+                    return;
+                }
+
+                if (evento.cancelable) evento.preventDefault();
+                movimento.xAtual = ponto.clientX;
+                movimento.yAtual = ponto.clientY;
+                posicionarItemFlutuante();
+                const elementoAlvo = document.elementFromPoint(ponto.clientX, ponto.clientY);
+                const linhaAlvo = elementoAlvo?.closest('tr[data-item-id]');
+                if (linhaAlvo && linhaAlvo !== movimento.linha) {
+                    const limites = linhaAlvo.getBoundingClientRect();
+                    if (ponto.clientY < limites.top + (limites.height / 2)) {
+                        container.insertBefore(movimento.linha, linhaAlvo);
+                    } else {
+                        container.insertBefore(movimento.linha, linhaAlvo.nextSibling);
+                    }
+                }
+
+                if (ponto.clientY < 70) window.scrollBy(0, -14);
+                if (ponto.clientY > window.innerHeight - 70) window.scrollBy(0, 14);
+            };
+
+            const finalizarMovimento = async () => {
+                if (!movimento) return;
+                const estavaAtivo = movimento.ativo;
+                const ordemInicial = movimento.ordemInicial;
+                limparMovimento();
+                if (!estavaAtivo || !maquinaSelecionadaId) return;
+
+                const itensIds = obterIdsNaTela();
+                if (ordemInicial.join('|') === itensIds.join('|')) return;
+
+                container.classList.add('ordenacao-salvando');
+                try {
+                    await dbAtualizarOrdemItensChecklist(maquinaSelecionadaId, itensIds);
+                } catch (erro) {
+                    console.error('Erro ao atualizar ordem do checklist:', erro);
+                    renderizarFolhaSelecionada();
+                    await window.playAlert('Não foi possível salvar a nova ordem dos itens.');
+                } finally {
+                    container.classList.remove('ordenacao-salvando');
+                }
+            };
+
+            const aoTocar = evento => iniciarMovimento(evento, evento.touches[0]);
+            const aoMoverToque = evento => {
+                if (evento.touches[0]) moverLinha(evento, evento.touches[0]);
+            };
+            const aoCancelarToque = () => {
+                const estavaAtivo = !!movimento?.ativo;
+                limparMovimento();
+                if (estavaAtivo) renderizarFolhaSelecionada();
+            };
+            const aoPressionarMouse = evento => {
+                if (evento.button !== 0) return;
+                iniciarMovimento(evento, evento);
+            };
+            const aoMoverMouse = evento => moverLinha(evento, evento);
+            const impedirMenuContexto = evento => {
+                if (evento.target.closest('.conteudo-item-checklist')) evento.preventDefault();
+            };
+
+            container.addEventListener('touchstart', aoTocar, { passive: true });
+            container.addEventListener('touchmove', aoMoverToque, { passive: false });
+            container.addEventListener('touchend', finalizarMovimento);
+            container.addEventListener('touchcancel', aoCancelarToque);
+            container.addEventListener('mousedown', aoPressionarMouse);
+            container.addEventListener('contextmenu', impedirMenuContexto);
+            document.addEventListener('mousemove', aoMoverMouse);
+            document.addEventListener('mouseup', finalizarMovimento);
+
+            removerEventosOrdenacaoItensChecklist = () => {
+                limparMovimento();
+                container.removeEventListener('touchstart', aoTocar);
+                container.removeEventListener('touchmove', aoMoverToque);
+                container.removeEventListener('touchend', finalizarMovimento);
+                container.removeEventListener('touchcancel', aoCancelarToque);
+                container.removeEventListener('mousedown', aoPressionarMouse);
+                container.removeEventListener('contextmenu', impedirMenuContexto);
+                document.removeEventListener('mousemove', aoMoverMouse);
+                document.removeEventListener('mouseup', finalizarMovimento);
+            };
+        }
+
         function renderizarFolhaSelecionada() {
             const maquina = maquinasAtuais.find(item => String(item.firebaseUrl) === maquinaSelecionadaId);
             if (!maquina) return;
@@ -403,37 +755,62 @@
             elementos.nomeMaquinaFolha.textContent = maquina.nome || 'Máquina';
             const itens = obterItensOrdenados(maquina);
             if (itens.length === 0) {
+                encerrarOrdenacaoItensChecklist();
                 elementos.linhasChecklist.innerHTML = `
                     <tr>
-                        <td colspan="6" style="text-align:center; padding:18px;">Nenhuma informação cadastrada neste checklist.</td>
+                        <td colspan="3" style="text-align:center; padding:18px;">Nenhuma informação cadastrada neste checklist.</td>
                     </tr>`;
                 return;
             }
 
-            elementos.linhasChecklist.innerHTML = itens.map((item, indice) => `
-                <tr>
-                    <td class="col-numero">${indice + 1}</td>
-                    <td>${escaparHtml(item.descricao)}</td>
-                    <td class="col-marca"><span class="marca-impressao">☐</span></td>
-                    <td class="col-marca"><span class="marca-impressao">☐</span></td>
+            elementos.linhasChecklist.innerHTML = itens.map(item => `
+                <tr data-item-id="${escaparHtml(item.firebaseUrl)}">
+                    <td class="col-descricao">
+                        <div class="conteudo-item-checklist">
+                            <span>${escaparHtml(item.descricao)}</span>
+                        </div>
+                    </td>
                     <td class="col-marca"><span class="marca-impressao">☐</span></td>
                     <td class="col-excluir nao-imprimir">
-                        <button class="btn-excluir-linha" type="button" data-excluir-item="${escaparHtml(item.firebaseUrl)}" data-item-descricao="${escaparHtml(item.descricao)}">Excluir</button>
+                        <button class="btn-excluir-linha" type="button" data-excluir-item="${escaparHtml(item.firebaseUrl)}" data-item-descricao="${escaparHtml(item.descricao)}" aria-label="Excluir ${escaparHtml(item.descricao)}" title="Excluir">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M3 6h18"></path>
+                                <path d="M8 6V4h8v2"></path>
+                                <path d="M19 6l-1 15H6L5 6"></path>
+                                <path d="M10 10v7M14 10v7"></path>
+                            </svg>
+                        </button>
                     </td>
                 </tr>
             `).join('');
+            ativarOrdenacaoItensChecklist();
         }
 
-        function abrirFolha(maquinaId) {
+        function abrirFolha(maquinaId, { registrarHistorico = true } = {}) {
             maquinaSelecionadaId = String(maquinaId || '').trim();
             renderizarFolhaSelecionada();
             elementos.painelChecklists.classList.add('oculto');
             elementos.folhaContainer.classList.remove('oculto');
+            if (registrarHistorico) {
+                history.pushState({
+                    ...history.state,
+                    telaArquivosImpressao: 'folha',
+                    maquinaChecklistId: maquinaSelecionadaId
+                }, '');
+            }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function abrirModal() {
+        function abrirModal(maquina = null) {
             elementos.form.reset();
+            maquinaEmEdicaoId = String(maquina?.firebaseUrl || '').trim();
+            const editando = !!maquinaEmEdicaoId;
+            elementos.tituloModal.textContent = editando ? 'Editar máquina' : 'Adicionar máquina';
+            elementos.textoModal.textContent = editando
+                ? 'Altere somente o nome da máquina. O checklist e seus itens serão preservados.'
+                : 'A nova máquina será incluída somente na área de checklists.';
+            elementos.nome.value = editando ? String(maquina?.nome || '') : '';
+            elementos.salvar.textContent = editando ? 'Salvar' : 'Adicionar';
             elementos.modal.classList.add('aberto');
             document.body.style.overflow = 'hidden';
             setTimeout(() => elementos.nome.focus(), 0);
@@ -442,6 +819,7 @@
         function fecharModal() {
             elementos.modal.classList.remove('aberto');
             document.body.style.overflow = '';
+            maquinaEmEdicaoId = '';
         }
 
         function abrirModalInformacao() {
@@ -458,13 +836,8 @@
         }
 
         document.getElementById('btnAbrirChecklists').addEventListener('click', abrirListaChecklists);
-        document.getElementById('btnVoltarArquivos').addEventListener('click', () => {
-            elementos.painelChecklists.classList.add('oculto');
-            elementos.painelInicial.classList.remove('oculto');
-        });
-        document.getElementById('btnAdicionarMaquina').addEventListener('click', abrirModal);
+        document.getElementById('btnAdicionarMaquina').addEventListener('click', () => abrirModal());
         document.getElementById('btnCancelarMaquina').addEventListener('click', fecharModal);
-        document.getElementById('btnFecharFolha').addEventListener('click', abrirListaChecklists);
         document.getElementById('btnImprimir').addEventListener('click', () => window.print());
         document.getElementById('btnAdicionarInformacao').addEventListener('click', abrirModalInformacao);
         document.getElementById('btnCancelarInformacao').addEventListener('click', fecharModalInformacao);
@@ -475,7 +848,36 @@
         elementos.modalInformacao.addEventListener('click', evento => {
             if (evento.target === elementos.modalInformacao) fecharModalInformacao();
         });
-        elementos.grade.addEventListener('click', evento => {
+        elementos.grade.addEventListener('click', async evento => {
+            const botaoEditar = evento.target.closest('[data-editar-maquina]');
+            if (botaoEditar) {
+                const maquina = maquinasAtuais.find(item =>
+                    String(item.firebaseUrl) === String(botaoEditar.dataset.editarMaquina)
+                );
+                if (maquina) abrirModal(maquina);
+                return;
+            }
+
+            const botaoExcluir = evento.target.closest('[data-excluir-maquina]');
+            if (botaoExcluir) {
+                const nomeMaquina = botaoExcluir.dataset.maquinaNome || 'esta máquina';
+                const confirmar = await window.playConfirm(`Tem certeza que deseja excluir “${nomeMaquina}”? O checklist deixará de aparecer na lista.`, {
+                    primaryLabel: 'Sim, excluir',
+                    secondaryLabel: 'Cancelar'
+                });
+                if (!confirmar) return;
+
+                botaoExcluir.disabled = true;
+                try {
+                    await dbExcluirMaquinaChecklist(botaoExcluir.dataset.excluirMaquina);
+                } catch (erro) {
+                    console.error('Erro ao excluir máquina do checklist:', erro);
+                    botaoExcluir.disabled = false;
+                    await window.playAlert('Não foi possível excluir a máquina.');
+                }
+                return;
+            }
+
             const card = evento.target.closest('[data-maquina-id]');
             if (!card) return;
             abrirFolha(card.dataset.maquinaId);
@@ -484,8 +886,8 @@
             const botao = evento.target.closest('[data-excluir-item]');
             if (!botao || !maquinaSelecionadaId) return;
             const descricao = botao.dataset.itemDescricao || 'esta informação';
-            const confirmar = await window.playConfirm(`Excluir “${descricao}” deste checklist?`, {
-                primaryLabel: 'Excluir',
+            const confirmar = await window.playConfirm(`Tem certeza que deseja excluir “${descricao}” deste checklist?`, {
+                primaryLabel: 'Sim, excluir',
                 secondaryLabel: 'Cancelar'
             });
             if (!confirmar) return;
@@ -499,21 +901,46 @@
                 await window.playAlert('Não foi possível excluir a informação.');
             }
         });
+
+        window.addEventListener('popstate', evento => {
+            const tela = evento.state?.telaArquivosImpressao;
+            if (tela === 'folha' && evento.state?.maquinaChecklistId) {
+                abrirFolha(evento.state.maquinaChecklistId, { registrarHistorico: false });
+                return;
+            }
+            if (tela === 'checklists') {
+                abrirListaChecklists({ registrarHistorico: false });
+                return;
+            }
+            exibirPainelInicial();
+        });
         elementos.form.addEventListener('submit', async evento => {
             evento.preventDefault();
             if (elementos.salvar.disabled) return;
+            const editando = !!maquinaEmEdicaoId;
+            const maquinaId = maquinaEmEdicaoId;
             elementos.salvar.disabled = true;
-            elementos.salvar.textContent = 'Adicionando...';
+            elementos.salvar.textContent = editando ? 'Salvando...' : 'Adicionando...';
             try {
-                await dbAdicionarMaquinaChecklist(elementos.nome.value, nomeUsuario);
+                if (editando) {
+                    await dbRenomearMaquinaChecklist(maquinaId, elementos.nome.value);
+                } else {
+                    await dbAdicionarMaquinaChecklist(elementos.nome.value, nomeUsuario);
+                }
                 fecharModal();
-                await window.playAlert('Máquina adicionada aos checklists.');
+                await window.playAlert(editando
+                    ? 'Nome da máquina atualizado.'
+                    : 'Máquina adicionada aos checklists.');
             } catch (erro) {
-                console.error('Erro ao adicionar máquina ao checklist:', erro);
-                await window.playAlert(erro?.message || 'Não foi possível adicionar a máquina.');
+                console.error(editando
+                    ? 'Erro ao renomear máquina do checklist:'
+                    : 'Erro ao adicionar máquina ao checklist:', erro);
+                await window.playAlert(erro?.message || (editando
+                    ? 'Não foi possível atualizar o nome da máquina.'
+                    : 'Não foi possível adicionar a máquina.'));
             } finally {
                 elementos.salvar.disabled = false;
-                elementos.salvar.textContent = 'Adicionar';
+                elementos.salvar.textContent = editando ? 'Salvar' : 'Adicionar';
             }
         });
         elementos.formInformacao.addEventListener('submit', async evento => {
@@ -551,8 +978,8 @@
 
             elementos.conteudo.classList.remove('oculto');
             document.body.style.visibility = 'visible';
+            history.replaceState({ ...history.state, telaArquivosImpressao: 'inicio' }, '');
 
-            await dbInicializarChecklistsPadrao();
             pararEscutaMaquinas = dbEscutarMaquinasChecklist(renderizarMaquinas);
         }
 
@@ -565,6 +992,7 @@
         });
 
         window.addEventListener('pagehide', () => {
+            encerrarOrdenacaoItensChecklist();
             if (typeof pararEscutaMaquinas === 'function') pararEscutaMaquinas();
         });
     </script>
