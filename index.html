@@ -346,11 +346,6 @@
             <span>Pedidos</span>
         </div>
 
-        <div class="botao" id="btnImpressao" onclick="window.location.href='arquivos_para_impressao.html'" style="display: none;">
-            <span class="icone">&#128424;</span>
-            <span>Impress&atilde;o</span>
-        </div>
-
         <div class="botao" id="btnWhatsPlay" onclick="window.location.href='whatsplay.html'">
             <span class="icone">&#128172;</span>
             <span>WhatsApp Play</span>
@@ -394,6 +389,11 @@
         <div class="botao-contrato" id="btnContrato" onclick="window.location.href='contrato.html'" style="display: none;">
             <span class="icone">📑</span>
             <span>Contratos & Acordos</span>
+        </div>
+
+        <div class="botao" id="btnImpressao" onclick="window.location.href='arquivos_para_impressao.html'" style="display: none;">
+            <span class="icone">&#128424;</span>
+            <span>Impress&atilde;o</span>
         </div>
 
     </div>
@@ -666,6 +666,11 @@
     function perfilEhGestaoNivel3(perfil) {
         const valor = normalizarTextoIndex(perfil).replace(/\s+/g, '_');
         return valor.includes('gestao_3');
+    }
+
+    function perfilEhEstoque(perfil) {
+        const valor = normalizarTextoIndex(perfil).replace(/\s+/g, '_');
+        return valor.includes('estoque');
     }
 
     function normalizarTextoIndex(valor) {
@@ -1002,8 +1007,8 @@
             btns.representante.style.display = 'flex';
         }
 
-        // Arquivos para Impressao: temporariamente somente Gestao nivel 3.
-        btns.impressao.style.display = perfilEhGestaoNivel3(perfil) ? 'flex' : 'none';
+        // Arquivos para Impressao: Gestao nivel 3 e perfil Estoque.
+        btns.impressao.style.display = perfilEhGestaoNivel3(perfil) || perfilEhEstoque(perfil) ? 'flex' : 'none';
 
         btns.contrato.style.display = usuarioEhSocio ? 'flex' : 'none';
 

@@ -378,7 +378,7 @@
 
         <section id="avisoAcesso" class="painel aviso-acesso oculto">
             <h2>Acesso restrito</h2>
-            <p>Esta área está disponível somente para Gestão nível 3.</p>
+            <p>Esta área está disponível somente para Gestão nível 3 e Estoque.</p>
             <button class="btn-secundario" type="button" onclick="window.location.href='index.html'">Voltar ao início</button>
         </section>
 
@@ -495,7 +495,7 @@
 
         function perfilPodeAcessar(perfil) {
             const valor = normalizar(perfil).replace(/\s+/g, '_');
-            return valor.includes('gestao_3') || valor.includes('gestor_3');
+            return valor.includes('gestao_3') || valor.includes('gestor_3') || valor.includes('estoque');
         }
 
         function escaparHtml(valor) {
