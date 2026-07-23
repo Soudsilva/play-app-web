@@ -315,7 +315,7 @@
     import { verificarAutenticacao } from './auth.js';
     await verificarAutenticacao();
     import { dbListarAtendimentos, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
-    import { dbSalvarDeposito, dbEscutarDepositos, dbAtualizarDeposito, dbExcluirDeposito, dbSalvarResumoMensalDeposito, dbEscutarResumosMensaisDepositos } from './database.js';
+    import { dbSalvarDeposito, dbEscutarDepositos, dbAtualizarDeposito, dbExcluirDeposito, dbSalvarResumoMensalDeposito, dbEscutarResumosMensaisDepositos, dbEscutarResumoDepositos } from './database.js';
 
     const usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
     const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
@@ -335,6 +335,42 @@
 
     function moeda(v) {
         return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits:0, maximumFractionDigits:0 });
+    }
+    function competenciaAtualBrasilia() {
+        const agora = bsbDate(new Date().toISOString());
+        return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
+    }
+    function buildSaldoOficialHTML() {
+        if (!resumoOficialCarregado) {
+            return `<div class="card-falta card-falta-pendente">
+                <div class="card-falta-pendente-titulo">Atualizando saldo...</div>
+            </div>`;
+        }
+        if (!resumoOficialDepositos || resumoOficialDepositos.erro) {
+            return `<div class="vazio-msg">Não foi possível atualizar o saldo.</div>`;
+        }
+        const falta = Math.max(0, Number(resumoOficialDepositos.faltaDepositarTotal || 0));
+        if (falta <= 0) {
+            return `<div class="card-ate-ok" style="text-align:center; background:rgba(76,175,80,0.18); border:2px solid rgba(76,175,80,0.7); border-radius:14px; padding:20px 8px;">
+                <div class="card-ate-ok-texto" style="font-size:22px; font-weight:bold; color:#a5d6a7;">✓ Até essa data, ok!</div>
+            </div>`;
+        }
+        return `<div class="card-falta card-falta-pendente">
+            <div class="card-falta-pendente-titulo">Falta Depositar</div>
+            <div class="card-falta-pendente-valor">${moeda(falta)}</div>
+            <div class="card-falta-pendente-linha"></div>
+            <div class="card-falta-pendente-sub">${resumoOficialAtualizando ? 'Atualizando saldo...' : 'valor pendente do período'}</div>
+        </div>`;
+    }
+    function obterAssinaturaSaldoDepositos(lista) {
+        return JSON.stringify((Array.isArray(lista) ? lista : [])
+            .map(deposito => ({
+                id: deposito.firebaseUrl || '',
+                data: deposito.data || '',
+                valor: Number(deposito.valor || 0),
+                valorConferido: Number(deposito.valorConferido || 0)
+            }))
+            .sort((a, b) => a.id.localeCompare(b.id)));
     }
     function dataLocalStr(date) {
         const d = bsbDate(date instanceof Date ? date.toISOString() : (date || 0));
@@ -387,9 +423,14 @@
     let todosAtendimentos = [];
     let todosDepositos = [];
     let resumosMensaisDepositos = {};
+    let resumoOficialDepositos = null;
+    let resumoOficialCarregado = false;
+    let resumoOficialAtualizando = false;
+    let assinaturaSaldoDepositos = null;
     let mesesDisponiveis = [];
     let pararEscutaDepositos = null;
     let pararEscutaResumosMensais = null;
+    let pararEscutaResumoOficial = null;
     let fotoEnvelopeBase64 = null;
 
     function obterMesesDisponiveis() {
@@ -713,6 +754,8 @@
     function renderizarFaltaEDepositos() {
         const mes = parseInt(selMes.value);
         const ano = parseInt(selAno.value);
+        const competenciaSelecionada = `${ano}-${String(mes).padStart(2, '0')}`;
+        const ehMesAtual = competenciaSelecionada === competenciaAtualBrasilia();
         const meusAtendimentos = todosAtendimentos.filter(a => {
             if (a.atendente !== usuarioLogado) return false;
             const d = bsbDate(a.data || a.dataHora || 0);
@@ -794,7 +837,9 @@
         document.getElementById('secaoFalta').innerHTML = '';
 
         if (segmentos.length === 0) {
-            document.getElementById('secaoDepositos').innerHTML = carryOver !== 0
+            document.getElementById('secaoDepositos').innerHTML = ehMesAtual
+                ? `<div class="secao">${carryOverHTML}${buildSaldoOficialHTML()}</div>`
+                : carryOver !== 0
                 ? `<div class="secao">${carryOverHTML}</div>`
                 : `<div class="vazio-msg">Nenhuma movimentação registrada ainda.</div>`;
             return;
@@ -820,7 +865,7 @@
                 if (segTotal > 0 || valorDep > 0) {
                     htmlItems.push(buildGreenCard(Math.max(0, segTotal), valorDep, formatarDataBR(ultimaDataSeg), seg.deposito.deps));
                 }
-            } else if (segTotal > 0) {
+            } else if (segTotal > 0 && !ehMesAtual) {
                 // Segmento aberto: só mostra se ainda há saldo a depositar
                 htmlItems.push(`
                     <div class="card-falta card-falta-pendente">
@@ -831,6 +876,8 @@
                     </div>`);
             }
         }
+
+        if (ehMesAtual) htmlItems.push(buildSaldoOficialHTML());
 
         document.getElementById('secaoDepositos').innerHTML = `<div class="secao">${carryOverHTML}${htmlItems.join('')}</div>`;
     }
@@ -1047,7 +1094,15 @@
     atualizarFormVisivel();
 
     pararEscutaDepositos = dbEscutarDepositos(usuarioLogado, (lista) => {
-        todosDepositos = Array.isArray(lista) ? lista : [];
+        const novaLista = Array.isArray(lista) ? lista : [];
+        const novaAssinatura = obterAssinaturaSaldoDepositos(novaLista);
+        if (assinaturaSaldoDepositos !== null &&
+            novaAssinatura !== assinaturaSaldoDepositos &&
+            resumoOficialCarregado) {
+            resumoOficialAtualizando = true;
+        }
+        assinaturaSaldoDepositos = novaAssinatura;
+        todosDepositos = novaLista;
         const atual = `${selAno.value}-${String(selMes.value).padStart(2, '0')}`;
         mesesDisponiveis = obterMesesDisponiveis();
         if (mesesDisponiveis.length && !mesesDisponiveis.includes(atual)) {
@@ -1070,9 +1125,17 @@
         renderizarFaltaEDepositos();
     });
 
+    pararEscutaResumoOficial = dbEscutarResumoDepositos(usuarioLogado, (resumo) => {
+        resumoOficialCarregado = true;
+        resumoOficialAtualizando = false;
+        resumoOficialDepositos = resumo;
+        renderizarFaltaEDepositos();
+    });
+
     window.addEventListener('beforeunload', () => {
         if (typeof pararEscutaDepositos === 'function') pararEscutaDepositos();
         if (typeof pararEscutaResumosMensais === 'function') pararEscutaResumosMensais();
+        if (typeof pararEscutaResumoOficial === 'function') pararEscutaResumoOficial();
     });
 </script>
 </body>
