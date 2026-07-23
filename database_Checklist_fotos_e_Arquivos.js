@@ -152,6 +152,34 @@ export async function dbAdicionarItemChecklist(maquinaId, descricao, criadoPor =
     return { firebaseUrl: novoRef.key, ...dados };
 }
 
+export async function dbEditarItemChecklist(maquinaId, itemId, descricao) {
+    const idMaquina = _validarChaveChecklist(maquinaId, 'Identificador da máquina');
+    const idItem = _validarChaveChecklist(itemId, 'Identificador da informação');
+    const descricaoLimpa = String(descricao || '').replace(/\s+/g, ' ').trim();
+    if (descricaoLimpa.length < 2 || descricaoLimpa.length > 240) {
+        throw new Error('Informe uma descrição entre 2 e 240 caracteres.');
+    }
+
+    const itensRef = ref(db, `${CHECKLISTS_ROOT}/maquinas/${idMaquina}/itens`);
+    const snapshot = await get(itensRef);
+    const itens = snapshot.val() || {};
+    if (!itens[idItem]) {
+        throw new Error('Essa informação não foi encontrada no checklist.');
+    }
+
+    const descricaoNormalizada = _normalizarNomeMaquinaChecklist(descricaoLimpa);
+    const itemDuplicado = Object.entries(itens).some(([id, item]) =>
+        id !== idItem && _normalizarNomeMaquinaChecklist(item?.descricao) === descricaoNormalizada
+    );
+    if (itemDuplicado) {
+        throw new Error('Essa informação já existe no checklist.');
+    }
+
+    await update(ref(db, `${CHECKLISTS_ROOT}/maquinas/${idMaquina}/itens/${idItem}`), {
+        descricao: descricaoLimpa
+    });
+}
+
 export async function dbAtualizarOrdemItensChecklist(maquinaId, itensIdsOrdenados) {
     const idMaquina = _validarChaveChecklist(maquinaId, 'Identificador da máquina');
     const ids = Array.isArray(itensIdsOrdenados)
