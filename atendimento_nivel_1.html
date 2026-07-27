@@ -775,7 +775,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFotoComThumb, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbVerificarELiberarRota, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
+    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbEscutarColaboradores, dbGerarIdAtendimento, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFotoComThumb, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbVerificarELiberarRota, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
     import { enfileirarAtendimento, salvarFotosPendentesUpload } from './offline-sync.js';
 
     let listaClientes = [];
@@ -2410,7 +2410,11 @@ function obterIdAtendimentoEmEdicao() {
                     await window.playAlert("📵 Sem internet — não é possível editar um atendimento já enviado.\nConecte-se e tente novamente.");
                     return;
                 }
-                await enfileirarAtendimento(prepararAtendimentoOfflineComFotosBase64(dadosAtendimento, fotosPendentesUpload));
+                const atendimentoServidorId = dbGerarIdAtendimento();
+                await enfileirarAtendimento(
+                    prepararAtendimentoOfflineComFotosBase64(dadosAtendimento, fotosPendentesUpload),
+                    atendimentoServidorId
+                );
             } else {
                 const atendimentoSalvoId = await dbSalvarAtendimento(dadosAtendimento, atendimentoEmEdicaoId || null);
                 if (fotosPendentesUpload.length > 0) {

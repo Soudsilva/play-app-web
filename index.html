@@ -448,7 +448,7 @@
 </script>
 
 <script type="module">
-    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFotoComThumb, dbEscutarResumoBalanco, dbExisteContestacaoAtendimentoDoUsuario, dbEscutarResumoContestacaoAtendimento, dbAtualizarFotoAtendimentoPendente } from './database.js';
+    import { dbEscutarColaboradores, dbGerarIdAtendimento, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFotoComThumb, dbEscutarResumoBalanco, dbExisteContestacaoAtendimentoDoUsuario, dbEscutarResumoContestacaoAtendimento, dbAtualizarFotoAtendimentoPendente } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
     import { sincronizarPendentes, sincronizarFotosPendentes } from './offline-sync.js';
 
@@ -593,7 +593,12 @@
         atualizarEstadoBotaoRotas();
     }
     async function sincronizarEnviosPendentesIndex() {
-        const n = await sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico);
+        const n = await sincronizarPendentes(
+            storageSalvarFotoComThumb,
+            dbSalvarAtendimento,
+            dbSincronizarProdutosAtendimentoNoHistorico,
+            dbGerarIdAtendimento
+        );
         const fotos = await sincronizarFotosPendentes(storageSalvarFotoComThumb, dbAtualizarFotoAtendimentoPendente);
         return { atendimentos: n, fotos: Number(fotos?.ok || 0) };
     }

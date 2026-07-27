@@ -1218,6 +1218,16 @@ export async function dbRemoverContestacao(id) {
     await _removerContestacaoAtendimentoPendente(atendente, id);
 }
 
+export function dbGerarIdAtendimento() {
+    // push() sem valor apenas reserva uma chave nativa; não grava dados no Firebase.
+    const novaReferencia = push(ref(db, 'atendimentos'));
+    const atendimentoId = String(novaReferencia?.key || '').trim();
+    if (!atendimentoId) {
+        throw new Error('Não foi possível gerar o ID do atendimento.');
+    }
+    return atendimentoId;
+}
+
 export async function dbSalvarAtendimento(atendimento, idExistente = null) {
     try {
         let atendimentoId = String(idExistente || '').trim();

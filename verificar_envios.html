@@ -582,7 +582,7 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbEscutarHistoricoBalancoDoUsuario, dbResponderContestacaoAtendimento, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFotoComThumb, dbAtualizarFotoAtendimentoPendente } from './database.js';
+    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbEscutarHistoricoBalancoDoUsuario, dbResponderContestacaoAtendimento, dbGerarIdAtendimento, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFotoComThumb, dbAtualizarFotoAtendimentoPendente } from './database.js';
     import { listarPendentes, listarFotosPendentesUpload, sincronizarPendentes, sincronizarFotosPendentes } from './offline-sync.js';
 
     // Pega quem estÃ¡ logado no celular no momento
@@ -762,7 +762,12 @@
         reenviandoPendencias = true;
         renderizarPendenciasLocais('Reenviando pendências, uma por vez...');
         try {
-            const enviadosAtendimentos = await sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico);
+            const enviadosAtendimentos = await sincronizarPendentes(
+                storageSalvarFotoComThumb,
+                dbSalvarAtendimento,
+                dbSincronizarProdutosAtendimentoNoHistorico,
+                dbGerarIdAtendimento
+            );
             const enviadosFotos = await sincronizarFotosPendentes(storageSalvarFotoComThumb, dbAtualizarFotoAtendimentoPendente);
             await carregarPendenciasLocais();
             const totalEnviado = Number(enviadosAtendimentos || 0) + Number(enviadosFotos?.ok || 0);
