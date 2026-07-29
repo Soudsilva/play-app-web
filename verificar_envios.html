@@ -27,6 +27,35 @@
         .card-envio.contestado {
             border-left-color: #ff9800;
         }
+        .card-envio.aguardando-carregamento {
+            position: relative;
+            overflow: hidden;
+        }
+        .card-envio.aguardando-carregamento::after {
+            content: attr(data-carimbo-carregamento);
+            position: absolute;
+            z-index: 8;
+            top: 50%;
+            left: 50%;
+            width: max-content;
+            max-width: 82%;
+            padding: 9px 16px;
+            border: 3px solid rgba(255, 138, 128, 0.9);
+            border-radius: 8px;
+            background: rgba(4, 45, 134, 0.78);
+            color: #ff8a80;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+            font-size: clamp(16px, 4.7vw, 22px);
+            font-weight: 900;
+            letter-spacing: 1px;
+            line-height: 1.1;
+            text-align: center;
+            text-transform: uppercase;
+            transform: translate(-50%, -50%) rotate(-8deg);
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
         .contestacao-chat {
             margin-top: 10px;
             padding-top: 8px;
@@ -600,6 +629,9 @@
     let atendimentosPendentesLocais = [];
     let fotosPendentesLocais = [];
     let reenviandoPendencias = false;
+    let timerNovaTentativaPendencias = null;
+    let indiceAtrasoNovaTentativaPendencias = 0;
+    const ATRASOS_NOVA_TENTATIVA_PENDENCIAS = [5000, 15000, 30000, 60000];
     const carregamentosEnvios = {
         historicoBalanco: false,
         colaboradores: false,
@@ -703,13 +735,138 @@
         ]);
         atendimentosPendentesLocais = atendimentos || [];
         fotosPendentesLocais = fotos || [];
+        renderizarEnvios();
         renderizarPendenciasLocais();
+    }
+
+    function obterIdServidorPendenciaLocal(item) {
+        return String(item?.atendimentoServidorId || '').trim();
+    }
+
+    function envioPossuiFotoPendente(envio) {
+        const fotos = envio?.fotos || {};
+        return envio?.fotosPendentes === true
+            || fotos?.fichaPendente === true
+            || (Array.isArray(fotos?.maquinas) && fotos.maquinas.some(foto => foto?.uploadPendente === true))
+            || (Array.isArray(fotos?.pix) && fotos.pix.some(foto => foto?.uploadPendente === true));
+    }
+
+    function montarAtendimentosParaExibicao() {
+        const pendenciasPorIdServidor = new Map();
+        atendimentosPendentesLocais.forEach(item => {
+            const idServidor = obterIdServidorPendenciaLocal(item);
+            if (!idServidor) return;
+            if (!pendenciasPorIdServidor.has(idServidor)) {
+                pendenciasPorIdServidor.set(idServidor, []);
+            }
+            pendenciasPorIdServidor.get(idServidor).push(item);
+        });
+
+        const idsComFotoLocalPendente = new Set(
+            fotosPendentesLocais
+                .map(item => String(item?.atendimentoId || '').trim())
+                .filter(Boolean)
+        );
+        const pendenciasJaCombinadas = new Set();
+
+        const enviadosDoServidor = atendimentosSalvos.map(envio => {
+            const idServidor = String(envio?.firebaseUrl || '').trim();
+            const pendenciasDoEnvio = idServidor ? (pendenciasPorIdServidor.get(idServidor) || []) : [];
+            const pendencia = pendenciasDoEnvio[pendenciasDoEnvio.length - 1] || null;
+            const aguardandoFoto = idServidor && (
+                idsComFotoLocalPendente.has(idServidor)
+                || envioPossuiFotoPendente(envio)
+            );
+            if (!pendencia && !aguardandoFoto) return envio;
+
+            pendenciasDoEnvio.forEach(item => pendenciasJaCombinadas.add(item?.id));
+            const dadosLocais = pendencia?.dados || {};
+            return {
+                ...dadosLocais,
+                ...envio,
+                fotos: {
+                    ...(dadosLocais?.fotos || {}),
+                    ...(envio?.fotos || {})
+                },
+                produtos: Array.isArray(dadosLocais?.produtos)
+                    ? dadosLocais.produtos
+                    : (Array.isArray(envio?.produtos) ? envio.produtos : []),
+                _aguardandoCarregamento: true,
+                _pendenciaLocalId: pendencia?.id || null
+            };
+        });
+
+        const idsServidorLocaisJaExibidos = new Set();
+        const enviadosSomenteLocais = atendimentosPendentesLocais
+            .filter(item => {
+                if (pendenciasJaCombinadas.has(item?.id)) return false;
+                const idServidor = obterIdServidorPendenciaLocal(item);
+                if (!idServidor) return true;
+                if (idsServidorLocaisJaExibidos.has(idServidor)) return false;
+                idsServidorLocaisJaExibidos.add(idServidor);
+                return true;
+            })
+            .map(item => {
+                const dados = item?.dados || {};
+                return {
+                    ...dados,
+                    firebaseUrl: obterIdServidorPendenciaLocal(item),
+                    _aguardandoCarregamento: true,
+                    _pendenciaLocalId: item?.id || null
+                };
+            });
+
+        return [...enviadosDoServidor, ...enviadosSomenteLocais];
+    }
+
+    function existemPendenciasLocaisParaReenvio() {
+        return atendimentosPendentesLocais.length > 0 || fotosPendentesLocais.length > 0;
+    }
+
+    function cancelarNovaTentativaPendencias(reiniciarAtraso = false) {
+        if (timerNovaTentativaPendencias !== null) {
+            clearTimeout(timerNovaTentativaPendencias);
+            timerNovaTentativaPendencias = null;
+        }
+        if (reiniciarAtraso) {
+            indiceAtrasoNovaTentativaPendencias = 0;
+        }
+    }
+
+    function agendarNovaTentativaPendencias() {
+        if (
+            !navigator.onLine
+            || reenviandoPendencias
+            || timerNovaTentativaPendencias !== null
+            || !existemPendenciasLocaisParaReenvio()
+        ) {
+            return;
+        }
+
+        const indice = Math.min(
+            indiceAtrasoNovaTentativaPendencias,
+            ATRASOS_NOVA_TENTATIVA_PENDENCIAS.length - 1
+        );
+        const atraso = ATRASOS_NOVA_TENTATIVA_PENDENCIAS[indice];
+        indiceAtrasoNovaTentativaPendencias = Math.min(
+            indice + 1,
+            ATRASOS_NOVA_TENTATIVA_PENDENCIAS.length - 1
+        );
+        timerNovaTentativaPendencias = window.setTimeout(() => {
+            timerNovaTentativaPendencias = null;
+            tentarReenviarPendenciasSeOnline().catch(erro => {
+                console.warn('Nova tentativa de envio pendente falhou:', erro);
+            });
+        }, atraso);
     }
 
     async function tentarReenviarPendenciasSeOnline() {
         await carregarPendenciasLocais();
         if (!navigator.onLine || reenviandoPendencias) return;
-        if (atendimentosPendentesLocais.length === 0 && fotosPendentesLocais.length === 0) return;
+        if (!existemPendenciasLocaisParaReenvio()) {
+            cancelarNovaTentativaPendencias(true);
+            return;
+        }
         await reenviarPendenciasLocais();
     }
 
@@ -756,11 +913,14 @@
     async function reenviarPendenciasLocais() {
         if (reenviandoPendencias) return;
         if (!navigator.onLine) {
+            cancelarNovaTentativaPendencias();
             renderizarPendenciasLocais('Sem internet. As pendências continuam salvas neste aparelho.');
             return;
         }
+        cancelarNovaTentativaPendencias();
         reenviandoPendencias = true;
         renderizarPendenciasLocais('Reenviando pendências, uma por vez...');
+        let houveProgresso = false;
         try {
             const enviadosAtendimentos = await sincronizarPendentes(
                 storageSalvarFotoComThumb,
@@ -771,6 +931,7 @@
             const enviadosFotos = await sincronizarFotosPendentes(storageSalvarFotoComThumb, dbAtualizarFotoAtendimentoPendente);
             await carregarPendenciasLocais();
             const totalEnviado = Number(enviadosAtendimentos || 0) + Number(enviadosFotos?.ok || 0);
+            houveProgresso = totalEnviado > 0;
             if (totalEnviado > 0) {
                 renderizarPendenciasLocais(`${totalEnviado} pendência${totalEnviado === 1 ? '' : 's'} enviada${totalEnviado === 1 ? '' : 's'}.`);
                 await carregarPendenciasLocais();
@@ -782,6 +943,14 @@
         } finally {
             reenviandoPendencias = false;
             await carregarPendenciasLocais();
+            if (houveProgresso) {
+                indiceAtrasoNovaTentativaPendencias = 0;
+            }
+            if (navigator.onLine && existemPendenciasLocaisParaReenvio()) {
+                agendarNovaTentativaPendencias();
+            } else if (!existemPendenciasLocaisParaReenvio()) {
+                cancelarNovaTentativaPendencias(true);
+            }
         }
     }
 
@@ -1621,6 +1790,10 @@
     }
 
     function podeAlterarEnvio(envio) {
+        if (envio?._aguardandoCarregamento === true) {
+            return false;
+        }
+
         if (!colaboradoresCarregados) {
             return false;
         }
@@ -1704,12 +1877,17 @@
             return;
         }
 
-        if (!todosEnviosCarregados()) {
+        const atendimentosParaExibicao = montarAtendimentosParaExibicao();
+        const possuiPendenciaLocalDoUsuario = atendimentosParaExibicao.some(envio =>
+            envio?._aguardandoCarregamento === true && pertenceAoUsuario(envio)
+        );
+
+        if (!todosEnviosCarregados() && !possuiPendenciaLocalDoUsuario) {
             renderizarCarregandoEnvios(container);
             return;
         }
 
-        const enviosAtendimento = atendimentosSalvos
+        const enviosAtendimento = atendimentosParaExibicao
             .filter(a => {
                 if (!pertenceAoUsuario(a)) return false;
                 if (ehMovimentoEstoque(a)) return false;
@@ -1765,6 +1943,10 @@
             }
             const card = document.createElement('div');
             card.className = 'card-envio';
+            if (envio?._aguardandoCarregamento === true) {
+                card.classList.add('aguardando-carregamento');
+                card.dataset.carimboCarregamento = 'Aguardando carregamento';
+            }
 
             if (envio?.tipoLinhaTempo === 'cadastro_pix') {
                 const clienteNome = envio?.cliente?.nome || 'Cliente Desconhecido';
@@ -1848,7 +2030,15 @@
                     htmlProdutos += `<div class="info-linha info-linha-livre"><span class="item-estoque-nome">${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
                 });
             } else if (!ehMovimentoEstoque(envio) && !ehRegistroManutencao(envio)) {
-                const produtosAtend = mapaMovimentacoesPorAtendimento[envio.firebaseUrl] || [];
+                const produtosAtend = envio?._aguardandoCarregamento === true && Array.isArray(envio?.produtos)
+                    ? envio.produtos
+                        .map(produto => ({
+                            nome: String(produto?.nome || '').trim(),
+                            movimento: Math.abs(Number(produto?.quantidade || produto?.movimento || 0)),
+                            totalApos: null
+                        }))
+                        .filter(produto => produto.nome && produto.movimento > 0)
+                    : (mapaMovimentacoesPorAtendimento[envio.firebaseUrl] || []);
                 if (produtosAtend.length > 0) {
                     htmlProdutos += `<div class="secao-titulo">Produtos</div>`;
                     produtosAtend.forEach(p => {
@@ -2100,9 +2290,29 @@
         marcarEnviosCarregados('clientes');
     });
 
-    carregarPendenciasLocais().catch(() => {});
+    tentarReenviarPendenciasSeOnline().catch(erro => {
+        console.warn('Sincronização inicial de pendências falhou:', erro);
+        agendarNovaTentativaPendencias();
+    });
     window.addEventListener('online', () => {
-        reenviarPendenciasLocais().catch(() => {});
+        cancelarNovaTentativaPendencias(true);
+        tentarReenviarPendenciasSeOnline().catch(erro => {
+            console.warn('Sincronização ao reconectar falhou:', erro);
+            agendarNovaTentativaPendencias();
+        });
+    });
+    window.addEventListener('offline', () => {
+        cancelarNovaTentativaPendencias();
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return;
+        tentarReenviarPendenciasSeOnline().catch(erro => {
+            console.warn('Sincronização ao retornar para a tela falhou:', erro);
+            agendarNovaTentativaPendencias();
+        });
+    });
+    window.addEventListener('pagehide', () => {
+        cancelarNovaTentativaPendencias();
     });
 
     window.editarEnvio = function(envio) {
