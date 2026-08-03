@@ -42,35 +42,6 @@
             width: 100%;
             align-items: center;
         }
-        .equip-retirada-loja {
-            display: none;
-            width: 100%;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin: 0;
-            padding: 8px 10px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.28);
-            background: transparent;
-            color: #ffffff;
-            font-size: 15px;
-            font-weight: 700;
-            text-align: center;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .equip-retirada-loja input {
-            width: 18px;
-            height: 18px;
-            margin: 0;
-            padding: 0;
-            flex: 0 0 auto;
-        }
-        .equip-retirada-loja.visivel {
-            display: flex;
-        }
         .produtos-instalacao-card {
             margin-bottom: 12px;
             padding: 12px;
@@ -1012,8 +983,7 @@
             nome: grupo.querySelector('.equip-select')?.value.trim() || "",
             qtd: grupo.querySelector('.qtd-input')?.value.trim() || "",
             pix: grupo.querySelector('.pix-input')?.value.trim() || "",
-            contador: grupo.querySelector('.contador-input')?.value.trim() || "",
-            contabilizarFinanceiro: grupo.querySelector('.equip-financeiro-check')?.checked !== false
+            contador: grupo.querySelector('.contador-input')?.value.trim() || ""
         }));
     }
 
@@ -1150,17 +1120,10 @@
         return obterEquipamentosDetalhadosDoFormulario().some(item => String(item.nome || "").trim());
     }
 
-    function haMaquinaRetiradaDaLojaParaInstalacao() {
-        return obterEquipamentosDetalhadosDoFormulario().some(item =>
-            String(item.nome || "").trim() && item.contabilizarFinanceiro !== false
-        );
-    }
-
     function validarProdutosObrigatoriosPorMaquina() {
         if (!haMaquinaPreenchidaNoFormulario()) return [];
 
         const produtos = coletarProdutosInstalacaoParaSalvar();
-        if (!haMaquinaRetiradaDaLojaParaInstalacao()) return produtos;
         if (produtos.length === 0) {
             throw new Error("Como houve inclusão de máquina, informe os produtos utilizados.");
         }
@@ -1181,8 +1144,7 @@
                 nome: String(item?.nome || "").trim(),
                 qtd: String(item?.qtd || item?.quantidade || "1").trim() || "1",
                 pix: String(item?.pix || "").trim(),
-                contador: String(item?.contador || "").trim(),
-                contabilizarFinanceiro: item?.contabilizarFinanceiro !== false
+                contador: String(item?.contador || "").trim()
             }));
         }
 
@@ -1894,19 +1856,6 @@
         document.querySelector('.card-fotos-instalacao')?.style.setProperty('display', display);
     }
 
-    function atendimentoEditandoCliente() {
-        return !modoSolicitar
-            && perfilUsuarioLogado.includes('atendimento')
-            && !perfilUsuarioLogado.includes('gestao');
-    }
-
-    function atualizarVisibilidadeFinanceiroEquipamentos() {
-        const exibir = atendimentoEditandoCliente();
-        document.querySelectorAll('.equip-retirada-loja').forEach(label => {
-            label.classList.toggle('visivel', exibir);
-        });
-    }
-
     function clienteTemRotaSelecionadaNaSessao() {
         const rotaCliente = String(clienteEmEdicao?.rota || "").trim();
         if (!editId || !rotaCliente || !sessaoRotasAtiva?.rotas) return false;
@@ -1944,7 +1893,6 @@
         perfilUsuarioLogado = String(usuarioAtual?.nivel_completo || "");
         perfilCarregado = true;
         aplicarVisibilidadeGestorEdicao();
-        atualizarVisibilidadeFinanceiroEquipamentos();
         if (editId && clienteEmEdicao && !usuarioPodeEditarCliente(clienteEmEdicao)) {
             bloquearEdicaoSemPermissao();
         }
@@ -1987,12 +1935,11 @@
         atualizarOpcoesProdutosInstalacao();
     });
 
-    window.adicionarLinhaEquipamento = function(nome = "", pix = "", qtd = "", contador = "", rowId = "", contabilizarFinanceiro = true) {
+    window.adicionarLinhaEquipamento = function(nome = "", pix = "", qtd = "", contador = "", rowId = "") {
         const container = document.getElementById('container-equipamentos');
         const novoGrupo = document.createElement('div');
         novoGrupo.className = 'equip-group';
         novoGrupo.dataset.equipRowId = criarRowIdEquipamento(rowId);
-        const checkedFinanceiro = contabilizarFinanceiro !== false ? 'checked' : '';
         
         let options = '<option value="">Selecione a máquina...</option>';
         maquinasDisponiveis.forEach(m => {
@@ -2008,14 +1955,9 @@
                 <input class="pix-input" value="${pix}" placeholder="Pix" inputmode="numeric" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);" style="flex: 1.2; margin-bottom:0; border: 2px solid #4caf50; text-align: center; padding: 10px 5px;">
                 <input class="contador-input" value="${contador}" placeholder="Cont." inputmode="numeric" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);" style="flex: 1.7; margin-bottom:0; border: 2px solid #ffeb3b; text-align: center; padding: 10px 5px;">
             </div>
-            <label class="equip-retirada-loja">
-                <input type="checkbox" class="equip-financeiro-check" ${checkedFinanceiro}>
-                <span>Retirou da loja para esta instalação</span>
-            </label>
         `;
         container.appendChild(novoGrupo);
         normalizarLinhasEquipamento();
-        atualizarVisibilidadeFinanceiroEquipamentos();
     }
 
     /* --- PARTE A: DETECTAR EDIÇÃO ---
@@ -2227,8 +2169,7 @@
                             item.pix,
                             item.qtd,
                             item.contador,
-                            item.rowId,
-                            item.contabilizarFinanceiro !== false
+                            item.rowId
                         );
                     });
                     adicionarLinhaEquipamento(); // Adiciona uma linha vazia no final
@@ -2425,8 +2366,7 @@
                         nome: item.nome,
                         qtd: item.qtd || "1",
                         pix: item.pix,
-                        contador: item.contador,
-                        contabilizarFinanceiro: item.contabilizarFinanceiro !== false
+                        contador: item.contador
                     };
                 });
 

@@ -2987,23 +2987,6 @@ function _somarPerfisRemuneracao(perfis) {
     return Object.values(perfis || {}).reduce((soma, item) => soma + _parseNumeroRemuneracao(item?.valor), 0);
 }
 
-function _obterDiasUteisMesAnoRemuneracao(mesAno) {
-    const partes = String(mesAno || '').match(/^(\d{4})-(\d{2})$/);
-    if (!partes) return 0;
-
-    const ano = Number(partes[1]);
-    const mes = Number(partes[2]);
-    if (!ano || !mes) return 0;
-
-    let total = 0;
-    const ultimoDia = new Date(ano, mes, 0).getDate();
-    for (let dia = 1; dia <= ultimoDia; dia += 1) {
-        const diaSemana = new Date(ano, mes - 1, dia).getDay();
-        if (diaSemana !== 0 && diaSemana !== 6) total += 1;
-    }
-    return total;
-}
-
 function _normalizarFaltasRemuneracao(faltas, mesAno) {
     const datasOrigem = faltas?.datas && typeof faltas.datas === 'object' ? faltas.datas : {};
     const datas = {};
@@ -3018,19 +3001,6 @@ function _normalizarFaltasRemuneracao(faltas, mesAno) {
         quantidade: Object.keys(datas).length,
         datas
     };
-}
-
-function _calcularDescontoFaltasProducaoEquipamentos(valorIntegral, faltas, mesAno) {
-    const valor = _parseNumeroRemuneracao(valorIntegral);
-    if (valor <= 0) return 0;
-
-    const faltasNormalizadas = _normalizarFaltasRemuneracao(faltas, mesAno);
-    const quantidade = _parseNumeroRemuneracao(faltasNormalizadas.quantidade);
-    const diasUteis = _obterDiasUteisMesAnoRemuneracao(mesAno);
-    if (quantidade <= 0 || diasUteis <= 0) return 0;
-
-    const faltasConsideradas = Math.min(quantidade, diasUteis);
-    return Math.round(valor * (faltasConsideradas / diasUteis));
 }
 
 async function _tentarRecalcularRemuneracoes() {
@@ -3048,7 +3018,6 @@ export async function dbRecalcularRemuneracoes() {
             clientesSnap,
             atendimentosSnap,
             historicoSnap,
-            historicoBalancoSnap,
             estoqueSnap,
             remuneracaoAtualSnap
         ] = await Promise.all([
@@ -3056,7 +3025,6 @@ export async function dbRecalcularRemuneracoes() {
             get(ref(db, 'clientes')),
             get(ref(db, 'atendimentos')),
             get(ref(db, 'historico_estoque')),
-            get(ref(db, 'movimentacao_balanco_historico')),
             get(ref(db, 'estoque')),
             get(ref(db, 'remuneracao/mensal'))
         ]);
@@ -3065,7 +3033,6 @@ export async function dbRecalcularRemuneracoes() {
         const clientesData = clientesSnap.exists() ? (clientesSnap.val() || {}) : {};
         const atendimentosData = atendimentosSnap.exists() ? (atendimentosSnap.val() || {}) : {};
         const historicoData = historicoSnap.exists() ? (historicoSnap.val() || {}) : {};
-        const historicoBalancoData = historicoBalancoSnap.exists() ? (historicoBalancoSnap.val() || {}) : {};
         const estoqueData = estoqueSnap.exists() ? (estoqueSnap.val() || {}) : {};
         const remuneracaoAtualData = remuneracaoAtualSnap.exists() ? (remuneracaoAtualSnap.val() || {}) : {};
 
@@ -3073,25 +3040,15 @@ export async function dbRecalcularRemuneracoes() {
         const clientes = Object.keys(clientesData).map(key => ({ firebaseUrl: key, ...clientesData[key] }));
         const atendimentos = Object.keys(atendimentosData).map(key => ({ firebaseUrl: key, ...atendimentosData[key] }));
         const historico = Object.keys(historicoData).map(key => ({ firebaseUrl: key, ...historicoData[key] }));
-        const historicoBalanco = Object.entries(historicoBalancoData)
-            .filter(([usuarioKey]) => usuarioKey !== MOVIMENTACOES_POR_USUARIO_MES_CAMPO)
-            .flatMap(([usuarioKey, movimentos]) =>
-                Object.entries(movimentos || {}).map(([firebaseUrl, mov]) => ({ usuarioKey, firebaseUrl, ...mov }))
-            );
         const estoque = Object.keys(estoqueData).map(key => ({ firebaseUrl: key, ...estoqueData[key] }));
 
         const mapaClientesRepresentante = _criarMapaClientesRepresentante(clientes);
-        const mapaValoresEstoque = {};
-        const mapaValoresEstoquePorChave = {};
         const mapaValoresPecas = {};
 
         estoque.forEach(item => {
             const nome = String(item?.nome || '').trim();
             if (!nome) return;
             const valor = _parseNumeroRemuneracao(item?.valorEquipamento);
-            mapaValoresEstoque[_normalizarNomeRemuneracao(nome)] = valor;
-            const chaveEstoque = String(item?.firebaseUrl || '').trim();
-            if (chaveEstoque) mapaValoresEstoquePorChave[chaveEstoque] = valor;
             if (item?.categoria === 'peca') mapaValoresPecas[nome] = valor;
         });
 
@@ -3102,10 +3059,6 @@ export async function dbRecalcularRemuneracoes() {
         });
         historico.forEach(item => {
             const mesAno = _obterMesAnoRemuneracao(item?.data || item?.criado_em);
-            if (mesAno) meses.add(mesAno);
-        });
-        historicoBalanco.forEach(item => {
-            const mesAno = _obterMesAnoRemuneracao(item?.timestamp || item?.data || item?.criado_em);
             if (mesAno) meses.add(mesAno);
         });
         Object.keys(remuneracaoAtualData || {}).forEach(mesAno => {
@@ -3126,24 +3079,7 @@ export async function dbRecalcularRemuneracoes() {
             const historicoMes = historico.filter(item =>
                 _obterMesAnoRemuneracao(item?.data || item?.criado_em) === mesAno
             );
-            const historicoBalancoMes = historicoBalanco.filter(item =>
-                _obterMesAnoRemuneracao(item?.timestamp || item?.data || item?.criado_em) === mesAno
-            );
-
             const baseGlobal = financeirosMes.reduce((soma, item) => soma + _obterSaldoParcialRemuneracao(item?.financeiro), 0);
-            const baseProducaoEquipamentosGeral = historicoBalancoMes.reduce((soma, item) => {
-                if (item?.cancelado) return soma;
-                if (!_ehProducaoEquipamentoRemuneravel(item)) return soma;
-                if (String(item?.categoria || '').trim() !== 'maquina') return soma;
-                const qtd = Math.abs(_parseNumeroRemuneracao(item?.movimento));
-                if (qtd <= 0 || _parseNumeroRemuneracao(item?.movimento) >= 0) return soma;
-                const itemChave = String(item?.itemChave || item?.refId || '').trim();
-                const nomeItem = String(item?.itemNome || '').trim();
-                const valorUnit = _parseNumeroRemuneracao(item?.valorUnitario)
-                    || _parseNumeroRemuneracao(mapaValoresEstoquePorChave[itemChave])
-                    || _parseNumeroRemuneracao(mapaValoresEstoque[_normalizarNomeRemuneracao(nomeItem)]);
-                return soma + (qtd * valorUnit);
-            }, 0);
             const registrosMes = {};
 
             for (const colab of colaboradores) {
@@ -3232,19 +3168,6 @@ export async function dbRecalcularRemuneracoes() {
                     });
                 }
 
-                if (colab?.producaoEquipamentos === true) {
-                    const percentualEquip = _parseNumeroRemuneracao(colab?.bonusManutencao);
-                    const totalEquip = Math.round(baseProducaoEquipamentosGeral * percentualEquip / 100);
-                    if (totalEquip > 0) {
-                        _registrarPerfilRemuneracao(perfis, 'producao_equipamentos', {
-                            valor: totalEquip,
-                            percentual: percentualEquip,
-                            base: Math.round(baseProducaoEquipamentosGeral),
-                            atualizadoEm
-                        });
-                    }
-                }
-
                 if (colab?.producaoPecas === true) {
                     let totalPecas = 0;
                     historicoMes.forEach(item => {
@@ -3273,8 +3196,7 @@ export async function dbRecalcularRemuneracoes() {
                 }
 
                 const faltasAtuais = _normalizarFaltasRemuneracao(remuneracaoAtualData?.[mesAno]?.[usuarioKey]?.faltas, mesAno);
-                const valorIntegralEquipamentos = _parseNumeroRemuneracao(perfis?.producao_equipamentos?.valor);
-                const descontoFaltas = _calcularDescontoFaltasProducaoEquipamentos(valorIntegralEquipamentos, faltasAtuais, mesAno);
+                const descontoFaltas = 0;
                 const temFaltas = _parseNumeroRemuneracao(faltasAtuais.quantidade) > 0;
                 if (temFaltas) {
                     faltasAtuais.desconto = descontoFaltas;
@@ -3809,15 +3731,6 @@ function _normalizarConsumosSaldosTestados(valor) {
     );
 }
 
-function _ehProducaoEquipamentoRemuneravel(item) {
-    const origem = String(item?.origemRegistro || '').trim();
-    const tipo = String(item?.tipo || '').trim();
-    return (
-        (origem === 'cadastro_cliente' && tipo === 'cadastro_cliente_adicao') ||
-        (origem === 'manutencao' && tipo === 'manutencao_adicao')
-    );
-}
-
 const RESUMO_BALANCO_ID = 'resumo_balanco';
 
 function _dataBrasiliaISOData(date = new Date()) {
@@ -4284,8 +4197,7 @@ export async function dbSincronizarItensManutencaoNoHistorico(atendimentoId, ate
                 itemId: String(item?.itemId || item?.itemChave || item?.refId || '').trim(),
                 categoria: String(item?.categoria || 'maquina').trim() || 'maquina',
                 nome: String(item?.nome || '').trim(),
-                quantidade: Number(item?.qtd || item?.quantidade || 0),
-                contabilizarFinanceiro: item?.contabilizarFinanceiro !== false
+                quantidade: Number(item?.qtd || item?.quantidade || 0)
             }))
             .filter(item => item.nome && item.quantidade > 0);
 
@@ -4300,7 +4212,7 @@ export async function dbSincronizarItensManutencaoNoHistorico(atendimentoId, ate
                 registradoPor: atendimento?.atendente || responsavel,
                 itemNome: maquina.nome,
                 categoria: maquina.categoria,
-                tipo: maquina.contabilizarFinanceiro === false ? 'manutencao' : 'manutencao_adicao',
+                tipo: 'manutencao',
                 origemRegistro: 'manutencao',
                 itemChave: maquina.itemId,
                 movimento: -Number(maquina.quantidade || 0),
@@ -4404,8 +4316,7 @@ export async function dbSincronizarItensCadastroClienteNoHistorico(clienteId, cl
                 categoria: String(item?.categoria || 'maquina').trim() || 'maquina',
                 nome: String(item?.nome || '').trim(),
                 quantidade: Number(item?.qtd || item?.quantidade || 0),
-                tecnicoResponsavel: String(item?.tecnico || item?.tecnicoResponsavel || '').trim(),
-                contabilizarFinanceiro: item?.contabilizarFinanceiro !== false
+                tecnicoResponsavel: String(item?.tecnico || item?.tecnicoResponsavel || '').trim()
             }))
             .filter(item => item.nome && item.quantidade > 0);
 
@@ -4420,7 +4331,7 @@ export async function dbSincronizarItensCadastroClienteNoHistorico(clienteId, cl
                 registradoPor: responsavel,
                 itemNome: maquina.nome,
                 categoria: maquina.categoria,
-                tipo: maquina.contabilizarFinanceiro === false ? 'cadastro_cliente' : 'cadastro_cliente_adicao',
+                tipo: 'cadastro_cliente',
                 origemRegistro: 'cadastro_cliente',
                 itemChave: maquina.itemId,
                 movimento: -Number(maquina.quantidade || 0),

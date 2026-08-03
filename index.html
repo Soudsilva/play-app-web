@@ -996,6 +996,12 @@
             btns.financeiroProducaoEquipamentosGestor.style.display = 'flex';
         }
 
+        // Perfil Estoque: substitui o Financeiro antigo pelo New Financeiro.
+        if (perfil.includes('estoque')) {
+            btns.financeiro.style.display = 'none';
+            btns.financeiroProducaoEquipamentosGestor.style.display = 'flex';
+        }
+
         // Remuneração "Comissão Global": exibe o botão Balanço para qualquer perfil
         if (usuarioTemComissaoGlobal(usuario)) {
             btns.balanco.style.display = 'flex';
