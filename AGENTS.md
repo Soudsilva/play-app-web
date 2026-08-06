@@ -110,3 +110,4 @@ Regra obrigatória para enviar, publicar ou postar alterações:
 - Não considere apenas o deploy no Firebase como entrega completa: o código também deve ser registrado e enviado ao Git conforme o fluxo acima.
 - Quando houver alterações dentro de `functions/`, inclua esses arquivos no commit e publique também as Firebase Functions afetadas, além do Hosting quando houver arquivos do site alterados.
 - Antes do envio, confira a branch atual e garanta que o commit realmente chegará à `main`; não execute um `git push origin main` que deixe as alterações presas somente em outra branch.
+- Depois de uma publicação concluída com sucesso, não verifique a versão online automaticamente. Faça essa verificação somente quando o proprietário solicitar explicitamente.
