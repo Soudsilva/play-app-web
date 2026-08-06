@@ -236,6 +236,15 @@
     </div>
 
     <div class="secao">
+        <div class="secao-titulo">Prazo da rota selecionada</div>
+        <div class="campo">
+            <label for="prazoRotaSelecionadaDias">Dias disponíveis</label>
+            <input id="prazoRotaSelecionadaDias" type="number" min="1" step="1" inputmode="numeric">
+        </div>
+        <div class="meta">O dia da seleção conta como o primeiro. A rota é liberada após o fim do último dia.</div>
+    </div>
+
+    <div class="secao">
         <div class="secao-titulo">Manutenção automática</div>
         <div class="campo">
             <label for="diasSemVisita">Dias sem visita para criar manutenção</label>
@@ -262,6 +271,9 @@
             dias_minimos: 0,
             dias_maximos: 70
         },
+        rota_selecionada: {
+            prazo_dias: 5
+        },
         manutencao_sem_visita: {
             dias_minimos: 100
         }
@@ -273,6 +285,7 @@
         valorMinimoRota: document.getElementById('valorMinimoRota'),
         diasMinimosRota: document.getElementById('diasMinimosRota'),
         diasMaximosRota: document.getElementById('diasMaximosRota'),
+        prazoRotaSelecionadaDias: document.getElementById('prazoRotaSelecionadaDias'),
         diasSemVisita: document.getElementById('diasSemVisita'),
         btnSalvar: document.getElementById('btnSalvar'),
         btnPadrao: document.getElementById('btnPadrao')
@@ -325,6 +338,7 @@
             Number(valores?.prioridade_rota?.valor_minimo || 0),
             Number(valores?.prioridade_rota?.dias_minimos || 0),
             Number(valores?.prioridade_rota?.dias_maximos || 0),
+            Number(valores?.rota_selecionada?.prazo_dias || 0),
             Number(valores?.manutencao_sem_visita?.dias_minimos || 0)
         ].join('|');
     }
@@ -335,6 +349,9 @@
                 valor_minimo: numeroPositivo(els.valorMinimoRota.value, 'valor mínimo da rota'),
                 dias_minimos: numeroNaoNegativo(els.diasMinimosRota.value, 'dias mínimos da rota'),
                 dias_maximos: numeroPositivo(els.diasMaximosRota.value, 'dias máximos da rota')
+            },
+            rota_selecionada: {
+                prazo_dias: Math.max(1, numeroPositivo(els.prazoRotaSelecionadaDias.value, 'dias disponíveis para fazer a rota'))
             },
             manutencao_sem_visita: {
                 dias_minimos: numeroPositivo(els.diasSemVisita.value, 'dias sem visita')
@@ -358,6 +375,7 @@
         els.valorMinimoRota.value = Number(config?.prioridade_rota?.valor_minimo || PADRAO.prioridade_rota.valor_minimo);
         els.diasMinimosRota.value = Number(config?.prioridade_rota?.dias_minimos ?? PADRAO.prioridade_rota.dias_minimos);
         els.diasMaximosRota.value = Number(config?.prioridade_rota?.dias_maximos || PADRAO.prioridade_rota.dias_maximos);
+        els.prazoRotaSelecionadaDias.value = Number(config?.rota_selecionada?.prazo_dias || PADRAO.rota_selecionada.prazo_dias);
         els.diasSemVisita.value = Number(config?.manutencao_sem_visita?.dias_minimos || PADRAO.manutencao_sem_visita.dias_minimos);
 
         const atualizadoPor = String(config?.atualizado_por || '').trim();
@@ -387,6 +405,9 @@
                     valor_minimo: Number(config?.prioridade_rota?.valor_minimo || PADRAO.prioridade_rota.valor_minimo),
                     dias_minimos: Number(config?.prioridade_rota?.dias_minimos ?? PADRAO.prioridade_rota.dias_minimos),
                     dias_maximos: Number(config?.prioridade_rota?.dias_maximos || PADRAO.prioridade_rota.dias_maximos)
+                },
+                rota_selecionada: {
+                    prazo_dias: Number(config?.rota_selecionada?.prazo_dias || PADRAO.rota_selecionada.prazo_dias)
                 },
                 manutencao_sem_visita: {
                     dias_minimos: Number(config?.manutencao_sem_visita?.dias_minimos || PADRAO.manutencao_sem_visita.dias_minimos)
@@ -424,7 +445,7 @@
     }
 
     els.btnSalvar.addEventListener('click', salvar);
-    [els.valorMinimoRota, els.diasMinimosRota, els.diasMaximosRota, els.diasSemVisita].forEach(input => {
+    [els.valorMinimoRota, els.diasMinimosRota, els.diasMaximosRota, els.prazoRotaSelecionadaDias, els.diasSemVisita].forEach(input => {
         input.addEventListener('input', atualizarEstadoSalvar);
     });
     els.btnPadrao.addEventListener('click', () => {

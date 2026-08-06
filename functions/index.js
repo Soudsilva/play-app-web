@@ -11,7 +11,7 @@ admin.initializeApp({
 });
 
 const RESUMO_BALANCO_ID = "resumo_balanco";
-const CINCO_DIAS_MS = 5 * 24 * 60 * 60 * 1000;
+const PRAZO_ROTA_LEGADO_MS = 5 * 24 * 60 * 60 * 1000;
 const VALOR_MINIMO_ADIANTAR_ROTA = 1500;
 const DIAS_MAXIMOS_ADIANTAR_ROTA = 70;
 const DIAS_MINIMOS_REPOR_SEM_VISITA = 100;
@@ -935,9 +935,10 @@ exports.verificarLiberacaoRotasDiaria = onSchedule(
       totalSelecionadas += 1;
       const basePath = `selecao_rotas/ativa/rotas/${numeroRota}`;
       const selecionadaMs = timestampValido(rota.selecionada_em);
-      const validadeMaximaMs = selecionadaMs == null ?
+      const validadeMaximaGravadaMs = timestampValido(rota.validade_maxima_em);
+      const validadeMaximaMs = validadeMaximaGravadaMs ?? (selecionadaMs == null ?
         null :
-        selecionadaMs + CINCO_DIAS_MS;
+        selecionadaMs + PRAZO_ROTA_LEGADO_MS);
       const liberarMs = timestampValido(rota.liberar_em) ?? validadeMaximaMs;
       const validadeMaximaEm = isoOuNull(validadeMaximaMs);
       const liberarEm = isoOuNull(liberarMs);

@@ -5234,6 +5234,30 @@ export function dbEscutarManutencoes(callback) {
 
 /* --- FUNÇÕES PARA SELEÇÃO DE ROTAS --- */
 
+const PRAZO_ROTA_SELECIONADA_PADRAO_DIAS = 5;
+
+function _normalizarPrazoRotaSelecionadaDias(valor) {
+    const dias = Number(valor);
+    return Number.isFinite(dias) && dias > 0
+        ? Math.max(1, Math.round(dias))
+        : PRAZO_ROTA_SELECIONADA_PADRAO_DIAS;
+}
+
+function _calcularValidadeRotaSelecionadaEm(selecionadaEm, prazoDias) {
+    const dataSelecao = new Date(selecionadaEm);
+    if (Number.isNaN(dataSelecao.getTime())) return null;
+
+    const diaSelecaoBrasilia = _dataBrasiliaISOData(dataSelecao);
+    const diaLiberacaoBrasilia = _somarDiasISOData(
+        diaSelecaoBrasilia,
+        _normalizarPrazoRotaSelecionadaDias(prazoDias)
+    );
+    if (!diaLiberacaoBrasilia) return null;
+
+    const liberacao = new Date(`${diaLiberacaoBrasilia}T00:00:00-03:00`);
+    return Number.isNaN(liberacao.getTime()) ? null : liberacao.toISOString();
+}
+
 // Cria ou sobrescreve a sessão ativa de seleção de rotas
 export async function dbCriarSessaoRotas(sessao) {
     try {
@@ -5452,6 +5476,9 @@ export async function dbSelecionarRota(nomeUsuario) {
 
     const rotas = sessao.rotas;
     const diasMinimosRota = Number(config?.prioridade_rota?.dias_minimos || 0);
+    const prazoRotaSelecionadaDias = _normalizarPrazoRotaSelecionadaDias(
+        config?.rota_selecionada?.prazo_dias
+    );
 
     // Ordena as disponíveis pelo maior valor estimado
     function obterPrioridadeMs(rota) {
@@ -5487,7 +5514,10 @@ export async function dbSelecionarRota(nomeUsuario) {
         if (dadosAtuais && !dadosAtuais.selecionada_por) {
             tentativa = { ...dadosAtuais, numeroRota };
             const selecionadaEm = new Date().toISOString();
-            const validadeMaximaEm = new Date(Date.parse(selecionadaEm) + (5 * 24 * 60 * 60 * 1000)).toISOString();
+            const validadeMaximaEm = _calcularValidadeRotaSelecionadaEm(
+                selecionadaEm,
+                prazoRotaSelecionadaDias
+            );
             return {
                 ...dadosAtuais,
                 selecionada_por: nomeUsuario,
@@ -5618,9 +5648,11 @@ export function calcularStatusLiberacaoRota({
 } = {}) {
     const DOIS_DIAS = 2 * 24 * 60 * 60 * 1000;
     const SEIS_DIAS = 6 * 24 * 60 * 60 * 1000;
-    const CINCO_DIAS = 5 * 24 * 60 * 60 * 1000;
+    const PRAZO_ROTA_LEGADO_MS = 5 * 24 * 60 * 60 * 1000;
     const inicioRotaMs = _obterTimestampRota(rotaDados?.selecionada_em);
-    const prazoMaximoMs = inicioRotaMs == null ? null : (inicioRotaMs + CINCO_DIAS);
+    const prazoMaximoGravadoMs = _obterTimestampRota(rotaDados?.validade_maxima_em);
+    const prazoMaximoMs = prazoMaximoGravadoMs
+        ?? (inicioRotaMs == null ? null : (inicioRotaMs + PRAZO_ROTA_LEGADO_MS));
     const usuarioNorm = _normalizarTextoRotaUsuario(nomeUsuario || rotaDados?.selecionada_por);
 
     const atendidos = [];
@@ -5806,7 +5838,8 @@ export async function dbVerificarELiberarRota(numeroRota, nomeUsuario, dados = {
  *   1. Todos os clientes atendidos nos últimos 6 dias -> libera no mesmo instante.
  *   2. Havendo justificativa, libera 2 dias após a última justificativa,
  *      mas essa contagem só começa depois do primeiro atendimento válido da rota.
- *   3. Rota selecionada há mais de 5 dias (selecionada_em) -> libera pelo prazo máximo.
+ *   3. Rota que alcançou o prazo máximo gravado em validade_maxima_em -> libera automaticamente.
+ *      Seleções antigas sem esse campo mantêm o prazo legado de 5 dias.
  * Ao liberar, a rota volta a ficar disponível para outro usuário selecionar.
  *
  * QUEM CHAMA:
