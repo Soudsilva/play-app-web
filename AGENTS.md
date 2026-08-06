@@ -101,3 +101,12 @@ Regra obrigatória de comunicação:
 - Informe tudo que for realmente importante para a segurança, o resultado ou a decisão do proprietário, sem omitir riscos relevantes.
 - Evite repetir informações, criar explicações longas ou acrescentar detalhes que não ajudem a resolver a solicitação.
 - Quando houver um resultado numérico ou uma conclusão clara, apresente primeiro esse resultado de forma simples.
+
+Regra obrigatória para enviar, publicar ou postar alterações:
+
+- Quando o proprietário pedir para enviar, publicar, postar, subir ou usar expressão semelhante, entenda que ele deseja o fluxo completo de entrega das alterações.
+- Antes de iniciar esse fluxo, confirme uma única vez com o proprietário. Depois da confirmação, execute sem pedir novas confirmações intermediárias, salvo se surgir risco, erro ou mudança de escopo relevante.
+- O fluxo Git deve incluir: conferir `git status`, executar `git add -A`, criar um commit com mensagem coerente com a alteração e enviar para `origin/main`.
+- Não considere apenas o deploy no Firebase como entrega completa: o código também deve ser registrado e enviado ao Git conforme o fluxo acima.
+- Quando houver alterações dentro de `functions/`, inclua esses arquivos no commit e publique também as Firebase Functions afetadas, além do Hosting quando houver arquivos do site alterados.
+- Antes do envio, confira a branch atual e garanta que o commit realmente chegará à `main`; não execute um `git push origin main` que deixe as alterações presas somente em outra branch.
