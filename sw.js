@@ -1,9 +1,10 @@
-const CACHE = 'play-v9';
+const CACHE = 'play-v10';
 
 // Arquivos essenciais do próprio app
 const SHELL = [
     '/index.html',
     '/login.html',
+    '/instalar.html',
     '/atendimento_nivel_1.html',
     '/clientes.html',
     '/pedidos.html',
@@ -13,11 +14,15 @@ const SHELL = [
     '/configuracoes_automaticas.html',
     '/arquivos_para_impressao.html',
     '/auth.js',
+    '/pwa-guard.js',
+    '/pwa-install.js',
     '/database.js',
     '/offline-sync.js',
     '/assets/js/play-dialogs.js',
     '/assets/img/logo.png',
+    '/assets/img/logomenor-192.png',
     '/assets/img/logomenor.png',
+    '/manifest.json',
 ];
 
 // Arquivos do Firebase SDK (CDN) — necessários para o app funcionar offline
