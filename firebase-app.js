@@ -16,5 +16,5 @@ export const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getDatabase(app);
-export const dadosSegurosDb = getDatabase(app, "https://play-na-web-localizacao.firebaseio.com");
+export const dadosSegurosDb = getDatabase(app, "https://play-na-web-seguranca.firebaseio.com");
 export const storage = getStorage(app);
