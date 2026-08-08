@@ -1,0 +1,47 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "usuarios": {
+      ".read": "auth != null && root.child('permissoes').child(auth.uid).child('administrador').val() === true",
+      ".indexOn": ["email"],
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && (root.child('permissoes').child(auth.uid).child('administrador').val() === true || (auth.uid === $uid && newData.exists()))",
+        ".validate": "newData.hasChildren(['uid', 'nome', 'email', 'atualizadoEm'])",
+        "uid": {
+          ".validate": "newData.isString() && newData.val() === $uid"
+        },
+        "nome": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 150 && (auth.uid !== $uid || root.child('permissoes').child(auth.uid).child('administrador').val() === true || newData.val() === auth.token.name)"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 254 && (auth.uid !== $uid || root.child('permissoes').child(auth.uid).child('administrador').val() === true || newData.val() === auth.token.email)"
+        },
+        "atualizadoEm": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "permissoes": {
+      ".read": "auth != null && root.child('permissoes').child(auth.uid).child('administrador').val() === true",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && root.child('permissoes').child(auth.uid).child('administrador').val() === true",
+        ".validate": "newData.hasChildren(['administrador'])",
+        "administrador": {
+          ".validate": "newData.isBoolean()"
+        },
+        "$permissao": {
+          ".validate": "newData.isBoolean()"
+        }
+      }
+    },
+    "$other": {
+      ".validate": false
+    }
+  }
+}

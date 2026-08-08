@@ -18,12 +18,6 @@ function normalizarNomeUsuario(nome) {
     return String(nome || '').trim();
 }
 
-function iniciarRespondedorLocalizacaoSilencioso(usuario) {
-    import('./localizacao-responder.js')
-        .then(({ iniciarRespondedorLocalizacao }) => iniciarRespondedorLocalizacao(usuario))
-        .catch(() => {});
-}
-
 // Converte nome do colaborador em email interno para o Firebase Auth
 // Ex: "João Silva" → "joao.silva@play.internal"
 export function nomeParaEmail(nome) {
@@ -86,7 +80,6 @@ export function verificarAutenticacao() {
                     localStorage.setItem('usuarioLogado', nomeExibicao);
                     localStorage.setItem('usuario_selecionado', nomeExibicao);
                 }
-                iniciarRespondedorLocalizacaoSilencioso(user);
                 document.body.style.visibility = 'visible';
                 resolve(user);
             } else {

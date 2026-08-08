@@ -10,7 +10,7 @@ import {
     update
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { dadosSegurosDb } from './firebase-app.js';
-import { idFirebaseValido, perfilPodeGerenciarLocalizacao } from './localizacao-rules.js';
+import { idFirebaseValido, perfilPodeAdministrarDadosSeguros } from './permissoes-rules.js';
 
 const USUARIOS_ROOT = 'usuarios';
 const PERMISSOES_ROOT = 'permissoes';
@@ -19,15 +19,6 @@ function validarUid(uid) {
     const valor = String(uid || '').trim();
     if (!idFirebaseValido(valor)) throw new Error('Usuário autenticado inválido.');
     return valor;
-}
-
-function garantirEscritaRemota() {
-    const hostname = window.location.hostname;
-    const hostLocal = ['localhost', '127.0.0.1', '[::1]'].includes(hostname);
-    const ipv4Privado = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(hostname);
-    if (hostLocal || ipv4Privado) {
-        throw new Error('A gravação de permissões está desativada na prévia local.');
-    }
 }
 
 export async function buscarUsuarioSeguroPorEmail(email) {
@@ -54,7 +45,6 @@ export async function usuarioTemPermissao(uid, permissao) {
 }
 
 export async function registrarIdentidadeSegura(usuario) {
-    garantirEscritaRemota();
     const uid = validarUid(usuario?.uid);
     const email = String(usuario?.email || '').trim().toLowerCase();
     const nome = String(usuario?.displayName || '').trim();
@@ -77,7 +67,6 @@ export async function registrarIdentidadeSegura(usuario) {
 }
 
 export async function sincronizarAcessoSeguroColaborador({ uid = '', nome, email, perfil }) {
-    garantirEscritaRemota();
     const emailLimpo = String(email || '').trim().toLowerCase();
     const nomeLimpo = String(nome || '').trim();
     let usuarioUid = String(uid || '').trim();
@@ -86,7 +75,7 @@ export async function sincronizarAcessoSeguroColaborador({ uid = '', nome, email
         usuarioUid = String(existente?.uid || '').trim();
     }
     usuarioUid = validarUid(usuarioUid);
-    const podeGerenciar = perfilPodeGerenciarLocalizacao(perfil);
+    const podeAdministrar = perfilPodeAdministrarDadosSeguros(perfil);
     const atualizacoes = {};
     atualizacoes[`${USUARIOS_ROOT}/${usuarioUid}`] = {
         uid: usuarioUid,
@@ -94,14 +83,12 @@ export async function sincronizarAcessoSeguroColaborador({ uid = '', nome, email
         email: emailLimpo,
         atualizadoEm: serverTimestamp()
     };
-    atualizacoes[`${PERMISSOES_ROOT}/${usuarioUid}/administrador`] = podeGerenciar;
-    atualizacoes[`${PERMISSOES_ROOT}/${usuarioUid}/localizacao_gestor`] = podeGerenciar;
+    atualizacoes[`${PERMISSOES_ROOT}/${usuarioUid}/administrador`] = podeAdministrar;
     await update(ref(dadosSegurosDb), atualizacoes);
     return usuarioUid;
 }
 
 export async function removerAcessoSeguroColaborador({ uid = '', email = '' }) {
-    garantirEscritaRemota();
     let usuarioUid = String(uid || '').trim();
     if (!usuarioUid && email) {
         const existente = await buscarUsuarioSeguroPorEmail(email);

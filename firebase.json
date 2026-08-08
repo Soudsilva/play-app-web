@@ -24,8 +24,8 @@
   },
   "database": [
     {
-      "target": "localizacao",
-      "rules": "database.localizacao.rules.json"
+      "target": "seguranca",
+      "rules": "database.seguranca.rules.json"
     }
   ],
   "functions": [
