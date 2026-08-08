@@ -635,6 +635,15 @@ Não alterar apenas uma ponta desse fluxo.
 - Não registrar tokens, senhas ou dados sensíveis no console.
 - Mudanças em regras de segurança exigem autorização e validação específica.
 
+### Estrutura genérica de permissões
+
+- A instância `play-na-web-seguranca` é uma base genérica para identidades e permissões por `uid`. Ela não pertence a uma tela ou funcionalidade específica e não deve receber novamente nomes ou estruturas relacionadas à localização.
+- `permissoes-service.js` é a camada de acesso a essa base. Centraliza consultas e atualizações dos nós `usuarios` e `permissoes`, incluindo registro de identidade, consulta de permissão e sincronização ou remoção do acesso de colaboradores.
+- `permissoes-rules.js` contém funções puras usadas pelo aplicativo para normalizar e validar identificadores e interpretar quais perfis administrativos podem gerenciar dados seguros. Esse arquivo não acessa o Firebase e não substitui as regras de segurança da base.
+- `database.seguranca.rules.json` é a proteção efetiva executada pelo Firebase. As verificações feitas na interface servem apenas para navegação e experiência visual; a autorização real de leitura e escrita deve continuar sendo garantida por esse arquivo.
+- Novas telas protegidas devem reutilizar essa estrutura por `uid`. Não criar um novo arquivo de serviço ou uma nova base para cada tela sem uma necessidade técnica clara.
+- Ao acrescentar uma nova permissão, conferir em conjunto onde ela é gravada, consultada, aplicada na navegação e validada em `database.seguranca.rules.json`, preservando as permissões já existentes.
+
 ---
 
 ## 27. Comunicação durante o trabalho
