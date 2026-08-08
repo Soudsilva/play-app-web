@@ -154,9 +154,10 @@
 
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
-  import { verificarAutenticacao, sincronizarContaColaborador, excluirContaColaborador } from './auth.js';
+  import { verificarAutenticacao, sincronizarContaColaborador, excluirContaColaborador, nomeParaEmail } from './auth.js';
   verificarAutenticacao();
   import { dbEscutarColaboradores, dbSalvarColaborador, dbExcluirColaborador, dbAtualizarOrdemColaborador } from './database.js';
+  import { removerAcessoSeguroColaborador, sincronizarAcessoSeguroColaborador } from './permissoes-service.js';
 
   let listaColaboradores = [];
 
@@ -462,8 +463,12 @@
                   e.stopPropagation();
                   if (!await window.playConfirm("Deseja excluir este colaborador?")) return;
                   try {
-                      await excluirContaColaborador(c.nome, c.senha);
+                      const contaUid = await excluirContaColaborador(c.nome, c.senha);
                       await dbExcluirColaborador(c.firebaseUrl);
+                      await removerAcessoSeguroColaborador({
+                          uid: contaUid,
+                          email: nomeParaEmail(c.nome)
+                      }).catch(() => {});
                   } catch (err) {
                       console.warn('Colaborador não excluído:', err);
                       await window.playAlert('Não foi possível excluir o colaborador. Tente novamente.');
@@ -574,8 +579,9 @@
 
           const nomeAlterado = !!idEdicao && String(colaboradorExistente?.nome || '').trim() !== dados.nome;
           const senhaAlterada = !!idEdicao && String(colaboradorExistente?.senha || '').trim() !== dados.senha;
+          let contaUid = '';
           if (!idEdicao || nomeAlterado || senhaAlterada) {
-              await sincronizarContaColaborador({
+              contaUid = await sincronizarContaColaborador({
                   nomeAnterior: colaboradorExistente?.nome || '',
                   senhaAnterior: colaboradorExistente?.senha || '',
                   nomeAtual: dados.nome,
@@ -589,6 +595,13 @@
           } else {
               await dbSalvarColaborador(dados, idEdicao);
           }
+
+          await sincronizarAcessoSeguroColaborador({
+              uid: contaUid,
+              nome: dados.nome,
+              email: nomeParaEmail(dados.nome),
+              perfil: dados.nivel_completo
+          });
 
           document.getElementById('formColaborador').reset();
           document.getElementById('idEdicao').value = "";

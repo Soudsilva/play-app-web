@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "play-na-web"
+  },
+  "targets": {
+    "play-na-web": {
+      "database": {
+        "localizacao": [
+          "play-na-web-localizacao"
+        ]
+      }
+    }
   }
 }

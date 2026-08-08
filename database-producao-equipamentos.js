@@ -1,5 +1,4 @@
 import {
-    getDatabase,
     ref,
     get,
     onValue,
@@ -10,16 +9,12 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import {
-    getStorage,
     ref as storageRef,
     uploadBytes,
     getDownloadURL,
     deleteObject
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-import { app } from './database.js';
-
-const db = getDatabase(app);
-const storage = getStorage(app);
+import { db, storage } from './firebase-app.js';
 
 // O ambiente fica isolado durante os testes. Na liberação oficial, somente este
 // módulo será ajustado para apontar para o ambiente oficial.

@@ -14,6 +14,7 @@
       ".tmp_blender_mcp_package/**",
       ".tmp_blender_views/**",
       "AGENTS.md",
+      "database*.rules.json",
       "package.json",
       "package-lock.json",
       "firebase-debug.log",
@@ -21,6 +22,12 @@
       "*.zip"
     ]
   },
+  "database": [
+    {
+      "target": "localizacao",
+      "rules": "database.localizacao.rules.json"
+    }
+  ],
   "functions": [
     {
       "source": "functions",

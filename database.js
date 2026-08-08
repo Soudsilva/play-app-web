@@ -6,9 +6,7 @@
 
 // --- 1. IMPORTAÇÃO DAS FERRAMENTAS ---
 // Aqui estamos "pegando emprestado" as funções prontas do Google (Firebase) para não ter que criar tudo do zero.
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
-    getDatabase,
     ref,
     set,
     get,
@@ -24,26 +22,13 @@ import {
     limitToLast,
     runTransaction
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 import { salvarCacheClientes, lerCacheClientes, lerCacheClientesCompleto, salvarCacheEstoque, lerCacheEstoque } from './offline-sync.js';
+import { app, db, storage, firebaseConfig } from './firebase-app.js';
 
-// --- 2. CONFIGURAÇÃO (AS CHAVES DO COFRE) ---
-// Estas são as credenciais que permitem que seu site converse especificamente com o SEU banco de dados.
-const firebaseConfig = {
-    apiKey: "AIzaSyAog2lzvvWkOSvr8BqPgtGCZpSM4VQ2b3E",
-    authDomain: "play-na-web.firebaseapp.com",
-    databaseURL: "https://play-na-web-default-rtdb.firebaseio.com", 
-    projectId: "play-na-web",
-    storageBucket: "play-na-web.firebasestorage.app",
-    messagingSenderId: "278404685529",
-    appId: "1:278404685529:web:c8e7dc89eeb660173ae8c8"
-};
-
-// --- 3. INICIALIZAÇÃO ---
-// Aqui ligamos o "motor" do Firebase usando as configurações acima.
-export const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const storage = getStorage(app);
+// A inicialização principal fica em firebase-app.js. Esta reexportação mantém
+// compatibilidade com as telas legadas que ainda importam app de database.js.
+export { app };
 
 const CONTESTACAO_ATENDIMENTO_ROOT = 'contestacao_atendimento';
 const MOVIMENTACAO_BALANCO_HISTORICO_ROOT = 'movimentacao_balanco_historico';

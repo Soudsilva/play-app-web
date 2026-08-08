@@ -105,6 +105,8 @@
 
         .botao:hover { background: #3c5f9f; }
         .botao:active { transform: translateY(2px); background: #355792; transition: 0.05s; }
+        #btnCadColaborador:has(#atalhoLocalizacao:active) { transform: none; }
+        #atalhoLocalizacao:active { transform: translateY(2px); }
         .botao.manutencao-bloqueada,
         .botao.balanco-bloqueado {
             background:#5f6470;
@@ -324,7 +326,7 @@
         </div>
 
         <div class="botao" id="btnCadColaborador" onclick="window.location.href='cadastrar_colaborador.html'">
-            <span class="icone">
+            <span class="icone" id="atalhoLocalizacao">
                 <img src="assets/img/boneco-cadastrar.png"
                      alt="Cadastrar"
                      style="width: 35px; height: 35px; vertical-align: middle;">
@@ -452,6 +454,7 @@
     import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFotoComThumb, dbEscutarResumoBalanco, dbExisteContestacaoAtendimentoDoUsuario, dbEscutarResumoContestacaoAtendimento, dbAtualizarFotoAtendimentoPendente } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
     import { sincronizarPendentes, sincronizarFotosPendentes } from './offline-sync.js';
+    import { configurarAtalhoLocalizacao } from './localizacao-index.js';
 
     let unsubscribeResumoBalanco = null;
     let unsubscribeResumoContestacaoAtendimento = null;
@@ -1018,6 +1021,7 @@
         btns.impressao.style.display = perfilEhGestaoNivel3(perfil) || perfilEhEstoque(perfil) ? 'flex' : 'none';
 
         btns.contrato.style.display = usuarioEhSocio ? 'flex' : 'none';
+        configurarAtalhoLocalizacao(document.getElementById('atalhoLocalizacao'), perfil);
 
         if (perfil.includes('gestao')) {
             ordenarMenuGestao();

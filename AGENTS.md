@@ -504,6 +504,7 @@ Código novo deve ser testável.
 - Não considerar uma alteração concluída apenas porque não houve erro no console.
 - Não publicar código com testes relevantes falhando.
 - Se não for possível executar um teste, informar claramente o que não foi validado.
+- Arquivos e pastas de teste criados somente para uma validação pontual, sem função de regressão permanente, devem ser excluídos depois que o teste passar. Não aumentar a lista de exclusão da publicação apenas para manter testes temporários.
 
 ---
 

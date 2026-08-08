@@ -1,10 +1,18 @@
-const CACHE = 'play-v10';
+const CACHE = 'play-v11';
 
 // Arquivos essenciais do próprio app
 const SHELL = [
     '/index.html',
     '/login.html',
     '/instalar.html',
+    '/localizacao.html',
+    '/localizacao.css',
+    '/localizacao.js',
+    '/localizacao-index.js',
+    '/localizacao-responder.js',
+    '/localizacao-rules.js',
+    '/localizacao-service.js',
+    '/permissoes-service.js',
     '/atendimento_nivel_1.html',
     '/clientes.html',
     '/pedidos.html',
@@ -17,6 +25,7 @@ const SHELL = [
     '/pwa-guard.js',
     '/pwa-install.js',
     '/database.js',
+    '/firebase-app.js',
     '/offline-sync.js',
     '/assets/js/play-dialogs.js',
     '/assets/img/logo.png',

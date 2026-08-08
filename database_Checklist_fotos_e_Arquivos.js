@@ -5,7 +5,6 @@
    ========================================================================= */
 
 import {
-    getDatabase,
     ref,
     set,
     get,
@@ -14,9 +13,7 @@ import {
     onValue,
     update
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-import { app } from './database.js';
-
-const db = getDatabase(app);
+import { db } from './firebase-app.js';
 const CHECKLISTS_ROOT = 'checklists';
 
 function _normalizarNomeMaquinaChecklist(valor) {
