@@ -1634,6 +1634,38 @@
         window.setTimeout(() => botaoLimpar?.classList.remove('is-busy'), 180);
     }
 
+    function solicitarLocalizacaoAoAbrirMapaEntrega(callback) {
+        const modoSolicitarAtivo = new URLSearchParams(window.location.search).get('modo') === 'solicitar';
+        if (!modoSolicitarAtivo) {
+            callback({ podeAbrirMapa: true });
+            return;
+        }
+        if (!navigator.geolocation) {
+            callback({ podeAbrirMapa: false, motivo: 'indisponivel' });
+            return;
+        }
+
+        let concluido = false;
+        const continuar = (resultado) => {
+            if (concluido) return;
+            concluido = true;
+            callback(resultado);
+        };
+
+        navigator.geolocation.getCurrentPosition(
+            () => continuar({ podeAbrirMapa: true }),
+            (erro) => continuar({
+                podeAbrirMapa: false,
+                motivo: Number(erro?.code) === 1 ? 'permissao_negada' : 'localizacao_desligada'
+            }),
+            {
+                enableHighAccuracy: true,
+                timeout: 12000,
+                maximumAge: 0
+            }
+        );
+    }
+
     window.abrirMapaEndereco = function() {
         const enderecoBase = String(document.getElementById("endereco")?.value || "").trim();
         const numero = String(document.getElementById("numero_endereco")?.value || "").trim();
@@ -1645,26 +1677,39 @@
 
         definirEstadoBotaoMapa(true);
 
-        try {
-            const ua = navigator.userAgent || '';
-            if (/Android/i.test(ua)) {
-                const intentUrl = urlMapa.replace(/^https:\/\/www\.google\.com\//i, 'intent://www.google.com/')
-                    + '#Intent;scheme=https;package=com.google.android.apps.maps;end';
-                const a = document.createElement('a');
-                a.href = intentUrl;
-                a.style.display = 'none';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            } else if (/iPhone|iPad|iPod/i.test(ua)) {
-                window.location.href = urlMapa.replace(/^https?:\/\//i, 'comgooglemapsurl://');
-                setTimeout(() => { window.location.href = urlMapa; }, 1000);
-            } else {
-                window.open(urlMapa, "_blank");
+        solicitarLocalizacaoAoAbrirMapaEntrega((resultado = {}) => {
+            if (!resultado.podeAbrirMapa) {
+                definirEstadoBotaoMapa(false);
+                if (resultado.motivo === 'permissao_negada') {
+                    mostrarAlertaPlay('A localização do Play está bloqueada. Autorize a localização nas permissões do site e toque novamente no mapa.');
+                } else if (resultado.motivo === 'localizacao_desligada') {
+                    mostrarAlertaPlay('Ative a Localização (GPS) do celular e toque novamente no mapa.');
+                } else {
+                    mostrarAlertaPlay('Este aparelho não disponibilizou a localização para o aplicativo.');
+                }
+                return;
             }
-        } finally {
-            window.setTimeout(() => definirEstadoBotaoMapa(false), 180);
-        }
+            try {
+                const ua = navigator.userAgent || '';
+                if (/Android/i.test(ua)) {
+                    const intentUrl = urlMapa.replace(/^https:\/\/www\.google\.com\//i, 'intent://www.google.com/')
+                        + '#Intent;scheme=https;package=com.google.android.apps.maps;end';
+                    const a = document.createElement('a');
+                    a.href = intentUrl;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                } else if (/iPhone|iPad|iPod/i.test(ua)) {
+                    window.location.href = urlMapa.replace(/^https?:\/\//i, 'comgooglemapsurl://');
+                    setTimeout(() => { window.location.href = urlMapa; }, 1000);
+                } else {
+                    window.open(urlMapa, "_blank");
+                }
+            } finally {
+                window.setTimeout(() => definirEstadoBotaoMapa(false), 180);
+            }
+        });
     }
 
     function atualizarEstadoCampoCidade() {
