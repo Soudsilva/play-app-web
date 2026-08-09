@@ -687,6 +687,13 @@
         return percentual > 0;
     }
 
+    function usuarioTemSomenteProducaoProdutos(usuario) {
+        return usuario?.producaoProdutos === true
+            && usuario?.producaoEquipamentos !== true
+            && usuario?.producaoPecas !== true
+            && usuario?.prestacaoServico !== true;
+    }
+
     function ordenarMenuGestao() {
         const menu = document.querySelector('.menu');
         const atendimento = document.getElementById('btnAtendimento');
@@ -997,8 +1004,9 @@
             btns.financeiroProducaoEquipamentosGestor.style.display = 'flex';
         }
 
-        // Perfil Estoque: substitui o Financeiro antigo pelo New Financeiro.
-        if (perfil.includes('estoque')) {
+        // Perfil Estoque sem Produção de Produtos: substitui o Financeiro antigo pelo New Financeiro.
+        // Quem possui Produção de Produtos mantém o Financeiro, que abre producao_produtos.html.
+        if (perfil.includes('estoque') && !usuario?.producaoProdutos) {
             btns.financeiro.style.display = 'none';
             btns.financeiroProducaoEquipamentosGestor.style.display = 'flex';
         }
@@ -1014,8 +1022,12 @@
             btns.representante.style.display = 'flex';
         }
 
-        // Arquivos para Impressao: Gestao nivel 3 e perfil Estoque.
-        btns.impressao.style.display = perfilEhGestaoNivel3(perfil) || perfilEhEstoque(perfil) ? 'flex' : 'none';
+        // Arquivos para Impressão: Gestão 3 e Estoque, exceto quem possui somente Produção de Produtos.
+        const estoqueSomenteProducaoProdutos = perfilEhEstoque(perfil) && usuarioTemSomenteProducaoProdutos(usuario);
+        btns.impressao.style.display = perfilEhGestaoNivel3(perfil)
+            || (perfilEhEstoque(perfil) && !estoqueSomenteProducaoProdutos)
+            ? 'flex'
+            : 'none';
 
         btns.contrato.style.display = usuarioEhSocio ? 'flex' : 'none';
         if (perfil.includes('gestao')) {

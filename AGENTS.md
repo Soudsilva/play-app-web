@@ -644,6 +644,77 @@ Não alterar apenas uma ponta desse fluxo.
 - Novas telas protegidas devem reutilizar essa estrutura por `uid`. Não criar um novo arquivo de serviço ou uma nova base para cada tela sem uma necessidade técnica clara.
 - Ao acrescentar uma nova permissão, conferir em conjunto onde ela é gravada, consultada, aplicada na navegação e validada em `database.seguranca.rules.json`, preservando as permissões já existentes.
 
+### Matriz atual de botões do `index.html`
+
+Esta matriz documenta somente quais botões são exibidos no `index.html`. As telas de destino podem possuir verificações internas adicionais.
+
+#### Estoque 1 e Estoque 2
+
+- Exibir: `Manutenção`, `Entr. Saídas` e `Pedidos`.
+- Com `Prod. Produtos`: exibir `Financeiro`, direcionando para `producao_produtos.html`.
+- Sem `Prod. Produtos`: exibir `New Financeiro`.
+- Com `Prod. Produtos` e `Prod. Equipamentos`: exibir `Financeiro` e `New Financeiro`.
+- Exibir `Impressão`, exceto quando `Prod. Produtos` for a única modalidade de produção ou serviço marcada.
+
+#### Estoque 3
+
+- Manter o perfil restrito, sem os botões comuns de manutenção, movimentação, pedidos, gestão e clientes.
+- Com `Prod. Produtos`: exibir `Financeiro`, direcionando para `producao_produtos.html`.
+- Sem `Prod. Produtos`: exibir `New Financeiro`.
+- Com `Prod. Produtos` e `Prod. Equipamentos`: exibir os dois botões financeiros.
+- Exibir `Impressão`, exceto quando `Prod. Produtos` for a única modalidade de produção ou serviço marcada.
+
+#### Atendimento 1
+
+- Exibir: `Atendimento`, `Lista de Clientes`, `Manutenção`, `Gestão`, `Balanço` e `WhatsApp Play`.
+- Dentro de `Gestão`, exibir: `Verificar Envios`, `Máquinas em Estoque`, `Depósitos` e `Seleção de rotas`.
+- Não exibir normalmente: `Pedidos`, `Área Pix`, `Fluxo de Caixa`, `Cad. Colaborador`, `Cadastro Itens`, `Entr. Saídas` e `Impressão`.
+
+#### Atendimento 2
+
+- Exibir: `Lista de Clientes`, `Manutenção`, `Gestão`, `Balanço`, `Pedidos`, `WhatsApp Play`, `Área Pix` e `Fluxo de Caixa`.
+- Dentro de `Gestão`, exibir: `Verificar Envios`, `Saúde de Vendas` e `Máquinas em Estoque`.
+- Não exibir o botão `Atendimento`.
+
+#### Atendimento 3
+
+- Exibir: `Atendimento`, `Lista de Clientes`, `Manutenção`, `Gestão`, `Balanço`, `WhatsApp Play` e `Área Pix`.
+- Dentro de `Gestão`, exibir: `Verificar Envios`, `Máquinas em Estoque` e `Depósitos`.
+
+#### Gestão 1
+
+- Exibir: `Atendimento`, `Serviço`, `Lista de Clientes`, `Manutenção`, `Gestão`, `Balanço` para contestação e `WhatsApp Play`.
+- Dentro de `Gestão`, exibir: `Verificações Gerais` e `Depósitos`.
+- Não exibir normalmente: `Cad. Colaborador`, `Cadastro Itens`, `Pedidos`, `Área Pix`, `Fluxo de Caixa` e `Impressão`.
+
+#### Gestão 2
+
+- Exibir: `Atendimento`, `Serviço`, `Lista de Clientes`, `Manutenção`, `Gestão`, `Balanço`, `Cad. Colaborador`, `Cadastro Itens`, `Entr. Saídas`, `Pedidos`, `WhatsApp Play`, `Área Pix` e `Fluxo de Caixa`.
+- Dentro de `Gestão`, exibir: `Verificações Gerais`, `Saúde de Vendas` e `Depósitos`.
+
+#### Gestão 3
+
+- Exibir: `Atendimento`, `Serviço`, `Lista de Clientes`, `Manutenção`, `Gestão`, `Balanço`, `Cad. Colaborador`, `Cadastro Itens`, `Entr. Saídas`, `Pedidos`, `WhatsApp Play`, `Área Pix`, `Financeiro`, `Produção Máquinas`, `New Financeiro` e `Impressão`.
+- Dentro de `Gestão`, exibir: `Verificações Gerais`, `Saúde de Vendas`, `Máquinas em Estoque`, `Depósitos`, `Importar Dataverse`, `Verificar Rotas` e `Config. Automáticas`.
+- Não exibir `Fluxo de Caixa`.
+
+#### Exceções por remuneração ou cargo
+
+- `Prod. Produtos`: acrescenta `Financeiro`.
+- `Prod. Equipamentos`: acrescenta `New Financeiro`.
+- `Comissão Global`: acrescenta `Balanço`.
+- Representante com percentual: acrescenta `Representante`.
+- Cargo `Sócio`: acrescenta `Contratos & Acordos`.
+
+#### Confirmação obrigatória antes de mudar a matriz
+
+- Antes de alterar a exibição, ocultação ou destino de qualquer botão do `index.html`, parar e pedir confirmação ao proprietário.
+- A pergunta deve informar claramente: `o perfil X passará a ter acesso ao botão Y` ou `o perfil X perderá o acesso ao botão Y`.
+- Quando remuneração, cargo ou nível também influenciarem a regra, informar a combinação completa afetada.
+- Se mais de um perfil for afetado, listar todos antes de editar.
+- Aguardar uma resposta explícita de `sim` ou `não`. Não alterar a matriz antes dessa resposta.
+- Depois da confirmação, modificar somente os acessos apresentados e aprovados.
+
 ---
 
 ## 27. Comunicação durante o trabalho
