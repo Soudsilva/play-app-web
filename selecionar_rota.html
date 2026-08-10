@@ -312,6 +312,7 @@
 <script src="assets/js/play-dialogs.js"></script>
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
+import { montarEnderecoCliente } from './selecionar-rota-rules.mjs';
 verificarAutenticacao();
 import {
     dbListarClientes,
@@ -682,10 +683,6 @@ function diasEmComum(clientes) {
         new Set((c.aberto || '').split(',').map(d => d.trim()).filter(Boolean))
     );
     return ORDEM_DIAS.filter(d => sets.every(s => s.has(d)));
-}
-
-function montarEnderecoCliente(c) {
-    return [c?.endereco, c?.numero_endereco, c?.cidade].filter(Boolean).join(', ').trim();
 }
 
 function enderecoEhLink(valor) {
