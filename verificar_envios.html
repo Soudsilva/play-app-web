@@ -205,12 +205,41 @@
         .item-estoque-nome { color: white !important; font-size: 18px !important; font-weight: bold; user-select: none; -webkit-user-select: none; }
         .envio-rodape-estoque {
             display: flex; justify-content: space-between; align-items: center;
+            gap: 10px;
+            position: relative;
+            padding-right: 30px;
             margin-top: 12px; padding-top: 10px;
             border-top: 1px solid rgba(255,255,255,0.25);
             font-size: 13px; color: white; font-weight: bold;
             user-select: none; -webkit-user-select: none;
         }
         .envio-rodape-estoque strong { color: #ffeb3b; }
+        .envio-visto {
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+            width: auto;
+            height: 13px;
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .envio-visto svg {
+            display: block;
+            height: 100%;
+            width: auto;
+            overflow: visible;
+        }
+        .envio-visto path {
+            fill: currentColor;
+            stroke: none;
+        }
+        /* Cinza enquanto aguarda (1 tique), azul quando confirmado (2 tiques) - padrao WhatsApp. */
+        .envio-visto.pendente { color: #8f9aa5; }
+        .envio-visto.confirmado { color: #53bdeb; }
 
         /* Galeria de Fotos Interna */
         .foto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
@@ -583,8 +612,9 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbEscutarHistoricoBalancoDoUsuario, dbResponderContestacaoAtendimento, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFotoComThumb, dbAtualizarFotoAtendimentoPendente } from './database.js';
+    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbEscutarHistoricoBalancoDoUsuario, dbResponderContestacaoAtendimento, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, dbGerarIdAtendimento, dbVerificarELiberarRota, storageSalvarFotoComThumb, dbAtualizarFotoAtendimentoPendente } from './database.js';
     import { listarPendentes, listarFotosPendentesUpload, sincronizarPendentes, sincronizarFotosPendentes } from './offline-sync.js';
+    import { combinarAtendimentosComFila, obterStatusVisualAtendimento } from './verificar-envios-sync-rules.mjs';
 
     // Pega quem estÃ¡ logado no celular no momento
     const usuarioLogado = localStorage.getItem('usuarioLogado');
@@ -601,6 +631,7 @@
     let atendimentosPendentesLocais = [];
     let fotosPendentesLocais = [];
     let reenviandoPendencias = false;
+    let assinaturaPendenciasLocais = '';
     const carregamentosEnvios = {
         historicoBalanco: false,
         colaboradores: false,
@@ -608,7 +639,8 @@
         cadastrosPix: false,
         historicoEstoque: false,
         manutencoes: false,
-        clientes: false
+        clientes: false,
+        pendenciasLocais: false
     };
 
     function todosEnviosCarregados() {
@@ -697,14 +729,38 @@
         return fotosFirebasePendentes.filter(item => idsLocais.has(String(item?.fotoLocalId || '').trim())).length;
     }
 
+    function criarAssinaturaPendenciasLocais(atendimentos, fotos) {
+        const resumir = (item) => [
+            item?.id,
+            item?.atendimentoServidorId,
+            item?.estado,
+            item?.fase,
+            item?.tentativas,
+            item?.atualizadoEm,
+            item?.ultimaFalhaEm
+        ];
+        return JSON.stringify({
+            atendimentos: (atendimentos || []).map(resumir),
+            fotos: (fotos || []).map(resumir)
+        });
+    }
+
     async function carregarPendenciasLocais() {
         const [atendimentos, fotos] = await Promise.all([
             listarPendentes(),
             listarFotosPendentesUpload()
         ]);
+        const novaAssinatura = criarAssinaturaPendenciasLocais(atendimentos, fotos);
+        const houveMudanca = novaAssinatura !== assinaturaPendenciasLocais;
+        assinaturaPendenciasLocais = novaAssinatura;
         atendimentosPendentesLocais = atendimentos || [];
         fotosPendentesLocais = fotos || [];
-        renderizarPendenciasLocais();
+        if (!carregamentosEnvios.pendenciasLocais) {
+            marcarEnviosCarregados('pendenciasLocais');
+        } else if (houveMudanca) {
+            renderizarEnvios();
+            renderizarPendenciasLocais();
+        }
     }
 
     async function tentarReenviarPendenciasSeOnline() {
@@ -763,7 +819,12 @@
         reenviandoPendencias = true;
         renderizarPendenciasLocais('Reenviando pendências, uma por vez...');
         try {
-            const enviadosAtendimentos = await sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico);
+            const enviadosAtendimentos = await sincronizarPendentes(
+                storageSalvarFotoComThumb,
+                dbSalvarAtendimento,
+                dbSincronizarProdutosAtendimentoNoHistorico,
+                { gerarAtendimentoId: dbGerarIdAtendimento, verificarRota: dbVerificarELiberarRota }
+            );
             const enviadosFotos = await sincronizarFotosPendentes(storageSalvarFotoComThumb, dbAtualizarFotoAtendimentoPendente);
             await carregarPendenciasLocais();
             const totalEnviado = Number(enviadosAtendimentos || 0) + Number(enviadosFotos?.ok || 0);
@@ -1617,6 +1678,9 @@
     }
 
     function podeAlterarEnvio(envio) {
+        if (envio?._statusSincronizacao === 'pendente') {
+            return false;
+        }
         if (!colaboradoresCarregados) {
             return false;
         }
@@ -1689,6 +1753,15 @@
         return data.toLocaleDateString('pt-BR');
     }
 
+    function montarHtmlStatusSincronizacao(envio) {
+        if (ehMovimentoEstoque(envio) || ehRegistroManutencao(envio)) return '';
+        const status = obterStatusVisualAtendimento(envio);
+        const desenho = status.classe === 'confirmado'
+            ? `<svg viewBox="0 0 16 11" width="16" height="11" aria-hidden="true" focusable="false"><path d="M11.0714 0.652832C10.991 0.585124 10.8894 0.55127 10.7667 0.55127C10.6186 0.55127 10.4916 0.610514 10.3858 0.729004L4.19688 8.36523L1.79112 6.09277C1.7345 6.02507 1.66779 5.97803 1.59098 5.95166C1.51417 5.92529 1.42264 5.91211 1.31641 5.91211C1.19336 5.91211 1.07031 5.9502 0.947266 6.02637L0.279297 6.6875C0.203125 6.75 0.165039 6.83203 0.165039 6.93359C0.165039 7.03516 0.203125 7.11719 0.279297 7.17969L3.89453 10.7949C3.9707 10.8574 4.05273 10.8887 4.14062 10.8887C4.22852 10.8887 4.31055 10.8574 4.38672 10.7949L11.9414 1.99414C12.0176 1.93164 12.0557 1.84961 12.0557 1.74805C12.0557 1.64648 12.0176 1.56445 11.9414 1.50195L11.0714 0.652832Z"></path><path d="M15.1015 0.652832C15.0211 0.585124 14.9195 0.55127 14.7968 0.55127C14.6487 0.55127 14.5217 0.610514 14.4159 0.729004L8.22705 8.36523L7.02295 7.22705L6.04932 8.39062L7.9248 10.7949C8.00098 10.8574 8.08301 10.8887 8.1709 10.8887C8.25879 10.8887 8.34082 10.8574 8.41699 10.7949L15.9716 1.99414C16.0478 1.93164 16.0858 1.84961 16.0858 1.74805C16.0858 1.64648 16.0478 1.56445 15.9716 1.50195L15.1015 0.652832Z"></path></svg>`
+            : `<svg viewBox="0 0 12 11" width="12" height="11" aria-hidden="true" focusable="false"><path d="M11.1549 0.652832C11.0745 0.585124 10.9729 0.55127 10.8502 0.55127C10.7021 0.55127 10.5751 0.610514 10.4693 0.729004L4.28038 8.36523L1.87461 6.09277C1.81798 6.02507 1.75128 5.97803 1.67447 5.95166C1.59766 5.92529 1.50613 5.91211 1.39989 5.91211C1.27685 5.91211 1.1538 5.9502 1.03075 6.02637L0.362793 6.6875C0.286621 6.75 0.248535 6.83203 0.248535 6.93359C0.248535 7.03516 0.286621 7.11719 0.362793 7.17969L3.97803 10.7949C4.0542 10.8574 4.13623 10.8887 4.22412 10.8887C4.31201 10.8887 4.39404 10.8574 4.47021 10.7949L12.0248 1.99414C12.101 1.93164 12.1391 1.84961 12.1391 1.74805C12.1391 1.64648 12.101 1.56445 12.0248 1.50195L11.1549 0.652832Z"></path></svg>`;
+        return `<span class="envio-visto ${status.classe}" title="${escaparHtml(status.titulo)}" aria-label="${escaparHtml(status.titulo)}">${desenho}</span>`;
+    }
+
     function renderizarEnvios() {
         const container = document.getElementById('listaEnvios');
         const termoBuscaOriginal = document.getElementById('inputBusca')?.value || '';
@@ -1705,7 +1778,12 @@
             return;
         }
 
-        const enviosAtendimento = atendimentosSalvos
+        const atendimentosComStatus = combinarAtendimentosComFila(
+            atendimentosSalvos,
+            atendimentosPendentesLocais,
+            usuarioLogado
+        );
+        const enviosAtendimento = atendimentosComStatus
             .filter(a => {
                 if (!pertenceAoUsuario(a)) return false;
                 if (ehMovimentoEstoque(a)) return false;
@@ -1844,7 +1922,15 @@
                     htmlProdutos += `<div class="info-linha info-linha-livre"><span class="item-estoque-nome">${p.nome}</span> <strong>Qtd: ${p.quantidade}</strong></div>`;
                 });
             } else if (!ehMovimentoEstoque(envio) && !ehRegistroManutencao(envio)) {
-                const produtosAtend = mapaMovimentacoesPorAtendimento[envio.firebaseUrl] || [];
+                const produtosHistorico = mapaMovimentacoesPorAtendimento[envio.firebaseUrl] || [];
+                const produtosFila = Array.isArray(envio?._produtosFilaLocal)
+                    ? envio._produtosFilaLocal.map(item => ({
+                        nome: item?.nome || 'Produto',
+                        movimento: Math.abs(Number(item?.quantidade || 0)),
+                        totalApos: null
+                    })).filter(item => item.movimento > 0)
+                    : [];
+                const produtosAtend = produtosHistorico.length > 0 ? produtosHistorico : produtosFila;
                 if (produtosAtend.length > 0) {
                     htmlProdutos += `<div class="secao-titulo">Produtos</div>`;
                     produtosAtend.forEach(p => {
@@ -2011,6 +2097,7 @@
                 <div class="envio-rodape-estoque">
                     <span>${dataFormatada}</span>
                     ${infoRodape.length > 0 ? `<span>${infoRodape.join(' | ')}</span>` : ''}
+                    ${montarHtmlStatusSincronizacao(envio)}
                 </div>`;
 
             card.innerHTML = `${htmlHeader}${htmlManutencao}${htmlCadastroPix}${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}${htmlRodape}`;
@@ -2097,6 +2184,12 @@
     });
 
     carregarPendenciasLocais().catch(() => {});
+    const intervaloPendenciasLocais = window.setInterval(() => {
+        carregarPendenciasLocais().catch(() => {});
+    }, 1500);
+    window.addEventListener('pagehide', (event) => {
+        if (!event.persisted) window.clearInterval(intervaloPendenciasLocais);
+    });
     window.addEventListener('online', () => {
         reenviarPendenciasLocais().catch(() => {});
     });

@@ -776,8 +776,8 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, storageSalvarFotoComThumb, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbVerificarELiberarRota, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
-    import { enfileirarAtendimento, salvarFotosPendentesUpload } from './offline-sync.js';
+    import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbEscutarColaboradores, dbGerarIdAtendimento, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
+    import { enfileirarAtendimento } from './offline-sync.js';
 
     let listaClientes = [];
     let listaClientesBruta = [];
@@ -792,6 +792,8 @@
     let historicoBalancoEdicao = null;
     let unsubscribeHistoricoBalancoEdicao = null;
     let saldoDevolucaoPixDisponivel = 0;
+    let operacaoFilaRascunhoId = '';
+    let atendimentoServidorRascunhoId = '';
     const CHAVE_CLIENTE_MANUAL_SESSAO = 'atendimento_cliente_manual_numero';
 
     try {
@@ -2099,57 +2101,6 @@ function obterIdAtendimentoEmEdicao() {
         }
     }
 
-    function prepararAtendimentoOfflineComFotosBase64(dadosAtendimento, fotosPendentesUpload) {
-        const fotosPendentes = Array.isArray(fotosPendentesUpload) ? fotosPendentesUpload : [];
-        if (fotosPendentes.length === 0) return dadosAtendimento;
-
-        const dadosOffline = JSON.parse(JSON.stringify(dadosAtendimento));
-        if (!dadosOffline.fotos) dadosOffline.fotos = {};
-        if (!Array.isArray(dadosOffline.fotos.maquinas)) dadosOffline.fotos.maquinas = [];
-        if (!Array.isArray(dadosOffline.fotos.pix)) dadosOffline.fotos.pix = [];
-
-        fotosPendentes.forEach((foto) => {
-            const base64 = String(foto?.base64 || '').trim();
-            if (!base64.startsWith('data:')) return;
-
-            if (foto.tipo === 'ficha') {
-                dadosOffline.fotos.ficha = base64;
-                dadosOffline.fotos.fichaThumb = null;
-                dadosOffline.fotos.fichaPendente = false;
-                dadosOffline.fotos.fichaLocalId = null;
-                return;
-            }
-
-            const indice = Number(foto.indice);
-            if (!Number.isInteger(indice) || indice < 0) return;
-
-            if (foto.tipo === 'maquina') {
-                dadosOffline.fotos.maquinas[indice] = {
-                    ...(dadosOffline.fotos.maquinas[indice] || {}),
-                    url: base64,
-                    thumbUrl: null,
-                    uploadPendente: false,
-                    fotoLocalId: null
-                };
-                return;
-            }
-
-            if (foto.tipo === 'pix') {
-                dadosOffline.fotos.pix[indice] = {
-                    ...(dadosOffline.fotos.pix[indice] || {}),
-                    url: base64,
-                    thumbUrl: null,
-                    uploadPendente: false,
-                    fotoLocalId: null
-                };
-            }
-        });
-
-        dadosOffline.fotosPendentes = false;
-        delete dadosOffline.fotosPendentesAtualizadoEm;
-        return dadosOffline;
-    }
-
     window.salvarAtendimento = async function() { // [ALTERADO] para async
         const btn = document.querySelector('.btn-finalizar');
         if (envioAtendimentoEmAndamento || btn?.disabled) return;
@@ -2231,49 +2182,14 @@ function obterIdAtendimentoEmEdicao() {
                 saldoDepositar: dinheiroValor - comissaoValor
             };
 
-            // --- 2. Upload de Fotos ---
+            // --- 2. Fotos para a fila local (sem rede nesta etapa) ---
             const fotos = { ficha: null, maquinas: [], pix: [] };
-            const fotosPendentesUpload = [];
-            const gerarFotoLocalId = () => `foto_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-            const criarFotoPendenteUpload = ({ tipo, indice = null, nome = '', numero = '', base64 = '' }) => {
-                const id = gerarFotoLocalId();
-                const pendencia = {
-                    id,
-                    tipo,
-                    indice,
-                    nome,
-                    numero,
-                    base64,
-                    pasta: 'atendimentos',
-                    clienteNumero,
-                    clienteNome,
-                    atendente,
-                    criadoEm: new Date().toISOString()
-                };
-                fotosPendentesUpload.push(pendencia);
-                return id;
-            };
 
             // Foto da Ficha
             const imgFicha = document.getElementById('imgPreviewFicha');
-            try {
-                if (imgFicha.style.display === 'block' && imgFicha.src && imgFicha.src.startsWith('data:')) {
-                    const r = await storageSalvarFotoComThumb(imgFicha.src);
-                    fotos.ficha = r.url;
-                    fotos.fichaThumb = r.thumbUrl;
-                } else if (imgFicha.style.display === 'block' && imgFicha.src && imgFicha.src.startsWith('http')) {
-                    fotos.ficha = imgFicha.src;
-                    fotos.fichaThumb = imgFicha.src;
-                }
-            } catch(e) {
-                console.warn("Falha no upload da ficha. Salvando como pendente.", e);
-                if (imgFicha?.src?.startsWith('data:')) {
-                    const fotoLocalId = criarFotoPendenteUpload({ tipo: 'ficha', nome: 'Ficha', base64: imgFicha.src });
-                    fotos.ficha = null;
-                    fotos.fichaThumb = null;
-                    fotos.fichaPendente = true;
-                    fotos.fichaLocalId = fotoLocalId;
-                }
+            if (imgFicha?.style.display === 'block' && imgFicha.src) {
+                fotos.ficha = imgFicha.src;
+                fotos.fichaThumb = imgFicha.src.startsWith('http') ? imgFicha.src : null;
             }
 
             // Fotos das Máquinas
@@ -2285,31 +2201,11 @@ function obterIdAtendimentoEmEdicao() {
                     const nomeMaquinaEl = input.closest('.sub-card').querySelector('.titulo-sub');
                     const nomeMaquina = nomeMaquinaEl ? nomeMaquinaEl.innerText.replace('FOTO: ', '').trim() : `Maquina ${index}`;
                     
-                    let url = null, thumbUrl = null;
-                    try {
-                        if (img.src.startsWith('data:')) {
-                            const r = await storageSalvarFotoComThumb(img.src);
-                            url = r.url; thumbUrl = r.thumbUrl;
-                        } else if (img.src.startsWith('http') && !img.src.includes('.html')) {
-                            url = img.src; thumbUrl = img.src;
-                        }
-                    } catch(e) { console.warn("Falha ao salvar foto da maquina. Salvando como pendente.", e); }
-                    if (url) {
-                        fotos.maquinas.push({ nome: nomeMaquina, url, thumbUrl });
-                    } else if (img.src.startsWith('data:')) {
-                        const indiceFoto = fotos.maquinas.length;
-                        const fotoLocalId = criarFotoPendenteUpload({
-                            tipo: 'maquina',
-                            indice: indiceFoto,
-                            nome: nomeMaquina,
-                            base64: img.src
-                        });
+                    if (img.src.startsWith('data:') || (img.src.startsWith('http') && !img.src.includes('.html'))) {
                         fotos.maquinas.push({
                             nome: nomeMaquina,
-                            url: null,
-                            thumbUrl: null,
-                            uploadPendente: true,
-                            fotoLocalId
+                            url: img.src,
+                            thumbUrl: img.src.startsWith('http') ? img.src : null
                         });
                     }
                 }
@@ -2324,32 +2220,11 @@ function obterIdAtendimentoEmEdicao() {
                     const numeroPixEl = input.closest('.sub-card').querySelector('.titulo-sub');
                     const numeroPix = numeroPixEl ? (numeroPixEl.innerText.match(/\d+/) || ['N/A'])[0] : `Pix ${index}`;
 
-                    let url = null, thumbUrl = null;
-                    try {
-                        if (img.src.startsWith('data:')) {
-                            const r = await storageSalvarFotoComThumb(img.src);
-                            url = r.url; thumbUrl = r.thumbUrl;
-                        } else if (img.src.startsWith('http') && !img.src.includes('.html')) {
-                            url = img.src; thumbUrl = img.src;
-                        }
-                    } catch(e) { console.warn("Falha ao salvar foto do pix. Salvando como pendente.", e); }
-                    if (url) {
-                        fotos.pix.push({ numero: numeroPix, url, thumbUrl });
-                    } else if (img.src.startsWith('data:')) {
-                        const indiceFoto = fotos.pix.length;
-                        const fotoLocalId = criarFotoPendenteUpload({
-                            tipo: 'pix',
-                            indice: indiceFoto,
-                            numero: numeroPix,
-                            nome: `Pix ${numeroPix}`,
-                            base64: img.src
-                        });
+                    if (img.src.startsWith('data:') || (img.src.startsWith('http') && !img.src.includes('.html'))) {
                         fotos.pix.push({
                             numero: numeroPix,
-                            url: null,
-                            thumbUrl: null,
-                            uploadPendente: true,
-                            fotoLocalId
+                            url: img.src,
+                            thumbUrl: img.src.startsWith('http') ? img.src : null
                         });
                     }
                 }
@@ -2385,11 +2260,7 @@ function obterIdAtendimentoEmEdicao() {
                     return isNaN(v) ? null : v;
                 })()
             };
-            dadosAtendimento.fotosPendentes = fotosPendentesUpload.length > 0;
-            if (fotosPendentesUpload.length > 0) {
-                dadosAtendimento.fotosPendentesAtualizadoEm = new Date().toISOString();
-            }
-
+            dadosAtendimento.fotosPendentes = false;
             if (atendimentoEmEdicaoId && atendimentoOriginal?._teste) {
                 dadosAtendimento._teste = true;
             }
@@ -2402,47 +2273,39 @@ function obterIdAtendimentoEmEdicao() {
                 dadosAtendimento._gestor_ultima_edicao = atendimentoOriginal._gestor_ultima_edicao;
             }
 
-            // --- 4. Salvar no Banco de Dados (ou na fila offline) ---
-            btn.innerText = "FINALIZANDO...";
-            const semInternet = !navigator.onLine;
-            if (semInternet) {
-                if (atendimentoEmEdicaoId) {
-                    desativarBloqueioEnvioAtendimento(btn);
-                    await window.playAlert("📵 Sem internet — não é possível editar um atendimento já enviado.\nConecte-se e tente novamente.");
-                    return;
-                }
-                await enfileirarAtendimento(prepararAtendimentoOfflineComFotosBase64(dadosAtendimento, fotosPendentesUpload));
-            } else {
-                const atendimentoSalvoId = await dbSalvarAtendimento(dadosAtendimento, atendimentoEmEdicaoId || null);
-                if (fotosPendentesUpload.length > 0) {
-                    const idParaFotos = atendimentoSalvoId || atendimentoEmEdicaoId || null;
-                    await salvarFotosPendentesUpload(fotosPendentesUpload.map(foto => ({
-                        ...foto,
-                        atendimentoId: idParaFotos
-                    })));
-                }
-                await dbSincronizarProdutosAtendimentoNoHistorico(atendimentoSalvoId || atendimentoEmEdicaoId || null, dadosAtendimento);
-                try {
-                    const numeroRota = String(dadosAtendimento?.cliente?.rota || '').trim();
-                    if (numeroRota) {
-                        await dbVerificarELiberarRota(numeroRota, atendente);
-                    }
-                } catch (erroLiberacaoRota) {
-                    console.warn('Falha ao verificar liberacao da rota apos o atendimento:', erroLiberacaoRota);
-                }
+            // --- 4. Confirmar primeiro na fila local; a rede fica em segundo plano ---
+            btn.innerText = "SALVANDO NO APARELHO...";
+            const atendimentoServidorId = atendimentoEmEdicaoId
+                || atendimentoServidorRascunhoId
+                || dbGerarIdAtendimento();
+            const operacaoFilaId = atendimentoEmEdicaoId
+                ? `${atendimentoEmEdicaoId}_${dbGerarIdAtendimento()}`
+                : (operacaoFilaRascunhoId || atendimentoServidorId);
+            if (!atendimentoEmEdicaoId) {
+                operacaoFilaRascunhoId = operacaoFilaId;
+                atendimentoServidorRascunhoId = atendimentoServidorId;
+                salvarRascunho();
             }
+            await enfileirarAtendimento(dadosAtendimento, {
+                id: operacaoFilaId,
+                atendimentoServidorId
+            });
 
             // --- 5. Limpeza e Redirecionamento ---
             localStorage.removeItem('rascunho_atendimento');
+            operacaoFilaRascunhoId = '';
+            atendimentoServidorRascunhoId = '';
             sessionStorage.removeItem('rota_filtro_numeros');
             sessionStorage.removeItem('rota_filtro_numero_rota');
             sessionStorage.removeItem('cliente_pre_selecionado');
             limparEstadoEdicao();
             sessionStorage.removeItem(CHAVE_CLIENTE_MANUAL_SESSAO);
             sessionStorage.removeItem('atendimento_tela_origem');
-            const msgFim = semInternet
-                ? "📵 Sem internet — atendimento salvo localmente!\nSerá enviado automaticamente quando a conexão voltar."
-                : (atendimentoEmEdicaoId ? "Atendimento atualizado com sucesso!" : "Atendimento registrado com sucesso!");
+            desativarBloqueioEnvioAtendimento(btn);
+            const msgFim = atendimentoEmEdicaoId
+                ? "Edição salva para envio."
+                : "Atendimento Salvo";
+
             await window.playAlert(msgFim);
             window.location.href = 'index.html';
 
@@ -2512,6 +2375,8 @@ function obterIdAtendimentoEmEdicao() {
         if (obterIdAtendimentoEmEdicao()) return;
         const cardSatRascunho = document.getElementById('card-saturno');
         const dados = {
+            ...(operacaoFilaRascunhoId ? { operacaoFilaId: operacaoFilaRascunhoId } : {}),
+            ...(atendimentoServidorRascunhoId ? { atendimentoServidorId: atendimentoServidorRascunhoId } : {}),
             clienteBusca: document.getElementById('inputBuscaCliente').value || "",
             pixLinhas: [],
             valorPixDevolvido: document.getElementById('valorPixDevolvido')?.value || "",
@@ -2592,6 +2457,10 @@ function obterIdAtendimentoEmEdicao() {
         if (dadosOnline || salvo) {
             try {
                 const dados = dadosOnline || JSON.parse(salvo);
+                if (!atendimentoEmEdicaoId) {
+                    operacaoFilaRascunhoId = String(dados?.operacaoFilaId || '').trim();
+                    atendimentoServidorRascunhoId = String(dados?.atendimentoServidorId || '').trim();
+                }
                 
                 // 1. Restaura Cliente
                 const clienteRestauradoPorId = tentarRestaurarClienteEdicaoPorId(dados);

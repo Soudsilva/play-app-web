@@ -1,4 +1,4 @@
-const CACHE = 'play-v12';
+const CACHE = 'play-v16';
 
 // Arquivos essenciais do próprio app
 const SHELL = [
@@ -21,6 +21,8 @@ const SHELL = [
     '/database.js',
     '/firebase-app.js',
     '/offline-sync.js',
+    '/atendimento-fila-sync.mjs',
+    '/verificar-envios-sync-rules.mjs',
     '/assets/js/play-dialogs.js',
     '/assets/img/logo.png',
     '/assets/img/logomenor-192.png',

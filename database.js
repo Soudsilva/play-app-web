@@ -848,7 +848,7 @@ function base64ToBlob(base64, contentType = 'image/jpeg') {
 }
 
 // [NOVO] Salvar uma foto no Firebase Storage
-export async function storageSalvarFoto(base64String, pasta = 'atendimentos') {
+export async function storageSalvarFoto(base64String, pasta = 'atendimentos', nomeArquivoEstavel = '') {
     // Offline: devolve o base64 como está — será enviado quando a internet voltar
     if (!navigator.onLine) return base64String;
     try {
@@ -856,7 +856,10 @@ export async function storageSalvarFoto(base64String, pasta = 'atendimentos') {
         const blob = base64ToBlob(base64String);
         
         // 2. Cria um nome de arquivo único para evitar sobreposições
-        const nomeArquivo = `${String(pasta || 'atendimentos').replace(/^\/+|\/+$/g, '')}/${Date.now()}-${Math.round(Math.random() * 1E9)}.jpg`;
+        const pastaNormalizada = String(pasta || 'atendimentos').replace(/^\/+|\/+$/g, '');
+        const nomeEstavelNormalizado = String(nomeArquivoEstavel || '').replace(/[^a-zA-Z0-9_-]/g, '');
+        const nomeBase = nomeEstavelNormalizado || `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+        const nomeArquivo = `${pastaNormalizada}/${nomeBase}.jpg`;
         const fotoRef = storageRef(storage, nomeArquivo);
         
         // 3. Faz o upload do arquivo (Com limite de 15 segundos para não travar)
@@ -897,13 +900,13 @@ async function _redimensionarParaThumb(base64, maxPx = 200) {
 
 // Salva foto original + miniatura. Retorna { url, thumbUrl }.
 // Offline: retorna base64 de ambas para sync posterior.
-export async function storageSalvarFotoComThumb(base64String, pasta = 'atendimentos', thumbMaxPx = 200) {
+export async function storageSalvarFotoComThumb(base64String, pasta = 'atendimentos', thumbMaxPx = 200, nomeArquivoEstavel = '') {
     const thumbBase64 = await _redimensionarParaThumb(base64String, thumbMaxPx).catch(() => base64String);
     if (!navigator.onLine) return { url: base64String, thumbUrl: thumbBase64 };
     try {
-        const uploads = [storageSalvarFoto(base64String, pasta)];
+        const uploads = [storageSalvarFoto(base64String, pasta, nomeArquivoEstavel)];
         if (thumbBase64 !== base64String) {
-            uploads.push(storageSalvarFoto(thumbBase64, pasta + '/thumbs'));
+            uploads.push(storageSalvarFoto(thumbBase64, pasta + '/thumbs', nomeArquivoEstavel));
         }
         const [url, thumbUrl] = await Promise.all(uploads);
         return { url, thumbUrl: thumbUrl || url };
@@ -914,6 +917,12 @@ export async function storageSalvarFotoComThumb(base64String, pasta = 'atendimen
 }
 
 // [NOVO] Salvar o registro completo do atendimento
+export function dbGerarIdAtendimento() {
+    const id = push(ref(db, 'atendimentos')).key;
+    if (!id) throw new Error('Nao foi possivel gerar o ID do atendimento.');
+    return id;
+}
+
 function _obterTimestampOrdenacaoAtendimento(atendimento) {
     const dataBase = atendimento?.ultimaEdicao || atendimento?.data || "";
     const timestamp = Date.parse(dataBase);

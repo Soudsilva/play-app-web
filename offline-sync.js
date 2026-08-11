@@ -1,3 +1,5 @@
+import { processarAtendimentoPendente } from './atendimento-fila-sync.mjs';
+
 /**
  * offline-sync.js
  * Gerencia dados offline usando IndexedDB:
@@ -100,16 +102,30 @@ export async function lerCacheEstoque() {
 
 // ─── FILA DE ATENDIMENTOS PENDENTES ──────────────────────────────────────────
 // Enfileira um atendimento (as fotos ficam como base64 até ter internet).
-export async function enfileirarAtendimento(dadosAtendimento) {
+export async function enfileirarAtendimento(dadosAtendimento, opcoes = {}) {
+    const idInformado = opcoes?.id ?? null;
+    const atendimentoServidorId = String(opcoes?.atendimentoServidorId || '').trim();
     const db = await abrirDB();
     return new Promise((resolve, reject) => {
         const tx  = db.transaction(PENDENTES, 'readwrite');
-        const req = tx.objectStore(PENDENTES).add({
+        const registro = {
+            ...(idInformado !== null && idInformado !== undefined ? { id: idInformado } : {}),
             dados:     dadosAtendimento,
-            criadoEm:  new Date().toISOString()
-        });
-        req.onsuccess = () => resolve(req.result); // retorna o id gerado
-        req.onerror   = () => reject(req.error);
+            criadoEm:  opcoes?.criadoEm || new Date().toISOString(),
+            atualizadoEm: new Date().toISOString(),
+            estado: 'pendente',
+            fase: 'salvo_localmente',
+            tentativas: Number(opcoes?.tentativas || 0),
+            ...(atendimentoServidorId ? { atendimentoServidorId } : {})
+        };
+        const req = idInformado !== null && idInformado !== undefined
+            ? tx.objectStore(PENDENTES).put(registro)
+            : tx.objectStore(PENDENTES).add(registro);
+        let idSalvo = idInformado;
+        req.onsuccess = () => { idSalvo = req.result; };
+        tx.oncomplete = () => resolve(idSalvo);
+        tx.onerror = () => reject(tx.error || req.error);
+        tx.onabort = () => reject(tx.error || new Error('Falha ao confirmar a fila local.'));
     });
 }
 
@@ -124,31 +140,88 @@ export async function listarPendentes() {
     } catch(e) { return []; }
 }
 
-export async function removerPendente(id) {
-    const db = await abrirDB();
-    return new Promise((resolve, reject) => {
-        const req = db.transaction(PENDENTES, 'readwrite').objectStore(PENDENTES).delete(id);
-        req.onsuccess = () => resolve();
-        req.onerror   = () => reject(req.error);
-    });
-}
-
-async function marcarPendenteComAtendimentoServidor(item, atendimentoId) {
-    const id = item?.id;
-    const idServidor = String(atendimentoId || '').trim();
-    if (!id || !idServidor) return;
-
+export async function removerPendente(id, tokenSincronizacao = '') {
     const db = await abrirDB();
     return new Promise((resolve, reject) => {
         const tx = db.transaction(PENDENTES, 'readwrite');
-        tx.objectStore(PENDENTES).put({
-            ...item,
-            atendimentoServidorId: idServidor,
-            sincronizadoParcialEm: new Date().toISOString()
-        });
+        const store = tx.objectStore(PENDENTES);
+        const req = store.get(id);
+        req.onsuccess = () => {
+            const atual = req.result;
+            if (!atual) return;
+            if (tokenSincronizacao && atual.tokenSincronizacao !== tokenSincronizacao) return;
+            store.delete(id);
+        };
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
     });
+}
+
+async function atualizarPendente(id, patch = {}, tokenSincronizacao = '') {
+    const db = await abrirDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(PENDENTES, 'readwrite');
+        const store = tx.objectStore(PENDENTES);
+        const req = store.get(id);
+        let atualizado = null;
+        req.onsuccess = () => {
+            const atual = req.result;
+            if (!atual) return;
+            if (tokenSincronizacao && atual.tokenSincronizacao !== tokenSincronizacao) return;
+            atualizado = {
+                ...atual,
+                ...patch,
+                atualizadoEm: new Date().toISOString()
+            };
+            store.put(atualizado);
+        };
+        tx.oncomplete = () => resolve(atualizado);
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+async function reservarPendente(id, tokenSincronizacao) {
+    const agora = Date.now();
+    const db = await abrirDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(PENDENTES, 'readwrite');
+        const store = tx.objectStore(PENDENTES);
+        const req = store.get(id);
+        let reservado = null;
+        req.onsuccess = () => {
+            const atual = req.result;
+            if (!atual) return;
+            const leaseAtivo = atual.estado === 'enviando'
+                && Number(atual.leaseAte || 0) > agora
+                && atual.tokenSincronizacao !== tokenSincronizacao;
+            if (leaseAtivo) return;
+            reservado = {
+                ...atual,
+                estado: 'enviando',
+                fase: atual.fase || 'iniciando_envio',
+                tentativas: Number(atual.tentativas || 0) + 1,
+                ultimaTentativaEm: new Date(agora).toISOString(),
+                tokenSincronizacao,
+                leaseAte: agora + (5 * 60 * 1000),
+                ultimoErro: null,
+                atualizadoEm: new Date(agora).toISOString()
+            };
+            store.put(reservado);
+        };
+        tx.oncomplete = () => resolve(reservado);
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+async function marcarFalhaPendente(id, tokenSincronizacao, erro) {
+    return atualizarPendente(id, {
+        estado: 'pendente',
+        fase: 'falha_aguardando_nova_tentativa',
+        ultimoErro: String(erro?.message || erro || 'Falha de sincronizacao').slice(0, 500),
+        ultimaFalhaEm: new Date().toISOString(),
+        tokenSincronizacao: null,
+        leaseAte: 0
+    }, tokenSincronizacao);
 }
 
 export async function contarPendentes() {
@@ -306,61 +379,61 @@ async function incrementarTentativaFotoPendente(id) {
 // ─── SINCRONIZAÇÃO ────────────────────────────────────────────────────────────
 // Pega tudo da fila, faz upload das fotos (ainda base64), salva no Firebase e limpa.
 // Retorna quantos atendimentos foram sincronizados com sucesso.
-export async function sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico = null) {
+let sincronizacaoAtendimentosEmAndamento = null;
+
+export async function sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico = null, opcoes = {}) {
     if (!navigator.onLine) return 0;
-    const pendentes = await listarPendentes();
-    let ok = 0;
+    if (sincronizacaoAtendimentosEmAndamento) return sincronizacaoAtendimentosEmAndamento;
 
-    async function salvarFotoCompleta(base64) {
-        const r = await storageSalvarFotoComThumb(base64);
-        if (typeof r === 'string') return { url: r, thumbUrl: r };
-        return { url: r?.url || '', thumbUrl: r?.thumbUrl || r?.url || '' };
-    }
+    sincronizacaoAtendimentosEmAndamento = (async () => {
+        const pendentes = await listarPendentes();
+        let ok = 0;
+        const tokenSincronizacao = globalThis.crypto?.randomUUID?.()
+            || `sync_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
-    for (const item of pendentes) {
-        try {
-            const d = JSON.parse(JSON.stringify(item.dados)); // cópia para não mutar
-
-            // Upload das fotos que ainda estão em base64
-            if (d.fotos?.ficha?.startsWith('data:')) {
-                const r = await salvarFotoCompleta(d.fotos.ficha);
-                d.fotos.ficha = r.url;
-                d.fotos.fichaThumb = r.thumbUrl;
+        for (const resumo of pendentes) {
+            const item = await reservarPendente(resumo.id, tokenSincronizacao);
+            if (!item) continue;
+            try {
+                await processarAtendimentoPendente({
+                    item,
+                    gerarAtendimentoId: opcoes?.gerarAtendimentoId,
+                    salvarFoto: storageSalvarFotoComThumb,
+                    salvarAtendimento: dbSalvarAtendimento,
+                    sincronizarProdutos: dbSincronizarProdutosAtendimentoNoHistorico,
+                    verificarRota: opcoes?.verificarRota,
+                    atualizarItem: async (patch) => {
+                        const atualizado = await atualizarPendente(item.id, {
+                            ...patch,
+                            estado: 'enviando',
+                            leaseAte: Date.now() + (5 * 60 * 1000)
+                        }, tokenSincronizacao);
+                        if (!atualizado) throw new Error('A reserva local do atendimento expirou.');
+                        return atualizado;
+                    }
+                });
+                const concluido = await atualizarPendente(item.id, {
+                    estado: 'enviado',
+                    fase: 'concluido',
+                    concluidoEm: new Date().toISOString()
+                }, tokenSincronizacao);
+                if (!concluido) throw new Error('A conclusao local do atendimento nao foi confirmada.');
+                await removerPendente(item.id, tokenSincronizacao);
+                ok++;
+            } catch(e) {
+                await marcarFalhaPendente(item.id, tokenSincronizacao, e).catch(() => {});
+                console.warn('offline-sync: falha ao sincronizar item', item.id, e);
+                break;
             }
-
-            for (const f of (d.fotos?.maquinas || [])) {
-                if (f.url?.startsWith('data:')) {
-                    const r = await salvarFotoCompleta(f.url);
-                    f.url = r.url;
-                    f.thumbUrl = r.thumbUrl;
-                }
-            }
-
-            for (const f of (d.fotos?.pix || [])) {
-                if (f.url?.startsWith('data:')) {
-                    const r = await salvarFotoCompleta(f.url);
-                    f.url = r.url;
-                    f.thumbUrl = r.thumbUrl;
-                }
-            }
-
-            const atendimentoServidorId = String(item?.atendimentoServidorId || '').trim();
-            const atendimentoId = await dbSalvarAtendimento(d, atendimentoServidorId || null);
-            if (!atendimentoServidorId && atendimentoId) {
-                await marcarPendenteComAtendimentoServidor(item, atendimentoId);
-            }
-            if (typeof dbSincronizarProdutosAtendimentoNoHistorico === 'function') {
-                await dbSincronizarProdutosAtendimentoNoHistorico(atendimentoId, d);
-            }
-            await removerPendente(item.id);
-            ok++;
-        } catch(e) {
-            console.warn('offline-sync: falha ao sincronizar item', item.id, e);
-            break; // Para na primeira falha — provavelmente sem internet ainda
         }
-    }
+        return ok;
+    })();
 
-    return ok;
+    try {
+        return await sincronizacaoAtendimentosEmAndamento;
+    } finally {
+        sincronizacaoAtendimentosEmAndamento = null;
+    }
 }
 
 export async function sincronizarFotosPendentes(storageSalvarFotoComThumb, dbAtualizarFotoAtendimentoPendente) {
