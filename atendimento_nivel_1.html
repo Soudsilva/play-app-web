@@ -778,6 +778,50 @@
     verificarAutenticacao();
     import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbEscutarColaboradores, dbGerarIdAtendimento, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
     import { enfileirarAtendimento } from './offline-sync.js';
+    import {
+        gerarIdVisitaAtendimento,
+        deveRestaurarVisitaAtendimento,
+        salvarRascunhoAtendimento,
+        lerRascunhoAtendimento,
+        removerRascunhoAtendimento,
+        limparRascunhosAtendimentoDoUsuario
+    } from './atendimento-rascunho-service.js';
+
+    const CHAVE_VISITA_RASCUNHO = 'atendimentoRascunhoVisitaId';
+    const usuarioRascunhoAtendimento = String(localStorage.getItem('usuarioLogado') || '').trim();
+    const tipoNavegacaoAtendimento = performance.getEntriesByType('navigation')[0]?.type || 'navigate';
+    const estadoHistoricoAtendimento = history.state && typeof history.state === 'object' ? history.state : {};
+    const visitaAnteriorRascunho = String(estadoHistoricoAtendimento?.[CHAVE_VISITA_RASCUNHO] || '').trim();
+    const deveRestaurarVisitaRascunho = deveRestaurarVisitaAtendimento(tipoNavegacaoAtendimento, visitaAnteriorRascunho);
+    const visitaRascunhoAtendimento = deveRestaurarVisitaRascunho
+        ? visitaAnteriorRascunho
+        : gerarIdVisitaAtendimento();
+
+    history.replaceState({
+        ...estadoHistoricoAtendimento,
+        [CHAVE_VISITA_RASCUNHO]: visitaRascunhoAtendimento
+    }, '', window.location.href);
+
+    const inicializacaoRascunhoAtendimento = deveRestaurarVisitaRascunho
+        ? Promise.resolve()
+        : limparRascunhosAtendimentoDoUsuario(usuarioRascunhoAtendimento).catch(error => {
+            console.warn('Nao foi possivel limpar rascunhos antigos do atendimento:', error);
+        });
+    const dadosRascunhoDaVisita = inicializacaoRascunhoAtendimento.then(() => {
+        if (!deveRestaurarVisitaRascunho) return null;
+        return lerRascunhoAtendimento({
+            usuario: usuarioRascunhoAtendimento,
+            visitaId: visitaRascunhoAtendimento
+        });
+    }).catch(error => {
+        console.warn('Nao foi possivel carregar o rascunho desta visita:', error);
+        return null;
+    });
+
+    if (!deveRestaurarVisitaRascunho) {
+        localStorage.removeItem('rascunho_atendimento');
+        sessionStorage.removeItem('atendimento_cliente_manual_numero');
+    }
 
     let listaClientes = [];
     let listaClientesBruta = [];
@@ -794,6 +838,11 @@
     let saldoDevolucaoPixDisponivel = 0;
     let operacaoFilaRascunhoId = '';
     let atendimentoServidorRascunhoId = '';
+    let aplicandoRascunhoAtendimento = false;
+    let rascunhoAtendimentoDescartado = false;
+    let timerSalvarRascunhoAtendimento = null;
+    let filaSalvarRascunhoAtendimento = Promise.resolve();
+    let restauracaoRascunhoAtendimentoEmAndamento = null;
     const CHAVE_CLIENTE_MANUAL_SESSAO = 'atendimento_cliente_manual_numero';
 
     try {
@@ -1108,9 +1157,7 @@ function obterIdAtendimentoEmEdicao() {
         unsubscribeHistoricoBalancoEdicao = dbEscutarHistoricoBalancoDoUsuario(atendimento.atendente, (lista) => {
             historicoBalancoEdicao = Array.isArray(lista) ? lista : [];
             if (!rascunhoRestaurado && listaProdutos.length > 0) {
-                restaurarRascunho();
-                if (document.getElementById('idClienteSelecionado')?.value) rascunhoRestaurado = true;
-                finalizarCarregamentoEdicaoSePronto();
+                restaurarRascunhoAtendimentoSePronto().catch(() => {});
             }
         });
     }
@@ -1443,6 +1490,7 @@ function obterIdAtendimentoEmEdicao() {
     dbEscutarClientes((lista) => {
         listaClientesBruta = lista || [];
         aplicarFiltroClientes(lista);
+        restaurarRascunhoAtendimentoSePronto().catch(() => {});
     });
 
     dbEscutarColaboradores((lista) => {
@@ -1480,6 +1528,7 @@ function obterIdAtendimentoEmEdicao() {
         if (obterIdAtendimentoEmEdicao() && !document.getElementById('idClienteSelecionado')?.value) {
             tentarRestaurarClienteEdicaoPorId();
         }
+        restaurarRascunhoAtendimentoSePronto().catch(() => {});
     }
 
     dbEscutarAtendimentos((lista) => {
@@ -1490,9 +1539,7 @@ function obterIdAtendimentoEmEdicao() {
             : null;
         if (atendimentoEdicao) iniciarHistoricoBalancoEdicao(atendimentoEdicao);
         if (obterIdAtendimentoEmEdicao() && !rascunhoRestaurado && listaProdutos.length > 0) {
-            restaurarRascunho();
-            if (document.getElementById('idClienteSelecionado')?.value) rascunhoRestaurado = true;
-            finalizarCarregamentoEdicaoSePronto();
+            restaurarRascunhoAtendimentoSePronto().catch(() => {});
         }
         const clienteSelecionadoId = document.getElementById('idClienteSelecionado')?.value;
         if (!clienteSelecionadoId) return;
@@ -1502,7 +1549,7 @@ function obterIdAtendimentoEmEdicao() {
     });
 
     // 2. Carrega Produtos e inicia a primeira linha
-    dbEscutarEstoque((lista) => {
+    dbEscutarEstoque(async (lista) => {
         // [ALTERADO] Filtra para não permitir nomes repetidos no dropdown
         const nomesVistos = new Set();
         const listaUnica = [];
@@ -1518,11 +1565,7 @@ function obterIdAtendimentoEmEdicao() {
         // Se for a primeira vez carregando e não tiver linhas, cria a primeira
         // [ALTERADO] Tenta restaurar rascunho antes de criar linha vazia
         if (!rascunhoRestaurado) {
-            restaurarRascunho();
-            if (!obterIdAtendimentoEmEdicao() || document.getElementById('idClienteSelecionado')?.value) {
-                rascunhoRestaurado = true;
-                finalizarCarregamentoEdicaoSePronto();
-            }
+            await restaurarRascunhoAtendimentoSePronto();
         }
         
         if (document.querySelectorAll('.linha-produto').length === 0) {
@@ -2284,7 +2327,9 @@ function obterIdAtendimentoEmEdicao() {
             if (!atendimentoEmEdicaoId) {
                 operacaoFilaRascunhoId = operacaoFilaId;
                 atendimentoServidorRascunhoId = atendimentoServidorId;
-                salvarRascunho();
+                await window.salvarRascunhoAtendimentoAgora().catch(error => {
+                    console.warn('Nao foi possivel atualizar o rascunho antes da fila:', error);
+                });
             }
             await enfileirarAtendimento(dadosAtendimento, {
                 id: operacaoFilaId,
@@ -2292,7 +2337,9 @@ function obterIdAtendimentoEmEdicao() {
             });
 
             // --- 5. Limpeza e Redirecionamento ---
-            localStorage.removeItem('rascunho_atendimento');
+            await window.descartarRascunhoAtendimento().catch(error => {
+                console.warn('Atendimento enfileirado, mas o rascunho nao foi removido imediatamente:', error);
+            });
             operacaoFilaRascunhoId = '';
             atendimentoServidorRascunhoId = '';
             sessionStorage.removeItem('rota_filtro_numeros');
@@ -2371,15 +2418,16 @@ function obterIdAtendimentoEmEdicao() {
         };
     }
     
-    window.salvarRascunho = function() {
-        if (obterIdAtendimentoEmEdicao()) return;
+    function coletarDadosRascunhoAtendimento() {
+        if (obterIdAtendimentoEmEdicao()) return null;
         const cardSatRascunho = document.getElementById('card-saturno');
         const dados = {
             ...(operacaoFilaRascunhoId ? { operacaoFilaId: operacaoFilaRascunhoId } : {}),
             ...(atendimentoServidorRascunhoId ? { atendimentoServidorId: atendimentoServidorRascunhoId } : {}),
+            clienteId: document.getElementById('idClienteSelecionado')?.value || "",
             clienteBusca: document.getElementById('inputBuscaCliente').value || "",
             pixLinhas: [],
-            valorPixDevolvido: document.getElementById('valorPixDevolvido')?.value || "",
+            // DEVOL. permanece exclusivamente sob o fluxo atual em tempo real.
             valorDinheiro: document.getElementById('valorDinheiro').value || "",
             porcComissao: document.getElementById('porcComissao').value || "",
             produtos: [],
@@ -2441,22 +2489,73 @@ function obterIdAtendimentoEmEdicao() {
             }
         });
 
-        try {
-            localStorage.setItem('rascunho_atendimento', JSON.stringify(dados));
-        } catch (e) {
-            console.warn("Imagem muito grande para salvar no rascunho.");
-        }
+        return dados;
     }
 
+    function executarSalvamentoRascunhoAtendimento() {
+        if (obterIdAtendimentoEmEdicao() || aplicandoRascunhoAtendimento || rascunhoAtendimentoDescartado) {
+            return filaSalvarRascunhoAtendimento;
+        }
+
+        const dados = coletarDadosRascunhoAtendimento();
+        if (!dados) return filaSalvarRascunhoAtendimento;
+
+        filaSalvarRascunhoAtendimento = filaSalvarRascunhoAtendimento
+            .catch(() => {})
+            .then(() => inicializacaoRascunhoAtendimento)
+            .then(() => salvarRascunhoAtendimento({
+                usuario: usuarioRascunhoAtendimento,
+                visitaId: visitaRascunhoAtendimento,
+                dados
+            }))
+            .catch(error => {
+                console.warn('Nao foi possivel salvar o rascunho do atendimento:', error);
+                throw error;
+            });
+        return filaSalvarRascunhoAtendimento;
+    }
+
+    window.salvarRascunho = function() {
+        if (obterIdAtendimentoEmEdicao() || aplicandoRascunhoAtendimento || rascunhoAtendimentoDescartado) return;
+        window.clearTimeout(timerSalvarRascunhoAtendimento);
+        timerSalvarRascunhoAtendimento = window.setTimeout(() => {
+            executarSalvamentoRascunhoAtendimento().catch(() => {});
+        }, 350);
+    };
+
+    window.salvarRascunhoAtendimentoAgora = function() {
+        window.clearTimeout(timerSalvarRascunhoAtendimento);
+        timerSalvarRascunhoAtendimento = null;
+        return executarSalvamentoRascunhoAtendimento();
+    };
+
+    window.descartarRascunhoAtendimento = async function() {
+        if (obterIdAtendimentoEmEdicao()) return;
+        rascunhoAtendimentoDescartado = true;
+        window.clearTimeout(timerSalvarRascunhoAtendimento);
+        timerSalvarRascunhoAtendimento = null;
+        await filaSalvarRascunhoAtendimento.catch(() => {});
+        await inicializacaoRascunhoAtendimento;
+        await removerRascunhoAtendimento({
+            usuario: usuarioRascunhoAtendimento,
+            visitaId: visitaRascunhoAtendimento
+        });
+        localStorage.removeItem('rascunho_atendimento');
+    };
+
     window.restaurarRascunho = function() {
-        const atendimentoEmEdicaoId = obterIdAtendimentoEmEdicao();
-        const dadosOnline = atendimentoEmEdicaoId
-            ? montarDadosEdicaoOnline((listaAtendimentos || []).find(item => item.firebaseUrl === atendimentoEmEdicaoId))
-            : null;
-        const salvo = atendimentoEmEdicaoId ? null : localStorage.getItem('rascunho_atendimento');
-        if (dadosOnline || salvo) {
+        if (restauracaoRascunhoAtendimentoEmAndamento) return restauracaoRascunhoAtendimentoEmAndamento;
+
+        const tarefaRestauracao = (async () => {
+            const atendimentoEmEdicaoId = obterIdAtendimentoEmEdicao();
+            const dadosOnline = atendimentoEmEdicaoId
+                ? montarDadosEdicaoOnline((listaAtendimentos || []).find(item => item.firebaseUrl === atendimentoEmEdicaoId))
+                : null;
+            const dados = dadosOnline || (atendimentoEmEdicaoId ? null : await dadosRascunhoDaVisita);
+            if (!dados) return false;
+
+            aplicandoRascunhoAtendimento = true;
             try {
-                const dados = dadosOnline || JSON.parse(salvo);
                 if (!atendimentoEmEdicaoId) {
                     operacaoFilaRascunhoId = String(dados?.operacaoFilaId || '').trim();
                     atendimentoServidorRascunhoId = String(dados?.atendimentoServidorId || '').trim();
@@ -2550,15 +2649,37 @@ function obterIdAtendimentoEmEdicao() {
                     });
                 }
 
-                if (atendimentoEmEdicaoId && document.getElementById('idClienteSelecionado')?.value) {
-                    rascunhoRestaurado = true;
-                    finalizarCarregamentoEdicaoSePronto();
-                }
-                
+                rascunhoRestaurado = true;
+                finalizarCarregamentoEdicaoSePronto();
+                return true;
             } catch (e) {
                 console.error("Erro ao restaurar rascunho", e);
+                return false;
+            } finally {
+                aplicandoRascunhoAtendimento = false;
             }
+        })();
+
+        restauracaoRascunhoAtendimentoEmAndamento = tarefaRestauracao.finally(() => {
+            restauracaoRascunhoAtendimentoEmAndamento = null;
+        });
+        return restauracaoRascunhoAtendimentoEmAndamento;
+    };
+
+    async function restaurarRascunhoAtendimentoSePronto() {
+        if (rascunhoRestaurado) return true;
+        if (listaProdutos.length === 0) return false;
+
+        const atendimentoEmEdicaoId = obterIdAtendimentoEmEdicao();
+        if (atendimentoEmEdicaoId && !(listaAtendimentos || []).some(item => item.firebaseUrl === atendimentoEmEdicaoId)) {
+            return false;
         }
+        if (!atendimentoEmEdicaoId && listaClientes.length === 0) return false;
+
+        const restaurou = await restaurarRascunho();
+        if (restaurou || !atendimentoEmEdicaoId) rascunhoRestaurado = true;
+        finalizarCarregamentoEdicaoSePronto();
+        return restaurou;
     }
     
     // Adiciona listener para salvar quando muda o dropdown de produto
@@ -2567,43 +2688,23 @@ function obterIdAtendimentoEmEdicao() {
     });
 
 
-    // [NOVO] Segurança Extra: Ao entrar na página (mesmo pelo cache do celular), se não houver rascunho, limpa tudo.
+    // Restaura somente quando esta mesma visita foi recarregada.
     window.addEventListener('pageshow', function() {
         atualizarModoEdicao();
-        if (obterIdAtendimentoEmEdicao()) {
-            if (!rascunhoRestaurado) restaurarRascunho();
-            return;
+        restaurarRascunhoAtendimentoSePronto().catch(error => {
+            console.warn('Nao foi possivel restaurar o atendimento nesta exibicao:', error);
+        });
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            window.salvarRascunhoAtendimentoAgora().catch(() => {});
         }
-        if (!localStorage.getItem('rascunho_atendimento')) {
-            document.getElementById('inputBuscaCliente').value = "";
-            document.getElementById('resultadoCliente').style.display = 'none';
-            document.getElementById('idClienteSelecionado').value = "";
-            atualizarVisibilidadeFluxoAtendimento(false);
-            const rotaDestaque = document.getElementById('rotaClienteDestaque');
-            if (rotaDestaque) {
-                rotaDestaque.style.display = 'none';
-                rotaDestaque.textContent = '';
-                rotaDestaque.onclick = null;
-                rotaDestaque.classList.remove('desativada');
-            }
-            fecharPainelClientesRota();
-            document.getElementById('containerProdutos').innerHTML = "";
-            document.getElementById('imgPreviewFicha').style.display = 'none';
-            document.getElementById('textoFotoFicha').style.display = 'block';
-            document.getElementById('containerFotosPix').innerHTML = '';
-            document.getElementById('containerFotosMaquinas').innerHTML = '';
-            document.getElementById('areaPix').style.display = 'block';
-            saldoDevolucaoPixDisponivel = 0;
-            document.getElementById('valorPixDevolvido').value = '';
-            atualizarVisibilidadePixDevolucao();
-            document.getElementById('containerPix').innerHTML = "";
-            // Se estiver vazio, tenta criar a primeira linha novamente
-            if (document.querySelectorAll('.linha-produto').length === 0 && typeof window.adicionarLinhaProduto === 'function') {
-                window.adicionarLinhaProduto();
-            }
-            if (document.querySelectorAll('#containerPix .linha-form').length === 0 && typeof window.criarLinhaPix === 'function') {
-                window.criarLinhaPix();
-            }
+    });
+
+    window.addEventListener('pagehide', () => {
+        if (!rascunhoAtendimentoDescartado) {
+            window.salvarRascunhoAtendimentoAgora().catch(() => {});
         }
     });
 
@@ -2630,7 +2731,7 @@ function obterIdAtendimentoEmEdicao() {
 
     function travarVoltar() {
         if (permitirSaidaAtendimento) return;
-        history.pushState(null, null, window.location.href);
+        history.pushState(history.state || {}, null, window.location.href);
     }
 
     function obterTelaAnterior() {
@@ -2652,13 +2753,15 @@ function obterIdAtendimentoEmEdicao() {
         return 'index.html';
     }
 
-    function sairParaTelaAnterior() {
+    async function sairParaTelaAnterior() {
         const destino = 'index.html';
         permitirSaidaAtendimento = true;
         window.removeEventListener('click', garantirTrava);
         window.removeEventListener('touchstart', garantirTrava);
         try {
-            localStorage.removeItem('rascunho_atendimento');
+            if (typeof window.descartarRascunhoAtendimento === 'function') {
+                await window.descartarRascunhoAtendimento();
+            }
             sessionStorage.removeItem(CHAVE_TELA_ORIGEM_ATENDIMENTO);
         } catch (error) {
             console.error('Falha ao limpar estado antes de sair do atendimento:', error);
@@ -2700,7 +2803,7 @@ function obterIdAtendimentoEmEdicao() {
             primaryResult: false,
             overlayResult: false
         })) {
-            sairParaTelaAnterior();
+            await sairParaTelaAnterior();
         }
     });
 </script>
