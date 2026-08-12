@@ -449,11 +449,10 @@
 </script>
 
 <script type="module">
-    import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, dbGerarIdAtendimento, dbVerificarELiberarRota, dbEscutarResumoBalanco, dbExisteContestacaoAtendimentoDoUsuario, dbEscutarResumoContestacaoAtendimento, dbAtualizarFotoAtendimentoPendente } from './database.js';
+    import { dbEscutarColaboradores, dbEscutarResumoBalanco, dbExisteContestacaoAtendimentoDoUsuario, dbEscutarResumoContestacaoAtendimento } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
-    import { sincronizarPendentes, sincronizarFotosPendentes, contarPendentes, contarFotosPendentesUpload } from './offline-sync.js';
-    import { confirmarAtendimentoNoFirebase, confirmarProdutosAtendimentoNoFirebase, confirmarResultadoRotaNoFirebase } from './atendimento-sync-confirmacao-service.js';
-    import { salvarFotoAtendimentoRetomavel } from './atendimento-sync-upload-service.js';
+    import { contarPendentes, contarFotosPendentesUpload } from './offline-sync.js';
+    import { sincronizarFilaAtendimentos, sincronizarFotosPendentesLegadas } from './atendimento-sync-runner.js';
 
     let unsubscribeResumoBalanco = null;
     let unsubscribeResumoContestacaoAtendimento = null;
@@ -628,20 +627,8 @@
     }
 
     async function sincronizarEnviosPendentesIndex() {
-        const n = await sincronizarPendentes(
-            salvarFotoAtendimentoRetomavel,
-            dbSalvarAtendimento,
-            dbSincronizarProdutosAtendimentoNoHistorico,
-            {
-                gerarAtendimentoId: dbGerarIdAtendimento,
-                atualizarFotoAtendimento: dbAtualizarFotoAtendimentoPendente,
-                verificarRota: dbVerificarELiberarRota,
-                confirmarAtendimento: confirmarAtendimentoNoFirebase,
-                confirmarProdutos: confirmarProdutosAtendimentoNoFirebase,
-                confirmarRota: confirmarResultadoRotaNoFirebase
-            }
-        );
-        const fotos = await sincronizarFotosPendentes(salvarFotoAtendimentoRetomavel, dbAtualizarFotoAtendimentoPendente);
+        const n = await sincronizarFilaAtendimentos();
+        const fotos = await sincronizarFotosPendentesLegadas();
         return { atendimentos: n, fotos: Number(fotos?.ok || 0) };
     }
 

@@ -778,6 +778,7 @@
     verificarAutenticacao();
     import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbEscutarColaboradores, dbGerarIdAtendimento, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
     import { enfileirarAtendimento } from './offline-sync.js';
+    import { sincronizarFilaAtendimentos } from './atendimento-sync-runner.js';
     import {
         gerarIdVisitaAtendimento,
         deveRestaurarVisitaAtendimento,
@@ -2335,6 +2336,14 @@ function obterIdAtendimentoEmEdicao() {
                 id: operacaoFilaId,
                 atendimentoServidorId
             });
+            if (navigator.onLine) {
+                sincronizarFilaAtendimentos({
+                    idPendente: String(operacaoFilaId),
+                    somenteRegistroInicial: true
+                }).catch(error => {
+                    console.warn('Envio textual imediato nao foi concluido; a fila tentara novamente:', error);
+                });
+            }
 
             // --- 5. Limpeza e Redirecionamento ---
             await window.descartarRascunhoAtendimento().catch(error => {

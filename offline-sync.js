@@ -439,7 +439,7 @@ export async function sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAt
             if (!item) continue;
             const encerrarRenovacao = iniciarRenovacaoReserva(item.id, tokenSincronizacao);
             try {
-                await processarAtendimentoPendente({
+                const resultadoProcessamento = await processarAtendimentoPendente({
                     item,
                     gerarAtendimentoId: opcoes?.gerarAtendimentoId,
                     salvarFoto: storageSalvarFotoComThumb,
@@ -450,6 +450,7 @@ export async function sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAt
                     confirmarAtendimento: opcoes?.confirmarAtendimento,
                     confirmarProdutos: opcoes?.confirmarProdutos,
                     confirmarRota: opcoes?.confirmarRota,
+                    pararAposRegistroInicial: opcoes?.somenteRegistroInicial === true,
                     atualizarItem: async (patch) => {
                         const atualizado = await atualizarPendente(item.id, {
                             ...patch,
@@ -460,6 +461,15 @@ export async function sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAt
                         return atualizado;
                     }
                 });
+                if (resultadoProcessamento?.parcial === true) {
+                    const liberado = await atualizarPendente(item.id, {
+                        estado: 'pendente',
+                        tokenSincronizacao: null,
+                        leaseAte: 0
+                    }, tokenSincronizacao);
+                    if (!liberado) throw new Error('Nao foi possivel liberar a fila apos o envio inicial.');
+                    break;
+                }
                 const concluido = await atualizarPendente(item.id, {
                     estado: 'enviado',
                     fase: 'concluido',

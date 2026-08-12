@@ -652,11 +652,10 @@
 <script type="module">
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
-    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbEscutarHistoricoBalancoDoUsuario, dbResponderContestacaoAtendimento, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, dbGerarIdAtendimento, dbVerificarELiberarRota, dbAtualizarFotoAtendimentoPendente } from './database.js';
-    import { listarPendentes, listarFotosPendentesUpload, sincronizarPendentes, sincronizarFotosPendentes, priorizarPendente } from './offline-sync.js';
+    import { dbEscutarAtendimentos, dbEscutarCadastrosPix, dbEscutarClientes, dbEscutarColaboradores, dbEscutarHistoricoDoUsuario, dbEscutarManutencoes, dbEscutarHistoricoBalancoDoUsuario, dbResponderContestacaoAtendimento } from './database.js';
+    import { listarPendentes, listarFotosPendentesUpload, priorizarPendente } from './offline-sync.js';
     import { combinarAtendimentosComFila, obterStatusVisualAtendimento } from './verificar-envios-sync-rules.mjs';
-    import { confirmarAtendimentoNoFirebase, confirmarProdutosAtendimentoNoFirebase, confirmarResultadoRotaNoFirebase } from './atendimento-sync-confirmacao-service.js';
-    import { salvarFotoAtendimentoRetomavel } from './atendimento-sync-upload-service.js';
+    import { sincronizarFilaAtendimentos, sincronizarFotosPendentesLegadas } from './atendimento-sync-runner.js';
 
     // Pega quem estÃ¡ logado no celular no momento
     const usuarioLogado = localStorage.getItem('usuarioLogado');
@@ -895,21 +894,10 @@
         reenviandoPendencias = true;
         renderizarPendenciasLocais('Reenviando pendências, uma por vez...');
         try {
-            const enviadosAtendimentos = await sincronizarPendentes(
-                salvarFotoAtendimentoRetomavel,
-                dbSalvarAtendimento,
-                dbSincronizarProdutosAtendimentoNoHistorico,
-                {
-                    gerarAtendimentoId: dbGerarIdAtendimento,
-                    atualizarFotoAtendimento: dbAtualizarFotoAtendimentoPendente,
-                    verificarRota: dbVerificarELiberarRota,
-                    confirmarAtendimento: confirmarAtendimentoNoFirebase,
-                    confirmarProdutos: confirmarProdutosAtendimentoNoFirebase,
-                    confirmarRota: confirmarResultadoRotaNoFirebase,
-                    ...(idSolicitado ? { idPendente: idSolicitado } : {})
-                }
+            const enviadosAtendimentos = await sincronizarFilaAtendimentos(
+                idSolicitado ? { idPendente: idSolicitado } : {}
             );
-            const enviadosFotos = await sincronizarFotosPendentes(salvarFotoAtendimentoRetomavel, dbAtualizarFotoAtendimentoPendente);
+            const enviadosFotos = await sincronizarFotosPendentesLegadas();
             await carregarPendenciasLocais();
             const totalEnviado = Number(enviadosAtendimentos || 0) + Number(enviadosFotos?.ok || 0);
             if (totalEnviado > 0) {

@@ -250,7 +250,8 @@ export async function processarAtendimentoPendente({
     verificarRota,
     confirmarAtendimento,
     confirmarProdutos,
-    confirmarRota
+    confirmarRota,
+    pararAposRegistroInicial = false
 }) {
     if (!item?.id) throw new Error('Item da fila sem id local.');
     if (typeof atualizarItem !== 'function') throw new Error('Atualizador da fila nao informado.');
@@ -282,6 +283,10 @@ export async function processarAtendimentoPendente({
                 ? faseAnterior
                 : 'atendimento_pendente_confirmado'
         });
+    }
+
+    if (pararAposRegistroInicial) {
+        return { atendimentoId, dados, item, parcial: true };
     }
 
     for (const alvo of listarFotosBase64Atendimento(dados)) {

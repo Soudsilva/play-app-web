@@ -60,6 +60,47 @@ test('prepara o texto para o Firebase sem incluir Base64 e marca somente as foto
     assert.equal(JSON.stringify(preparado).includes('data:image'), false);
 });
 
+test('envio inicial acionado pelo formulario grava somente o texto e conserva a fila', async () => {
+    const chamadas = [];
+    let itemAtual = {
+        id: 'fila-envio-inicial',
+        atendimentoServidorId: 'atendimento-envio-inicial',
+        fase: 'salvo_localmente',
+        dados: {
+            ...structuredClone(dadosBase),
+            fotos: {
+                ficha: 'data:image/jpeg;base64,ficha',
+                maquinas: [],
+                pix: []
+            }
+        }
+    };
+
+    const resultado = await processarAtendimentoPendente({
+        item: itemAtual,
+        pararAposRegistroInicial: true,
+        atualizarItem: async patch => {
+            itemAtual = { ...itemAtual, ...patch };
+            chamadas.push(`fase:${patch.fase}`);
+            return itemAtual;
+        },
+        salvarAtendimento: async dados => {
+            chamadas.push('texto');
+            assert.equal(dados.fotosPendentes, true);
+            assert.equal(JSON.stringify(dados).includes('data:image'), false);
+        },
+        salvarFoto: async () => chamadas.push('foto'),
+        atualizarFotoAtendimento: async () => chamadas.push('foto-remota'),
+        sincronizarProdutos: async () => chamadas.push('produtos'),
+        confirmarAtendimento: async () => chamadas.push('confirmacao')
+    });
+
+    assert.equal(resultado.parcial, true);
+    assert.equal(itemAtual.registroInicialConfirmado, true);
+    assert.match(itemAtual.dados.fotos.ficha, /^data:/);
+    assert.deepEqual(chamadas, ['texto', 'fase:atendimento_pendente_confirmado']);
+});
+
 test('retomada após efeitos confirmados executa somente rota e confirmação remota', async () => {
     const chamadas = [];
     let itemAtual = {
