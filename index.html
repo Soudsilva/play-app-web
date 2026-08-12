@@ -452,6 +452,7 @@
     import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, dbGerarIdAtendimento, dbVerificarELiberarRota, storageSalvarFotoComThumb, dbEscutarResumoBalanco, dbExisteContestacaoAtendimentoDoUsuario, dbEscutarResumoContestacaoAtendimento, dbAtualizarFotoAtendimentoPendente } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
     import { sincronizarPendentes, sincronizarFotosPendentes, contarPendentes, contarFotosPendentesUpload } from './offline-sync.js';
+    import { confirmarAtendimentoNoFirebase, confirmarProdutosAtendimentoNoFirebase, confirmarResultadoRotaNoFirebase } from './atendimento-sync-confirmacao-service.js';
 
     let unsubscribeResumoBalanco = null;
     let unsubscribeResumoContestacaoAtendimento = null;
@@ -630,7 +631,13 @@
             storageSalvarFotoComThumb,
             dbSalvarAtendimento,
             dbSincronizarProdutosAtendimentoNoHistorico,
-            { gerarAtendimentoId: dbGerarIdAtendimento, verificarRota: dbVerificarELiberarRota }
+            {
+                gerarAtendimentoId: dbGerarIdAtendimento,
+                verificarRota: dbVerificarELiberarRota,
+                confirmarAtendimento: confirmarAtendimentoNoFirebase,
+                confirmarProdutos: confirmarProdutosAtendimentoNoFirebase,
+                confirmarRota: confirmarResultadoRotaNoFirebase
+            }
         );
         const fotos = await sincronizarFotosPendentes(storageSalvarFotoComThumb, dbAtualizarFotoAtendimentoPendente);
         return { atendimentos: n, fotos: Number(fotos?.ok || 0) };

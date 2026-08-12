@@ -4079,13 +4079,15 @@ export async function dbSincronizarProdutosAtendimentoNoHistorico(atendimentoId,
     try {
         const idRef = String(atendimentoId || '').trim();
         const responsavel = String(atendimento?.atendente || '').trim();
+        const chaveUsuario = _normalizarChaveUsuario(responsavel);
+        const confirmacao = { caminhos: [] };
         const nomeCliente = String(atendimento?.cliente?.nome || '').trim();
         const descricaoAtendimento = nomeCliente ? `Atendimento - ${nomeCliente}` : 'Atendimento';
-        if (!idRef || !responsavel) return;
+        if (!idRef || !responsavel || !chaveUsuario) return confirmacao;
 
         await _substituirMovimentacoesHistoricoBalancoPorRefId(idRef, responsavel);
 
-        if (atendimento?.origemRegistro && atendimento.origemRegistro !== 'atendimento') return;
+        if (atendimento?.origemRegistro && atendimento.origemRegistro !== 'atendimento') return confirmacao;
 
         const produtos = Array.isArray(atendimento?.produtos) ? atendimento.produtos : [];
         const itensValidos = produtos
@@ -4105,11 +4107,11 @@ export async function dbSincronizarProdutosAtendimentoNoHistorico(atendimentoId,
         if (itensValidos.length === 0) {
             await dbAtualizarResumoBalanco(responsavel);
             await _tentarRecalcularRemuneracoes();
-            return;
+            return confirmacao;
         }
 
         for (const produto of itensValidos) {
-            await dbSalvarHistoricoBalanco({
+            const movimentoId = await dbSalvarHistoricoBalanco({
                 responsavel,
                 registradoPor: atendimento?.atendente || responsavel,
                 itemNome: produto.nome,
@@ -4126,7 +4128,12 @@ export async function dbSincronizarProdutosAtendimentoNoHistorico(atendimentoId,
                 isDefeitoEntry: false,
                 qtdDefeitoConsumida: 0
             });
+            if (!movimentoId) {
+                throw new Error(`Movimentacao do produto nao foi confirmada: ${produto.nome}.`);
+            }
+            confirmacao.caminhos.push(`movimentacao_balanco_historico/${chaveUsuario}/${movimentoId}`);
         }
+        return confirmacao;
     } catch (e) {
         console.error('ERRO AO SINCRONIZAR PRODUTOS DO ATENDIMENTO NO HISTORICO:', e);
         throw e;

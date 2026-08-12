@@ -1,4 +1,4 @@
-const CACHE = 'play-v17';
+const CACHE = 'play-v18';
 
 // Arquivos essenciais do próprio app
 const SHELL = [
@@ -23,6 +23,7 @@ const SHELL = [
     '/offline-sync.js',
     '/atendimento-rascunho-service.js',
     '/atendimento-fila-sync.mjs',
+    '/atendimento-sync-confirmacao-service.js',
     '/verificar-envios-sync-rules.mjs',
     '/assets/js/play-dialogs.js',
     '/assets/img/logo.png',
