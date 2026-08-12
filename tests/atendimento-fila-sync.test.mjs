@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
     processarAtendimentoPendente,
     ordenarPendenciasAtendimento,
+    prepararAtendimentoComFotosPendentes,
     validarConfirmacaoAtendimentoRemoto,
     validarConfirmacaoProdutosAtendimento
 } from '../atendimento-fila-sync.mjs';
@@ -37,12 +38,35 @@ test('confirma efeitos somente quando quantidades dos produtos correspondem', ()
     ]), /Efeito do produto ainda nao confirmado/);
 });
 
+test('prepara o texto para o Firebase sem incluir Base64 e marca somente as fotos pendentes', () => {
+    const preparado = prepararAtendimentoComFotosPendentes({
+        ...structuredClone(dadosBase),
+        fotos: {
+            ficha: 'data:image/jpeg;base64,ficha',
+            maquinas: [
+                { nome: 'Maquina P', url: 'data:image/jpeg;base64,maquina' },
+                { nome: 'Maquina G', url: 'https://storage/existente.jpg' }
+            ],
+            pix: []
+        }
+    }, { id: 'fila-texto' });
+
+    assert.equal(preparado.fotosPendentes, true);
+    assert.equal(preparado.fotos.ficha, null);
+    assert.equal(preparado.fotos.fichaPendente, true);
+    assert.equal(preparado.fotos.maquinas[0].url, null);
+    assert.equal(preparado.fotos.maquinas[0].uploadPendente, true);
+    assert.equal(preparado.fotos.maquinas[1].url, 'https://storage/existente.jpg');
+    assert.equal(JSON.stringify(preparado).includes('data:image'), false);
+});
+
 test('retomada após efeitos confirmados executa somente rota e confirmação remota', async () => {
     const chamadas = [];
     let itemAtual = {
         id: 'fila-1',
         atendimentoServidorId: 'atendimento-1',
         fase: 'efeitos_confirmados',
+        registroInicialConfirmado: true,
         dados: structuredClone(dadosBase)
     };
 
@@ -88,6 +112,7 @@ test('fluxo completo confirma fotos, atendimento, efeitos, rota e leitura final'
         }
     };
     let numeroFoto = 0;
+    const ordem = [];
 
     const resultado = await processarAtendimentoPendente({
         item: itemAtual,
@@ -97,24 +122,36 @@ test('fluxo completo confirma fotos, atendimento, efeitos, rota e leitura final'
             return itemAtual;
         },
         salvarFoto: async () => {
+            ordem.push('upload');
             numeroFoto += 1;
             return {
                 url: `https://storage/foto-${numeroFoto}.jpg`,
                 thumbUrl: `https://storage/thumb-${numeroFoto}.jpg`
             };
         },
-        salvarAtendimento: async () => {},
+        salvarAtendimento: async (dados, id, opcoes) => {
+            ordem.push('texto');
+            assert.equal(id, 'atendimento-completo');
+            assert.equal(opcoes.recalcularRemuneracoes, false);
+            assert.equal(dados.fotosPendentes, true);
+            assert.equal(JSON.stringify(dados).includes('data:image'), false);
+        },
+        atualizarFotoAtendimento: async referencia => ordem.push(`foto-remota:${referencia.tipo}`),
         sincronizarProdutos: async () => ({ caminhos: ['movimentacao_balanco_historico/usuario/movimento-1'] }),
         confirmarProdutos: async (_resultado, dados) => validarConfirmacaoProdutosAtendimento(dados, [
             { nome: 'Amoeba', movimento: 2 }
         ]),
         verificarRota: async () => ({ liberada: false }),
         confirmarRota: async () => true,
-        confirmarAtendimento: async (_id, dados) => validarConfirmacaoAtendimentoRemoto(dados, dados)
+        confirmarAtendimento: async (_id, dados) => {
+            ordem.push('confirmar-atendimento');
+            return validarConfirmacaoAtendimentoRemoto(dados, dados);
+        }
     });
 
     assert.equal(resultado.atendimentoId, 'atendimento-completo');
     assert.deepEqual(fases, [
+        'atendimento_pendente_confirmado',
         'fotos_enviando',
         'fotos_enviando',
         'fotos_confirmadas',
@@ -123,6 +160,67 @@ test('fluxo completo confirma fotos, atendimento, efeitos, rota e leitura final'
         'rota_confirmada',
         'confirmacao_remota'
     ]);
+    assert.deepEqual(ordem.slice(0, 5), [
+        'texto',
+        'upload',
+        'foto-remota:ficha',
+        'upload',
+        'foto-remota:maquina'
+    ]);
+});
+
+test('falha na segunda foto preserva a primeira e a retomada envia somente o que falta', async () => {
+    let itemAtual = {
+        id: 'fila-retomada-foto',
+        atendimentoServidorId: 'atendimento-retomada-foto',
+        fase: 'salvo_localmente',
+        dados: {
+            ...structuredClone(dadosBase),
+            fotos: {
+                ficha: 'data:image/jpeg;base64,ficha',
+                maquinas: [{ nome: 'Maquina P', url: 'data:image/jpeg;base64,maquina' }],
+                pix: []
+            }
+        }
+    };
+    let uploads = 0;
+    const atualizarItem = async patch => {
+        itemAtual = { ...itemAtual, ...patch };
+        return itemAtual;
+    };
+    const servicos = {
+        atualizarItem,
+        salvarAtendimento: async () => {},
+        atualizarFotoAtendimento: async () => {},
+        sincronizarProdutos: async () => ({ caminhos: [] }),
+        confirmarProdutos: async () => true,
+        confirmarAtendimento: async () => true
+    };
+
+    await assert.rejects(() => processarAtendimentoPendente({
+        item: itemAtual,
+        ...servicos,
+        salvarFoto: async () => {
+            uploads += 1;
+            if (uploads === 2) throw new Error('rede interrompida');
+            return { url: 'https://storage/ficha.jpg', thumbUrl: 'https://storage/thumb-ficha.jpg' };
+        }
+    }), /rede interrompida/);
+
+    assert.equal(itemAtual.dados.fotos.ficha, 'https://storage/ficha.jpg');
+    assert.match(itemAtual.dados.fotos.maquinas[0].url, /^data:/);
+
+    await processarAtendimentoPendente({
+        item: itemAtual,
+        ...servicos,
+        salvarFoto: async () => {
+            uploads += 1;
+            return { url: 'https://storage/maquina.jpg', thumbUrl: 'https://storage/thumb-maquina.jpg' };
+        }
+    });
+
+    assert.equal(uploads, 3);
+    assert.equal(itemAtual.dados.fotos.maquinas[0].url, 'https://storage/maquina.jpg');
 });
 
 test('falha na leitura final mantém a fase pronta para nova confirmação', async () => {
@@ -130,6 +228,7 @@ test('falha na leitura final mantém a fase pronta para nova confirmação', asy
         id: 'fila-2',
         atendimentoServidorId: 'atendimento-2',
         fase: 'rota_confirmada',
+        registroInicialConfirmado: true,
         dados: structuredClone(dadosBase)
     };
 

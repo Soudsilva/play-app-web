@@ -444,6 +444,7 @@ export async function sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAt
                     gerarAtendimentoId: opcoes?.gerarAtendimentoId,
                     salvarFoto: storageSalvarFotoComThumb,
                     salvarAtendimento: dbSalvarAtendimento,
+                    atualizarFotoAtendimento: opcoes?.atualizarFotoAtendimento,
                     sincronizarProdutos: dbSincronizarProdutosAtendimentoNoHistorico,
                     verificarRota: opcoes?.verificarRota,
                     confirmarAtendimento: opcoes?.confirmarAtendimento,
@@ -499,7 +500,8 @@ export async function sincronizarFotosPendentes(storageSalvarFotoComThumb, dbAtu
                 await removerFotoPendenteUpload(foto.id);
                 continue;
             }
-            const r = await storageSalvarFotoComThumb(base64, foto?.pasta || 'atendimentos');
+            const nomeEstavel = `pendente-${String(foto?.id || atendimentoId).replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+            const r = await storageSalvarFotoComThumb(base64, foto?.pasta || 'atendimentos', 200, nomeEstavel);
             await dbAtualizarFotoAtendimentoPendente(foto, r.url, r.thumbUrl || r.url);
             await removerFotoPendenteUpload(foto.id);
             ok++;

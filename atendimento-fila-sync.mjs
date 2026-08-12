@@ -35,13 +35,14 @@ export function listarFotosBase64Atendimento(dados = {}) {
 const ORDEM_FASES = Object.freeze({
     salvo_localmente: 0,
     id_reservado: 1,
-    fotos_enviando: 2,
-    fotos_confirmadas: 3,
-    atendimento_confirmado: 4,
-    efeitos_confirmados: 5,
-    rota_confirmada: 6,
-    confirmacao_remota: 7,
-    concluido: 8
+    atendimento_pendente_confirmado: 2,
+    fotos_enviando: 3,
+    fotos_confirmadas: 4,
+    atendimento_confirmado: 5,
+    efeitos_confirmados: 6,
+    rota_confirmada: 7,
+    confirmacao_remota: 8,
+    concluido: 9
 });
 
 function faseAtingida(item, fase) {
@@ -166,6 +167,8 @@ export function aplicarUploadNaFotoAtendimento(dados, alvo, resultadoUpload) {
     if (alvo?.tipo === 'ficha') {
         atualizado.fotos.ficha = resultado.url;
         atualizado.fotos.fichaThumb = resultado.thumbUrl;
+        atualizado.fotos.fichaPendente = false;
+        atualizado.fotos.fichaLocalId = null;
         return atualizado;
     }
 
@@ -178,9 +181,55 @@ export function aplicarUploadNaFotoAtendimento(dados, alvo, resultadoUpload) {
     atualizado.fotos[colecao][indice] = {
         ...(atualizado.fotos[colecao][indice] || {}),
         url: resultado.url,
-        thumbUrl: resultado.thumbUrl
+        thumbUrl: resultado.thumbUrl,
+        uploadPendente: false,
+        fotoLocalId: null
     };
     return atualizado;
+}
+
+function criarIdLocalFoto(item, alvo) {
+    const operacao = String(item?.id || 'operacao').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const sufixo = alvo?.tipo === 'ficha' ? 'ficha' : `${alvo?.tipo || 'foto'}-${Number(alvo?.indice) || 0}`;
+    return `${operacao}-${sufixo}`;
+}
+
+export function prepararAtendimentoComFotosPendentes(dados = {}, item = {}) {
+    const preparado = clonar(dados || {});
+    if (!preparado.fotos) preparado.fotos = {};
+    const alvos = listarFotosBase64Atendimento(preparado);
+
+    alvos.forEach(alvo => {
+        const idLocal = criarIdLocalFoto(item, alvo);
+        if (alvo.tipo === 'ficha') {
+            preparado.fotos.ficha = null;
+            preparado.fotos.fichaThumb = null;
+            preparado.fotos.fichaPendente = true;
+            preparado.fotos.fichaLocalId = idLocal;
+            return;
+        }
+
+        const colecao = alvo.tipo === 'maquina' ? 'maquinas' : 'pix';
+        preparado.fotos[colecao][alvo.indice] = {
+            ...(preparado.fotos[colecao][alvo.indice] || {}),
+            url: null,
+            thumbUrl: null,
+            uploadPendente: true,
+            fotoLocalId: idLocal
+        };
+    });
+
+    preparado.fotosPendentes = alvos.length > 0;
+    return preparado;
+}
+
+export function criarReferenciaFotoPendente(item, atendimentoId, alvo) {
+    return {
+        atendimentoId,
+        tipo: alvo?.tipo,
+        indice: alvo?.indice,
+        fotoLocalId: criarIdLocalFoto(item, alvo)
+    };
 }
 
 export function criarNomeEstavelFoto(item, atendimentoId, alvo) {
@@ -196,6 +245,7 @@ export async function processarAtendimentoPendente({
     gerarAtendimentoId,
     salvarFoto,
     salvarAtendimento,
+    atualizarFotoAtendimento,
     sincronizarProdutos,
     verificarRota,
     confirmarAtendimento,
@@ -222,12 +272,33 @@ export async function processarAtendimentoPendente({
     }
 
     let dados = clonar(item?.dados || {});
+    if (item?.registroInicialConfirmado !== true) {
+        const faseAnterior = String(item?.fase || 'salvo_localmente');
+        const dadosIniciais = prepararAtendimentoComFotosPendentes(dados, item);
+        await salvarAtendimento(dadosIniciais, atendimentoId, { recalcularRemuneracoes: false });
+        item = await atualizarItem({
+            registroInicialConfirmado: true,
+            fase: faseAtingida(item, 'atendimento_confirmado')
+                ? faseAnterior
+                : 'atendimento_pendente_confirmado'
+        });
+    }
+
     for (const alvo of listarFotosBase64Atendimento(dados)) {
         const resultado = await salvarFoto(
             alvo.base64,
             'atendimentos',
             200,
             criarNomeEstavelFoto(item, atendimentoId, alvo)
+        );
+        if (typeof atualizarFotoAtendimento !== 'function') {
+            throw new Error('Atualizador remoto de foto pendente nao informado.');
+        }
+        const uploadNormalizado = normalizarResultadoUpload(resultado);
+        await atualizarFotoAtendimento(
+            criarReferenciaFotoPendente(item, atendimentoId, alvo),
+            uploadNormalizado.url,
+            uploadNormalizado.thumbUrl
         );
         dados = aplicarUploadNaFotoAtendimento(dados, alvo, resultado);
         item = await atualizarItem({
@@ -240,12 +311,17 @@ export async function processarAtendimentoPendente({
         throw new Error('Ainda existem fotos locais sem confirmacao de upload.');
     }
 
+    dados.fotosPendentes = false;
+
     if (!faseAtingida(item, 'fotos_confirmadas')) {
         item = await atualizarItem({ dados, fase: 'fotos_confirmadas' });
     }
 
     if (!faseAtingida(item, 'atendimento_confirmado')) {
-        await salvarAtendimento(dados, atendimentoId);
+        if (typeof confirmarAtendimento !== 'function') {
+            throw new Error('Confirmacao remota do atendimento nao informada.');
+        }
+        await confirmarAtendimento(atendimentoId, dados);
         item = await atualizarItem({ dados, fase: 'atendimento_confirmado' });
     }
 

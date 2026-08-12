@@ -1212,7 +1212,7 @@ export async function dbRemoverContestacao(id) {
     await _removerContestacaoAtendimentoPendente(atendente, id);
 }
 
-export async function dbSalvarAtendimento(atendimento, idExistente = null) {
+export async function dbSalvarAtendimento(atendimento, idExistente = null, opcoes = {}) {
     try {
         let atendimentoId = String(idExistente || '').trim();
         let atendimentoAnterior = null;
@@ -1251,7 +1251,9 @@ export async function dbSalvarAtendimento(atendimento, idExistente = null) {
         if (payloadAtendimento?.contestado && atendenteAtual && !resolveuContestacaoPorEdicao) {
             await _marcarContestacaoAtendimentoPendente(atendenteAtual, idResumoContestacao);
         }
-        await _tentarRecalcularRemuneracoes();
+        if (opcoes?.recalcularRemuneracoes !== false) {
+            await _tentarRecalcularRemuneracoes();
+        }
         return atendimentoId || null;
     } catch (error) {
         console.error("ERRO AO SALVAR ATENDIMENTO:", error);
@@ -4127,12 +4129,13 @@ export async function dbSincronizarProdutosAtendimentoNoHistorico(atendimentoId,
                 controlarPosse: true,
                 isDefeitoEntry: false,
                 qtdDefeitoConsumida: 0
-            });
+            }, { recalcular: false });
             if (!movimentoId) {
                 throw new Error(`Movimentacao do produto nao foi confirmada: ${produto.nome}.`);
             }
             confirmacao.caminhos.push(`movimentacao_balanco_historico/${chaveUsuario}/${movimentoId}`);
         }
+        await _tentarRecalcularRemuneracoes();
         return confirmacao;
     } catch (e) {
         console.error('ERRO AO SINCRONIZAR PRODUTOS DO ATENDIMENTO NO HISTORICO:', e);
