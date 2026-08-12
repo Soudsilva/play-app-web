@@ -32,6 +32,25 @@ export function listarFotosBase64Atendimento(dados = {}) {
     return alvos;
 }
 
+function listarOrigensFotosAtendimento(dados = {}) {
+    const origens = [];
+    if (String(dados?.fotos?.ficha || '').trim()) origens.push(String(dados.fotos.ficha));
+    (Array.isArray(dados?.fotos?.maquinas) ? dados.fotos.maquinas : []).forEach(foto => {
+        if (String(foto?.url || '').trim()) origens.push(String(foto.url));
+    });
+    (Array.isArray(dados?.fotos?.pix) ? dados.fotos.pix : []).forEach(foto => {
+        if (String(foto?.url || '').trim()) origens.push(String(foto.url));
+    });
+    return origens;
+}
+
+export function calcularProgressoFotosAtendimento(dados = {}) {
+    const origens = listarOrigensFotosAtendimento(dados);
+    if (origens.length === 0) return 0;
+    const confirmadas = origens.filter(origem => !origem.startsWith('data:') && !origem.startsWith('blob:')).length;
+    return Math.max(0, Math.min(70, Math.round((confirmadas / origens.length) * 70)));
+}
+
 export function aplicarUploadNaFotoAtendimento(dados, alvo, resultadoUpload) {
     const atualizado = clonar(dados || {});
     const resultado = normalizarResultadoUpload(resultadoUpload);
@@ -88,7 +107,8 @@ export async function processarAtendimentoPendente({
         if (!atendimentoId) throw new Error('ID estavel do atendimento nao foi gerado.');
         item = await atualizarItem({
             atendimentoServidorId: atendimentoId,
-            fase: 'id_reservado'
+            fase: 'id_reservado',
+            progressoSincronizacao: 0
         });
     }
 
@@ -103,7 +123,8 @@ export async function processarAtendimentoPendente({
         dados = aplicarUploadNaFotoAtendimento(dados, alvo, resultado);
         item = await atualizarItem({
             dados,
-            fase: 'fotos_enviando'
+            fase: 'fotos_enviando',
+            progressoSincronizacao: calcularProgressoFotosAtendimento(dados)
         });
     }
 
@@ -112,11 +133,18 @@ export async function processarAtendimentoPendente({
     }
 
     await salvarAtendimento(dados, atendimentoId);
-    item = await atualizarItem({ dados, fase: 'atendimento_confirmado' });
+    item = await atualizarItem({
+        dados,
+        fase: 'atendimento_confirmado',
+        progressoSincronizacao: 85
+    });
 
     if (typeof sincronizarProdutos === 'function') {
         await sincronizarProdutos(atendimentoId, dados);
-        item = await atualizarItem({ fase: 'efeitos_confirmados' });
+        item = await atualizarItem({
+            fase: 'efeitos_confirmados',
+            progressoSincronizacao: 95
+        });
     }
 
     if (typeof verificarRota === 'function') {
@@ -124,6 +152,11 @@ export async function processarAtendimentoPendente({
         const atendente = String(dados?.atendente || '').trim();
         if (numeroRota) await verificarRota(numeroRota, atendente);
     }
+
+    item = await atualizarItem({
+        fase: 'rota_confirmada',
+        progressoSincronizacao: 99
+    });
 
     return { atendimentoId, dados, item };
 }

@@ -451,7 +451,7 @@
 <script type="module">
     import { dbEscutarColaboradores, dbSalvarAtendimento, dbSincronizarProdutosAtendimentoNoHistorico, dbGerarIdAtendimento, dbVerificarELiberarRota, storageSalvarFotoComThumb, dbEscutarResumoBalanco, dbExisteContestacaoAtendimentoDoUsuario, dbEscutarResumoContestacaoAtendimento, dbAtualizarFotoAtendimentoPendente } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
-    import { sincronizarPendentes, sincronizarFotosPendentes } from './offline-sync.js';
+    import { sincronizarPendentes, sincronizarFotosPendentes, contarPendentes, contarFotosPendentesUpload } from './offline-sync.js';
 
     let unsubscribeResumoBalanco = null;
     let unsubscribeResumoContestacaoAtendimento = null;
@@ -593,6 +593,38 @@
         pillOffline.style.display = navigator.onLine ? 'none' : 'block';
         atualizarEstadoBotaoRotas();
     }
+
+    const INTERVALO_NOVA_TENTATIVA_ENVIOS = 30 * 1000;
+    let timerNovaTentativaEnvios = null;
+    let sincronizacaoEnviosIndexEmAndamento = null;
+    let paginaIndexAtiva = true;
+
+    async function existemEnviosPendentesIndex() {
+        const [atendimentos, fotos] = await Promise.all([
+            contarPendentes(),
+            contarFotosPendentesUpload()
+        ]);
+        return Number(atendimentos || 0) + Number(fotos || 0) > 0;
+    }
+
+    function cancelarNovaTentativaEnviosIndex() {
+        if (timerNovaTentativaEnvios !== null) {
+            window.clearTimeout(timerNovaTentativaEnvios);
+            timerNovaTentativaEnvios = null;
+        }
+    }
+
+    function agendarNovaTentativaEnviosIndex() {
+        cancelarNovaTentativaEnviosIndex();
+        if (!paginaIndexAtiva) return;
+        timerNovaTentativaEnvios = window.setTimeout(() => {
+            timerNovaTentativaEnvios = null;
+            executarCicloEnviosPendentesIndex().catch(error => {
+                console.warn('Nova tentativa de sincronizacao falhou:', error);
+            });
+        }, INTERVALO_NOVA_TENTATIVA_ENVIOS);
+    }
+
     async function sincronizarEnviosPendentesIndex() {
         const n = await sincronizarPendentes(
             storageSalvarFotoComThumb,
@@ -603,22 +635,64 @@
         const fotos = await sincronizarFotosPendentes(storageSalvarFotoComThumb, dbAtualizarFotoAtendimentoPendente);
         return { atendimentos: n, fotos: Number(fotos?.ok || 0) };
     }
+
+    async function executarCicloEnviosPendentesIndex() {
+        if (sincronizacaoEnviosIndexEmAndamento) return sincronizacaoEnviosIndexEmAndamento;
+
+        sincronizacaoEnviosIndexEmAndamento = (async () => {
+            cancelarNovaTentativaEnviosIndex();
+            let resultado = { atendimentos: 0, fotos: 0 };
+
+            try {
+                if (navigator.onLine) {
+                    resultado = await sincronizarEnviosPendentesIndex();
+                    if (resultado.atendimentos > 0) {
+                        Promise.resolve(window.playAlert('Sucesso Atendimento enviado!')).catch(() => {});
+                    }
+                }
+            } catch (error) {
+                console.warn('Sincronizacao de atendimentos pendentes falhou:', error);
+            } finally {
+                const aindaTemPendencias = await existemEnviosPendentesIndex().catch(() => false);
+                if (aindaTemPendencias) agendarNovaTentativaEnviosIndex();
+                else cancelarNovaTentativaEnviosIndex();
+            }
+
+            return resultado;
+        })();
+
+        try {
+            return await sincronizacaoEnviosIndexEmAndamento;
+        } finally {
+            sincronizacaoEnviosIndexEmAndamento = null;
+        }
+    }
+
     atualizarConexao();
     window.addEventListener('offline', atualizarConexao);
-    window.addEventListener('online', async () => {
+    window.addEventListener('online', () => {
         atualizarConexao();
-        try {
-            const r = await sincronizarEnviosPendentesIndex();
-            if (r.atendimentos > 0) await window.playAlert('Sucesso Atendimento enviado!');
-        } catch(e) { console.warn('Sync ao reconectar falhou:', e); }
+        executarCicloEnviosPendentesIndex().catch(() => {});
     });
 
-    // Sincroniza pendentes que ficaram da sessÃ£o anterior
-    if (navigator.onLine) {
-        sincronizarEnviosPendentesIndex().then(async r => {
-            if (r.atendimentos > 0) await window.playAlert('Sucesso Atendimento enviado!');
-        }).catch(() => {});
-    }
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            executarCicloEnviosPendentesIndex().catch(() => {});
+        }
+    });
+
+    window.addEventListener('pageshow', () => {
+        paginaIndexAtiva = true;
+        executarCicloEnviosPendentesIndex().catch(() => {});
+    });
+
+    window.addEventListener('pagehide', () => {
+        paginaIndexAtiva = false;
+        cancelarNovaTentativaEnviosIndex();
+    });
+
+    // Tenta imediatamente ao abrir e mantém uma única nova tentativa a cada 30 segundos.
+    executarCicloEnviosPendentesIndex().catch(() => {});
 
     verificarAutenticacao();
     window.sair = fazerLogout;

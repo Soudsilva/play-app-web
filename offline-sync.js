@@ -115,6 +115,7 @@ export async function enfileirarAtendimento(dadosAtendimento, opcoes = {}) {
             atualizadoEm: new Date().toISOString(),
             estado: 'pendente',
             fase: 'salvo_localmente',
+            progressoSincronizacao: 0,
             tentativas: Number(opcoes?.tentativas || 0),
             ...(atendimentoServidorId ? { atendimentoServidorId } : {})
         };
@@ -386,7 +387,10 @@ export async function sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAt
     if (sincronizacaoAtendimentosEmAndamento) return sincronizacaoAtendimentosEmAndamento;
 
     sincronizacaoAtendimentosEmAndamento = (async () => {
-        const pendentes = await listarPendentes();
+        const idPendente = String(opcoes?.idPendente || '').trim();
+        const pendentes = (await listarPendentes()).filter(item =>
+            !idPendente || String(item?.id || '').trim() === idPendente
+        );
         let ok = 0;
         const tokenSincronizacao = globalThis.crypto?.randomUUID?.()
             || `sync_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -415,6 +419,7 @@ export async function sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAt
                 const concluido = await atualizarPendente(item.id, {
                     estado: 'enviado',
                     fase: 'concluido',
+                    progressoSincronizacao: 100,
                     concluidoEm: new Date().toISOString()
                 }, tokenSincronizacao);
                 if (!concluido) throw new Error('A conclusao local do atendimento nao foi confirmada.');

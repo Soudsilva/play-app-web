@@ -17,10 +17,45 @@ function pertenceAoUsuario(item, usuarioLogado) {
     ].some(nome => normalizarTexto(nome) === usuario);
 }
 
+function limitarPercentual(valor) {
+    const numero = Number(valor);
+    if (!Number.isFinite(numero)) return null;
+    return Math.max(0, Math.min(100, Math.round(numero)));
+}
+
+function calcularProgressoFotosLocal(dados = {}) {
+    const origens = [];
+    if (String(dados?.fotos?.ficha || '').trim()) origens.push(String(dados.fotos.ficha));
+    (Array.isArray(dados?.fotos?.maquinas) ? dados.fotos.maquinas : []).forEach(foto => {
+        if (String(foto?.url || '').trim()) origens.push(String(foto.url));
+    });
+    (Array.isArray(dados?.fotos?.pix) ? dados.fotos.pix : []).forEach(foto => {
+        if (String(foto?.url || '').trim()) origens.push(String(foto.url));
+    });
+    if (origens.length === 0) return 0;
+    const confirmadas = origens.filter(origem => !origem.startsWith('data:') && !origem.startsWith('blob:')).length;
+    return Math.max(0, Math.min(70, Math.round((confirmadas / origens.length) * 70)));
+}
+
+function obterProgressoPendencia(item = {}) {
+    const progressoRegistrado = limitarPercentual(item?.progressoSincronizacao);
+    if (progressoRegistrado !== null) return progressoRegistrado;
+
+    const fase = String(item?.fase || 'salvo_localmente').trim();
+    if (fase === 'concluido' || item?.estado === 'enviado') return 100;
+    if (fase === 'rota_confirmada') return 99;
+    if (fase === 'efeitos_confirmados') return 95;
+    if (fase === 'atendimento_confirmado') return 85;
+    if (fase === 'fotos_enviando') return calcularProgressoFotosLocal(item?.dados || {});
+    return 0;
+}
+
 function criarMetadadosPendencia(item) {
     return {
+        id: String(item?.id || ''),
         estado: String(item?.estado || 'pendente'),
         fase: String(item?.fase || 'salvo_localmente'),
+        progresso: obterProgressoPendencia(item),
         tentativas: Number(item?.tentativas || 0),
         ultimoErro: String(item?.ultimoErro || '')
     };
@@ -78,15 +113,20 @@ export function combinarAtendimentosComFila(atendimentosRemotos = [], pendencias
 
 export function obterStatusVisualAtendimento(envio = {}) {
     if (envio?._statusSincronizacao === 'pendente') {
+        const percentual = limitarPercentual(envio?._sincronizacaoLocal?.progresso) ?? 0;
         return {
             classe: 'pendente',
-            simbolo: '✓',
-            titulo: 'Salvo no aparelho. Aguardando confirmação do Firebase.'
+            simbolo: `${percentual}%`,
+            percentual,
+            titulo: percentual > 0
+                ? `Envio em andamento: ${percentual}% confirmado.`
+                : 'Salvo no aparelho. Nenhum dado confirmado no Firebase.'
         };
     }
     return {
         classe: 'confirmado',
         simbolo: '✓✓',
+        percentual: 100,
         titulo: 'Dados e fotos confirmados no Firebase.'
     };
 }
