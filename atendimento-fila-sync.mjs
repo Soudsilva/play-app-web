@@ -2,6 +2,8 @@ function clonar(valor) {
     return JSON.parse(JSON.stringify(valor));
 }
 
+const MINIATURA_ATENDIMENTO_MAX_PX = 200;
+
 function normalizarResultadoUpload(resultado) {
     if (typeof resultado === 'string') {
         return { url: resultado, thumbUrl: resultado };
@@ -251,7 +253,8 @@ export async function processarAtendimentoPendente({
     confirmarAtendimento,
     confirmarProdutos,
     confirmarRota,
-    pararAposRegistroInicial = false
+    pararAposRegistroInicial = false,
+    envioDireto = false
 }) {
     if (!item?.id) throw new Error('Item da fila sem id local.');
     if (typeof atualizarItem !== 'function') throw new Error('Atualizador da fila nao informado.');
@@ -273,6 +276,54 @@ export async function processarAtendimentoPendente({
     }
 
     let dados = clonar(item?.dados || {});
+
+    if (envioDireto) {
+        for (const alvo of listarFotosBase64Atendimento(dados)) {
+            const resultado = await salvarFoto(
+                alvo.base64,
+                'atendimentos',
+                MINIATURA_ATENDIMENTO_MAX_PX,
+                criarNomeEstavelFoto(item, atendimentoId, alvo)
+            );
+            dados = aplicarUploadNaFotoAtendimento(dados, alvo, resultado);
+            item = await atualizarItem({ dados, fase: 'fotos_enviando' });
+        }
+
+        if (listarFotosBase64Atendimento(dados).length > 0) {
+            throw new Error('Ainda existem fotos locais sem confirmacao de upload.');
+        }
+        dados.fotosPendentes = false;
+
+        if (!faseAtingida(item, 'atendimento_confirmado')) {
+            await salvarAtendimento(dados, atendimentoId);
+            item = await atualizarItem({
+                dados,
+                registroInicialConfirmado: true,
+                fase: 'atendimento_confirmado'
+            });
+        }
+
+        if (!faseAtingida(item, 'efeitos_confirmados') && typeof sincronizarProdutos === 'function') {
+            await sincronizarProdutos(atendimentoId, dados);
+            item = await atualizarItem({ fase: 'efeitos_confirmados' });
+        }
+
+        if (!faseAtingida(item, 'rota_confirmada') && typeof verificarRota === 'function') {
+            const numeroRota = String(dados?.cliente?.rota || '').trim();
+            const atendente = String(dados?.atendente || '').trim();
+            if (numeroRota) {
+                try {
+                    await verificarRota(numeroRota, atendente);
+                } catch (erroRota) {
+                    console.warn('Falha ao verificar liberacao da rota apos o atendimento:', erroRota);
+                }
+            }
+            item = await atualizarItem({ fase: 'rota_confirmada' });
+        }
+
+        return { atendimentoId, dados, item };
+    }
+
     if (item?.registroInicialConfirmado !== true) {
         const faseAnterior = String(item?.fase || 'salvo_localmente');
         const dadosIniciais = prepararAtendimentoComFotosPendentes(dados, item);
@@ -293,7 +344,7 @@ export async function processarAtendimentoPendente({
         const resultado = await salvarFoto(
             alvo.base64,
             'atendimentos',
-            200,
+            MINIATURA_ATENDIMENTO_MAX_PX,
             criarNomeEstavelFoto(item, atendimentoId, alvo)
         );
         if (typeof atualizarFotoAtendimento !== 'function') {

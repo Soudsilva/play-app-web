@@ -451,6 +451,7 @@ export async function sincronizarPendentes(storageSalvarFotoComThumb, dbSalvarAt
                     confirmarProdutos: opcoes?.confirmarProdutos,
                     confirmarRota: opcoes?.confirmarRota,
                     pararAposRegistroInicial: opcoes?.somenteRegistroInicial === true,
+                    envioDireto: opcoes?.envioDireto === true,
                     atualizarItem: async (patch) => {
                         const atualizado = await atualizarPendente(item.id, {
                             ...patch,

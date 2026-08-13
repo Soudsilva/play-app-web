@@ -777,8 +777,8 @@
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
     import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbEscutarColaboradores, dbGerarIdAtendimento, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
-    import { enfileirarAtendimento } from './offline-sync.js';
-    import { sincronizarFilaAtendimentos } from './atendimento-sync-runner.js';
+    import { enfileirarAtendimento, listarPendentes } from './offline-sync.js';
+    import { sincronizarFilaAtendimentosDireto } from './atendimento-sync-runner.js';
     import {
         gerarIdVisitaAtendimento,
         deveRestaurarVisitaAtendimento,
@@ -2317,13 +2317,13 @@ function obterIdAtendimentoEmEdicao() {
                 dadosAtendimento._gestor_ultima_edicao = atendimentoOriginal._gestor_ultima_edicao;
             }
 
-            // --- 4. Confirmar primeiro na fila local; a rede fica em segundo plano ---
+            // --- 4. Proteger na fila local e, online, concluir nesta tela ---
             btn.innerText = "SALVANDO NO APARELHO...";
             const atendimentoServidorId = atendimentoEmEdicaoId
                 || atendimentoServidorRascunhoId
                 || dbGerarIdAtendimento();
             const operacaoFilaId = atendimentoEmEdicaoId
-                ? `${atendimentoEmEdicaoId}_${dbGerarIdAtendimento()}`
+                ? `${atendimentoEmEdicaoId}_edicao`
                 : (operacaoFilaRascunhoId || atendimentoServidorId);
             if (!atendimentoEmEdicaoId) {
                 operacaoFilaRascunhoId = operacaoFilaId;
@@ -2336,13 +2336,20 @@ function obterIdAtendimentoEmEdicao() {
                 id: operacaoFilaId,
                 atendimentoServidorId
             });
-            if (navigator.onLine) {
-                sincronizarFilaAtendimentos({
-                    idPendente: String(operacaoFilaId),
-                    somenteRegistroInicial: true
-                }).catch(error => {
-                    console.warn('Envio textual imediato nao foi concluido; a fila tentara novamente:', error);
+
+            const semInternet = !navigator.onLine;
+            if (!semInternet) {
+                btn.innerText = "FINALIZANDO...";
+                await sincronizarFilaAtendimentosDireto({
+                    idPendente: String(operacaoFilaId)
                 });
+
+                const aindaPendente = (await listarPendentes()).some(item =>
+                    String(item?.id || '') === String(operacaoFilaId)
+                );
+                if (aindaPendente) {
+                    throw new Error('O envio nao foi concluido. O atendimento continua salvo no aparelho.');
+                }
             }
 
             // --- 5. Limpeza e Redirecionamento ---
@@ -2358,9 +2365,11 @@ function obterIdAtendimentoEmEdicao() {
             sessionStorage.removeItem(CHAVE_CLIENTE_MANUAL_SESSAO);
             sessionStorage.removeItem('atendimento_tela_origem');
             desativarBloqueioEnvioAtendimento(btn);
-            const msgFim = atendimentoEmEdicaoId
-                ? "Edição salva para envio."
-                : "Atendimento Salvo";
+            const msgFim = semInternet
+                ? "Atendimento Salvo"
+                : (atendimentoEmEdicaoId
+                    ? "Atendimento atualizado com sucesso!"
+                    : "Sucesso Atendimento enviado!");
 
             await window.playAlert(msgFim);
             window.location.href = 'index.html';

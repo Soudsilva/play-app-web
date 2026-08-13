@@ -101,6 +101,59 @@ test('envio inicial acionado pelo formulario grava somente o texto e conserva a 
     assert.deepEqual(chamadas, ['texto', 'fase:atendimento_pendente_confirmado']);
 });
 
+test('envio direto conclui fotos antes do atendimento sem confirmacoes redundantes', async () => {
+    const chamadas = [];
+    let itemAtual = {
+        id: 'fila-direta',
+        atendimentoServidorId: 'atendimento-direto',
+        fase: 'salvo_localmente',
+        dados: {
+            ...structuredClone(dadosBase),
+            fotos: {
+                ficha: 'data:image/jpeg;base64,ficha',
+                maquinas: [{ nome: 'Maquina P', url: 'data:image/jpeg;base64,maquina' }],
+                pix: []
+            }
+        }
+    };
+
+    const resultado = await processarAtendimentoPendente({
+        item: itemAtual,
+        envioDireto: true,
+        atualizarItem: async patch => {
+            itemAtual = { ...itemAtual, ...patch };
+            return itemAtual;
+        },
+        salvarFoto: async (_base64, _pasta, thumbMaxPx, nomeEstavel) => {
+            assert.equal(thumbMaxPx, 200);
+            chamadas.push(`foto:${nomeEstavel}`);
+            return {
+                url: `https://storage/${nomeEstavel}.jpg`,
+                thumbUrl: `https://storage/thumbs/${nomeEstavel}.jpg`
+            };
+        },
+        salvarAtendimento: async (dados, id, opcoes) => {
+            chamadas.push('atendimento');
+            assert.equal(id, 'atendimento-direto');
+            assert.equal(opcoes, undefined);
+            assert.equal(dados.fotosPendentes, false);
+            assert.equal(JSON.stringify(dados).includes('data:image'), false);
+        },
+        atualizarFotoAtendimento: async () => chamadas.push('foto-remota'),
+        sincronizarProdutos: async () => chamadas.push('produtos'),
+        verificarRota: async () => chamadas.push('rota'),
+        confirmarAtendimento: async () => chamadas.push('confirmar-atendimento'),
+        confirmarProdutos: async () => chamadas.push('confirmar-produtos'),
+        confirmarRota: async () => chamadas.push('confirmar-rota')
+    });
+
+    assert.equal(resultado.atendimentoId, 'atendimento-direto');
+    assert.equal(chamadas.filter(item => item.startsWith('foto:')).length, 2);
+    assert.deepEqual(chamadas.slice(-3), ['atendimento', 'produtos', 'rota']);
+    assert.equal(chamadas.includes('foto-remota'), false);
+    assert.equal(chamadas.some(item => item.startsWith('confirmar-')), false);
+});
+
 test('retomada após efeitos confirmados executa somente rota e confirmação remota', async () => {
     const chamadas = [];
     let itemAtual = {

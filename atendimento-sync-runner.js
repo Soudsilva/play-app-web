@@ -7,7 +7,8 @@ import {
     dbSincronizarProdutosAtendimentoNoHistorico,
     dbGerarIdAtendimento,
     dbVerificarELiberarRota,
-    dbAtualizarFotoAtendimentoPendente
+    dbAtualizarFotoAtendimentoPendente,
+    storageSalvarFotoComThumb
 } from './database.js';
 import {
     confirmarAtendimentoNoFirebase,
@@ -16,9 +17,9 @@ import {
 } from './atendimento-sync-confirmacao-service.js';
 import { salvarFotoAtendimentoRetomavel } from './atendimento-sync-upload-service.js';
 
-export function sincronizarFilaAtendimentos(opcoes = {}) {
+function executarSincronizacaoAtendimentos(salvarFoto, opcoes = {}) {
     return sincronizarPendentes(
-        salvarFotoAtendimentoRetomavel,
+        salvarFoto,
         dbSalvarAtendimento,
         dbSincronizarProdutosAtendimentoNoHistorico,
         {
@@ -36,6 +37,20 @@ export function sincronizarFilaAtendimentos(opcoes = {}) {
                 : {})
         }
     );
+}
+
+export function sincronizarFilaAtendimentos(opcoes = {}) {
+    return executarSincronizacaoAtendimentos(salvarFotoAtendimentoRetomavel, opcoes);
+}
+
+// Usado somente enquanto a tela de atendimento permanece aberta aguardando
+// a conclusao. Reaproveita o uploader original, que envia foto e miniatura
+// em paralelo, mantendo a fila local como protecao contra interrupcoes.
+export function sincronizarFilaAtendimentosDireto(opcoes = {}) {
+    return executarSincronizacaoAtendimentos(storageSalvarFotoComThumb, {
+        ...opcoes,
+        envioDireto: true
+    });
 }
 
 export function sincronizarFotosPendentesLegadas() {
