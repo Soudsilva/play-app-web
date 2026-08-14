@@ -1,6 +1,9 @@
 const {setGlobalOptions} = require("firebase-functions");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
-const {onValueWritten} = require("firebase-functions/v2/database");
+const {
+  onValueCreated,
+  onValueWritten,
+} = require("firebase-functions/v2/database");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 
@@ -673,6 +676,26 @@ exports.atualizarResumoDepositosPorDeposito = onValueWritten(
     const after = event.data.after.exists() ? event.data.after.val() : null;
     const alvos = obterAlvosDeposito(event.params.usuario, before, after);
     await recalcularAlvosDepositos(alvos, "deposito");
+  },
+);
+
+exports.inicializarResumoDepositosPorColaborador = onValueCreated(
+  "/colaboradores/{colaboradorId}",
+  async (event) => {
+    const colaborador = event.data.val() || {};
+    const usuario = normalizarChaveUsuario(colaborador.nome);
+    if (!usuario) {
+      logger.warn("Resumo de depositos nao inicializado: colaborador sem nome.", {
+        colaboradorId: event.params.colaboradorId,
+      });
+      return;
+    }
+
+    await recalcularResumoDepositosTotal(usuario);
+    logger.info("Resumo de depositos inicializado para novo colaborador.", {
+      colaboradorId: event.params.colaboradorId,
+      usuario,
+    });
   },
 );
 
