@@ -15,8 +15,8 @@
         .badges-col,
         .badge-cat,
         .badge-tempo,
-        .avatar,
         .nome-sol,
+        .card-acoes,
         .btn-acao,
         .btn-excluir,
         .form-fixo-topo,
@@ -24,6 +24,8 @@
         .form-fixo-categoria,
         .chips-cat,
         .chip-cat,
+        .campo-direcionamento,
+        .campo-direcionamento label,
         #btnCancelar,
         #btnEnviar,
         .estado-vazio {
@@ -60,7 +62,6 @@
         .titulo { font-size: 28px; font-weight: bold; letter-spacing: 0.3px; white-space: nowrap; color: #ffffff; }
         .titulo-tipo.produtos { color: #4caf50; }
         .titulo-tipo.peca { color: #ff9800; }
-        .titulo-tipo.maquina { color: #9c27b0; }
         .subtitulo {
             font-size: 14px;
             letter-spacing: 2px;
@@ -104,28 +105,24 @@
         }
         .accent-produtos  { background: linear-gradient(90deg, #4caf50, #81c784); }
         .accent-peca      { background: linear-gradient(90deg, #ff9800, #ffb74d); }
-        .accent-maquina   { background: linear-gradient(90deg, #9c27b0, #ce93d8); }
 
         /* Urgência sobrescreve a cor */
         .urgencia-alta  .card-accent { background: linear-gradient(90deg, #f44336, #ef9a9a) !important; }
         .urgencia-media .card-accent { background: linear-gradient(90deg, #ff9800, #ffcc80) !important; }
 
-        .card-corpo { padding: 16px 16px 14px; }
+        .card-corpo { padding: 13px 16px 12px; }
 
-        /* Topo do card: descrição à esquerda, badges empilhados à direita */
+        /* Topo do card: categoria discreta acima da descrição */
         .card-topo {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .desc-item {
-            font-size: 23px;
-            font-weight: bold;
+            font-size: 20px;
+            font-weight: 700;
             color: white;
             word-break: break-word;
-            line-height: 1.25;
+            line-height: 1.3;
             flex: 1;
             -webkit-user-select: none;
             user-select: none;
@@ -133,96 +130,139 @@
 
         .badges-col {
             display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 5px;
-            flex-shrink: 0;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 7px;
+            width: 100%;
+            min-width: 0;
+            margin-bottom: 6px;
         }
 
         .badge-cat {
-            padding: 5px 14px;
+            padding: 3px 9px;
             border-radius: 999px;
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
             white-space: nowrap;
         }
         .badge-produtos { background: rgba(76,175,80,0.25);  border: 1.5px solid #4caf50; color: #c8e6c9; }
         .badge-peca     { background: rgba(255,152,0,0.25);  border: 1.5px solid #ff9800; color: #ffe0b2; }
-        .badge-maquina  { background: rgba(156,39,176,0.25); border: 1.5px solid #9c27b0; color: #e1bee7; }
+
+        .responsavel-estoque {
+            margin-left: auto;
+            max-width: 70%;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: right;
+            color: #dce8fa;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 21px;
+        }
 
         .badge-tempo {
-            font-size: 13px;
-            font-weight: bold;
-            padding: 5px 12px;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 4px 8px;
             border-radius: 999px;
             white-space: nowrap;
+            letter-spacing: 0.1px;
+            border: 1px solid transparent;
         }
-        .tempo-hoje   { background: rgba(76,175,80,0.2);  border: 1.5px solid #4caf50; color: #c8e6c9; }
-        .tempo-fresco { background: rgba(33,150,243,0.2); border: 1.5px solid #2196f3; color: #bbdefb; }
-        .tempo-alerta { background: rgba(255,152,0,0.2);  border: 1.5px solid #ff9800; color: #ffe0b2; }
-        .tempo-urgente{ background: rgba(244,67,54,0.2);  border: 1.5px solid #f44336; color: #ffcdd2; }
+        .tempo-hoje   { background: rgba(76,175,80,0.20);  border-color: rgba(76,175,80,0.36);  color: #d5f2d8; }
+        .tempo-fresco { background: rgba(33,150,243,0.20); border-color: rgba(33,150,243,0.36); color: #d4e9ff; }
+        .tempo-alerta { background: rgba(255,152,0,0.20);  border-color: rgba(255,152,0,0.38);  color: #fff0d5; }
+        .tempo-urgente{ background: rgba(244,67,54,0.20);  border-color: rgba(244,67,54,0.38);  color: #ffe0e2; }
 
-        /* Rodapé do card: solicitante + botões na mesma linha */
+        /* Rodapé: metadados à esquerda e ações exclusivamente à direita */
         .card-rodape {
             display: flex;
             align-items: center;
-            gap: 6px;
+            justify-content: space-between;
+            gap: 10px;
             border-top: 1px solid rgba(255,255,255,0.18);
             padding-top: 8px;
         }
 
-        .avatar {
-            width: 28px; height: 28px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            border: 1.5px solid rgba(255,255,255,0.45);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px;
-            font-weight: bold;
-            flex-shrink: 0;
+        .card-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+            flex: 1;
         }
         .nome-sol {
             font-size: 14px;
             color: #dde8ff;
-            font-weight: bold;
+            font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .card-rodape .badge-tempo {
-            margin-left: auto;
+        .meta-separador {
+            color: rgba(221,232,255,0.58);
+            flex-shrink: 0;
+        }
+        .card-meta .badge-tempo { flex-shrink: 0; }
+
+        .card-acoes {
+            display: flex;
+            align-items: center;
+            gap: 2px;
             flex-shrink: 0;
         }
 
         .btn-acao {
-            background: none;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
             border: none;
             cursor: not-allowed;
-            font-size: 20px;
-            line-height: 1;
-            padding: 2px 3px;
-            border-radius: 6px;
+            color: #b9c8e6;
+            border-radius: 50%;
             transition: 0.15s;
-            opacity: 0.25;
+            opacity: 0.4;
             flex-shrink: 0;
         }
-        .btn-acao.ativo-editar  { opacity: 0.75; cursor: pointer; }
-        .btn-acao.ativo-editar:active  { opacity: 1; background: rgba(33,150,243,0.2); }
-        .btn-acao.ativo-confirmar { opacity: 0.9; cursor: pointer; }
+        .btn-acao.ativo-editar  { opacity: 1; cursor: pointer; color: #a8cdfa; }
+        .btn-acao.ativo-editar:active  { background: rgba(33,150,243,0.2); }
+        .btn-acao.ativo-confirmar { opacity: 1; cursor: pointer; color: #a9dfb2; }
         .btn-acao.ativo-confirmar:active { background: rgba(76,175,80,0.28); }
 
         .btn-excluir {
-            background: rgba(244,67,54,0.15);
-            border: 1.5px solid rgba(244,67,54,0.5);
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
             cursor: pointer;
-            font-size: 14px;
-            line-height: 1;
-            padding: 2px 5px;
-            border-radius: 6px;
+            color: #ffafb3;
+            border-radius: 50%;
             transition: 0.15s;
             flex-shrink: 0;
         }
         .btn-excluir:active { background: rgba(244,67,54,0.35); }
+        .icone-acao {
+            width: 20px;
+            height: 20px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .icone-lixeira { font-size: 18px; line-height: 1; }
+        .icone-confirmar { font-size: 18px; line-height: 1; }
 
         /* ── FORM FIXO ── */
         .form-fixo {
@@ -285,11 +325,6 @@
             border-color: rgba(255,152,0,0.55);
             color: #ffd79b;
         }
-        .form-fixo-categoria.maquina {
-            background: rgba(156,39,176,0.2);
-            border-color: rgba(156,39,176,0.55);
-            color: #dfb1ea;
-        }
 
         .input-glass {
             width: 100%;
@@ -303,6 +338,54 @@
         }
         .input-glass::placeholder { color: #7a9cc8; }
         .input-glass:focus { border-color: #ffeb3b; background: rgba(255,255,255,0.12); }
+
+        .campo-direcionamento {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .campo-direcionamento[hidden] { display: none; }
+        .campo-direcionamento label {
+            align-self: center;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: #c9d9f3;
+        }
+        .select-glass {
+            width: 100%;
+            min-height: 42px;
+            padding: 10px 38px 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.09);
+            color: #ffffff;
+            font: inherit;
+            font-size: 15px;
+            outline: none;
+        }
+        .select-glass:focus { border-color: #ffeb3b; background: rgba(255,255,255,0.12); }
+        .select-glass option { color: #10285c; }
+
+        .linha-categoria-direcionamento {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(142px, 1fr);
+            align-items: end;
+            gap: 8px;
+        }
+        .linha-categoria-direcionamento.sem-direcionamento { grid-template-columns: 1fr; }
+
+        .card-direcionamento {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 8px;
+            color: #c9d9f3;
+            font-size: 12px;
+            line-height: 1.25;
+        }
+        .card-direcionamento strong { color: #ffffff; }
 
         /* Linha única: chips de categoria + botão enviar */
         .linha-enviar {
@@ -327,8 +410,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 3px;
-            padding: 8px 4px;
+            padding: 10px 4px;
             border-radius: 10px;
             cursor: pointer;
             border: 1.5px solid rgba(255,255,255,0.25);
@@ -338,8 +420,13 @@
             -webkit-user-select: none;
             user-select: none;
         }
-        .chip-cat .chip-icon { font-size: 18px; line-height: 1; }
-        .chip-cat .chip-label { font-size: 11px; font-weight: bold; color: #ffffff; }
+        .chip-cat .chip-label {
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .chip-cat[data-val="peca"] .chip-label { color: #ffcc80; }
+        .chip-cat[data-val="produtos"] .chip-label { color: #a5d6a7; }
         .chip-cat.selecionado-produtos {
             border-color: #4caf50;
             background: rgba(76,175,80,0.22);
@@ -358,16 +445,6 @@
             box-shadow: 0 6px 18px rgba(255,152,0,0.55), 0 2px 0 #ff9800;
             border-bottom-width: 3px;
             border-bottom-color: #ff9800;
-            z-index: 2;
-        }
-        .chip-cat.selecionado-maquina {
-            border-color: #9c27b0;
-            background: rgba(156,39,176,0.22);
-            color: #ce93d8;
-            transform: translateY(-5px) scale(1.07);
-            box-shadow: 0 6px 18px rgba(156,39,176,0.55), 0 2px 0 #9c27b0;
-            border-bottom-width: 3px;
-            border-bottom-color: #9c27b0;
             z-index: 2;
         }
         .chip-cat:active { transform: scale(0.96); }
@@ -397,6 +474,11 @@
             cursor: pointer;
             transition: 0.15s;
             white-space: nowrap;
+        }
+        #btnEnviar:disabled {
+            cursor: not-allowed;
+            opacity: 0.45;
+            filter: saturate(0.45);
         }
         #btnEnviar:active { transform: scale(0.97); }
 
@@ -441,10 +523,17 @@
     <button id="btnCancelar" onclick="cancelarEdicao()">✕ Cancelar edição</button>
     <input type="hidden" id="idPedido">
 
-    <div class="chips-cat" id="chipsCat">
-        <div class="chip-cat selecionado-peca" data-val="peca" onclick="selecionarCat('peca')"><span class="chip-icon">🟠</span><span class="chip-label">Outros / Peças</span></div>
-        <div class="chip-cat" data-val="produtos" onclick="selecionarCat('produtos')"><span class="chip-icon">🟢</span><span class="chip-label">Produtos</span></div>
-        <div class="chip-cat" data-val="maquina" onclick="selecionarCat('maquina')"><span class="chip-icon">🟣</span><span class="chip-label">Máquinas</span></div>
+    <div class="linha-categoria-direcionamento" id="linhaCategoriaDirecionamento">
+        <div class="chips-cat" id="chipsCat">
+            <div class="chip-cat selecionado-peca" data-val="peca" onclick="selecionarCat('peca')"><span class="chip-label">Outros / Peças</span></div>
+            <div class="chip-cat" data-val="produtos" onclick="selecionarCat('produtos')"><span class="chip-label">Produtos</span></div>
+        </div>
+
+        <div class="campo-direcionamento" id="campoDirecionamento">
+            <select class="select-glass" id="direcionadoPara" aria-label="Aos cuidados de" required>
+                <option value="">A/C</option>
+            </select>
+        </div>
     </div>
 
     <div class="linha-enviar">
@@ -464,18 +553,70 @@
     const _cacheColab = localStorage.getItem('cache_colaboradores');
     const _listaColab = _cacheColab ? JSON.parse(_cacheColab) : [];
     const _usuarioObj = _listaColab.find(c => c.nome === usuarioLogado);
-    const isGestor = _usuarioObj ? (_usuarioObj.nivel_completo || '').includes('gestao') : false;
+    const _perfilUsuario = String(_usuarioObj?.nivel_completo || '').toLowerCase();
+    const isGestor = _perfilUsuario.includes('gestao');
+    const isEstoqueNivel1 = _perfilUsuario.includes('estoque_1') || _perfilUsuario.includes('estoque nivel 1');
 
     // Categoria selecionada no form
     let catAtual = 'peca';
     let pedidoRecemSalvo = null;
+
+    function perfilPodeReceberPedido(colaborador) {
+        const perfil = String(colaborador?.nivel_completo || '').toLowerCase();
+        return perfil.includes('atendimento_2') || perfil.includes('gestao_3');
+    }
+
+    function preencherResponsaveisPedido() {
+        const select = document.getElementById('direcionadoPara');
+        if (!select) return;
+
+        const responsaveis = (Array.isArray(_listaColab) ? _listaColab : [])
+            .filter(perfilPodeReceberPedido)
+            .map(colaborador => String(colaborador?.nome || '').trim())
+            .filter(Boolean)
+            .sort((a, b) => b.localeCompare(a, 'pt-BR'));
+
+        select.innerHTML = '<option value="">A/C</option>';
+        responsaveis.forEach(nome => {
+            const option = document.createElement('option');
+            option.value = nome;
+            option.textContent = nome;
+            select.appendChild(option);
+        });
+
+        if (responsaveis.length === 0) {
+            select.options[0].textContent = 'Nenhum responsável disponível';
+            select.disabled = true;
+        }
+    }
+
+    function atualizarCampoDirecionamento() {
+        const campo = document.getElementById('campoDirecionamento');
+        const select = document.getElementById('direcionadoPara');
+        const linha = document.getElementById('linhaCategoriaDirecionamento');
+        const ehPedidoDePeca = catAtual === 'peca';
+        if (!campo || !select) return;
+        campo.hidden = !ehPedidoDePeca;
+        select.required = ehPedidoDePeca;
+        linha?.classList.toggle('sem-direcionamento', !ehPedidoDePeca);
+        if (!ehPedidoDePeca) select.value = '';
+        atualizarEstadoBotaoEnviar();
+    }
+
+    function atualizarEstadoBotaoEnviar() {
+        const botao = document.getElementById('btnEnviar');
+        const responsavel = document.getElementById('direcionadoPara')?.value || '';
+        const descricao = document.getElementById('descPedido')?.value.trim() || '';
+        if (!botao) return;
+        botao.disabled = !descricao || (catAtual === 'peca' && !responsavel);
+    }
+
     function atualizarCategoriaTituloForm() {
         const categoriaEl = document.getElementById('formCategoriaAtual');
         if (!categoriaEl) return;
         const rotulos = {
             produtos: 'Produtos',
             peca: 'Peças',
-            maquina: 'Máquinas',
         };
         categoriaEl.className = `form-fixo-categoria ${catAtual || 'vazia'}`;
         categoriaEl.textContent = rotulos[catAtual] || 'Selecione';
@@ -486,6 +627,7 @@
                 ? `Pedidos <span class="titulo-tipo ${catAtual}">${rotulos[catAtual]}</span>`
                 : 'Pedidos';
         }
+        atualizarCampoDirecionamento();
     }
     window.selecionarCat = function(val) {
         catAtual = val;
@@ -508,10 +650,33 @@
     }
 
     function aplicarFiltroCategoria() {
-        document.querySelectorAll('.card-pedido').forEach(card => {
+        const container = document.getElementById('listaPedidos');
+        const cards = Array.from(document.querySelectorAll('.card-pedido'));
+        let totalVisivel = 0;
+
+        cards.forEach(card => {
             const categoria = card.dataset.cat || '';
-            card.style.display = !catAtual || categoria === catAtual ? '' : 'none';
+            const exibir = !catAtual || categoria === catAtual;
+            card.style.display = exibir ? '' : 'none';
+            if (exibir) totalVisivel += 1;
         });
+
+        const estadoExistente = document.getElementById('estadoVazioFiltro');
+        if (cards.length === 0) return;
+        if (totalVisivel > 0) {
+            estadoExistente?.remove();
+            return;
+        }
+
+        const estado = estadoExistente || document.createElement('div');
+        estado.id = 'estadoVazioFiltro';
+        estado.className = 'estado-vazio';
+        estado.innerHTML = `
+            <div class="icone-vazio">📭</div>
+            <p>${catAtual === 'peca'
+                ? 'Nenhum pedido de peças direcionado a você.'
+                : 'Nenhum pedido de produtos pendente.'}</p>`;
+        if (!estadoExistente) container.appendChild(estado);
     }
 
     function calcularDias(dataIso) {
@@ -555,6 +720,10 @@
             .trim();
     }
 
+    preencherResponsaveisPedido();
+    document.getElementById('direcionadoPara')?.addEventListener('change', atualizarEstadoBotaoEnviar);
+    document.getElementById('descPedido')?.addEventListener('input', atualizarEstadoBotaoEnviar);
+
     // 1. CARREGAR PEDIDOS
     dbEscutarPedidos((lista) => {
         const container = document.getElementById('listaPedidos');
@@ -573,22 +742,20 @@
         const media = todosDias.length ? todosDias.reduce((a, b) => a + b, 0) / todosDias.length : 7;
 
         let cardRecemSalvo = null;
+        let totalCardsRenderizados = 0;
         lista.slice().sort((a, b) => timestampPedido(a) - timestampPedido(b)).forEach(p => {
             const dias = calcularDias(p.data);
             const tempo = badgeTempo(dias, media);
             const urgencia = urgenciaClass(dias, media);
             const souDono = (p.solicitante === usuarioLogado);
+            const foiDirecionado = normalizarTextoPedido(p.direcionadoPara) === normalizarTextoPedido(usuarioLogado);
             const pedidoAutomatico = normalizarTextoPedido(p.solicitante) === 'pedido automatico';
             const podeConfirmar = souDono || pedidoAutomatico;
 
-            const catMap = { produtos: 'Produtos', peca: 'Peças', maquina: 'Máquinas' };
-            const nomeCat = catMap[p.categoria] || p.categoria;
+            if (p.categoria === 'peca' && !souDono && !foiDirecionado && !isEstoqueNivel1) return;
 
-            const classeConfirmar = podeConfirmar ? 'ativo-confirmar' : '';
-            const textoConfirmar  = podeConfirmar ? '✔ Recebido' : 'Aguardando';
-            const acaoConfirmar   = podeConfirmar ? `confirmarCompra('${p.firebaseUrl}')` : '';
-            const classeEditar    = souDono ? 'ativo-editar' : '';
-            const acaoEditar      = souDono ? `editarPedido(${JSON.stringify(p).replace(/'/g,"&#39;")})` : '';
+            const catMap = { produtos: 'Produtos', peca: 'Peças' };
+            const nomeCat = catMap[p.categoria] || p.categoria;
 
             const card = document.createElement('div');
             card.className = `card-pedido ${urgencia}`;
@@ -599,22 +766,30 @@
                 <div class="card-accent accent-${p.categoria}"></div>
                 <div class="card-corpo">
                     <div class="card-topo">
-                        <div class="desc-item">${p.descricao}</div>
                         <div class="badges-col">
                             <span class="badge-cat badge-${p.categoria}">${nomeCat}</span>
+                            ${p.categoria === 'peca' && p.direcionadoPara && isEstoqueNivel1 ? `<span class="responsavel-estoque">A/C: ${p.direcionadoPara}</span>` : ''}
                         </div>
+                        <div class="desc-item">${p.descricao}</div>
+                        ${p.categoria === 'peca' && p.direcionadoPara && !isEstoqueNivel1 ? `<div class="card-direcionamento"><span>A/C:</span><strong>${p.direcionadoPara}</strong></div>` : ''}
                     </div>
                     <div class="card-rodape">
-                        <div class="avatar">${inicialAvatar(p.solicitante)}</div>
-                        <span class="nome-sol">${p.solicitante}</span>
-                        <span class="badge-tempo ${tempo.cls}">${tempo.txt}</span>
-                        <button class="btn-acao ${classeEditar}" onclick='${acaoEditar}'>✏️</button>
-                        <button class="btn-acao ${classeConfirmar}" onclick="${acaoConfirmar}">${podeConfirmar ? '✅' : '⏳'}</button>
-                        ${isGestor ? `<button class="btn-excluir" onclick="excluirPedido('${p.firebaseUrl}')">🗑️</button>` : ''}
+                        <div class="card-meta">
+                            <span class="nome-sol">${p.solicitante}</span>
+                            <span class="meta-separador" aria-hidden="true">·</span>
+                            <span class="badge-tempo ${tempo.cls}">${tempo.txt}</span>
+                        </div>
+                        ${(souDono || podeConfirmar || isGestor) ? `
+                        <div class="card-acoes" aria-label="Ações do pedido">
+                            ${souDono ? `<button class="btn-acao ativo-editar" title="Editar pedido" aria-label="Editar pedido" onclick='editarPedido(${JSON.stringify(p).replace(/'/g,"&#39;")})'><svg class="icone-acao" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></button>` : ''}
+                            ${podeConfirmar ? `<button class="btn-acao ativo-confirmar" title="Confirmar recebimento" aria-label="Confirmar recebimento" onclick="confirmarCompra('${p.firebaseUrl}')"><span class="icone-confirmar" aria-hidden="true">✓</span></button>` : ''}
+                            ${isGestor ? `<button class="btn-excluir" title="Excluir pedido" aria-label="Excluir pedido" onclick="excluirPedido('${p.firebaseUrl}')"><span class="icone-lixeira" aria-hidden="true">🗑️</span></button>` : ''}
+                        </div>` : ''}
                     </div>
                 </div>`;
 
             container.appendChild(card);
+            totalCardsRenderizados += 1;
             if (
                 pedidoRecemSalvo &&
                 p.solicitante === pedidoRecemSalvo.solicitante &&
@@ -625,6 +800,15 @@
                 cardRecemSalvo = card;
             }
         });
+
+        if (totalCardsRenderizados === 0) {
+            container.innerHTML = `
+                <div class="estado-vazio">
+                    <div class="icone-vazio">📭</div>
+                    <p>Nenhum pedido de peças direcionado a você.</p>
+                </div>`;
+            return;
+        }
 
         aplicarFiltroCategoria();
         if (cardRecemSalvo) {
@@ -646,18 +830,25 @@
 
         const dataPedido = new Date().toISOString();
         const categoriaPedido = catAtual;
+        const responsavelPedido = document.getElementById('direcionadoPara').value;
+        if (categoriaPedido === 'peca' && !responsavelPedido) {
+            await window.playAlert('Selecione quem ficará aos cuidados deste pedido.');
+            return;
+        }
         const pedido = {
             descricao:   desc,
             categoria:   categoriaPedido,
             solicitante: usuarioLogado,
             data:        dataPedido
         };
+        if (categoriaPedido === 'peca') pedido.direcionadoPara = responsavelPedido;
 
         if (!id) pedidoRecemSalvo = pedido;
         await dbSalvarPedido(pedido, id);
 
         document.getElementById('idPedido').value          = '';
         document.getElementById('descPedido').value        = '';
+        document.getElementById('direcionadoPara').value    = '';
         document.getElementById('btnEnviar').innerText      = 'ENVIAR';
         document.getElementById('btnCancelar').style.display = 'none';
         document.querySelector('.form-fixo-titulo').textContent = 'Novo Pedido';
@@ -669,6 +860,8 @@
         document.getElementById('idPedido').value   = p.firebaseUrl;
         document.getElementById('descPedido').value = p.descricao;
         selecionarCat(p.categoria);
+        document.getElementById('direcionadoPara').value = p.direcionadoPara || '';
+        atualizarEstadoBotaoEnviar();
         document.getElementById('btnEnviar').innerText      = 'SALVAR';
         document.getElementById('btnCancelar').style.display = 'block';
         document.querySelector('.form-fixo-titulo').textContent = 'Editando Pedido';
@@ -679,6 +872,7 @@
     window.cancelarEdicao = function() {
         document.getElementById('idPedido').value          = '';
         document.getElementById('descPedido').value        = '';
+        document.getElementById('direcionadoPara').value    = '';
         document.getElementById('btnEnviar').innerText      = 'ENVIAR';
         document.getElementById('btnCancelar').style.display = 'none';
         document.querySelector('.form-fixo-titulo').textContent = 'Novo Pedido';
