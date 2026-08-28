@@ -751,7 +751,16 @@ Não afirmar que está tudo funcionando se algum caminho importante não foi val
 
 ---
 
-## 29. Enviar, publicar, postar ou subir alterações
+## 29. Salvar, enviar, publicar, postar ou subir alterações
+
+Quando o proprietário disser `salvar`, antes de iniciar qualquer commit, push ou deploy, perguntar exatamente:
+
+> Quer enviar todas as alterações?
+> 1. Sim
+> 2. Não
+
+- Com a resposta `1. Sim`, executar o fluxo completo de entrega descrito abaixo para todas as alterações aprovadas: commit, envio à `main`, publicação do Firebase Hosting quando houver mudança no site e publicação das Functions alteradas, quando houver.
+- Com a resposta `2. Não`, manter as alterações apenas salvas localmente, sem commit, push ou deploy.
 
 Quando o proprietário pedir para enviar, publicar, postar, subir ou expressão equivalente, entender como solicitação do fluxo completo de entrega.
 
