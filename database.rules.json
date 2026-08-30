@@ -4,7 +4,7 @@
     ".write": "auth != null",
     "arquivos_impressao": {
       "listagem": {
-        ".indexOn": ["nomeBusca"]
+        ".indexOn": ["nomeBusca", "ordem"]
       }
     }
   }

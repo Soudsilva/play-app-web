@@ -493,20 +493,28 @@
     <div id="modalArquivo" class="modal modal-arquivo" role="dialog" aria-modal="true" aria-labelledby="tituloModalArquivo">
         <form id="formArquivo" class="modal-conteudo">
             <h2 id="tituloModalArquivo">Adicionar arquivo</h2>
-            <label for="nomeArquivo">Nome exibido</label>
-            <input id="nomeArquivo" name="nome" type="text" maxlength="120" autocomplete="off" required>
             <label for="pdfArquivo">Arquivo PDF</label>
             <input id="pdfArquivo" name="pdf" type="file" accept="application/pdf,.pdf" required>
-            <label for="miniaturaArquivo">Miniatura opcional</label>
-            <input id="miniaturaArquivo" name="miniatura" type="file" accept="image/jpeg,image/png,image/webp">
-            <p class="texto-ajuda-arquivo">Use uma imagem JPG, PNG ou WebP para exibir uma prévia na lista. Sem miniatura, o arquivo será exibido com o ícone PDF.</p>
+            <p class="texto-ajuda-arquivo">A miniatura será criada automaticamente a partir da primeira página do PDF.</p>
             <div id="progressoArquivo" class="progresso-arquivo oculto">
-                <progress value="0" max="100"></progress>
+                <progress id="barraProgressoArquivo" value="0" max="100"></progress>
                 <div id="textoProgressoArquivo">Preparando envio...</div>
             </div>
             <div class="modal-acoes">
                 <button id="btnCancelarArquivo" class="btn-secundario" type="button">Cancelar</button>
                 <button id="btnSalvarArquivo" class="btn-adicionar" type="submit">Enviar</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="modalRenomearArquivo" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloRenomearArquivo">
+        <form id="formRenomearArquivo" class="modal-conteudo">
+            <h2 id="tituloRenomearArquivo">Editar nome</h2>
+            <label for="novoNomeArquivo">Nome do arquivo</label>
+            <input id="novoNomeArquivo" name="nome" type="text" minlength="2" maxlength="120" autocomplete="off" required>
+            <div class="modal-acoes">
+                <button id="btnCancelarNomeArquivo" class="btn-secundario" type="button">Cancelar</button>
+                <button id="btnSalvarNomeArquivo" class="btn-adicionar" type="submit">Salvar</button>
             </div>
         </form>
     </div>

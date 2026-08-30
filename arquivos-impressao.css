@@ -43,8 +43,17 @@
     display: grid;
     gap: 12px;
 }
+.lista-arquivos.ordenacao-salvando {
+    pointer-events: none;
+    opacity: .72;
+}
+body.reordenando-arquivos {
+    cursor: grabbing;
+    user-select: none;
+}
 
 .arquivo-card {
+    position: relative;
     display: grid;
     grid-template-columns: 72px minmax(0, 1fr);
     gap: 12px;
@@ -53,7 +62,62 @@
     border: 1px solid rgba(255,255,255,.23);
     border-radius: 16px;
     background: rgba(255,255,255,.09);
+    transition: opacity .12s ease, transform .12s ease;
 }
+
+.arquivo-card-clique {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    cursor: pointer;
+}
+.arquivo-card-clique:active:not(:disabled) {
+    background: rgba(3, 16, 48, .13);
+}
+.arquivo-card:has(.arquivo-card-clique:active:not(:disabled)) {
+    transform: translateY(4px) scale(.985);
+}
+.arquivo-card-clique:focus-visible {
+    outline: 2px solid var(--amarelo);
+    outline-offset: 3px;
+}
+.arquivo-card.preparando { opacity: .72; }
+.arquivo-card.indisponivel { opacity: .58; }
+.arquivo-card.compartilhando {
+    opacity: .72;
+    transform: scale(.99);
+}
+.arquivo-card.item-em-movimento {
+    opacity: .28;
+    transform: none;
+}
+.arquivo-card-flutuante {
+    position: fixed;
+    z-index: 10050;
+    max-width: calc(100vw - 20px);
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    border: 1px solid rgba(255,255,255,.42);
+    border-radius: 14px;
+    background: #294a88;
+    color: #fff;
+    box-shadow: 0 12px 30px rgba(0,0,0,.32);
+    font-size: 16px;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+    pointer-events: none;
+}
+.arquivo-card-clique:disabled { pointer-events: none; }
 
 .arquivo-miniatura {
     width: 72px;
@@ -77,38 +141,73 @@
 }
 
 .arquivo-conteudo { min-width: 0; }
+.arquivo-cabecalho {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
 .arquivo-nome {
+    flex: 1;
+    min-width: 0;
     margin: 0;
     overflow-wrap: anywhere;
     font-size: 17px;
 }
-.arquivo-detalhes {
-    margin: 5px 0 10px;
-    color: rgba(255,255,255,.72);
-    font-size: 13px;
-}
-.arquivo-acoes {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-}
-.arquivo-acoes button {
-    min-height: 34px;
-    padding: 7px 10px;
+.arquivo-acao-icone {
+    position: relative;
+    z-index: 2;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    padding: 7px;
     border: 1px solid rgba(255,255,255,.23);
-    border-radius: 9px;
+    border-radius: 50%;
     background: rgba(255,255,255,.1);
     color: #fff;
-    font-size: 12px;
-    font-weight: bold;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    outline: none;
+    transition: transform .12s ease, filter .12s ease;
+    touch-action: manipulation;
 }
-.arquivo-acoes .acao-principal {
+.arquivo-acao-icone svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.arquivo-acao-icone:active:not(:disabled) {
+    transform: translateY(2px) scale(.94);
+    filter: brightness(.94);
+}
+.arquivo-acao-icone:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+}
+.arquivo-acao-icone.acao-editar {
+    position: absolute;
+    right: 15px;
+    bottom: 7px;
+    width: 30px;
+    height: 30px;
+    padding: 9px;
     border-color: transparent;
-    background: var(--amarelo);
-    color: var(--azul-escuro);
+    background: transparent;
+    color: rgba(255,255,255,.66);
+    opacity: .62;
 }
-.arquivo-acoes .acao-perigosa { color: #ffd8d5; }
-.arquivo-acoes button:disabled { opacity: .55; cursor: default; }
+.arquivo-acao-icone.acao-editar svg {
+    width: 12px;
+    height: 12px;
+}
+.arquivo-acao-icone.acao-editar:hover,
+.arquivo-acao-icone.acao-editar:focus-visible { opacity: 1; }
+.arquivo-acao-icone.acao-perigosa { color: #ffd8d5; }
 
 .rodape-arquivos {
     display: flex;
@@ -118,7 +217,41 @@
 
 .modal-arquivo .modal-conteudo { max-height: calc(100vh - 36px); overflow-y: auto; }
 .modal-arquivo .modal-conteudo label { margin-top: 15px; }
-.modal-arquivo .modal-conteudo input[type="file"] { padding: 10px; }
+.modal-arquivo .modal-conteudo input[type="file"] {
+    width: 100%;
+    min-height: 58px;
+    padding: 7px;
+    border: 1px dashed rgba(255,255,255,.38);
+    border-radius: 13px;
+    background: rgba(255,255,255,.08);
+    color: rgba(255,255,255,.82);
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.modal-arquivo .modal-conteudo input[type="file"]::file-selector-button {
+    min-height: 43px;
+    margin-right: 10px;
+    padding: 10px 15px;
+    border: 0;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #ffe342, #ffc928);
+    color: var(--azul-escuro);
+    font-weight: 800;
+    cursor: pointer;
+    transition: filter .12s ease, transform .12s ease;
+}
+.modal-arquivo .modal-conteudo input[type="file"]:hover::file-selector-button {
+    filter: brightness(1.04);
+}
+.modal-arquivo .modal-conteudo input[type="file"]:active::file-selector-button {
+    filter: brightness(.94);
+}
+.modal-arquivo .modal-conteudo input[type="file"]:focus-visible {
+    border-color: var(--amarelo);
+    box-shadow: 0 0 0 3px rgba(255, 218, 43, .2);
+}
 .texto-ajuda-arquivo {
     margin: 8px 0 0;
     color: rgba(255,255,255,.72);

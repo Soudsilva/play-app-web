@@ -1,4 +1,4 @@
-const CACHE = 'play-v24';
+const CACHE = 'play-v47';
 
 // Arquivos essenciais do próprio app
 const SHELL = [
@@ -19,6 +19,8 @@ const SHELL = [
     '/arquivos-impressao.js',
     '/arquivos-impressao-service.js',
     '/arquivos-impressao-rules.js',
+    '/arquivos-impressao-thumbnail.js',
+    '/arquivos-impressao-order.js',
     '/auth.js',
     '/pwa-guard.js',
     '/pwa-install.js',
@@ -69,6 +71,21 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
     const url = e.request.url;
+
+    // O gerador de miniaturas é pesado e carregado somente sob demanda.
+    // Depois do primeiro uso, reutiliza a cópia local sem novo consumo de dados.
+    if (url.includes('/assets/vendor/pdfjs/')) {
+        e.respondWith(
+            caches.match(e.request).then(cached => cached || fetch(e.request).then(response => {
+                if (response.ok) {
+                    const clone = response.clone();
+                    caches.open(CACHE).then(cache => cache.put(e.request, clone));
+                }
+                return response;
+            }))
+        );
+        return;
+    }
 
     // Chamadas de API do Firebase (dados em tempo real, auth tokens, storage uploads)
     // NÃO devem ser cacheadas — passam direto para a rede
