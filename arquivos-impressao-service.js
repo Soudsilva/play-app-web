@@ -13,7 +13,8 @@ import {
 import {
     ref as storageRef,
     uploadBytesResumable,
-    getDownloadURL
+    getDownloadURL,
+    getBlob
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
 import { db, storage } from './firebase-app.js';
 import {
@@ -104,6 +105,12 @@ export async function dbObterUrlArquivoImpressao(storagePath) {
     const caminho = String(storagePath || '').trim();
     if (!caminho) throw new Error('Caminho do arquivo não encontrado.');
     return getDownloadURL(storageRef(storage, caminho));
+}
+
+export async function dbBaixarArquivoImpressao(storagePath) {
+    const caminho = String(storagePath || '').trim();
+    if (!caminho) throw new Error('Caminho do arquivo não encontrado.');
+    return getBlob(storageRef(storage, caminho));
 }
 
 export async function dbCadastrarArquivoImpressao({ arquivo, miniatura, titulo, usuario, aoProgresso }) {

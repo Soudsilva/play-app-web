@@ -1,5 +1,6 @@
 import {
     dbCadastrarArquivoImpressao,
+    dbBaixarArquivoImpressao,
     dbDesativarArquivoImpressao,
     dbListarArquivosImpressao,
     dbObterArquivoImpressao,
@@ -44,9 +45,9 @@ export function inicializarArquivosImpressao({ nomeUsuario, podeAdministrar }) {
         arquivoEmEdicao: null,
         observador: null,
         temporizadorBusca: null,
-        urlsCompartilhamento: new Map(),
-        urlsComFalha: new Set(),
-        urlsEmPreparacao: new Set(),
+        documentosCompartilhamento: new Map(),
+        documentosComFalha: new Set(),
+        documentosEmPreparacao: new Set(),
         arquivosPreparados: new Map()
     };
 
@@ -80,8 +81,8 @@ export function inicializarArquivosImpressao({ nomeUsuario, podeAdministrar }) {
         const acoesGestor = podeAdministrar ? `
             <button type="button" data-acao="substituir" data-arquivo-id="${escaparHtml(arquivo.id)}">Substituir</button>
             <button type="button" class="acao-perigosa" data-acao="desativar" data-arquivo-id="${escaparHtml(arquivo.id)}">Remover</button>` : '';
-        const compartilhamentoPronto = estado.urlsCompartilhamento.has(arquivo.id);
-        const compartilhamentoFalhou = estado.urlsComFalha.has(arquivo.id);
+        const compartilhamentoPronto = estado.documentosCompartilhamento.has(arquivo.id);
+        const compartilhamentoFalhou = estado.documentosComFalha.has(arquivo.id);
         const textoCompartilhar = compartilhamentoPronto
             ? 'Compartilhar'
             : compartilhamentoFalhou ? 'Arquivo indisponível' : 'Preparando...';
@@ -134,15 +135,15 @@ export function inicializarArquivosImpressao({ nomeUsuario, podeAdministrar }) {
         miniaturas.forEach(miniatura => estado.observador.observe(miniatura));
     }
 
-    async function prepararUrlsCompartilhamento() {
+    async function prepararDocumentosCompartilhamento() {
         const pendentes = estado.itens.filter(arquivo =>
-            !estado.urlsCompartilhamento.has(arquivo.id)
-            && !estado.urlsComFalha.has(arquivo.id)
-            && !estado.urlsEmPreparacao.has(arquivo.id)
+            !estado.documentosCompartilhamento.has(arquivo.id)
+            && !estado.documentosComFalha.has(arquivo.id)
+            && !estado.documentosEmPreparacao.has(arquivo.id)
         );
         if (!pendentes.length) return;
 
-        pendentes.forEach(arquivo => estado.urlsEmPreparacao.add(arquivo.id));
+        pendentes.forEach(arquivo => estado.documentosEmPreparacao.add(arquivo.id));
         const limite = 3;
         let proximoIndice = 0;
         const trabalhador = async () => {
@@ -150,13 +151,12 @@ export function inicializarArquivosImpressao({ nomeUsuario, podeAdministrar }) {
                 const arquivo = pendentes[proximoIndice++];
                 try {
                     const documento = await dbObterArquivoImpressao(arquivo.id);
-                    const url = await dbObterUrlArquivoImpressao(documento.storagePath);
-                    estado.urlsCompartilhamento.set(arquivo.id, { documento, url });
+                    estado.documentosCompartilhamento.set(arquivo.id, documento);
                 } catch (erro) {
                     console.warn('Arquivo indisponível para compartilhamento:', erro);
-                    estado.urlsComFalha.add(arquivo.id);
+                    estado.documentosComFalha.add(arquivo.id);
                 } finally {
-                    estado.urlsEmPreparacao.delete(arquivo.id);
+                    estado.documentosEmPreparacao.delete(arquivo.id);
                 }
             }
         };
@@ -178,7 +178,7 @@ export function inicializarArquivosImpressao({ nomeUsuario, podeAdministrar }) {
         elementos.lista.innerHTML = estado.itens.map(montarCard).join('');
         ativarMiniaturas();
         atualizarBotaoMais();
-        prepararUrlsCompartilhamento();
+        prepararDocumentosCompartilhamento();
     }
 
     async function carregar({ acrescentar = false } = {}) {
@@ -212,9 +212,8 @@ export function inicializarArquivosImpressao({ nomeUsuario, podeAdministrar }) {
 
     async function compartilharArquivo(id, botao) {
         if (botao?.disabled) return;
-        const compartilhamento = estado.urlsCompartilhamento.get(id);
-        if (!compartilhamento) return;
-        const { documento, url } = compartilhamento;
+        const documento = estado.documentosCompartilhamento.get(id);
+        if (!documento) return;
         const textoOriginal = botao?.textContent || 'Compartilhar';
         if (!navigator.share) {
             await window.playAlert('O compartilhamento nativo não é suportado neste navegador.');
@@ -225,9 +224,7 @@ export function inicializarArquivosImpressao({ nomeUsuario, podeAdministrar }) {
             if (!arquivo) {
                 botao.disabled = true;
                 botao.textContent = 'Preparando PDF...';
-                const resposta = await fetch(url);
-                if (!resposta.ok) throw new Error('Não foi possível baixar o PDF para compartilhar.');
-                const blob = await resposta.blob();
+                const blob = await dbBaixarArquivoImpressao(documento.storagePath);
                 arquivo = new File([blob], `${documento.nome}.pdf`, {
                     type: blob.type || 'application/pdf'
                 });
