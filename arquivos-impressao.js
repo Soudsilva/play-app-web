@@ -7,9 +7,9 @@ import {
     dbObterArquivoImpressao,
     dbObterUrlArquivoImpressao,
     dbRenomearArquivoImpressao
-} from './arquivos-impressao-service.js';
-import { gerarMiniaturaPdf } from './arquivos-impressao-thumbnail.js';
-import { ativarOrdenacaoArquivos } from './arquivos-impressao-order.js';
+} from './arquivos-impressao-service.js?v=48';
+import { gerarMiniaturaPdf } from './arquivos-impressao-thumbnail.js?v=48';
+import { ativarOrdenacaoArquivos } from './arquivos-impressao-order.js?v=48';
 
 function escaparHtml(valor) {
     return String(valor || '')

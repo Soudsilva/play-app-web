@@ -25,7 +25,7 @@ import {
     obterExtensaoMiniatura,
     validarMiniaturaArquivo,
     validarPdfParaImpressao
-} from './arquivos-impressao-rules.js';
+} from './arquivos-impressao-rules.js?v=48';
 
 const ROOT = 'arquivos_impressao';
 const PAGE_SIZE = 20;

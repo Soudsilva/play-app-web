@@ -1,4 +1,4 @@
-const CACHE = 'play-v47';
+const CACHE = 'play-v48';
 
 // Arquivos essenciais do próprio app
 const SHELL = [
@@ -15,12 +15,12 @@ const SHELL = [
     '/importar_cobrancas_dataverse.html',
     '/configuracoes_automaticas.html',
     '/arquivos_para_impressao.html',
-    '/arquivos-impressao.css',
-    '/arquivos-impressao.js',
-    '/arquivos-impressao-service.js',
-    '/arquivos-impressao-rules.js',
-    '/arquivos-impressao-thumbnail.js',
-    '/arquivos-impressao-order.js',
+    '/arquivos-impressao.css?v=48',
+    '/arquivos-impressao.js?v=48',
+    '/arquivos-impressao-service.js?v=48',
+    '/arquivos-impressao-rules.js?v=48',
+    '/arquivos-impressao-thumbnail.js?v=48',
+    '/arquivos-impressao-order.js?v=48',
     '/auth.js',
     '/pwa-guard.js',
     '/pwa-install.js',
@@ -98,8 +98,10 @@ self.addEventListener('fetch', (e) => {
 
     // Todo o resto (próprio app + Firebase SDK do gstatic.com):
     // rede primeiro, cache como fallback
+    const ehArquivoDoApp = new URL(e.request.url).origin === self.location.origin;
+
     e.respondWith(
-        fetch(e.request)
+        fetch(e.request, ehArquivoDoApp ? { cache: 'no-cache' } : undefined)
             .then(response => {
                 if (response.ok) {
                     const clone = response.clone();

@@ -6,10 +6,10 @@ let carregamentoPdfJs = null;
 
 async function carregarPdfJs() {
     if (!carregamentoPdfJs) {
-        carregamentoPdfJs = import('./assets/vendor/pdfjs/pdf.min.mjs')
+        carregamentoPdfJs = import('./assets/vendor/pdfjs/pdf.min.mjs?v=48')
             .then(pdfjs => {
                 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-                    './assets/vendor/pdfjs/pdf.worker.min.mjs',
+                    './assets/vendor/pdfjs/pdf.worker.min.mjs?v=48',
                     import.meta.url
                 ).href;
                 return pdfjs;
