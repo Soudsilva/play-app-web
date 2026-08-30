@@ -226,7 +226,7 @@ export function inicializarArquivosImpressao({ nomeUsuario, podeAdministrar }) {
                 botao.textContent = 'Preparando PDF...';
                 const blob = await dbBaixarArquivoImpressao(documento.storagePath);
                 arquivo = new File([blob], `${documento.nome}.pdf`, {
-                    type: blob.type || 'application/pdf'
+                    type: 'application/pdf'
                 });
                 estado.arquivosPreparados.set(id, arquivo);
             }
@@ -234,7 +234,8 @@ export function inicializarArquivosImpressao({ nomeUsuario, podeAdministrar }) {
             if (typeof navigator.canShare === 'function' && !navigator.canShare({ files: [arquivo] })) {
                 throw new Error('Este navegador não permite compartilhar PDF como arquivo.');
             }
-            await navigator.share({ title: documento.nome, files: [arquivo] });
+            botao.textContent = 'Abrindo opções...';
+            await navigator.share({ files: [arquivo] });
         } catch (erro) {
             if (erro?.name === 'AbortError') return;
             if (erro?.name === 'NotAllowedError' && estado.arquivosPreparados.has(id)) {
