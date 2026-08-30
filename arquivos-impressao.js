@@ -46,7 +46,8 @@ export function inicializarArquivosImpressao({ nomeUsuario, podeAdministrar }) {
         temporizadorBusca: null,
         urlsCompartilhamento: new Map(),
         urlsComFalha: new Set(),
-        urlsEmPreparacao: new Set()
+        urlsEmPreparacao: new Set(),
+        arquivosPreparados: new Map()
     };
 
     elementos.adicionar.hidden = !podeAdministrar;
@@ -209,25 +210,45 @@ export function inicializarArquivosImpressao({ nomeUsuario, podeAdministrar }) {
         }
     }
 
-    function compartilharArquivo(id, botao) {
+    async function compartilharArquivo(id, botao) {
         if (botao?.disabled) return;
         const compartilhamento = estado.urlsCompartilhamento.get(id);
         if (!compartilhamento) return;
         const { documento, url } = compartilhamento;
+        const textoOriginal = botao?.textContent || 'Compartilhar';
+        if (!navigator.share) {
+            await window.playAlert('O compartilhamento nativo não é suportado neste navegador.');
+            return;
+        }
         try {
-            if (!navigator.share) {
-                window.open(url, '_blank', 'noopener');
+            let arquivo = estado.arquivosPreparados.get(id);
+            if (!arquivo) {
+                botao.disabled = true;
+                botao.textContent = 'Preparando PDF...';
+                const resposta = await fetch(url);
+                if (!resposta.ok) throw new Error('Não foi possível baixar o PDF para compartilhar.');
+                const blob = await resposta.blob();
+                arquivo = new File([blob], `${documento.nome}.pdf`, {
+                    type: blob.type || 'application/pdf'
+                });
+                estado.arquivosPreparados.set(id, arquivo);
+            }
+
+            if (typeof navigator.canShare === 'function' && !navigator.canShare({ files: [arquivo] })) {
+                throw new Error('Este navegador não permite compartilhar PDF como arquivo.');
+            }
+            await navigator.share({ title: documento.nome, files: [arquivo] });
+        } catch (erro) {
+            if (erro?.name === 'AbortError') return;
+            if (erro?.name === 'NotAllowedError' && estado.arquivosPreparados.has(id)) {
+                await window.playAlert('O PDF foi preparado. Toque em Compartilhar novamente para abrir as opções do celular.');
                 return;
             }
-            navigator.share({ title: documento.nome, url }).catch(erro => {
-                if (erro?.name !== 'AbortError') {
-                    console.error('Erro ao compartilhar arquivo para impressão:', erro);
-                    window.playAlert('Não foi possível abrir o compartilhamento.');
-                }
-            });
-        } catch (erro) {
             console.error('Erro ao compartilhar arquivo para impressão:', erro);
-            window.playAlert(erro?.message || 'Não foi possível compartilhar este arquivo.');
+            await window.playAlert(erro?.message || 'Não foi possível compartilhar este arquivo.');
+        } finally {
+            botao.disabled = false;
+            botao.textContent = textoOriginal;
         }
     }
 
@@ -324,6 +345,7 @@ export function inicializarArquivosImpressao({ nomeUsuario, podeAdministrar }) {
             };
             if (estado.arquivoEmEdicao) {
                 await dbSubstituirArquivoImpressao({ ...dados, id: estado.arquivoEmEdicao.id });
+                estado.arquivosPreparados.delete(estado.arquivoEmEdicao.id);
             } else {
                 await dbCadastrarArquivoImpressao(dados);
             }
