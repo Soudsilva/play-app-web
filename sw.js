@@ -1,4 +1,4 @@
-const CACHE = 'play-v20';
+const CACHE = 'play-v21';
 
 // Arquivos essenciais do próprio app
 const SHELL = [
@@ -15,6 +15,10 @@ const SHELL = [
     '/importar_cobrancas_dataverse.html',
     '/configuracoes_automaticas.html',
     '/arquivos_para_impressao.html',
+    '/arquivos-impressao.css',
+    '/arquivos-impressao.js',
+    '/arquivos-impressao-service.js',
+    '/arquivos-impressao-rules.js',
     '/auth.js',
     '/pwa-guard.js',
     '/pwa-install.js',

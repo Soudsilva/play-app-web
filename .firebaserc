@@ -5,6 +5,9 @@
   "targets": {
     "play-na-web": {
       "database": {
+        "default": [
+          "play-na-web-default-rtdb"
+        ],
         "seguranca": [
           "play-na-web-seguranca"
         ]

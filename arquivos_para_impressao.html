@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arquivos para Impressão - Play</title>
+    <link rel="stylesheet" href="arquivos-impressao.css">
     <style>
         * {
             box-sizing: border-box;
@@ -383,6 +384,10 @@
                     <span>✓</span>
                     <span>Checklist</span>
                 </button>
+                <button id="btnAbrirArquivos" class="atalho-principal arquivos" type="button">
+                    <span>📄</span>
+                    <span>Arquivos</span>
+                </button>
             </div>
 
             <section id="painelChecklists" class="painel oculto">
@@ -397,6 +402,23 @@
                         <span class="icone-fliper" aria-hidden="true">🕹️</span>
                         <span>+ Adicionar</span>
                     </button>
+                </div>
+            </section>
+
+            <section id="painelArquivos" class="painel painel-arquivos oculto" aria-live="polite">
+                <div class="cabecalho-arquivos">
+                    <h2>Arquivos</h2>
+                    <button id="btnAdicionarArquivo" class="btn-adicionar" type="button">+ Adicionar arquivo</button>
+                </div>
+                <label class="campo-arquivos" for="buscaArquivos">
+                    Buscar arquivo
+                    <input id="buscaArquivos" type="search" maxlength="120" autocomplete="off" placeholder="Digite o nome do arquivo">
+                </label>
+                <div id="listaArquivos" class="lista-arquivos">
+                    <div class="estado">Carregando arquivos...</div>
+                </div>
+                <div class="rodape-arquivos">
+                    <button id="btnCarregarMaisArquivos" class="btn-secundario oculto" type="button">Carregar mais</button>
                 </div>
             </section>
         </section>
@@ -468,10 +490,32 @@
         </form>
     </div>
 
+    <div id="modalArquivo" class="modal modal-arquivo" role="dialog" aria-modal="true" aria-labelledby="tituloModalArquivo">
+        <form id="formArquivo" class="modal-conteudo">
+            <h2 id="tituloModalArquivo">Adicionar arquivo</h2>
+            <label for="nomeArquivo">Nome exibido</label>
+            <input id="nomeArquivo" name="nome" type="text" maxlength="120" autocomplete="off" required>
+            <label for="pdfArquivo">Arquivo PDF</label>
+            <input id="pdfArquivo" name="pdf" type="file" accept="application/pdf,.pdf" required>
+            <label for="miniaturaArquivo">Miniatura opcional</label>
+            <input id="miniaturaArquivo" name="miniatura" type="file" accept="image/jpeg,image/png,image/webp">
+            <p class="texto-ajuda-arquivo">Use uma imagem JPG, PNG ou WebP para exibir uma prévia na lista. Sem miniatura, o arquivo será exibido com o ícone PDF.</p>
+            <div id="progressoArquivo" class="progresso-arquivo oculto">
+                <progress value="0" max="100"></progress>
+                <div id="textoProgressoArquivo">Preparando envio...</div>
+            </div>
+            <div class="modal-acoes">
+                <button id="btnCancelarArquivo" class="btn-secundario" type="button">Cancelar</button>
+                <button id="btnSalvarArquivo" class="btn-adicionar" type="submit">Enviar</button>
+            </div>
+        </form>
+    </div>
+
     <script src="assets/js/play-dialogs.js"></script>
     <script type="module">
         import { verificarAutenticacao } from './auth.js';
         import { dbListarColaboradores } from './database.js';
+        import { inicializarArquivosImpressao } from './arquivos-impressao.js';
         import {
             dbEscutarMaquinasChecklist,
             dbAdicionarMaquinaChecklist,
@@ -514,6 +558,7 @@
         let maquinaEmEdicaoId = '';
         let itemEmEdicaoId = '';
         let removerEventosOrdenacaoItensChecklist = null;
+        let arquivosImpressao = null;
 
         function normalizar(valor) {
             return String(valor || '')
@@ -601,6 +646,7 @@
 
         function exibirPainelInicial() {
             maquinaSelecionadaId = '';
+            arquivosImpressao?.fechar();
             elementos.painelInicial.classList.remove('oculto');
             elementos.painelChecklists.classList.add('oculto');
             elementos.folhaContainer.classList.add('oculto');
@@ -608,12 +654,21 @@
 
         function abrirListaChecklists({ registrarHistorico = true } = {}) {
             maquinaSelecionadaId = '';
+            arquivosImpressao?.fechar();
             elementos.painelInicial.classList.add('oculto');
             elementos.painelChecklists.classList.remove('oculto');
             elementos.folhaContainer.classList.add('oculto');
             if (registrarHistorico) {
                 history.pushState({ ...history.state, telaArquivosImpressao: 'checklists' }, '');
             }
+        }
+
+        function abrirListaArquivos({ registrarHistorico = true } = {}) {
+            maquinaSelecionadaId = '';
+            elementos.painelInicial.classList.add('oculto');
+            elementos.painelChecklists.classList.add('oculto');
+            elementos.folhaContainer.classList.add('oculto');
+            arquivosImpressao?.abrir({ registrarHistorico });
         }
 
         function obterItensOrdenados(maquina) {
@@ -912,6 +967,7 @@
         }
 
         document.getElementById('btnAbrirChecklists').addEventListener('click', abrirListaChecklists);
+        document.getElementById('btnAbrirArquivos').addEventListener('click', abrirListaArquivos);
         document.getElementById('btnAdicionarMaquina').addEventListener('click', () => abrirModal());
         document.getElementById('btnCancelarMaquina').addEventListener('click', fecharModal);
         document.getElementById('btnImprimir').addEventListener('click', () => window.print());
@@ -988,6 +1044,10 @@
             }
             if (tela === 'checklists') {
                 abrirListaChecklists({ registrarHistorico: false });
+                return;
+            }
+            if (tela === 'arquivos') {
+                abrirListaArquivos({ registrarHistorico: false });
                 return;
             }
             exibirPainelInicial();
@@ -1070,6 +1130,12 @@
             document.body.style.visibility = 'visible';
             history.replaceState({ ...history.state, telaArquivosImpressao: 'inicio' }, '');
 
+            const perfilNormalizado = normalizar(usuarioAtual.nivel_completo).replace(/\s+/g, '_');
+            arquivosImpressao = inicializarArquivosImpressao({
+                nomeUsuario,
+                podeAdministrar: perfilNormalizado.includes('gestao_3') || perfilNormalizado.includes('gestor_3')
+            });
+
             pararEscutaMaquinas = dbEscutarMaquinasChecklist(renderizarMaquinas);
         }
 
@@ -1083,6 +1149,7 @@
 
         window.addEventListener('pagehide', () => {
             encerrarOrdenacaoItensChecklist();
+            arquivosImpressao?.fechar();
             if (typeof pararEscutaMaquinas === 'function') pararEscutaMaquinas();
         });
     </script>
