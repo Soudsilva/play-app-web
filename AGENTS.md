@@ -805,3 +805,30 @@ O projeto está em produção e deve evoluir gradualmente.
 - Não trocar desempenho por uma estrutura difícil de compreender.
 - Toda alteração deve reduzir ou, no mínimo, não aumentar a dívida técnica.
 - Se uma solução rápida aumentar acoplamento, leitura excessiva, duplicação ou risco de dados, parar e propor uma solução segura antes de implementar.
+
+---
+
+## 31. Versão de entrega e sincronização entre computadores
+
+### Versão de entrega
+
+- O rodapé deste arquivo é a fonte oficial da versão entregue do projeto.
+- Sempre que o proprietário disser `salvar` e confirmar a opção `1. Sim`, antes de criar o commit, atualizar a versão no rodapé deste arquivo.
+- A nova versão deve ser incluída no mesmo commit de todas as alterações aprovadas e enviada para a `main`.
+- Não atualizar a versão para alterações que permanecerem apenas locais, nem quando o proprietário responder `2. Não`.
+- Usar versão sequencial no formato `vMAJOR.MINOR.PATCH`; na ausência de orientação diferente, incrementar apenas `PATCH` a cada entrega.
+- Depois de executar `pull` em outro computador, conferir a versão no rodapé deste arquivo para confirmar que a cópia local corresponde à última versão entregue.
+
+### Pull solicitado pelo proprietário
+
+- Quando o proprietário disser `faça pull`, `pull`, ou expressão equivalente, antes de qualquer comando perguntar exatamente:
+
+> Trazer a versão do GitHub e excluir as alterações locais?
+> 1. Sim
+> 2. Não
+
+- Com a resposta `1. Sim`, primeiro conferir e informar o estado local que será descartado; em seguida, trazer a versão de `origin/main` de modo que a cópia local fique igual à versão do GitHub.
+- Com a resposta `2. Não`, não executar o pull nem alterar arquivos locais.
+- Nunca descartar alterações locais sem essa confirmação explícita.
+
+**Versão atual de entrega: v0.0.1**
