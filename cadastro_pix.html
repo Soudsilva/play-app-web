@@ -1226,6 +1226,7 @@ import {
     removerPixPossePendente,
     sincronizarPixPossePendentes
 } from './offline-sync.js';
+import { validarPixParaCadastrarNoCliente } from './pix-posse-service.js';
 
 verificarAutenticacao();
 
@@ -1376,32 +1377,6 @@ function esc(valor) {
 
 function normalizarPix(valor) {
     return String(valor || '').trim();
-}
-
-function obterResponsaveisPixEmPosse(numeroPix, usuarioAtual = '') {
-    const pixNormalizado = normalizarPix(numeroPix);
-    const responsaveis = new Set();
-    const usuarioLogado = String(usuarioAtual || '').trim();
-
-    if (usuarioLogado) responsaveis.add(usuarioLogado);
-    if (!pixNormalizado) return [...responsaveis];
-
-    const ultimoRegistroRetirada = Object.values(window._pixData || {})
-        .filter(item => normalizarPix(item?.numero_pix) === pixNormalizado)
-        .sort((a, b) => obterTimestampRegistro(b) - obterTimestampRegistro(a))
-        .find(item => String(item?.tecnico_retirada || '').trim());
-
-    const retiradoPor = String(ultimoRegistroRetirada?.tecnico_retirada || '').trim();
-    if (retiradoPor) responsaveis.add(retiradoPor);
-
-    return [...responsaveis];
-}
-
-async function abaterPixDoBalanco(numeroPix, usuarioAtual = '') {
-    const responsaveis = obterResponsaveisPixEmPosse(numeroPix, usuarioAtual);
-    for (const responsavel of responsaveis) {
-        await dbRemoverPixEmPosse(responsavel, numeroPix);
-    }
 }
 
 function normalizarTexto(valor) {
@@ -2443,6 +2418,11 @@ window.confirmarPixMaquina = async function(clienteId, rowId, chave) {
     equips[idx].manutencaoPendentePor = usuarioLogado;
 
     try {
+        await validarPixParaCadastrarNoCliente({
+            responsavel: usuarioLogado,
+            itensAtuais: [{ pix: pixNum }]
+        });
+
         let fotoContadorUrl = '';
         let fotoContadorThumbUrl = '';
         if (fotoBase64) {
@@ -2472,11 +2452,7 @@ window.confirmarPixMaquina = async function(clienteId, rowId, chave) {
             criado_em     : dataInstalacao
         });
 
-        try {
-            await abaterPixDoBalanco(pixNum, usuarioLogado);
-        } catch (erroPossePix) {
-            console.warn('Falha ao abater Pix do balanÃ§o:', erroPossePix);
-        }
+        await dbRemoverPixEmPosse(usuarioLogado, pixNum);
 
         await set(ref(db, 'metadata/clientes_versao'), Date.now());
         delete _adicaoPixFotos[chave];
@@ -2488,7 +2464,8 @@ window.confirmarPixMaquina = async function(clienteId, rowId, chave) {
             alert(mensagem);
         }
     } catch (e) {
-        mostrarErro('Erro ao salvar. Tente novamente.');
+        const erroDePosse = String(e?.code || '').includes('PIX');
+        mostrarErro(erroDePosse ? e.message : 'Erro ao salvar. Tente novamente.');
     }
 };
 
@@ -2575,6 +2552,11 @@ window.confirmarInstalacaoCard = async function(clienteId, rowId, pixNum, pixKey
     const nomeEquipamento = idx !== -1 ? String(equips[idx]?.nome || '').trim() : '';
 
     try {
+        await validarPixParaCadastrarNoCliente({
+            responsavel: usuarioLogado,
+            itensAtuais: [{ pix: pixNum }]
+        });
+
         let fotoContadorUrl = '';
         let fotoContadorThumbUrl = '';
         if (fotoBase64) {
@@ -2616,11 +2598,7 @@ window.confirmarInstalacaoCard = async function(clienteId, rowId, pixNum, pixKey
             throw new Error(descreverErroFirebase(erroPixNovo, 'Falha ao registrar o Pix instalado.'));
         }
 
-        try {
-            await abaterPixDoBalanco(pixNum, usuarioLogado);
-        } catch (erroPossePix) {
-            console.warn('Falha ao abater Pix do balanÃ§o:', erroPossePix);
-        }
+        await dbRemoverPixEmPosse(usuarioLogado, pixNum);
 
         try {
             await set(ref(db, 'metadata/clientes_versao'), Date.now());
@@ -2636,7 +2614,9 @@ window.confirmarInstalacaoCard = async function(clienteId, rowId, pixNum, pixKey
         }
     } catch (e) {
         console.error('Erro ao confirmar instala\u00e7\u00e3o do Pix:', e);
-        const detalhe = descreverErroFirebase(e, 'Erro ao salvar a instala\u00e7\u00e3o.');
+        const detalhe = String(e?.code || '').includes('PIX')
+            ? e.message
+            : descreverErroFirebase(e, 'Erro ao salvar a instala\u00e7\u00e3o.');
         if (window.playAlert) {
             window.playAlert(detalhe);
         } else {

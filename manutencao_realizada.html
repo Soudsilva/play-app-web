@@ -1117,6 +1117,7 @@ import { verificarAutenticacao } from './auth.js';
 verificarAutenticacao();
 import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbSalvarCliente, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, storageSalvarFotoComThumb, dbSalvarMovimentoFluxoCaixa, dbSincronizarItensManutencaoNoHistorico, dbSincronizarClienteRecuperacaoSessaoRotas } from './database.js';
 import { validarSaldoParaAdicionarMaquinas } from './maquina-posse-service.js';
+import { validarPixParaCadastrarNoCliente } from './pix-posse-service.js';
 
 // ════════════════════════════════════════════════
 // DADOS DA MANUTENÇÃO
@@ -3388,6 +3389,10 @@ window.finalizarRegistro = async function() {
 
                 const equipamentosAdicionados = coletarEquipamentosAdicionadosParaSalvar();
                 await validarSaldoParaAdicionarMaquinas({
+                    responsavel: usuarioLogado,
+                    itensAtuais: equipamentosAdicionados
+                });
+                await validarPixParaCadastrarNoCliente({
                     responsavel: usuarioLogado,
                     itensAtuais: equipamentosAdicionados
                 });

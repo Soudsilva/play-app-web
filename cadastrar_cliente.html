@@ -587,8 +587,9 @@
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
     // Importamos as ferramentas de banco de dados do seu arquivo externo
-    import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, dbEscutarSessaoRotas, dbSincronizarItensCadastroClienteNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
+    import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, dbEscutarSessaoRotas, dbSincronizarItensCadastroClienteNoHistorico, dbRemoverPixEmPosse, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
     import { validarSaldoParaAdicionarMaquinas } from './maquina-posse-service.js';
+    import { validarPixParaCadastrarNoCliente } from './pix-posse-service.js';
 
     let maquinasDisponiveis = [];
     let produtosDisponiveis = [];
@@ -2385,6 +2386,7 @@
                 ? []
                 : (editId ? coletarProdutosInstalacaoParaSalvar() : validarProdutosObrigatoriosPorMaquina());
 
+            let pixAdicionadosAoCliente = [];
             if (!modoSolicitar) {
                 const equipamentosAnteriores = editId
                     ? obterEquipamentosDetalhadosDoCliente(clienteEmEdicao).map(item => {
@@ -2401,6 +2403,12 @@
                     itensAtuais: equipamentosDetalhados,
                     itensAnteriores: equipamentosAnteriores
                 });
+                const validacaoPix = await validarPixParaCadastrarNoCliente({
+                    responsavel: nomeUsuarioLogado,
+                    itensAtuais: equipamentosDetalhados,
+                    itensAnteriores: equipamentosAnteriores
+                });
+                pixAdicionadosAoCliente = validacaoPix.pixAdicionados;
             }
 
             const fotosMaquinasInstalacao = [];
@@ -2523,6 +2531,10 @@
                 };
                 const clienteIdSalvo = await dbSalvarCliente(dadosFinal, idParaSalvar);
                 await sincronizarCadastroClienteNoHistorico(clienteIdSalvo || idParaSalvar, dadosFinal);
+
+                for (const numeroPix of pixAdicionadosAoCliente) {
+                    await dbRemoverPixEmPosse(nomeUsuarioLogado, numeroPix);
+                }
 
                 if (fromPontoNovo && pontoNovoCarregado) {
                     await dbSalvarManutencao({ ...pontoNovoCarregado, status: "concluido" }, fromPontoNovo);
