@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Balan&ccedil;o</title>
+    <link rel="stylesheet" href="./balanco-maquinas-gestor.css">
     <style>
         html { background:#0b2870; }
         body { margin:0; font-family:Arial, sans-serif; background:#0b2870; display:flex; justify-content:center; color:white; user-select:none; -webkit-user-select:none; }
@@ -768,21 +769,6 @@
             justify-content:center;
             gap:10px;
         }
-        .gestor-mov-badge {
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-            background:#ffeb3b;
-            color:#0b2256;
-            font-size:11px;
-            font-weight:900;
-            min-width:20px;
-            height:18px;
-            padding:0 6px;
-            border-radius:999px;
-        }
-        .gestor-mov-header.aberto .gestor-mov-badge { background:#ffeb3b; color:#0b2256; }
-        .gestor-mov-subtexto { display:none; }
         .gestor-mov-seta {
             position:absolute;
             right:18px;
@@ -955,133 +941,6 @@
             font-size:15px;
             font-weight:bold;
         }
-        .gestor-mov-busca {
-            width:100%;
-            height:44px;
-            box-sizing:border-box;
-            margin-bottom:12px;
-            text-align:center;
-            background:#173d8f;
-            color:#ffffff;
-            border:1px solid #d7dce3;
-            border-radius:10px;
-            font-size:15px;
-            outline:none;
-            user-select:text;
-            -webkit-user-select:text;
-        }
-        .gestor-mov-busca::placeholder { color:#d7e3ff; }
-        .gestor-mov-filtros {
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:8px;
-            margin-bottom:12px;
-        }
-        .gestor-mov-mes-select {
-            width:100%;
-            height:44px;
-            box-sizing:border-box;
-            margin-bottom:10px;
-            border-radius:10px;
-            border:1.5px solid #7fa6ff;
-            background:#244d9b;
-            color:#ffffff;
-            font-size:13px;
-            font-weight:700;
-            text-align:center;
-            cursor:pointer;
-            user-select:none;
-            -webkit-user-select:none;
-        }
-        .gestor-mov-filtro {
-            display:flex;
-            flex-direction:column;
-            gap:4px;
-        }
-        .gestor-mov-filtro label {
-            color:#d7e3ff;
-            font-size:13px;
-            font-weight:700;
-            text-align:center;
-        }
-        .gestor-mov-filtro select {
-            width:100%;
-            height:42px;
-            box-sizing:border-box;
-            background:#ffffff;
-            color:#0b2256;
-            border:1px solid #d7dce3;
-            border-radius:10px;
-            font-size:15px;
-            font-weight:700;
-            padding:0 8px;
-        }
-        .gestor-mov-item {
-            background:#173d8f;
-            padding:10px;
-            border-radius:8px;
-            margin-bottom:8px;
-            font-size:13px;
-            display:flex;
-            flex-direction:column;
-            gap:6px;
-            border:1px solid #d7dce3;
-        }
-        .gestor-mov-item.entrada { border-color:#4caf50; }
-        .gestor-mov-item.saida { border-color:#f44336; }
-        .gestor-mov-topo,
-        .gestor-mov-linha {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            gap:8px;
-            border-bottom:1px solid #3d63b8;
-            min-height:32px;
-            padding:4px 0 5px;
-            line-height:1.2;
-        }
-        .gestor-mov-topo > :first-child,
-        .gestor-mov-linha > :first-child { min-width:0; }
-        .gestor-mov-topo > :last-child,
-        .gestor-mov-linha > :last-child {
-            flex-shrink:0;
-            text-align:right;
-        }
-        .gestor-mov-tipo { font-size:18px; font-weight:700; }
-        .gestor-mov-tipo.entrada { color:#81c784; }
-        .gestor-mov-tipo.saida { color:#ef9a9a; }
-        .gestor-mov-data { font-size:13px; color:#d7e3ff; text-align:right; }
-        .gestor-mov-topo-resp {
-            font-size:19px;
-            font-weight:700;
-            color:#ffffff;
-            text-align:right;
-        }
-        .gestor-mov-registro {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            gap:8px;
-            color:#d7e3ff;
-            font-size:15px;
-            font-style:italic;
-            min-height:28px;
-            padding-top:4px;
-            line-height:1.2;
-        }
-        .gestor-mov-registro > :first-child { min-width:0; }
-        .gestor-mov-registro > :last-child { flex-shrink:0; text-align:right; }
-        .gestor-mov-nome { font-size:17px; color:#ffffff; font-weight:700; }
-        .gestor-mov-resp { font-size:16px; color:#d7e3ff; text-align:right; }
-        .gestor-mov-obs { font-size:15px; color:#d7e3ff; font-style:italic; }
-        .gestor-mov-qtd { font-size:24px; font-weight:700; }
-        .gestor-mov-vazio {
-            text-align:center;
-            font-size:15px;
-            color:#d7e3ff;
-            padding:18px 10px;
-        }
-
         /* Modal de histórico de movimentações */
         .hist-overlay {
             display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8);
@@ -1613,13 +1472,15 @@
         dbRemoverStatusAprovadoContestacaoBalanco,
         dbCancelarContestacaoBalanco,
         dbSalvarHistoricoBalanco,
-        dbEscutarUltimosPorItem,
-        dbEscutarHistoricoBalanco,
-        dbEscutarHistoricoBalancoDoUsuario,
         dbEscutarRemuneracaoMensal,
         dbEscutarMesesRemuneracao,
         dbListarRemuneracaoMensal
     } from './database.js';
+    import { criarAuditoriaMaquinasGestor } from './balanco-maquinas-gestor.js';
+    import {
+        escutarUltimasMovimentacoesDaMaquina,
+        listarPaginaMovimentacoesDaMaquina
+    } from './balanco-maquinas-gestor-service.js';
 
     const usuarioLogado = String(localStorage.getItem('usuarioLogado') || '').trim();
     let todosAtendimentos = [];
@@ -1648,20 +1509,23 @@
     let isGestao1 = false;
     let isGestao3 = false;
     let contestacoesAberto = false;
-    let movimentacoesGestorAberto = false;
-    let filtroMovimentacoesGestor = '';
-    let filtroMovimentacoesGestorUsuario = '';
-    let filtroMovimentacoesGestorTipo = 'maquina';
-    let filtroMovimentacoesGestorMes = '';
-    let historicoMovimentacoesGestor = [];
-    let historicoMovimentacoesGestorGlobal = [];
-    let unsubscribeHistoricoMovimentacoesGestorUsuario = null;
     let usaComissaoGlobal = false;
     let mapaRotas = {};
     let contestacaoContexto = null;
     let historicoAbertoContexto = null;
     let unsubscribeHistoricoItem = null;
     let ultimasEntradasHistorico = [];
+    let historicoAuditoriaCursor = '';
+    let historicoAuditoriaTemMais = false;
+    let historicoAuditoriaCarregando = false;
+    let historicoAuditoriaErro = '';
+    let historicoAuditoriaGeracao = 0;
+    const auditoriaMaquinasGestor = criarAuditoriaMaquinasGestor({
+        aoAbrirHistorico: abrirHistoricoAuditoriaMaquina,
+        aoAlterarAbertura: aberto => {
+            if (aberto) definirContestacoesAbertas(false);
+        }
+    });
     const _loadingMsgsBalanco = [
         'Buscando os dados do balanço...',
         'Conferindo atendimentos...',
@@ -1732,91 +1596,6 @@
             diaSemana: data.toLocaleDateString('pt-BR', { weekday: 'long' }).toUpperCase(),
             data: data.toLocaleDateString('pt-BR')
         };
-    }
-
-    function ehMovimentoEstoqueHistoricoGestor(mov) {
-        if (mov?.cancelado) return false;
-        const tipo = String(mov?.tipo || '').trim();
-        if (tipo === 'cancelamento') return false;
-        const origemRegistro = String(mov?.origemRegistro || '').trim();
-        return tipo === 'entrada_estoque'
-            || tipo === 'saida_estoque'
-            || origemRegistro === 'entrada_estoque'
-            || origemRegistro === 'retirada_estoque';
-    }
-
-    function obterMetaMovimentacaoGestor(mov) {
-        const tipo = String(mov?.tipo || '').trim();
-        if (tipo === 'entrada_estoque') return { classe: 'entrada', texto: 'ENTRADA', cor: '#81c784', ehEntrada: true };
-        if (tipo === 'saida_estoque') return { classe: 'saida', texto: 'SAÍDA', cor: '#ef9a9a', ehEntrada: false };
-        const origem = String(mov?.origemRegistro || '').trim();
-        if (origem === 'entrada_estoque') return { classe: 'entrada', texto: 'ENTRADA', cor: '#81c784', ehEntrada: true };
-        return { classe: 'saida', texto: 'SAÍDA', cor: '#ef9a9a', ehEntrada: false };
-    }
-
-    function obterOrigemMovimentacaoGestor(mov) {
-        const origem = String(mov?.origemRegistro || '').trim();
-        if (origem === 'entrada_estoque') return { icone: '&#128229;', texto: 'Tela Movimentação', cor: '#a5d6a7' };
-        if (origem === 'retirada_estoque') return { icone: '&#128228;', texto: 'Tela Movimentação', cor: '#ffcc80' };
-        return { icone: '&#128230;', texto: origem || 'Manual', cor: '#d7e3ff' };
-    }
-
-    function formatarDescricaoMovimentacaoGestor(descricao) {
-        const texto = String(descricao || '').trim();
-        const chave = normalizarTexto(texto);
-        const mapa = {
-            'retirada de estoque': 'Retirada de estoque',
-            'devolucao ao estoque': 'Devolução ao estoque',
-            'reposicao': 'Reposição',
-            'reposicao de estoque': 'Reposição de estoque',
-            'saida de estoque': 'Saída de estoque',
-            'entrada de estoque': 'Entrada de estoque'
-        };
-        return mapa[chave] || texto;
-    }
-
-    function obterDataMovimentacaoGestor(mov) {
-        const data = new Date(mov?.timestamp || mov?.data || '');
-        return Number.isFinite(data.getTime()) ? data : null;
-    }
-
-    function obterAnoMesMovimentacaoGestor(mov) {
-        const data = obterDataMovimentacaoGestor(mov);
-        if (!data) return '';
-        return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
-    }
-
-    function rotuloAnoMesMovimentacaoGestor(anoMes) {
-        const [ano, mes] = String(anoMes || '').split('-').map(Number);
-        if (!ano || !mes) return 'Mês';
-        return `${MESES[mes - 1]} de ${ano}`;
-    }
-
-    function obterMesAtualMovimentacoesGestor() {
-        const agora = new Date();
-        return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
-    }
-
-    function obterMesesMovimentacoesGestor() {
-        return [...new Set(historicoMovimentacoesGestor.map(obterAnoMesMovimentacaoGestor).filter(Boolean))]
-            .sort((a, b) => b.localeCompare(a));
-    }
-
-    function garantirMesMovimentacoesGestor() {
-        const meses = obterMesesMovimentacoesGestor();
-        const mesAtual = obterMesAtualMovimentacoesGestor();
-        if (!filtroMovimentacoesGestorMes || !meses.includes(filtroMovimentacoesGestorMes)) {
-            filtroMovimentacoesGestorMes = meses.includes(mesAtual) ? mesAtual : (meses[0] || '');
-        }
-        return meses;
-    }
-
-    function obterTotalMovimentacoesGestorMes() {
-        garantirMesMovimentacoesGestor();
-        if (!filtroMovimentacoesGestorMes) return historicoMovimentacoesGestor.length;
-        return historicoMovimentacoesGestor
-            .filter(mov => obterAnoMesMovimentacaoGestor(mov) === filtroMovimentacoesGestorMes)
-            .length;
     }
 
     function obterMesAtualCobrancasMensaisGestor() {
@@ -1966,127 +1745,6 @@
             cobrancasMensaisGestor = Array.isArray(lista) ? lista : [];
             renderizar();
         });
-    }
-
-    function aplicarHistoricoMovimentacoesGestor(lista) {
-        historicoMovimentacoesGestor = (Array.isArray(lista) ? lista : []).filter(ehMovimentoEstoqueHistoricoGestor);
-        garantirMesMovimentacoesGestor();
-        renderizar();
-    }
-
-    function atualizarFonteHistoricoMovimentacoesGestor() {
-        if (!isGestor) return;
-
-        if (unsubscribeHistoricoMovimentacoesGestorUsuario) {
-            unsubscribeHistoricoMovimentacoesGestorUsuario();
-            unsubscribeHistoricoMovimentacoesGestorUsuario = null;
-        }
-
-        const usuarioSelecionado = String(filtroMovimentacoesGestorUsuario || '').trim();
-        if (!usuarioSelecionado) {
-            aplicarHistoricoMovimentacoesGestor(historicoMovimentacoesGestorGlobal);
-            return;
-        }
-
-        unsubscribeHistoricoMovimentacoesGestorUsuario = dbEscutarHistoricoBalancoDoUsuario(usuarioSelecionado, aplicarHistoricoMovimentacoesGestor);
-    }
-
-    function montarCardsMovimentacoesGestor() {
-        if (!isGestor) return '';
-
-        garantirMesMovimentacoesGestor();
-        const input = document.getElementById('filtroMovimentacoesGestor');
-        const termo = normalizarTexto(input?.value || filtroMovimentacoesGestor || '');
-        const filtroUsuario = normalizarTexto(filtroMovimentacoesGestorUsuario);
-        const filtroTipo = normalizarTexto(filtroMovimentacoesGestorTipo || 'todos');
-        const filtroMes = String(filtroMovimentacoesGestorMes || '').trim();
-        const lista = historicoMovimentacoesGestor.filter(mov => {
-            if (filtroMes && obterAnoMesMovimentacaoGestor(mov) !== filtroMes) return false;
-            if (filtroUsuario && normalizarTexto(mov?.responsavel) !== filtroUsuario) return false;
-            if (filtroTipo && filtroTipo !== 'todos') {
-                const categoria = normalizarTexto(mov?.categoria || mov?.itemCategoria || '');
-                if (categoria !== filtroTipo) return false;
-            }
-            if (!termo) return true;
-            const texto = [
-                mov?.itemNome,
-                mov?.responsavel,
-                mov?.registradoPor,
-                mov?.tipo,
-                mov?.descricao,
-                mov?.origemRegistro
-            ].join(' ');
-            return normalizarTexto(texto).includes(termo);
-        });
-
-        if (lista.length === 0) {
-            return '<div class="gestor-mov-vazio">Nenhuma movimentação encontrada.</div>';
-        }
-
-        return lista.map(mov => {
-            const meta = obterMetaMovimentacaoGestor(mov);
-            const movimentacao = Number(mov.movimento ?? 0);
-            const quantidade = Math.abs(movimentacao);
-            const dataFormatada = formatarDataHoraCurta(mov.timestamp || mov.data || '');
-            const registradoPor = String(mov.registradoPor || '').trim();
-            const responsavel = String(mov.responsavel || '').trim();
-
-            return `
-                <div class="gestor-mov-item ${meta.classe}">
-                    <div class="gestor-mov-topo">
-                        <span class="gestor-mov-tipo ${meta.classe}">${meta.texto}</span>
-                        <span class="gestor-mov-topo-resp">${escaparHtml(responsavel || '-')}</span>
-                    </div>
-                    <div class="gestor-mov-linha">
-                        <span class="gestor-mov-nome">${escaparHtml(mov.itemNome || 'Item')}</span>
-                        <span class="gestor-mov-qtd ${meta.classe}" style="color:${meta.cor};">${quantidade}</span>
-                    </div>
-                    <div class="gestor-mov-registro">
-                        <span>${registradoPor && registradoPor !== responsavel ? `Registrado por: ${escaparHtml(registradoPor)}` : ''}</span>
-                        <span class="gestor-mov-data">${dataFormatada}</span>
-                    </div>
-                </div>`;
-        }).join('');
-    }
-
-    function obterUsuariosMovimentacoesGestor() {
-        const nomes = new Set(
-            historicoMovimentacoesGestor
-                .map(mov => String(mov?.responsavel || '').trim())
-                .filter(Boolean)
-        );
-
-        try {
-            const cache = JSON.parse(localStorage.getItem('cache_colaboradores') || '[]');
-            (Array.isArray(cache) ? cache : []).forEach(colab => {
-                const perfil = String(colab?.nivel_completo || '').trim();
-                const nome = String(colab?.nome || colab?.usuario || '').trim();
-                if (!nome) return;
-                if (perfil.includes('atendimento_1') || perfil.includes('atendimento_2')) {
-                    nomes.add(nome);
-                }
-            });
-        } catch (_) {}
-
-        return [...nomes].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-    }
-
-    function obterTiposMovimentacoesGestor() {
-        const tipos = new Set(['maquina']);
-        historicoMovimentacoesGestor.forEach(mov => {
-            const categoria = normalizarTexto(mov?.categoria || mov?.itemCategoria || '');
-            if (categoria) tipos.add(categoria);
-        });
-        return [...tipos];
-    }
-
-    function rotuloTipoMovimentacaoGestor(tipo) {
-        const valor = normalizarTexto(tipo);
-        if (valor === 'maquina') return 'Máquinas';
-        if (valor === 'produtos' || valor === 'produto') return 'Produtos';
-        if (valor === 'peca') return 'Peças';
-        if (valor === 'materiais' || valor === 'material') return 'Materiais';
-        return tipo || 'Tipo';
     }
 
     // Estado do calendÃ¡rio
@@ -2758,7 +2416,7 @@
         }
 
         let ultimaData = '';
-        lista.innerHTML = timeline.map(e => {
+        const linhasHistoricoHtml = timeline.map(e => {
             const tipoLinha = String(e.tipoLinha || 'movimento');
             const movimentacao = Number(e.movimento ?? 0);
             const quantidade = tipoLinha === 'movimento' ? movimentacao : Number(e.quantidade || 0);
@@ -2820,6 +2478,14 @@
                 </div>
             </div>`;
         }).join('');
+        const modoAuditoria = Boolean(historicoAbertoContexto?.modoGestorAuditoria);
+        const erroAuditoriaHtml = modoAuditoria && historicoAuditoriaErro
+            ? `<div class="hist-vazio" style="padding:12px 18px;color:#fecaca;">${escaparHtml(historicoAuditoriaErro)}</div>`
+            : '';
+        const verMaisHtml = modoAuditoria && (historicoAuditoriaTemMais || historicoAuditoriaCarregando || historicoAuditoriaErro)
+            ? `<button type="button" class="hist-ver-mais" onclick="carregarMaisHistoricoAuditoria()"${historicoAuditoriaCarregando ? ' disabled' : ''}>${historicoAuditoriaCarregando ? 'Carregando...' : (historicoAuditoriaErro ? 'Tentar novamente' : 'Ver mais')}</button>`
+            : '';
+        lista.innerHTML = linhasHistoricoHtml + erroAuditoriaHtml + verMaisHtml;
     }
 
     function formatarListaPixEmPosse(lista) {
@@ -2984,7 +2650,10 @@
 
     function atualizarBotoesContestacaoHistorico() {
         const acoes = document.querySelector('#histOverlay .hist-acoes');
-        if (acoes) acoes.classList.toggle('gestor-contestacao', Boolean(historicoAbertoContexto?.modoGestorContestacao));
+        if (acoes) {
+            acoes.classList.toggle('gestor-contestacao', Boolean(historicoAbertoContexto?.modoGestorContestacao));
+            acoes.classList.toggle('somente-consulta', Boolean(historicoAbertoContexto?.modoGestorAuditoria));
+        }
         atualizarBotaoAprovarContestacao();
         atualizarBotaoContestarContestacao();
     }
@@ -3027,6 +2696,7 @@
     }
 
     window.abrirHistoricoProduto = async function(nomeProduto, totalAtual, categoria = 'produto', itemChave = '') {
+        resetarHistoricoAuditoria();
         const overlay = document.getElementById('histOverlay');
         const lista   = document.getElementById('histLista');
         const titulo  = document.getElementById('histTitulo');
@@ -3053,13 +2723,17 @@
         if (typeof unsubscribeHistoricoItem === 'function') unsubscribeHistoricoItem();
         historicoAbertoContexto = { nomeProduto, categoria, itemChave, responsavel: usuarioLogado };
         ultimasEntradasHistorico = [];
-        unsubscribeHistoricoItem = dbEscutarUltimosPorItem(usuarioLogado, nomeProduto, 20, (entradas) => {
+        unsubscribeHistoricoItem = escutarUltimasMovimentacoesDaMaquina(usuarioLogado, itemChave, nomeProduto, 20, (entradas) => {
             ultimasEntradasHistorico = Array.isArray(entradas) ? entradas : [];
             renderizarHistoricoAberto();
+        }, erro => {
+            console.error('Erro ao carregar o histórico do item:', erro);
+            lista.innerHTML = '<div class="hist-vazio">Não foi possível carregar o histórico.</div>';
         });
     };
 
     window.abrirHistoricoContestacaoGestor = function(contestacaoId, usuarioKey = '') {
+        resetarHistoricoAuditoria();
         const id = String(contestacaoId || '').trim();
         const usuario = String(usuarioKey || '').trim();
         const contestacao = (contestacoesGestor || []).find(c => {
@@ -3101,15 +2775,113 @@
         atualizarBotoesContestacaoHistorico();
         atualizarResumoGestorHistorico(contestacao);
         ultimasEntradasHistorico = [];
-        unsubscribeHistoricoItem = dbEscutarUltimosPorItem(responsavel, nomeProduto, 20, (entradas) => {
+        unsubscribeHistoricoItem = escutarUltimasMovimentacoesDaMaquina(responsavel, itemChave, nomeProduto, 20, (entradas) => {
             ultimasEntradasHistorico = Array.isArray(entradas) ? entradas : [];
             renderizarHistoricoAberto();
+        }, erro => {
+            console.error('Erro ao carregar o histórico da contestação:', erro);
+            lista.innerHTML = '<div class="hist-vazio">Não foi possível carregar o histórico.</div>';
         });
+    };
+
+    function resetarHistoricoAuditoria() {
+        historicoAuditoriaGeracao += 1;
+        historicoAuditoriaCursor = '';
+        historicoAuditoriaTemMais = false;
+        historicoAuditoriaCarregando = false;
+        historicoAuditoriaErro = '';
+    }
+
+    async function carregarPaginaHistoricoAuditoria() {
+        if (!historicoAbertoContexto?.modoGestorAuditoria || historicoAuditoriaCarregando) return;
+        const contexto = { ...historicoAbertoContexto };
+        const geracaoAtual = historicoAuditoriaGeracao;
+        historicoAuditoriaCarregando = true;
+        historicoAuditoriaErro = '';
+        if (ultimasEntradasHistorico.length) renderizarHistoricoAberto();
+
+        try {
+            const pagina = await listarPaginaMovimentacoesDaMaquina(contexto.responsavel, contexto.itemChave, {
+                limite: 10,
+                cursorId: historicoAuditoriaCursor,
+                itemNome: contexto.nomeProduto
+            });
+            if (geracaoAtual !== historicoAuditoriaGeracao || !historicoAbertoContexto?.modoGestorAuditoria) return;
+            const idsExistentes = new Set(ultimasEntradasHistorico.map(item => String(item?.id || item?.firebaseUrl || '')));
+            ultimasEntradasHistorico = [
+                ...ultimasEntradasHistorico,
+                ...pagina.movimentos.filter(item => !idsExistentes.has(String(item?.id || item?.firebaseUrl || '')))
+            ];
+            historicoAuditoriaCursor = pagina.proximoCursor || historicoAuditoriaCursor;
+            historicoAuditoriaTemMais = Boolean(pagina.temMais);
+            historicoAuditoriaErro = '';
+        } catch (erro) {
+            console.error('Erro ao carregar histórico detalhado da máquina:', erro);
+            historicoAuditoriaErro = 'Não foi possível carregar mais movimentações.';
+        } finally {
+            if (geracaoAtual !== historicoAuditoriaGeracao) return;
+            historicoAuditoriaCarregando = false;
+            if (ultimasEntradasHistorico.length) {
+                renderizarHistoricoAberto();
+            } else {
+                const lista = document.getElementById('histLista');
+                if (lista) {
+                    lista.innerHTML = historicoAuditoriaErro
+                        ? `<div class="hist-vazio" style="color:#fecaca;">${escaparHtml(historicoAuditoriaErro)}</div><button type="button" class="hist-ver-mais" onclick="carregarMaisHistoricoAuditoria()">Tentar novamente</button>`
+                        : '<div class="hist-vazio">Nenhuma movimentação registrada.</div>';
+                }
+            }
+        }
+    }
+
+    function abrirHistoricoAuditoriaMaquina(maquina) {
+        if (!isGestor || !maquina?.responsavel || !maquina?.itemChave) return;
+        if (typeof unsubscribeHistoricoItem === 'function') unsubscribeHistoricoItem();
+        unsubscribeHistoricoItem = null;
+        resetarHistoricoAuditoria();
+
+        const overlay = document.getElementById('histOverlay');
+        const lista = document.getElementById('histLista');
+        const titulo = document.getElementById('histTitulo');
+        const totalEl = document.getElementById('histTotalAtual');
+        const totalNumero = Number(maquina.quantidade || 0);
+        titulo.textContent = maquina.nome || 'Histórico da máquina';
+        totalEl.textContent = `Total atual: ${formatarQuantidadeVisual(totalNumero)}`;
+        totalEl.classList.toggle('negativo', totalNumero < 0);
+        lista.innerHTML = '<div class="hist-loading">Carregando...</div>';
+        contestacaoContexto = {
+            responsavel: String(maquina.responsavel).trim(),
+            registradoPor: usuarioLogado,
+            categoria: 'maquina',
+            itemNome: String(maquina.nome || '').trim(),
+            itemChave: String(maquina.itemChave || '').trim(),
+            quantidadeAtual: totalNumero
+        };
+        historicoAbertoContexto = {
+            nomeProduto: String(maquina.nome || '').trim(),
+            categoria: 'maquina',
+            itemChave: String(maquina.itemChave || '').trim(),
+            responsavel: String(maquina.responsavel).trim(),
+            quantidadeAtual: totalNumero,
+            modoGestorAuditoria: true
+        };
+        ultimasEntradasHistorico = [];
+        fecharBoxContestacao();
+        atualizarResumoGestorHistorico();
+        atualizarBotoesContestacaoHistorico();
+        overlay.classList.add('aberto');
+        history.pushState({ histAberto: true }, '');
+        carregarPaginaHistoricoAuditoria();
+    }
+
+    window.carregarMaisHistoricoAuditoria = function() {
+        carregarPaginaHistoricoAuditoria();
     };
 
     window.fecharHistorico = function() {
         if (typeof unsubscribeHistoricoItem === 'function') unsubscribeHistoricoItem();
         unsubscribeHistoricoItem = null;
+        resetarHistoricoAuditoria();
         historicoAbertoContexto = null;
         ultimasEntradasHistorico = [];
         fecharBoxContestacao();
@@ -3347,6 +3119,7 @@
         if (document.getElementById('histOverlay').classList.contains('aberto')) {
             if (typeof unsubscribeHistoricoItem === 'function') unsubscribeHistoricoItem();
             unsubscribeHistoricoItem = null;
+            resetarHistoricoAuditoria();
             historicoAbertoContexto = null;
             ultimasEntradasHistorico = [];
             fecharBoxContestacao();
@@ -3702,49 +3475,7 @@
                 ${montarCardsCobrancasMensaisGestor()}
             </div>` : ''}
 
-            ${isGestor ? `
-            <div id="tituloMovimentacoesGestor" class="gestor-mov-header${movimentacoesGestorAberto ? ' aberto' : ''}" onclick="window.toggleMovimentacoesGestor()">
-                <span class="gestor-mov-icone">&#128230;</span>
-                <span class="gestor-mov-info">
-                    <span class="gestor-mov-label">
-                        Movimenta&ccedil;&otilde;es
-                        ${obterTotalMovimentacoesGestorMes() > 0 ? `<span class="gestor-mov-badge">${obterTotalMovimentacoesGestorMes()}</span>` : ''}
-                    </span>
-                    <span class="gestor-mov-subtexto">${movimentacoesGestorAberto ? 'Toque para ocultar' : 'Toque para ver todas as movimenta&ccedil;&otilde;es'}</span>
-                </span>
-                <span class="gestor-mov-seta${movimentacoesGestorAberto ? ' girada' : ''}" id="setaMovimentacoesGestor">&#9660;</span>
-            </div>
-            <div class="gestor-mov-corpo${movimentacoesGestorAberto ? ' aberto' : ''}" id="corpoMovimentacoesGestor">
-                ${(() => {
-                    const mesesMov = garantirMesMovimentacoesGestor();
-                    return `
-                <select id="filtroMovimentacoesGestorMes" class="gestor-mov-mes-select" onchange="window.alterarMesMovimentacoesGestor(this.value)">
-                    ${mesesMov.length
-                        ? mesesMov.map(mes => `<option value="${escaparHtml(mes)}"${mes === filtroMovimentacoesGestorMes ? ' selected' : ''}>${escaparHtml(rotuloAnoMesMovimentacaoGestor(mes))}</option>`).join('')
-                        : '<option value="">Mês</option>'}
-                </select>`;
-                })()}
-                <div class="gestor-mov-filtros">
-                    <div class="gestor-mov-filtro">
-                        <label for="filtroMovimentacoesGestorUsuario">Usuário</label>
-                        <select id="filtroMovimentacoesGestorUsuario" onchange="window.filtrarMovimentacoesGestor()">
-                            <option value="">Todos</option>
-                            ${obterUsuariosMovimentacoesGestor().map(nome => `<option value="${escaparHtml(nome)}"${nome === filtroMovimentacoesGestorUsuario ? ' selected' : ''}>${escaparHtml(nome)}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="gestor-mov-filtro">
-                        <label for="filtroMovimentacoesGestorTipo">Tipo</label>
-                        <select id="filtroMovimentacoesGestorTipo" onchange="window.filtrarMovimentacoesGestor()">
-                            <option value="todos"${filtroMovimentacoesGestorTipo === 'todos' ? ' selected' : ''}>Todos</option>
-                            ${obterTiposMovimentacoesGestor().map(tipo => `<option value="${escaparHtml(tipo)}"${tipo === filtroMovimentacoesGestorTipo ? ' selected' : ''}>${escaparHtml(rotuloTipoMovimentacaoGestor(tipo))}</option>`).join('')}
-                        </select>
-                    </div>
-                </div>
-                <input type="text" id="filtroMovimentacoesGestor" class="gestor-mov-busca" placeholder="Pesquisar movimenta&ccedil;&otilde;es..." value="${escaparHtml(filtroMovimentacoesGestor)}" oninput="window.filtrarMovimentacoesGestor()">
-                <div id="listaMovimentacoesGestor">
-                    ${montarCardsMovimentacoesGestor()}
-                </div>
-            </div>` : ''}
+            ${isGestor ? '<div id="auditoriaMaquinasGestor"></div>' : ''}
 
             ${isGestor ? `
             <div id="tituloContestacoes" class="contest-header" onclick="window.toggleContestacoes()">
@@ -3764,6 +3495,10 @@
         if (contestacoesAberto) {
             document.getElementById('tituloContestacoes')?.classList.add('aberta');
             document.getElementById('setaContestacoes')?.classList.add('girada');
+        }
+        if (isGestor) {
+            auditoriaMaquinasGestor.atualizarColaboradores(listaColaboradores);
+            auditoriaMaquinasGestor.montar(document.getElementById('auditoriaMaquinasGestor'));
         }
         setupTopoObserver();
     }
@@ -3814,29 +3549,25 @@
         seta.classList.toggle('girada', abrindo);
     };
 
-    window.toggleContestacoes = function() {
+    function definirContestacoesAbertas(aberto) {
         const header = document.getElementById('tituloContestacoes');
         const corpo  = document.getElementById('corpoContestacoes');
         const seta   = document.getElementById('setaContestacoes');
+        contestacoesAberto = Boolean(aberto);
         if (!header || !corpo || !seta) return;
-        contestacoesAberto = !corpo.classList.contains('aberto');
         corpo.classList.toggle('aberto', contestacoesAberto);
         header.classList.toggle('aberta', contestacoesAberto);
         seta.classList.toggle('girada', contestacoesAberto);
+    }
+
+    window.toggleContestacoes = function() {
+        const corpo = document.getElementById('corpoContestacoes');
+        if (!corpo) return;
+        const abrindo = !corpo.classList.contains('aberto');
+        if (abrindo) auditoriaMaquinasGestor.fechar();
+        definirContestacoesAbertas(abrindo);
         // TODO: ao abrir pela primeira vez, chamar carregarContestacoes()
         // que faz dbEscutarTodasContestacoes() e popula #listaContestacoes
-    };
-
-    window.toggleMovimentacoesGestor = function() {
-        const header = document.getElementById('tituloMovimentacoesGestor');
-        const corpo  = document.getElementById('corpoMovimentacoesGestor');
-        const seta   = document.getElementById('setaMovimentacoesGestor');
-        if (!header || !corpo || !seta) return;
-        movimentacoesGestorAberto = !corpo.classList.contains('aberto');
-        corpo.classList.toggle('aberto', movimentacoesGestorAberto);
-        header.classList.toggle('aberto', movimentacoesGestorAberto);
-        seta.classList.toggle('girada', movimentacoesGestorAberto);
-        if (movimentacoesGestorAberto) window.filtrarMovimentacoesGestor();
     };
 
     window.toggleCobrancasMensaisGestor = function() {
@@ -3869,30 +3600,6 @@
             if (seta) seta.classList.add('girada');
             if (btn)  btn.classList.add('aberta');
         }
-    };
-
-    window.filtrarMovimentacoesGestor = function() {
-        const input = document.getElementById('filtroMovimentacoesGestor');
-        const selectUsuario = document.getElementById('filtroMovimentacoesGestorUsuario');
-        const selectTipo = document.getElementById('filtroMovimentacoesGestorTipo');
-        const selectMes = document.getElementById('filtroMovimentacoesGestorMes');
-        const usuarioAnterior = filtroMovimentacoesGestorUsuario;
-        filtroMovimentacoesGestor = String(input?.value || '');
-        filtroMovimentacoesGestorUsuario = String(selectUsuario?.value || '');
-        filtroMovimentacoesGestorTipo = String(selectTipo?.value || 'maquina');
-        filtroMovimentacoesGestorMes = String(selectMes?.value || filtroMovimentacoesGestorMes || '');
-        if (filtroMovimentacoesGestorUsuario !== usuarioAnterior) {
-            atualizarFonteHistoricoMovimentacoesGestor();
-            return;
-        }
-        const lista = document.getElementById('listaMovimentacoesGestor');
-        if (lista) lista.innerHTML = montarCardsMovimentacoesGestor();
-    };
-
-    window.alterarMesMovimentacoesGestor = function(valor) {
-        filtroMovimentacoesGestorMes = String(valor || '');
-        window.filtrarMovimentacoesGestor();
-        renderizar();
     };
 
     window.alterarMesCobrancasMensaisGestor = function(valor) {
@@ -3929,6 +3636,10 @@
     });
 
     window.addEventListener('beforeunload', () => {
+        auditoriaMaquinasGestor.destruir();
+        if (typeof unsubscribeHistoricoItem === 'function') {
+            unsubscribeHistoricoItem();
+        }
         if (typeof unsubscribeCobrancasMensaisGestor === 'function') {
             unsubscribeCobrancasMensaisGestor();
         }
@@ -3988,8 +3699,6 @@
     renderizar();
 
     if (new URLSearchParams(window.location.search).get('contestacao') === '1') {
-        contestacoesAberto = true;
-        renderizar();
         setTimeout(() => {
             document.getElementById('tituloContestacoes')?.scrollIntoView({ behavior: 'smooth' });
         }, 50);
@@ -4056,12 +3765,6 @@
             renderizar();
         });
 
-        dbEscutarHistoricoBalanco((lista) => {
-            historicoMovimentacoesGestorGlobal = Array.isArray(lista) ? lista : [];
-            if (!filtroMovimentacoesGestorUsuario) {
-                aplicarHistoricoMovimentacoesGestor(historicoMovimentacoesGestorGlobal);
-            }
-        });
     }
 
     if (isGestao3) {

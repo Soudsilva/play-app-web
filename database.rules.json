@@ -2,6 +2,11 @@
   "rules": {
     ".read": "auth != null",
     ".write": "auth != null",
+    "movimentacao_balanco_historico": {
+      "$usuario": {
+        ".indexOn": ["itemChave", "itemNome"]
+      }
+    },
     "arquivos_impressao": {
       "listagem": {
         ".indexOn": ["nomeBusca", "ordem"]

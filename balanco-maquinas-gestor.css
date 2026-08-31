@@ -1,0 +1,56 @@
+.audit-maq-secao {
+    width:100%;
+    margin-top:0;
+    box-sizing:border-box;
+}
+.audit-maq-header {
+    width:100%; box-sizing:border-box; position:relative; margin:16px 0 0; padding:12px 20px;
+    border:3px solid rgba(255,255,255,0.2); border-radius:40px; background:#1a3d8f; color:#fff;
+    display:flex; align-items:center; justify-content:center; min-height:62px; cursor:pointer; font:inherit;
+}
+.audit-maq-header.aberto { border-radius:22px 22px 0 0; }
+.audit-maq-header .gestor-mov-icone { position:absolute; left:18px; font-size:20px; }
+.audit-maq-header .gestor-mov-label { font-size:20px; font-weight:bold; }
+.audit-maq-header .gestor-mov-seta { position:absolute; right:18px; transition:transform .25s; }
+.audit-maq-header .gestor-mov-seta.girada { transform:rotate(180deg); }
+.audit-maq-corpo {
+    width:100%; display:none; box-sizing:border-box; padding:14px 12px 16px; margin-bottom:20px;
+    border:3px solid #d7dce3; border-top:none; border-radius:0 0 22px 22px; background:rgba(8,22,65,0.75);
+}
+.audit-maq-corpo.aberto { display:block; }
+.audit-maq-controle { width:min(100%, 300px); margin:0 auto 14px; }
+.audit-maq-controle label { display:block; text-align:center; color:#ffeb3b; font-size:11px; font-weight:700; margin-bottom:5px; }
+.audit-maq-controle select {
+    width:100%; box-sizing:border-box; border:1px solid rgba(255,255,255,0.28); border-radius:10px;
+    padding:10px 12px; background:#173d86; color:#fff; font-size:14px; text-align:center;
+}
+.audit-maq-instrucao,.audit-maq-vazio,.audit-maq-erro,.audit-maq-carregando { text-align:center; padding:14px 8px; font-size:12px; color:rgba(255,255,255,0.7); }
+.audit-maq-erro { color:#fecaca; }
+.audit-maq-lista { display:flex; flex-direction:column; gap:10px; }
+.audit-maq-card {
+    width:100%; padding:0; overflow:hidden; border:1px solid rgba(255,255,255,0.17); border-radius:13px;
+    color:#fff; background:rgba(5,23,66,0.5); text-align:left; cursor:pointer; font:inherit;
+}
+.audit-maq-card:active { background:rgba(31,75,154,0.65); }
+.audit-maq-card-topo { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 12px; background:rgba(255,255,255,0.07); }
+.audit-maq-nome { font-size:14px; font-weight:800; }
+.audit-maq-saldo { flex-shrink:0; border-radius:20px; padding:3px 8px; background:rgba(74,222,128,0.14); color:#86efac; font-size:11px; font-weight:800; }
+.audit-maq-saldo.negativo { background:rgba(239,68,68,0.15); color:#fecaca; }
+.audit-maq-resumo { display:grid; gap:7px; padding:9px 11px; }
+.audit-maq-mov { border-left:3px solid rgba(96,165,250,0.75); padding:5px 8px; background:rgba(255,255,255,0.035); border-radius:0 8px 8px 0; }
+.audit-maq-mov-topo { display:flex; justify-content:space-between; gap:8px; font-size:12px; }
+.audit-maq-mov-topo strong.positivo { color:#86efac; }
+.audit-maq-mov-topo strong.negativo { color:#fca5a5; }
+.audit-maq-mov-desc,.audit-maq-mov-data { margin-top:3px; color:rgba(255,255,255,0.58); font-size:10px; }
+.audit-maq-abrir { padding:7px 11px 9px; color:#bfdbfe; text-align:right; font-size:10px; }
+.audit-maq-paginacao { display:flex; align-items:center; justify-content:center; gap:13px; margin-top:13px; font-size:11px; }
+.audit-maq-paginacao button { width:34px; height:30px; border:1px solid rgba(255,255,255,0.22); border-radius:9px; background:#173d86; color:#fff; font-size:20px; cursor:pointer; }
+.audit-maq-paginacao button:disabled { opacity:0.3; cursor:default; }
+.hist-acoes.somente-consulta .hist-contestar-btn,
+.hist-acoes.somente-consulta .hist-negar-btn,
+.hist-acoes.somente-consulta .hist-aprovar-btn { display:none; }
+.hist-ver-mais {
+    display:block; width:calc(100% - 30px); margin:12px 15px 4px; padding:11px; border:1px solid rgba(147,197,253,0.55);
+    border-radius:11px; background:rgba(30,64,175,0.32); color:#dbeafe; font-size:12px; font-weight:700; cursor:pointer;
+}
+.hist-ver-mais:disabled { opacity:0.55; cursor:default; }
