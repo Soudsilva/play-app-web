@@ -791,11 +791,11 @@
                     || await dbExisteContestacaoAtendimentoDoUsuario(nomeLogado);
                 if (temContestacao) {
                     const abrirContestacoes = window.playConfirm
-                        ? await window.playConfirm('Existe uma contestação pendente, ver agora?', {
+                        ? await window.playConfirm('Existe uma pendência do gestor, ver agora?', {
                             primaryLabel: 'Sim',
                             secondaryLabel: 'Não'
                         })
-                        : confirm('Existe uma contestação pendente, ver agora?');
+                        : confirm('Existe uma pendência do gestor, ver agora?');
                     if (abrirContestacoes) {
                         window.location.href = 'verificar_envios.html?contestacao=1';
                     }
@@ -827,11 +827,11 @@
             const temContestacao = await dbExisteContestacaoAtendimentoDoUsuario(nomeLogado);
             if (temContestacao) {
                 const abrirContestacoes = window.playConfirm
-                    ? await window.playConfirm('Existe uma contestação pendente, ver agora?', {
+                    ? await window.playConfirm('Existe uma pendência do gestor, ver agora?', {
                         primaryLabel: 'Sim',
                         secondaryLabel: 'Não'
                     })
-                    : confirm('Existe uma contestação pendente, ver agora?');
+                    : confirm('Existe uma pendência do gestor, ver agora?');
                 if (abrirContestacoes) {
                     window.location.href = 'verificar_envios.html?contestacao=1';
                 }

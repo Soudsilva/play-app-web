@@ -786,6 +786,59 @@
             background: #7f1d1d;
             border-color: #fca5a5;
         }
+        .btn-ligacao-servico {
+            border-radius: 999px;
+            padding: 8px 16px;
+            font-size: 15px;
+            font-weight: 700;
+            font-family: Arial, sans-serif;
+            cursor: pointer;
+            border: 1px solid #38bdf8;
+            background: #075985;
+            color: #ffffff;
+        }
+        .btn-ligacao-servico.recebida {
+            border-color: #4ade80;
+            background: #166534;
+        }
+        .btn-ligacao-servico:disabled {
+            opacity: 0.55;
+            cursor: default;
+        }
+        .servico-acoes-principais {
+            width: 100%;
+            display: flex;
+            align-items: stretch;
+            gap: 6px;
+        }
+        .servico-acoes-principais > button {
+            flex: 1 1 0;
+            min-width: 0;
+            min-height: 42px;
+            padding: 7px 5px;
+            font-size: 13px;
+            line-height: 1.1;
+            white-space: normal;
+        }
+        .servico-acoes-cliente {
+            width: 100%;
+            display: grid;
+            gap: 7px;
+        }
+        .servico-edicao-cliente {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .card-rodape:has(> .servico-acoes-principais) > .servico-acoes-principais,
+        .card-rodape:has(> .servico-acoes-cliente) > .servico-acoes-cliente {
+            order: 1;
+        }
+        .card-rodape:has(> .servico-acoes-principais) > .card-data,
+        .card-rodape:has(> .servico-acoes-cliente) > .card-data {
+            order: 2;
+            width: 100%;
+            margin-top: 2px;
+        }
         .btn-contestacao-cancelar {
             background: #334155;
             border-color: #64748b;
@@ -863,6 +916,15 @@
         dbRemoverContestacao
     } from './database.js';
     import { verificarAutenticacao, fazerLogout } from './auth.js';
+    import {
+        enviarDuvidaCliente,
+        removerDuvidaCliente,
+        temDuvidaClientePendente
+    } from './duvida-cliente-service.js';
+    import {
+        confirmarLigacaoRecebidaServico,
+        solicitarLigacaoServico
+    } from './solicitacao-ligacao-service.js';
 
     let _clientes    = [];
     let _manutencoes = [];
@@ -1294,6 +1356,9 @@
                 contestado: atendimento.contestado === true,
                 contestadoPor: atendimento.contestadoPor || '',
                 contestacaoObservacao: atendimento.contestacaoObservacao || null,
+                solicitacaoLigacaoPendente: atendimento.solicitacaoLigacaoPendente === true,
+                solicitacaoLigacaoEm: atendimento.solicitacaoLigacaoEm || '',
+                solicitacaoLigacaoPor: atendimento.solicitacaoLigacaoPor || '',
                 equipColocadas: adicionados,
                 equipRetiradas: retiradosDetalhes.length ? retiradosDetalhes : retirados,
                 foto: manutencaoBanco.fotoSolicitacao || manutencaoBanco.fotoSolicitacaoThumb || '',
@@ -1748,19 +1813,48 @@
             return `<button class="btn-ok" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`;
         }
         const atendimentoId = escHtml(ev.atendimentoId);
+        const botaoLigacao = montarBotaoLigacaoServico(ev, 'atendimento');
         if (ev.contestado) {
             return `
-                <button class="btn-contestar-servico contestado" data-atendimento-id="${atendimentoId}" onclick="window.removerDuvidaServico(this.dataset.atendimentoId,this)">Remover</button>
-                <button class="btn-ok" type="button" disabled>Duvida enviada</button>`;
+                <div class="servico-acoes-principais">
+                    ${botaoLigacao}
+                    <button class="btn-contestar-servico contestado" data-atendimento-id="${atendimentoId}" onclick="window.removerDuvidaServico(this.dataset.atendimentoId,this)">Remover</button>
+                    <button class="btn-ok" type="button" disabled>Duvida enviada</button>
+                </div>`;
         }
         return `
-            <button class="btn-contestar-servico" data-atendimento-id="${atendimentoId}" onclick="window.abrirDuvidaServico(this.dataset.atendimentoId,this)">Tirar duvida</button>
-            <button class="btn-ok" data-servico-ok="1" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`;
+            <div class="servico-acoes-principais">
+                ${botaoLigacao}
+                <button class="btn-contestar-servico" data-atendimento-id="${atendimentoId}" onclick="window.abrirDuvidaServico(this.dataset.atendimentoId,this)">Tirar duvida</button>
+                ${ev.solicitacaoLigacaoPendente ? '' : `<button class="btn-ok" data-servico-ok="1" onclick="window.okManutencao('${ev.id}',this)">&#10003; OK</button>`}
+            </div>`;
     }
 
-    function montarContestacaoPendenteServico(ev, pendente) {
+    function montarBotaoLigacaoServico(ev, tipoRegistro) {
+        const id = tipoRegistro === 'cliente' ? ev?.id : ev?.atendimentoId;
+        if (!id) return '';
+        const pendente = ev?.solicitacaoLigacaoPendente === true;
+        return `<button class="btn-ligacao-servico${pendente ? ' recebida' : ''}" data-registro-tipo="${tipoRegistro}" data-registro-id="${escHtml(id)}" onclick="window.alternarSolicitacaoLigacaoServico(this.dataset.registroTipo,this.dataset.registroId,this)">${pendente ? 'Liga&ccedil;&atilde;o recebida' : 'Solicitar liga&ccedil;&atilde;o'}</button>`;
+    }
+
+    function montarBotoesClienteServico(ev, htmlConfirmar, htmlEditar = '') {
+        const id = escHtml(ev?.id || '');
+        const botaoDuvida = ev?.contestado
+            ? `<button class="btn-contestar-servico contestado" data-cliente-id="${id}" onclick="window.removerDuvidaClienteServico(this.dataset.clienteId,this)">Remover</button>
+               <button class="btn-ok" type="button" disabled>Duvida enviada</button>`
+            : `<button class="btn-contestar-servico" data-cliente-id="${id}" onclick="window.abrirDuvidaClienteServico(this.dataset.clienteId,this)">Tirar duvida</button>`;
+        const botaoLigacao = montarBotaoLigacaoServico(ev, 'cliente');
+        const podeConfirmar = !ev?.contestado && !ev?.solicitacaoLigacaoPendente;
+
+        return `<div class="servico-acoes-cliente">
+            ${htmlEditar ? `<div class="servico-edicao-cliente">${htmlEditar}</div>` : ''}
+            <div class="servico-acoes-principais">${botaoLigacao}${botaoDuvida}${podeConfirmar ? htmlConfirmar : ''}</div>
+        </div>`;
+    }
+
+    function montarContestacaoPendenteServico(ev, pendente, titulo = 'Duvida enviada ao tecnico') {
         if (!pendente || !ev?.contestado) return '';
-        return montarHtmlConversaContestacaoServico(ev.contestacaoObservacao, 'Duvida enviada ao tecnico');
+        return montarHtmlConversaContestacaoServico(ev.contestacaoObservacao, titulo);
     }
 
     function dataLocalYMD(iso) {
@@ -1931,6 +2025,12 @@
                     fotosInstalacao: itensPix.length > 0 ? [] : fotosInstalacao,
                     pixItens: itensPix,
                     somentePix: itensPix.length > 0 && itensPix.every(item => item.tipo === 'retirada' || item.somentePix === true),
+                    contestado: c.contestado === true,
+                    contestadoPor: c.contestadoPor || '',
+                    contestacaoObservacao: c.contestacaoObservacao || null,
+                    solicitacaoLigacaoPendente: c.solicitacaoLigacaoPendente === true,
+                    solicitacaoLigacaoEm: c.solicitacaoLigacaoEm || '',
+                    solicitacaoLigacaoPor: c.solicitacaoLigacaoPor || '',
                     buscaExtra: montarBuscaExtraPix(itensPix)
                 };
             })
@@ -1980,19 +2080,22 @@
     }
 
     function cardPixCadastro(ev) {
+        const botaoConfirmar = `<button class="btn-gestor-confirmar" onclick="window.confirmarPixServico(this,'${ev.id}')">Confirmar</button>`;
         const rodape = ev.confirmado
             ? !ev.semDesfazer && podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
                 ? `<button class="btn-desfazer" onclick="window.desfazerNovoPonto('${ev.id}',this)">&#8617; Desfazer</button>`
                 : `<span class="confirmado-por">&#10003; Aprovado</span>`
-            : `<button class="btn-gestor-confirmar" onclick="window.confirmarPixServico(this,'${ev.id}')">Confirmar</button>`;
+            : montarBotoesClienteServico(ev, botaoConfirmar);
+        const contestacaoHtml = montarContestacaoPendenteServico(ev, !ev.confirmado, 'Duvida enviada ao colaborador');
 
         return `
-            <div class="card pix-servico" id="card-${ev.id}">
+            <div class="card pix-servico${!ev.confirmado && ev.contestado ? ' contestado' : ''}" id="card-${ev.id}">
                 <div class="pix-servico-origem-wrap"><div class="pix-servico-origem">${ev.pixItens.some(item => item.tipo === 'adicao' && item.nome) ? 'Maquina + Pix' : 'Pix'}</div></div>
                 <div class="pix-servico-cliente">&#128205; ${montarIdentificacaoPix(ev.clienteNumero, ev.clienteNome)}</div>
                 ${montarDestaquePixServico(ev.pixItens, { somentePix: ev.somentePix })}
                 ${montarListaPixServico(ev.pixItens)}
                 ${montarFotosInstalacaoHtml(ev.fotosInstalacao)}
+                ${contestacaoHtml}
                 <div class="card-rodape" style="margin-top:12px;">
                     <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
                     ${rodape}
@@ -2187,6 +2290,10 @@
 
     function cardNovoPonto(ev) {
         const fotoHtml = montarFotosInstalacaoHtml(ev.fotosInstalacao);
+        const botaoEditar = `<button class="btn-editar-cliente" onclick="window.location.href='cadastrar_cliente.html?edit=${ev.id}&volta=servico.html'">&#9998; Editar</button>`;
+        const botaoAprovar = `<button class="btn-aprovar" onclick="window.aprovarCliente('${ev.id}',this)">&#10003; Aprovar</button>`;
+        const acoesPendentes = montarBotoesClienteServico(ev, botaoAprovar, botaoEditar);
+        const contestacaoHtml = montarContestacaoPendenteServico(ev, !ev.confirmado, 'Duvida enviada ao colaborador');
 
         const enderecoSolicitacaoHtml = ev.enderecoSolicitacao
             ? `<div style="margin-top:10px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.06);border-left:3px solid rgba(255,255,255,0.6);">
@@ -2212,7 +2319,7 @@
             : '';
 
         return `
-        <div class="card novo-ponto" id="card-${ev.id}">
+        <div class="card novo-ponto${!ev.confirmado && ev.contestado ? ' contestado' : ''}" id="card-${ev.id}">
             <div class="card-tipo tipo-novo-ponto">&#127968; Cliente Novo</div>
             <div class="card-cliente">N. ${ev.clienteNumero} ${ev.clienteNome}</div>
             <div class="card-detalhe">
@@ -2224,22 +2331,180 @@
             ${enderecoSolicitacaoHtml}
             ${enderecoEntregaHtml}
             ${btnRotaHtml}
+            ${contestacaoHtml}
             <div class="card-rodape" style="margin-top:12px;">
                 <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
                 ${ev.confirmado
                     ? podeDesfazerConfirmacaoServico(ev.dataConfirmacao)
                         ? `<button class="btn-desfazer" onclick="window.desfazerNovoPonto('${ev.id}',this)">↩ Desfazer</button>`
                         : `<span class="confirmado-por">&#10003; Aprovado</span>`
-                    : `<div style="display:flex;gap:8px;">
-                           <button class="btn-editar-cliente" onclick="window.location.href='cadastrar_cliente.html?edit=${ev.id}&volta=servico.html'">&#9998; Editar</button>
-                           <button class="btn-aprovar" onclick="window.aprovarCliente('${ev.id}',this)">&#10003; Aprovar</button>
-                       </div>`
+                    : acoesPendentes
                 }
             </div>
         </div>`;
     }
 
     // ── AÇÕES ─────────────────────────────────────────────────────────────────
+    function atualizarClienteLocalServico(clienteId, patchCliente) {
+        const cliente = _clientes.find(item => String(item?.firebaseUrl || '').trim() === String(clienteId || '').trim());
+        if (cliente) Object.assign(cliente, patchCliente || {});
+    }
+
+    function atualizarRegistroLigacaoLocal(tipoRegistro, registroId, patchRegistro) {
+        const lista = tipoRegistro === 'cliente' ? _clientes : _atendimentos;
+        const registro = lista.find(item => String(item?.firebaseUrl || '').trim() === String(registroId || '').trim());
+        if (registro) Object.assign(registro, patchRegistro || {});
+    }
+
+    window.alternarSolicitacaoLigacaoServico = async function(tipoRegistro, registroId, btn) {
+        const tipo = String(tipoRegistro || '').trim();
+        const id = String(registroId || '').trim();
+        if (!tipo || !id) return;
+
+        const lista = tipo === 'cliente' ? _clientes : _atendimentos;
+        const registro = lista.find(item => String(item?.firebaseUrl || '').trim() === id);
+        const ligacaoPendente = registro?.solicitacaoLigacaoPendente === true;
+
+        if (ligacaoPendente) {
+            const confirmar = window.playConfirm
+                ? await window.playConfirm('Confirmar que a ligação foi recebida?', {
+                    primaryLabel: 'Ligação recebida',
+                    secondaryLabel: 'Cancelar'
+                })
+                : confirm('Confirmar que a ligação foi recebida?');
+            if (!confirmar) return;
+        }
+
+        const textoOriginal = btn?.textContent || (ligacaoPendente ? 'Ligação recebida' : 'Solicitar ligação');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = ligacaoPendente ? 'Confirmando...' : 'Solicitando...';
+        }
+
+        try {
+            const patchRegistro = ligacaoPendente
+                ? await confirmarLigacaoRecebidaServico(tipo, id, _nomeUsuario || 'Gestor')
+                : await solicitarLigacaoServico(tipo, id, _nomeUsuario || 'Gestor');
+            atualizarRegistroLigacaoLocal(tipo, id, patchRegistro);
+            renderizar();
+            if (!ligacaoPendente && window.playAlert) {
+                await window.playAlert('Ligação solicitada ao colaborador.');
+            }
+        } catch (e) {
+            console.error(e);
+            if (window.playAlert) await window.playAlert('Erro na solicitação de ligação: ' + (e.message || e));
+            else alert('Erro na solicitação de ligação: ' + (e.message || e));
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = textoOriginal;
+            }
+        }
+    };
+
+    window.fecharDuvidaClienteServico = function(panel) {
+        const box = panel || document.querySelector('.servico-contestacao-form[data-cliente-id]');
+        if (!box) return;
+        const card = box.closest('.card');
+        const clienteId = box.dataset.clienteId || '';
+        const btnDuvida = card?.querySelector(`.btn-contestar-servico[data-cliente-id="${CSS.escape(clienteId)}"]`);
+        const btnConfirmar = card?.querySelector('.btn-aprovar, .btn-gestor-confirmar');
+        const btnLigacao = card?.querySelector('.btn-ligacao-servico');
+        if (btnDuvida) btnDuvida.style.display = '';
+        if (btnConfirmar) btnConfirmar.style.display = '';
+        if (btnLigacao) btnLigacao.style.display = '';
+        box.remove();
+    };
+
+    window.abrirDuvidaClienteServico = function(clienteId, btn) {
+        const id = String(clienteId || '').trim();
+        if (!id) return;
+        const card = btn?.closest('.card');
+        if (!card) return;
+
+        const existente = card.querySelector('.servico-contestacao-form[data-cliente-id]');
+        if (existente) {
+            existente.querySelector('.servico-contestacao-campo')?.focus();
+            return;
+        }
+
+        const cliente = _clientes.find(item => String(item?.firebaseUrl || '').trim() === id);
+        const conversaAnterior = montarHtmlConversaContestacaoServico(cliente?.contestacaoObservacao, 'Conversa anterior');
+        const panel = document.createElement('div');
+        panel.className = 'servico-contestacao-form';
+        panel.dataset.clienteId = id;
+        panel.innerHTML = `
+            ${conversaAnterior}
+            <div class="servico-contestacao-titulo">Qual e a duvida?</div>
+            <textarea class="servico-contestacao-campo" rows="3" placeholder="Digite a duvida para o colaborador..."></textarea>
+            <div class="servico-contestacao-acoes">
+                <button class="btn-contestacao-cancelar" type="button" onclick="window.fecharDuvidaClienteServico(this.closest('.servico-contestacao-form'))">Cancelar</button>
+                <button class="btn-contestacao-salvar" type="button" data-cliente-id="${escHtml(id)}" onclick="window.salvarDuvidaClienteServico(this.dataset.clienteId,this)">Enviar duvida</button>
+            </div>
+        `;
+
+        const rodape = card.querySelector('.card-rodape');
+        card.insertBefore(panel, rodape || null);
+        if (btn) btn.style.display = 'none';
+        const btnConfirmar = card.querySelector('.btn-aprovar, .btn-gestor-confirmar');
+        const btnLigacao = card.querySelector('.btn-ligacao-servico');
+        if (btnConfirmar) btnConfirmar.style.display = 'none';
+        if (btnLigacao) btnLigacao.style.display = 'none';
+        panel.querySelector('.servico-contestacao-campo')?.focus();
+    };
+
+    window.salvarDuvidaClienteServico = async function(clienteId, btn) {
+        const id = String(clienteId || '').trim();
+        const panel = btn?.closest('.servico-contestacao-form');
+        const campo = panel?.querySelector('.servico-contestacao-campo');
+        const texto = String(campo?.value || '').trim();
+        if (!id) return;
+        if (!texto) {
+            if (window.playAlert) await window.playAlert('Digite a duvida para o colaborador.');
+            else alert('Digite a duvida para o colaborador.');
+            campo?.focus();
+            return;
+        }
+
+        const textoOriginal = btn?.textContent || 'Enviar duvida';
+        if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+        try {
+            const patchCliente = await enviarDuvidaCliente(id, _nomeUsuario || 'Gestor', texto);
+            atualizarClienteLocalServico(id, patchCliente);
+            renderizar();
+            if (window.playAlert) await window.playAlert('Duvida enviada ao colaborador.');
+        } catch (e) {
+            console.error(e);
+            if (window.playAlert) await window.playAlert('Erro ao enviar duvida: ' + (e.message || e));
+            else alert('Erro ao enviar duvida: ' + (e.message || e));
+            if (btn) { btn.disabled = false; btn.textContent = textoOriginal; }
+        }
+    };
+
+    window.removerDuvidaClienteServico = async function(clienteId, btn) {
+        const id = String(clienteId || '').trim();
+        if (!id) return;
+        const confirmar = window.playConfirm
+            ? await window.playConfirm('Remover a duvida deste cliente?', {
+                primaryLabel: 'Remover',
+                secondaryLabel: 'Cancelar'
+            })
+            : confirm('Remover a duvida deste cliente?');
+        if (!confirmar) return;
+
+        const textoOriginal = btn?.textContent || 'Remover';
+        if (btn) { btn.disabled = true; btn.textContent = 'Removendo...'; }
+        try {
+            const patchCliente = await removerDuvidaCliente(id);
+            atualizarClienteLocalServico(id, patchCliente);
+            renderizar();
+        } catch (e) {
+            console.error(e);
+            if (window.playAlert) await window.playAlert('Erro ao remover duvida: ' + (e.message || e));
+            else alert('Erro ao remover duvida: ' + (e.message || e));
+            if (btn) { btn.disabled = false; btn.textContent = textoOriginal; }
+        }
+    };
+
     window.fecharDuvidaServico = function(panel) {
         const box = panel || document.querySelector('.servico-contestacao-form');
         if (!box) return;
@@ -2247,8 +2512,10 @@
         const atendimentoId = box.dataset.atendimentoId || '';
         const btnDuvida = card?.querySelector(`.btn-contestar-servico[data-atendimento-id="${CSS.escape(atendimentoId)}"]`);
         const btnOk = card?.querySelector('.btn-ok[data-servico-ok="1"]');
+        const btnLigacao = card?.querySelector('.btn-ligacao-servico');
         if (btnDuvida) btnDuvida.style.display = '';
         if (btnOk) btnOk.style.display = '';
+        if (btnLigacao) btnLigacao.style.display = '';
         box.remove();
     };
 
@@ -2283,7 +2550,9 @@
         card.insertBefore(panel, rodape || null);
         if (btn) btn.style.display = 'none';
         const btnOk = card.querySelector('.btn-ok[data-servico-ok="1"]');
+        const btnLigacao = card.querySelector('.btn-ligacao-servico');
         if (btnOk) btnOk.style.display = 'none';
+        if (btnLigacao) btnLigacao.style.display = 'none';
         panel.querySelector('.servico-contestacao-campo')?.focus();
     };
 
@@ -2347,6 +2616,11 @@
             else alert('Responda ou remova a duvida antes de confirmar este servico.');
             return;
         }
+        if (evento?.solicitacaoLigacaoPendente) {
+            if (window.playAlert) await window.playAlert('Confirme o recebimento da ligacao antes de confirmar este servico.');
+            else alert('Confirme o recebimento da ligacao antes de confirmar este servico.');
+            return;
+        }
         const manut = _manutencoes.find(m => m.firebaseUrl === id);
         if (manut?.pontoEncerrado === true) {
             const confirmado = await window.playConfirm(
@@ -2406,6 +2680,13 @@
         const textoOriginal = btn?.textContent || 'Confirmar';
         if (btn) { btn.disabled = true; btn.textContent = '...'; }
         try {
+            const clienteAtual = _clientes.find(c => c.firebaseUrl === id);
+            if (clienteAtual?.solicitacaoLigacaoPendente) {
+                throw new Error('Confirme o recebimento da ligacao antes da confirmacao.');
+            }
+            if (await temDuvidaClientePendente(id)) {
+                throw new Error('O colaborador precisa responder ou o gestor remover a duvida antes da confirmacao.');
+            }
             const cliente = _clientes.find(c => c.firebaseUrl === id);
             if (!cliente) throw new Error('Cliente nao encontrado.');
 
@@ -2427,8 +2708,9 @@
             }, id);
         } catch (e) {
             console.error(e);
-            if (window.playAlert) window.playAlert('Nao foi possivel confirmar este cadastro Pix.');
-            else alert('Nao foi possivel confirmar este cadastro Pix.');
+            const mensagem = e?.message || 'Nao foi possivel confirmar este cadastro Pix.';
+            if (window.playAlert) await window.playAlert(mensagem);
+            else alert(mensagem);
             if (btn) { btn.disabled = false; btn.textContent = textoOriginal; }
         }
     };
@@ -2437,9 +2719,18 @@
         if (!id) return;
         if (btn) { btn.disabled = true; btn.textContent = '…'; }
         try {
+            const clienteAtual = _clientes.find(c => c.firebaseUrl === id);
+            if (clienteAtual?.solicitacaoLigacaoPendente) {
+                throw new Error('Confirme o recebimento da ligacao antes da aprovacao.');
+            }
+            if (await temDuvidaClientePendente(id)) {
+                throw new Error('O colaborador precisa responder ou o gestor remover a duvida antes da aprovacao.');
+            }
             await dbSalvarCliente({ statusCadastro: 'aprovado', dataAprovacao: new Date().toISOString() }, id);
         } catch (e) {
             console.error(e);
+            if (window.playAlert) await window.playAlert(e?.message || 'Nao foi possivel aprovar este cliente.');
+            else alert(e?.message || 'Nao foi possivel aprovar este cliente.');
             if (btn) { btn.disabled = false; btn.textContent = '✓ Aprovar'; }
         }
     };

@@ -656,6 +656,7 @@
     import { listarPendentes, listarFotosPendentesUpload, priorizarPendente } from './offline-sync.js';
     import { combinarAtendimentosComFila, obterStatusVisualAtendimento } from './verificar-envios-sync-rules.mjs';
     import { sincronizarFilaAtendimentos, sincronizarFotosPendentesLegadas } from './atendimento-sync-runner.js';
+    import { responderDuvidaCliente } from './duvida-cliente-service.js';
 
     // Pega quem estÃ¡ logado no celular no momento
     const usuarioLogado = localStorage.getItem('usuarioLogado');
@@ -1153,9 +1154,10 @@
             });
     }
 
-    function montarHtmlConversaContestacao(envio) {
+    function montarHtmlConversaContestacao(envio, opcoes = {}) {
         const mensagens = obterMensagensContestacao(envio?.contestacaoObservacao);
-        const mostrarEditar = !ehRegistroManutencao(envio);
+        const mostrarEditar = opcoes.mostrarEditar ?? !ehRegistroManutencao(envio);
+        const tipoRegistro = opcoes.tipoRegistro || 'atendimento';
         const htmlMensagens = mensagens.map((msg) => {
             const papel = msg.papel === 'usuario' ? 'usuario' : 'gestor';
             const autor = msg.autor || (papel === 'usuario' ? 'Usuário' : 'Gestor');
@@ -1175,7 +1177,7 @@
                     <textarea class="contestacao-resposta-texto" data-contestacao-resposta-id="${escaparHtml(envio.firebaseUrl)}" placeholder="Responder ao gestor..."></textarea>
                     <div class="contestacao-acoes-resposta">
                         ${mostrarEditar ? '<button class="btn-acao btn-editar btn-editar-envio" type="button">Editar</button><span class="contestacao-ou">Ou</span>' : ''}
-                        <button class="btn-responder-contestacao" type="button" data-contestacao-responder-id="${escaparHtml(envio.firebaseUrl)}">Enviar resposta</button>
+                        <button class="btn-responder-contestacao" type="button" data-contestacao-responder-id="${escaparHtml(envio.firebaseUrl)}" data-contestacao-tipo="${escaparHtml(tipoRegistro)}">Enviar resposta</button>
                     </div>
                 </div>
             </div>`;
@@ -1635,7 +1637,14 @@
             .filter(item => normalizarTexto(item?.cadastradoPor) === usuario)
             .map(item => ({
                 tipoLinhaTempo: 'cadastro_cliente',
+                firebaseUrl: item?.firebaseUrl || '',
                 data: item?.dataCadastro || '',
+                contestado: item?.contestado === true,
+                contestadoPor: item?.contestadoPor || '',
+                contestacaoObservacao: item?.contestacaoObservacao || null,
+                solicitacaoLigacaoPendente: item?.solicitacaoLigacaoPendente === true,
+                solicitacaoLigacaoEm: item?.solicitacaoLigacaoEm || '',
+                solicitacaoLigacaoPor: item?.solicitacaoLigacaoPor || '',
                 clienteCadastro: item,
                 cliente: {
                     numero: item?.numero || '',
@@ -1782,6 +1791,29 @@
         return !!envio?.contestado;
     }
 
+    function solicitacaoLigacaoRegistrada(envio) {
+        return envio?.solicitacaoLigacaoPendente === true;
+    }
+
+    function pendenciaGestorRegistrada(envio) {
+        return contestacaoRegistrada(envio) || solicitacaoLigacaoRegistrada(envio);
+    }
+
+    function contarPendenciasGestor(envio) {
+        return Number(contestacaoRegistrada(envio)) + Number(solicitacaoLigacaoRegistrada(envio));
+    }
+
+    function montarHtmlSolicitacaoLigacao(envio) {
+        if (!solicitacaoLigacaoRegistrada(envio)) return '';
+        const gestor = escaparHtml(envio?.solicitacaoLigacaoPor || 'Gestor');
+        const data = formatarDataHora(envio?.solicitacaoLigacaoEm);
+        return `
+            <div style="padding:10px 12px;background:rgba(14,116,144,0.25);border:1px solid #38bdf8;border-radius:10px;color:#ffffff;font-size:14px;font-weight:bold;margin:10px 0 8px;text-align:center;user-select:none;-webkit-user-select:none;">
+                &#128222; O gestor solicitou uma liga&ccedil;&atilde;o.<br>
+                <span style="font-size:13px;font-weight:normal;">Entre em contato com ${gestor}${data ? ` &middot; ${escaparHtml(data)}` : ''}. A solicita&ccedil;&atilde;o ser&aacute; encerrada somente pelo gestor.</span>
+            </div>`;
+    }
+
     function atualizarResumoContestacoes() {
         const resumo = document.getElementById('contestacoesResumo');
         if (!resumo || !usuarioLogado || !todosEnviosCarregados()) {
@@ -1789,11 +1821,13 @@
             return;
         }
 
-        const total = atendimentosSalvos.filter(a =>
-            pertenceAoUsuario(a)
-            && !ehMovimentoEstoque(a)
-            && contestacaoRegistrada(a)
-        ).length;
+        const totalAtendimentos = atendimentosSalvos
+            .filter(a => pertenceAoUsuario(a) && !ehMovimentoEstoque(a))
+            .reduce((total, item) => total + contarPendenciasGestor(item), 0);
+        const totalClientes = clientesSalvos
+            .filter(cliente => normalizarTexto(cliente?.cadastradoPor) === normalizarTexto(usuarioLogado))
+            .reduce((total, item) => total + contarPendenciasGestor(item), 0);
+        const total = totalAtendimentos + totalClientes;
 
         if (total <= 0) {
             filtroContestacoesAtivo = false;
@@ -1804,8 +1838,8 @@
         }
 
         resumo.innerHTML = filtroContestacoesAtivo
-            ? `<span class="contestacoes-badge">✓</span><span class="contestacoes-texto"><span class="contestacoes-texto-titulo">${total === 1 ? 'Contestação' : 'Contestações'} do gestor</span><span class="contestacoes-texto-sub">Toque para limpar o filtro</span></span>`
-            : `<span class="contestacoes-badge">${total}</span><span class="contestacoes-texto"><span class="contestacoes-texto-titulo">${total === 1 ? 'Contestação' : 'Contestações'} do gestor</span><span class="contestacoes-texto-sub">Toque para ver</span></span>`;
+            ? `<span class="contestacoes-badge">✓</span><span class="contestacoes-texto"><span class="contestacoes-texto-titulo">${total === 1 ? 'Pendência' : 'Pendências'} do gestor</span><span class="contestacoes-texto-sub">Toque para limpar o filtro</span></span>`
+            : `<span class="contestacoes-badge">${total}</span><span class="contestacoes-texto"><span class="contestacoes-texto-titulo">${total === 1 ? 'Pendência' : 'Pendências'} do gestor</span><span class="contestacoes-texto-sub">Toque para ver</span></span>`;
         resumo.classList.toggle('ativo', filtroContestacoesAtivo);
         resumo.hidden = false;
     }
@@ -1870,7 +1904,7 @@
             .filter(a => {
                 if (!pertenceAoUsuario(a)) return false;
                 if (ehMovimentoEstoque(a)) return false;
-                if (filtroContestacoesAtivo && !contestacaoRegistrada(a)) return false;
+                if (filtroContestacoesAtivo && !pendenciaGestorRegistrada(a)) return false;
                 return itemBateBuscaEnvio(a, termoBuscaOriginal);
             });
 
@@ -1881,7 +1915,8 @@
             });
 
         const enviosEstoque = filtroContestacoesAtivo ? [] : obterMovimentosEstoqueDoUsuario();
-        const enviosCadastroCliente = filtroContestacoesAtivo ? [] : obterCadastrosClienteDoUsuario();
+        const enviosCadastroCliente = obterCadastrosClienteDoUsuario()
+            .filter(item => !filtroContestacoesAtivo || pendenciaGestorRegistrada(item));
 
         // Filtra sÃ³ os que foram enviados por ele e ordena da data mais recente (maior) para a mais velha (menor)
         const meusEnvios = [
@@ -1902,7 +1937,7 @@
 
         if (meusEnviosOrdenados.length === 0) {
             container.innerHTML = filtroContestacoesAtivo
-                ? '<p class="sem-envios">Nenhuma contestação encontrada.</p>'
+                ? '<p class="sem-envios">Nenhuma pendência do gestor encontrada.</p>'
                 : termoBusca
                 ? `<p class="sem-envios">Nenhum envio encontrado para "<strong>${document.getElementById('inputBusca').value}</strong>".</p>`
                 : '<p class="sem-envios">Você ainda não tem nenhum envio salvo no sistema.</p>';
@@ -1943,6 +1978,8 @@
                 const clienteNumero = envio?.cliente?.numero || 'S/N';
                 const dataFormatada = formatarDataHora(envio?.data);
                 const info = envio?.clienteCadastro || {};
+                const estaContestado = !!envio.contestado;
+                if (estaContestado || solicitacaoLigacaoRegistrada(envio)) card.classList.add('contestado');
                 const htmlHeader = `<div class="envio-header"><div class="envio-cliente">Nº ${clienteNumero} - ${clienteNome}</div>${montarHtmlRotaEnvio(envio)}</div>`;
                 let htmlFotos = '';
                 const fotos = [];
@@ -1960,8 +1997,14 @@
                     });
                     htmlFotos += `</div>`;
                 }
+                const htmlContestacao = estaContestado ? `
+                    <div style="padding:10px 12px;background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.5);border-radius:10px;color:#f59e0b;font-size:14px;font-weight:bold;margin:10px 0 8px;text-align:center;user-select:none;-webkit-user-select:none;">
+                        ⚠ O gestor enviou uma dúvida sobre este cadastro.
+                        ${montarHtmlConversaContestacao(envio, { mostrarEditar: false, tipoRegistro: 'cliente' })}
+                    </div>` : '';
+                const htmlLigacao = montarHtmlSolicitacaoLigacao(envio);
                 const htmlRodape = `<div class="envio-rodape-estoque"><span>${dataFormatada}</span></div>`;
-                card.innerHTML = `${htmlHeader}${montarHtmlCadastroCliente(envio)}${htmlFotos}${htmlRodape}`;
+                card.innerHTML = `${htmlHeader}${montarHtmlCadastroCliente(envio)}${htmlFotos}${htmlContestacao}${htmlLigacao}${htmlRodape}`;
                 container.appendChild(card);
                 return;
             }
@@ -2144,8 +2187,9 @@
             }
 
             const estaContestado = !!envio.contestado;
-            if (estaContestado) card.classList.add('contestado');
+            if (estaContestado || solicitacaoLigacaoRegistrada(envio)) card.classList.add('contestado');
             const liberado = !ehMovimentoEstoque(envio) && podeAlterarEnvio(envio);
+            const htmlAvisoLigacao = montarHtmlSolicitacaoLigacao(envio);
             const htmlAvisoContestacao = estaContestado ? `
                 <div style="padding:10px 12px;background:rgba(255,152,0,0.15);border:1px solid rgba(255,152,0,0.5);border-radius:10px;color:#f59e0b;font-size:14px;font-weight:bold;margin-bottom:8px;text-align:center;user-select:none;-webkit-user-select:none;">
                     ⚠ O gestor contestou esse atendimento.
@@ -2154,7 +2198,7 @@
             const htmlAcoes = liberado ? `
                 <div class="envio-acoes">
                     ${htmlAvisoContestacao}
-                    ${estaContestado || ehRegistroManutencao(envio) ? '' : `
+                    ${estaContestado || solicitacaoLigacaoRegistrada(envio) || ehRegistroManutencao(envio) ? '' : `
                         <div class="acoes-linha">
                             <button class="btn-acao btn-editar btn-editar-envio">Editar</button>
                         </div>
@@ -2183,7 +2227,7 @@
                     ${montarHtmlStatusSincronizacao(envio)}
                 </div>`;
 
-            card.innerHTML = `${htmlHeader}${htmlManutencao}${htmlCadastroPix}${htmlProdutos}${htmlFin}${htmlFotos}${htmlAcoes}${htmlRodape}`;
+            card.innerHTML = `${htmlHeader}${htmlManutencao}${htmlCadastroPix}${htmlProdutos}${htmlFin}${htmlFotos}${htmlAvisoLigacao}${htmlAcoes}${htmlRodape}`;
             if (liberado) {
                 card.querySelector('.btn-editar-envio')?.addEventListener('click', () => window.editarEnvio(envio));
             }
@@ -2210,6 +2254,7 @@
         if (!btn) return;
 
         const id = btn.dataset.contestacaoResponderId;
+        const tipoContestacao = btn.dataset.contestacaoTipo || 'atendimento';
         const textarea = btn.closest('.card-envio')?.querySelector('.contestacao-resposta-texto');
         const resposta = (textarea?.value || '').trim();
 
@@ -2222,7 +2267,14 @@
         btn.disabled = true;
         btn.textContent = 'Enviando...';
         try {
-            await dbResponderContestacaoAtendimento(id, usuarioLogado, resposta);
+            if (tipoContestacao === 'cliente') {
+                const patchCliente = await responderDuvidaCliente(id, usuarioLogado, resposta);
+                const cliente = clientesSalvos.find(item => String(item?.firebaseUrl || '').trim() === String(id || '').trim());
+                if (cliente) Object.assign(cliente, patchCliente || {});
+                renderizarEnvios();
+            } else {
+                await dbResponderContestacaoAtendimento(id, usuarioLogado, resposta);
+            }
             if (textarea) textarea.value = '';
             await window.playAlert('Resposta enviada.');
         } catch (erro) {
