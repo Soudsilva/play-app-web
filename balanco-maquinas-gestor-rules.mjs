@@ -18,6 +18,61 @@ export function normalizarTipoMovimentacaoMaquina(movimento) {
     return ehAdicaoLegadaEmManutencao ? 'manutencao_adicao' : tipo;
 }
 
+export function extrairClienteDaDescricaoHistorico(movimento) {
+    const descricao = String(movimento?.descricao || '').trim();
+    const prefixos = ['Serviço realizado - ', 'Cadastro de cliente - ', 'Atendimento - '];
+    const prefixo = prefixos.find(item => descricao.toLocaleLowerCase('pt-BR').startsWith(item.toLocaleLowerCase('pt-BR')));
+    return prefixo ? descricao.slice(prefixo.length).trim() : '';
+}
+
+export function formatarRotuloHistoricoMaquina(movimento) {
+    const tipo = normalizarTipoMovimentacaoMaquina(movimento);
+    const cliente = extrairClienteDaDescricaoHistorico(movimento);
+    const rotulos = {
+        saida_estoque: 'Retirada - Estoque',
+        entrada_estoque: 'Devolução ao estoque',
+        atendimento: `Entregue - ${cliente || 'Cliente'}`,
+        cadastro_cliente: `Entregue - ${cliente || 'Cliente'}`,
+        manutencao: `Reposição${cliente ? ` - ${cliente}` : ''}`,
+        manutencao_adicao: `Entregue - ${cliente || 'Cliente'}`,
+        manutencao_retirada: `Retirada - ${cliente || 'Cliente'}`,
+        ajuste_balanco_gestor: 'Ajuste do gestor',
+        balanco_aprovado: 'Conferido',
+        cancelamento: 'Cancelamento'
+    };
+    return rotulos[tipo] || String(movimento?.descricao || tipo || 'Movimentação').trim();
+}
+
+export function formatarDescricaoComplementarHistorico(movimento) {
+    const tipo = normalizarTipoMovimentacaoMaquina(movimento);
+    const descricao = String(movimento?.descricao || '').trim();
+    if (tipo === 'balanco_aprovado') return '';
+    if (tipo === 'cancelamento') {
+        const prefixo = 'Cancelamento:';
+        if (descricao.toLocaleLowerCase('pt-BR').startsWith(prefixo.toLocaleLowerCase('pt-BR'))) {
+            return descricao.slice(prefixo.length).trim();
+        }
+    }
+    if (['manutencao', 'manutencao_adicao', 'manutencao_retirada'].includes(tipo)
+        && extrairClienteDaDescricaoHistorico(movimento)) {
+        return '';
+    }
+    if (['atendimento', 'cadastro_cliente'].includes(tipo)
+        && extrairClienteDaDescricaoHistorico(movimento)) {
+        return '';
+    }
+    if (tipo === 'saida_estoque' && normalizarTextoComparacao(descricao) === 'retirada de estoque') return '';
+    return descricao;
+}
+
+function normalizarTextoComparacao(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase();
+}
+
 export function ordenarMovimentacoesMaisRecentes(movimentos) {
     return [...(Array.isArray(movimentos) ? movimentos : [])].sort((a, b) => {
         const dataA = Date.parse(a?.timestamp || a?.data || '');
@@ -27,6 +82,14 @@ export function ordenarMovimentacoesMaisRecentes(movimentos) {
         return tempoB - tempoA
             || String(b?.id || b?.firebaseUrl || '').localeCompare(String(a?.id || a?.firebaseUrl || ''));
     });
+}
+
+export function selecionarMovimentacoesDoCard(movimentos, expandido, limiteExpandido = 10) {
+    const lista = Array.isArray(movimentos) ? movimentos : [];
+    const limite = expandido
+        ? Math.max(2, Math.min(Number(limiteExpandido) || 10, 30))
+        : 2;
+    return lista.slice(0, limite);
 }
 
 export function movimentoEhConferenciaDeTotal(movimento) {

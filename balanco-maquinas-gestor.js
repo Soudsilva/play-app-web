@@ -3,10 +3,12 @@ import {
     listarPaginaMovimentacoesDaMaquina
 } from './balanco-maquinas-gestor-service.js';
 import {
+    formatarDescricaoComplementarHistorico,
+    formatarRotuloHistoricoMaquina,
     listarUsuariosAuditaveis,
     movimentoEhConferenciaDeTotal,
-    normalizarTipoMovimentacaoMaquina,
-    ordenarMovimentacoesMaisRecentes
+    ordenarMovimentacoesMaisRecentes,
+    selecionarMovimentacoesDoCard
 } from './balanco-maquinas-gestor-rules.mjs';
 
 const ITENS_POR_PAGINA = 6;
@@ -28,23 +30,6 @@ function formatarDataHora(valor) {
     return data.toLocaleDateString('pt-BR') + ' ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-function rotuloMovimento(movimento) {
-    const rotulos = {
-        saida_estoque: 'Retirada na loja',
-        entrada_estoque: 'Devolução ao estoque',
-        atendimento: 'Entregue ao cliente',
-        cadastro_cliente: 'Cadastro em cliente',
-        manutencao: 'Reposição',
-        manutencao_retirada: 'Retirada em manutenção',
-        manutencao_adicao: 'Adicionou',
-        ajuste_balanco_gestor: 'Ajuste do gestor',
-        balanco_aprovado: 'Valor conferido',
-        cancelamento: 'Cancelamento'
-    };
-    const tipo = normalizarTipoMovimentacaoMaquina(movimento);
-    return rotulos[tipo] || String(movimento?.descricao || tipo || 'Movimentação').trim();
-}
-
 function htmlMovimentoResumo(movimento) {
     const quantidade = Number(movimento?.movimento || 0);
     const sinal = quantidade > 0 ? '+' : '';
@@ -52,8 +37,8 @@ function htmlMovimentoResumo(movimento) {
     const totalBase = movimento?.totalApos ?? (ehConferencia ? movimento?.valorConferido : null);
     const totalNumero = totalBase != null ? Number(totalBase) : null;
     const totalTexto = totalNumero != null && Number.isFinite(totalNumero) ? totalNumero : '—';
-    const descricao = String(movimento?.descricao || '').trim();
-    const rotulo = rotuloMovimento(movimento);
+    const descricao = formatarDescricaoComplementarHistorico(movimento);
+    const rotulo = formatarRotuloHistoricoMaquina(movimento);
     return `<div class="audit-maq-mov">
         <div class="audit-maq-mov-topo">
             <span>${escaparHtml(rotulo)}</span>
@@ -67,7 +52,7 @@ function htmlMovimentoResumo(movimento) {
     </div>`;
 }
 
-export function criarAuditoriaMaquinasGestor({ aoAbrirHistorico, aoAlterarAbertura, servico = {} } = {}) {
+export function criarAuditoriaMaquinasGestor({ aoAlterarAbertura, servico = {} } = {}) {
     const escutarMaquinas = servico.escutarMaquinasDoUsuario || escutarMaquinasDoUsuario;
     const listarMovimentos = servico.listarPaginaMovimentacoesDaMaquina || listarPaginaMovimentacoesDaMaquina;
     let raiz = null;
@@ -80,6 +65,8 @@ export function criarAuditoriaMaquinasGestor({ aoAbrirHistorico, aoAlterarAbertu
     let erroMaquinas = '';
     let cancelarPosse = null;
     let geracao = 0;
+    let itemExpandido = '';
+    let ouvinteExternoAtivo = false;
     const resumos = new Map();
 
     function maquinasVisiveis() {
@@ -102,7 +89,29 @@ export function criarAuditoriaMaquinasGestor({ aoAbrirHistorico, aoAlterarAbertu
         if (!resumo.movimentos.length) {
             return '<div class="audit-maq-vazio">Nenhuma movimentação encontrada.</div>';
         }
-        return resumo.movimentos.map(htmlMovimentoResumo).join('');
+        return selecionarMovimentacoesDoCard(
+            resumo.movimentos,
+            itemExpandido === maquina.itemChave,
+            CANDIDATOS_POR_RESUMO
+        ).map(htmlMovimentoResumo).join('');
+    }
+
+    function htmlAcaoHistorico(maquina) {
+        const resumo = resumos.get(maquina.itemChave);
+        if (resumo?.status !== 'pronto' || resumo.movimentos.length <= 2) return '';
+        const expandido = itemExpandido === maquina.itemChave;
+        return `<button type="button" class="audit-maq-abrir" data-expandir-item="${escaparHtml(maquina.itemChave)}" aria-expanded="${expandido}">
+            <span>${expandido ? 'Ver menos' : 'Ver mais'}</span>
+            <span class="audit-maq-abrir-seta${expandido ? ' girada' : ''}" aria-hidden="true">&#9660;</span>
+        </button>`;
+    }
+
+    function recolherAoTocarFora(evento) {
+        if (!itemExpandido || !raiz) return;
+        const cardTocado = evento.target?.closest?.('.audit-maq-card');
+        if (cardTocado?.dataset.itemChave === itemExpandido) return;
+        itemExpandido = '';
+        renderizar();
     }
 
     function renderizar() {
@@ -117,14 +126,14 @@ export function criarAuditoriaMaquinasGestor({ aoAbrirHistorico, aoAlterarAbertu
             corpo = '<div class="audit-maq-instrucao">Nenhuma máquina relacionada a este usuário.</div>';
         } else if (usuarioSelecionado) {
             corpo = `<div class="audit-maq-lista">${maquinasVisiveis().map(maquina => `
-                <button type="button" class="audit-maq-card" data-item-chave="${escaparHtml(maquina.itemChave)}">
+                <article class="audit-maq-card" data-item-chave="${escaparHtml(maquina.itemChave)}">
                     <div class="audit-maq-card-topo">
                         <span class="audit-maq-nome">${escaparHtml(maquina.nome)}</span>
                         <span class="audit-maq-total${maquina.quantidade < 0 ? ' negativo' : ''}">Total: ${maquina.quantidade}</span>
                     </div>
                     <div class="audit-maq-resumo">${htmlResumo(maquina)}</div>
-                    <div class="audit-maq-abrir">Toque para ver o histórico</div>
-                </button>`).join('')}</div>
+                    ${htmlAcaoHistorico(maquina)}
+                </article>`).join('')}</div>
                 ${totalPaginas() > 1 ? `<div class="audit-maq-paginacao">
                     <button type="button" data-pagina="anterior"${pagina === 0 ? ' disabled' : ''}>&lsaquo;</button>
                     <span>${pagina + 1} de ${totalPaginas()}</span>
@@ -152,15 +161,18 @@ export function criarAuditoriaMaquinasGestor({ aoAbrirHistorico, aoAlterarAbertu
 
         raiz.querySelector('#auditMaquinasCabecalho')?.addEventListener('click', () => {
             aberto = !aberto;
+            if (!aberto) itemExpandido = '';
             renderizar();
             if (typeof aoAlterarAbertura === 'function') aoAlterarAbertura(aberto);
         });
         raiz.querySelector('#auditMaquinasUsuario')?.addEventListener('change', evento => selecionarUsuario(evento.target.value));
         raiz.querySelector('[data-pagina="anterior"]')?.addEventListener('click', () => alterarPagina(-1));
         raiz.querySelector('[data-pagina="proxima"]')?.addEventListener('click', () => alterarPagina(1));
-        raiz.querySelectorAll('.audit-maq-card').forEach(card => card.addEventListener('click', () => {
-            const maquina = maquinas.find(item => item.itemChave === card.dataset.itemChave);
-            if (maquina && typeof aoAbrirHistorico === 'function') aoAbrirHistorico({ ...maquina, responsavel: usuarioSelecionado });
+        raiz.querySelectorAll('[data-expandir-item]').forEach(botao => botao.addEventListener('click', evento => {
+            evento.stopPropagation();
+            const itemChave = botao.dataset.expandirItem || '';
+            itemExpandido = itemExpandido === itemChave ? '' : itemChave;
+            renderizar();
         }));
         if (aberto) carregarResumosVisiveis();
     }
@@ -183,7 +195,7 @@ export function criarAuditoriaMaquinasGestor({ aoAbrirHistorico, aoAlterarAbertu
                     if (geracaoAtual !== geracao) return;
                     resumos.set(maquina.itemChave, {
                         status: 'pronto',
-                        movimentos: ordenarMovimentacoesMaisRecentes(paginaMovimentos.movimentos).slice(0, 2)
+                        movimentos: ordenarMovimentacoesMaisRecentes(paginaMovimentos.movimentos).slice(0, CANDIDATOS_POR_RESUMO)
                     });
                 } catch (erro) {
                     console.error('Erro ao carregar resumo da máquina:', erro);
@@ -203,6 +215,7 @@ export function criarAuditoriaMaquinasGestor({ aoAbrirHistorico, aoAlterarAbertu
         if (typeof cancelarPosse === 'function') cancelarPosse();
         cancelarPosse = null;
         usuarioSelecionado = novoUsuario;
+        itemExpandido = '';
         maquinas = [];
         pagina = 0;
         erroMaquinas = '';
@@ -232,6 +245,7 @@ export function criarAuditoriaMaquinasGestor({ aoAbrirHistorico, aoAlterarAbertu
         const proxima = Math.max(0, Math.min(totalPaginas() - 1, pagina + Number(delta || 0)));
         if (proxima === pagina) return;
         pagina = proxima;
+        itemExpandido = '';
         renderizar();
     }
 
@@ -243,17 +257,24 @@ export function criarAuditoriaMaquinasGestor({ aoAbrirHistorico, aoAlterarAbertu
         },
         montar(elemento) {
             raiz = elemento || null;
+            if (!ouvinteExternoAtivo) {
+                document.addEventListener('click', recolherAoTocarFora);
+                ouvinteExternoAtivo = true;
+            }
             renderizar();
         },
         fechar() {
             if (!aberto) return;
             aberto = false;
+            itemExpandido = '';
             renderizar();
         },
         destruir() {
             geracao += 1;
             if (typeof cancelarPosse === 'function') cancelarPosse();
             cancelarPosse = null;
+            if (ouvinteExternoAtivo) document.removeEventListener('click', recolherAoTocarFora);
+            ouvinteExternoAtivo = false;
             raiz = null;
         }
     };

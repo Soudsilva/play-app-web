@@ -3,11 +3,14 @@ import assert from 'node:assert/strict';
 
 import {
     extrairMaquinasDaPosse,
+    formatarDescricaoComplementarHistorico,
+    formatarRotuloHistoricoMaquina,
     listarUsuariosAuditaveis,
     montarPaginaMovimentacoes,
     movimentoEhConferenciaDeTotal,
     normalizarTipoMovimentacaoMaquina,
-    ordenarMovimentacoesMaisRecentes
+    ordenarMovimentacoesMaisRecentes,
+    selecionarMovimentacoesDoCard
 } from '../balanco-maquinas-gestor-rules.mjs';
 
 test('lista somente Atendimento 2 sem duplicar usuários', () => {
@@ -92,4 +95,64 @@ test('ordena as duas movimentações do resumo da mais recente para a mais antig
 test('valor conferido representa o total e não uma movimentação zero', () => {
     assert.equal(movimentoEhConferenciaDeTotal({ tipo: 'balanco_aprovado', movimento: 0, totalApos: 1 }), true);
     assert.equal(movimentoEhConferenciaDeTotal({ tipo: 'cancelamento', movimento: -1, totalApos: 1 }), false);
+    assert.equal(formatarRotuloHistoricoMaquina({ tipo: 'balanco_aprovado' }), 'Conferido');
+    assert.equal(formatarDescricaoComplementarHistorico({
+        tipo: 'balanco_aprovado',
+        descricao: 'Valor conferido'
+    }), '');
+});
+
+test('cancelamento não repete o nome no complemento', () => {
+    assert.equal(formatarDescricaoComplementarHistorico({
+        tipo: 'cancelamento',
+        descricao: 'Cancelamento: Retirada de estoque'
+    }), 'Retirada de estoque');
+});
+
+test('card limita o histórico recolhido e expandido', () => {
+    const movimentos = Array.from({ length: 12 }, (_, indice) => ({ id: `mov_${indice + 1}` }));
+    assert.deepEqual(
+        selecionarMovimentacoesDoCard(movimentos, false).map(item => item.id),
+        ['mov_1', 'mov_2']
+    );
+    assert.equal(selecionarMovimentacoesDoCard(movimentos, true).length, 10);
+});
+
+test('retirada mostra a origem física em vez da tela utilizada', () => {
+    const retiradaCliente = {
+        tipo: 'manutencao_retirada',
+        descricao: 'Serviço realizado - Cliente Teste'
+    };
+    assert.equal(formatarRotuloHistoricoMaquina(retiradaCliente), 'Retirada - Cliente Teste');
+    assert.equal(formatarDescricaoComplementarHistorico(retiradaCliente), '');
+    assert.equal(formatarRotuloHistoricoMaquina({ tipo: 'manutencao_retirada' }), 'Retirada - Cliente');
+    assert.equal(formatarRotuloHistoricoMaquina({ tipo: 'saida_estoque' }), 'Retirada - Estoque');
+    assert.equal(formatarDescricaoComplementarHistorico({
+        tipo: 'saida_estoque',
+        descricao: 'Retirada de estoque'
+    }), '');
+});
+
+test('cadastro e atendimento mostram o cliente como destino da entrega', () => {
+    const cadastro = {
+        tipo: 'cadastro_cliente',
+        descricao: 'Cadastro de cliente - Cliente Teste'
+    };
+    const atendimento = {
+        tipo: 'atendimento',
+        descricao: 'Atendimento - Cliente Teste'
+    };
+    assert.equal(formatarRotuloHistoricoMaquina(cadastro), 'Entregue - Cliente Teste');
+    assert.equal(formatarDescricaoComplementarHistorico(cadastro), '');
+    assert.equal(formatarRotuloHistoricoMaquina(atendimento), 'Entregue - Cliente Teste');
+    assert.equal(formatarDescricaoComplementarHistorico(atendimento), '');
+});
+
+test('máquina adicionada em manutenção também aparece como entregue ao cliente', () => {
+    const movimento = {
+        tipo: 'manutencao_adicao',
+        descricao: 'Serviço realizado - Cliente Teste'
+    };
+    assert.equal(formatarRotuloHistoricoMaquina(movimento), 'Entregue - Cliente Teste');
+    assert.equal(formatarDescricaoComplementarHistorico(movimento), '');
 });

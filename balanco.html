@@ -1518,7 +1518,11 @@
         dbListarRemuneracaoMensal
     } from './database.js';
     import { criarAuditoriaMaquinasGestor } from './balanco-maquinas-gestor.js';
-    import { normalizarTipoMovimentacaoMaquina } from './balanco-maquinas-gestor-rules.mjs';
+    import {
+        formatarDescricaoComplementarHistorico,
+        formatarRotuloHistoricoMaquina,
+        normalizarTipoMovimentacaoMaquina
+    } from './balanco-maquinas-gestor-rules.mjs';
     import {
         escutarUltimasMovimentacoesDaMaquina,
         listarPaginaMovimentacoesDaMaquina
@@ -1563,7 +1567,6 @@
     let historicoAuditoriaErro = '';
     let historicoAuditoriaGeracao = 0;
     const auditoriaMaquinasGestor = criarAuditoriaMaquinasGestor({
-        aoAbrirHistorico: abrirHistoricoAuditoriaMaquina,
         aoAlterarAbertura: aberto => {
             if (aberto) definirContestacoesAbertas(false);
         }
@@ -2408,7 +2411,21 @@
     function formatarDescricaoHistoricoBalanco(entrada) {
         const tipo = normalizarTipoMovimentacaoMaquina(entrada);
         const descricao = String(entrada?.descricao || '').trim();
+        const categoriaEntrada = String(
+            entrada?.categoria
+            || entrada?.itemCategoria
+            || historicoAbertoContexto?.categoria
+            || ''
+        ).trim().toLowerCase();
+        if (categoriaEntrada === 'maquina') {
+            const rotuloMaquina = formatarRotuloHistoricoMaquina(entrada);
+            const complementoMaquina = formatarDescricaoComplementarHistorico(entrada);
+            return tipo === 'cancelamento' && complementoMaquina
+                ? `${rotuloMaquina} - ${complementoMaquina}`
+                : rotuloMaquina;
+        }
         if (tipo === 'ajuste_balanco_gestor') return 'Correção';
+        if (tipo === 'balanco_aprovado') return 'Conferido';
 
         const rotulosManutencao = {
             manutencao: 'Reposição',
@@ -2505,7 +2522,7 @@
                 </div>
                 ${tipoLinha === 'aprovacao' ? `
                 <div class="hist-info-linha">
-                    <span class="hist-info-label">Valor conferido:</span>
+                    <span class="hist-info-label">Conferido:</span>
                     <span class="hist-info-valor total${e.valorConferido != null && Number(e.valorConferido) < 0 ? ' negativo' : totalClasse}">${e.valorConferido != null ? formatarQuantidadeVisual(e.valorConferido) : totalStr}</span>
                 </div>` : totalNaLinha ? '' : `
                 <div class="hist-info-linha">
@@ -2609,7 +2626,7 @@
         manutencao:          'Manutenção',
         manutencao_retirada: 'Retirada p/ manutenção',
         manutencao_adicao:   'Adicionou',
-        balanco_aprovado:    'Valor conferido',
+        balanco_aprovado:    'Conferido',
         ajuste_balanco_gestor: 'Ajuste de balanço',
         cancelamento:   'Cancelamento'
     };
