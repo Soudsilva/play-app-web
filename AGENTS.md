@@ -487,9 +487,9 @@ Antes de otimizar, identificar o gargalo real. Não adicionar caches, duplicaç�
 
 ## 19. Testes obrigatórios
 
-Código novo deve ser testável.
+Código novo deve ser testável, mas arquivos de teste não devem fazer parte do projeto entregue.
 
-- Regras de negócio novas devem possuir testes unitários quando forem relevantes.
+- Regras de negócio novas devem ser validadas isoladamente quando forem relevantes.
 - Serviços Firebase devem ser testados preferencialmente com mocks ou Firebase Emulator.
 - Testar:
   - Caminho principal.
@@ -504,7 +504,12 @@ Código novo deve ser testável.
 - Não considerar uma alteração concluída apenas porque não houve erro no console.
 - Não publicar código com testes relevantes falhando.
 - Se não for possível executar um teste, informar claramente o que não foi validado.
-- Arquivos e pastas de teste criados somente para uma validação pontual, sem função de regressão permanente, devem ser excluídos depois que o teste passar. Não aumentar a lista de exclusão da publicação apenas para manter testes temporários.
+- Nunca adicionar, manter, versionar, enviar ou publicar arquivos de teste.
+- Isso inclui pastas `tests/`, `test/`, `__tests__/` e arquivos `*.test.*` ou `*.spec.*` em qualquer parte do projeto.
+- Quando uma validação exigir código auxiliar, executar por comando inline ou criar arquivo temporário local ignorado pelo Git.
+- Todo arquivo temporário de teste deve ser excluído imediatamente após a validação e antes de salvar.
+- Antes de qualquer commit ou publicação, conferir que nenhum arquivo de teste está rastreado, preparado para commit ou incluído no Firebase Hosting ou Functions.
+- `.gitignore` e `firebase.json` devem continuar bloqueando arquivos de teste; não remover essas exclusões sem autorização expressa do proprietário.
 
 ---
 
@@ -831,4 +836,4 @@ O projeto está em produção e deve evoluir gradualmente.
 - Com a resposta `2. Não`, não executar o pull nem alterar arquivos locais.
 - Nunca descartar alterações locais sem essa confirmação explícita.
 
-**Versão atual de entrega: v0.0.5**
+**Versão atual de entrega: v0.0.6**
