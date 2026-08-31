@@ -25,6 +25,7 @@ import {
 import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 import { salvarCacheClientes, lerCacheClientes, lerCacheClientesCompleto, salvarCacheEstoque, lerCacheEstoque } from './offline-sync.js';
 import { app, db, storage, firebaseConfig } from './firebase-app.js';
+import { movimentoExigeSaldoDisponivelMaquina } from './maquina-posse-rules.mjs';
 
 // A inicialização principal fica em firebase-app.js. Esta reexportação mantém
 // compatibilidade com as telas legadas que ainda importam app de database.js.
@@ -3804,6 +3805,7 @@ async function _atualizarPosseItensUsuario(entrada, movimento) {
         ? null
         : await _obterTotalAtualHistoricoBalanco(chaveUsuario, entrada?.itemNome, itemChave);
     const atualizadoEm = new Date().toISOString();
+    const exigeSaldoDisponivelMaquina = movimentoExigeSaldoDisponivelMaquina(entrada, movimento);
     const resultado = await runTransaction(posseRef, (atual) => {
         const estadoAtual = atual && typeof atual === 'object' ? atual : {};
         const categoriaAtual = String(entrada?.categoria || estadoAtual?.categoria || 'produto').trim();
@@ -3824,6 +3826,7 @@ async function _atualizarPosseItensUsuario(entrada, movimento) {
         );
         const quantidadeNova = quantidadeAtual + Number(movimento || 0);
 
+        if (quantidadeNova < 0 && exigeSaldoDisponivelMaquina) return;
         if (quantidadeNova < 0 && !permitirSaldoNegativo && !ignorarValidacaoPosse) return;
 
         return {
@@ -3842,6 +3845,18 @@ async function _atualizarPosseItensUsuario(entrada, movimento) {
     });
 
     if (!resultado?.committed || !resultado?.snapshot?.exists()) {
+        if (exigeSaldoDisponivelMaquina) {
+            const disponivel = Number(
+                resultado?.snapshot?.val()?.quantidade
+                ?? posseAtualSnap.val()?.quantidade
+                ?? quantidadeInicialFallback
+                ?? 0
+            );
+            throw new Error(
+                `Você não possui saldo suficiente de ${String(entrada?.itemNome || 'esta máquina').trim()} no seu balanço. `
+                + `Disponível: ${Number.isFinite(disponivel) ? disponivel : 0}. Necessário: ${Math.abs(Number(movimento || 0))}.`
+            );
+        }
         throw new Error(`Posse insuficiente para ${String(entrada?.responsavel || 'o usuário').trim()} em ${String(entrada?.itemNome || 'o item').trim()}.`);
     }
 

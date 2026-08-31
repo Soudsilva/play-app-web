@@ -34,11 +34,15 @@
 .audit-maq-card:active { background:rgba(31,75,154,0.65); }
 .audit-maq-card-topo { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 12px; background:rgba(255,255,255,0.07); }
 .audit-maq-nome { font-size:14px; font-weight:800; }
-.audit-maq-saldo { flex-shrink:0; border-radius:20px; padding:3px 8px; background:rgba(74,222,128,0.14); color:#86efac; font-size:11px; font-weight:800; }
-.audit-maq-saldo.negativo { background:rgba(239,68,68,0.15); color:#fecaca; }
+.audit-maq-total { flex-shrink:0; border-radius:20px; padding:3px 8px; background:rgba(74,222,128,0.14); color:#86efac; font-size:11px; font-weight:800; }
+.audit-maq-total.negativo { background:rgba(239,68,68,0.15); color:#fecaca; }
 .audit-maq-resumo { display:grid; gap:7px; padding:9px 11px; }
 .audit-maq-mov { border-left:3px solid rgba(96,165,250,0.75); padding:5px 8px; background:rgba(255,255,255,0.035); border-radius:0 8px 8px 0; }
-.audit-maq-mov-topo { display:flex; justify-content:space-between; gap:8px; font-size:12px; }
+.audit-maq-mov-topo { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12px; }
+.audit-maq-mov-topo > span:first-child { min-width:0; }
+.audit-maq-mov-valores { display:flex; align-items:center; gap:6px; flex-shrink:0; white-space:nowrap; }
+.audit-maq-mov-total { border-left:1px solid rgba(255,255,255,0.22); padding-left:6px; color:rgba(255,255,255,0.72); font-size:11px; font-weight:600; }
+.audit-maq-mov-valores.somente-total .audit-maq-mov-total { border-left:0; padding-left:0; }
 .audit-maq-mov-topo strong.positivo { color:#86efac; }
 .audit-maq-mov-topo strong.negativo { color:#fca5a5; }
 .audit-maq-mov-desc,.audit-maq-mov-data { margin-top:3px; color:rgba(255,255,255,0.58); font-size:10px; }

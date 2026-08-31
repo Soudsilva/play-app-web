@@ -588,6 +588,7 @@
     verificarAutenticacao();
     // Importamos as ferramentas de banco de dados do seu arquivo externo
     import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, dbEscutarSessaoRotas, dbSincronizarItensCadastroClienteNoHistorico, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
+    import { validarSaldoParaAdicionarMaquinas } from './maquina-posse-service.js';
 
     let maquinasDisponiveis = [];
     let produtosDisponiveis = [];
@@ -2383,6 +2384,24 @@
             const produtosInstalacao = modoSolicitar
                 ? []
                 : (editId ? coletarProdutosInstalacaoParaSalvar() : validarProdutosObrigatoriosPorMaquina());
+
+            if (!modoSolicitar) {
+                const equipamentosAnteriores = editId
+                    ? obterEquipamentosDetalhadosDoCliente(clienteEmEdicao).map(item => {
+                        const maquinaInfo = maquinasDisponiveis.find(maquina => maquina.nome === item.nome);
+                        return {
+                            ...item,
+                            itemId: item.itemId || maquinaInfo?.firebaseUrl || '',
+                            categoria: item.categoria || maquinaInfo?.categoria || 'maquina'
+                        };
+                    })
+                    : [];
+                await validarSaldoParaAdicionarMaquinas({
+                    responsavel: clienteEmEdicao?.cadastradoPor || nomeUsuarioLogado,
+                    itensAtuais: equipamentosDetalhados,
+                    itensAnteriores: equipamentosAnteriores
+                });
+            }
 
             const fotosMaquinasInstalacao = [];
             for (const equipamento of equipamentosDetalhados) {

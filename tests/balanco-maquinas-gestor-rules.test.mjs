@@ -5,7 +5,9 @@ import {
     extrairMaquinasDaPosse,
     listarUsuariosAuditaveis,
     montarPaginaMovimentacoes,
-    normalizarTipoMovimentacaoMaquina
+    movimentoEhConferenciaDeTotal,
+    normalizarTipoMovimentacaoMaquina,
+    ordenarMovimentacoesMaisRecentes
 } from '../balanco-maquinas-gestor-rules.mjs';
 
 test('lista somente Atendimento 2 sem duplicar usuários', () => {
@@ -74,4 +76,20 @@ test('preserva reposição de produto e retirada de máquina', () => {
         categoria: 'maquina',
         movimento: 1
     }), 'manutencao_retirada');
+});
+
+test('ordena as duas movimentações do resumo da mais recente para a mais antiga', () => {
+    const movimentos = ordenarMovimentacoesMaisRecentes([
+        { id: 'cadastro_julho', timestamp: '2026-07-13T14:42:00.000Z' },
+        { id: 'cancelamento', timestamp: '2026-08-20T18:54:00.000Z' },
+        { id: 'conferido', timestamp: '2026-08-21T11:22:00.000Z' },
+        { id: 'movimento_junho', timestamp: '2026-06-10T12:00:00.000Z' }
+    ]).slice(0, 2);
+
+    assert.deepEqual(movimentos.map(item => item.id), ['conferido', 'cancelamento']);
+});
+
+test('valor conferido representa o total e não uma movimentação zero', () => {
+    assert.equal(movimentoEhConferenciaDeTotal({ tipo: 'balanco_aprovado', movimento: 0, totalApos: 1 }), true);
+    assert.equal(movimentoEhConferenciaDeTotal({ tipo: 'cancelamento', movimento: -1, totalApos: 1 }), false);
 });

@@ -779,6 +779,7 @@
     import { dbEscutarClientes, dbEscutarEstoque, dbEscutarAtendimentos, dbEscutarColaboradores, dbGerarIdAtendimento, dbObterSessaoRotas, dbListarAtendimentos, dbListarJustificativasCheckin, calcularStatusLiberacaoRota, dbEscutarHistoricoBalancoDoUsuario } from './database.js';
     import { enfileirarAtendimento, listarPendentes } from './offline-sync.js';
     import { sincronizarFilaAtendimentosDireto } from './atendimento-sync-runner.js';
+    import { validarSaldoParaAdicionarMaquinas } from './maquina-posse-service.js';
     import {
         gerarIdVisitaAtendimento,
         deveRestaurarVisitaAtendimento,
@@ -2195,6 +2196,12 @@ function obterIdAtendimentoEmEdicao() {
                         quantidade: qtd
                     });
                 }
+            });
+
+            await validarSaldoParaAdicionarMaquinas({
+                responsavel: atendente,
+                itensAtuais: produtos,
+                itensAnteriores: Array.isArray(atendimentoOriginal?.produtos) ? atendimentoOriginal.produtos : []
             });
 
             // Coleta financeiro

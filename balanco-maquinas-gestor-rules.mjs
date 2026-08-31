@@ -18,6 +18,21 @@ export function normalizarTipoMovimentacaoMaquina(movimento) {
     return ehAdicaoLegadaEmManutencao ? 'manutencao_adicao' : tipo;
 }
 
+export function ordenarMovimentacoesMaisRecentes(movimentos) {
+    return [...(Array.isArray(movimentos) ? movimentos : [])].sort((a, b) => {
+        const dataA = Date.parse(a?.timestamp || a?.data || '');
+        const dataB = Date.parse(b?.timestamp || b?.data || '');
+        const tempoA = Number.isFinite(dataA) ? dataA : 0;
+        const tempoB = Number.isFinite(dataB) ? dataB : 0;
+        return tempoB - tempoA
+            || String(b?.id || b?.firebaseUrl || '').localeCompare(String(a?.id || a?.firebaseUrl || ''));
+    });
+}
+
+export function movimentoEhConferenciaDeTotal(movimento) {
+    return normalizarTipoMovimentacaoMaquina(movimento) === 'balanco_aprovado';
+}
+
 export function perfilPodeAparecerNaAuditoriaMaquinas(colaborador) {
     const perfil = String(colaborador?.nivel_completo || '').trim().toLowerCase();
     return perfil.includes('atendimento_2');

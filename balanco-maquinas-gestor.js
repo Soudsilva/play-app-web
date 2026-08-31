@@ -4,11 +4,14 @@ import {
 } from './balanco-maquinas-gestor-service.js';
 import {
     listarUsuariosAuditaveis,
-    normalizarTipoMovimentacaoMaquina
+    movimentoEhConferenciaDeTotal,
+    normalizarTipoMovimentacaoMaquina,
+    ordenarMovimentacoesMaisRecentes
 } from './balanco-maquinas-gestor-rules.mjs';
 
 const ITENS_POR_PAGINA = 6;
 const CONCORRENCIA_RESUMOS = 3;
+const CANDIDATOS_POR_RESUMO = 10;
 
 function escaparHtml(valor) {
     return String(valor ?? '')
@@ -45,13 +48,21 @@ function rotuloMovimento(movimento) {
 function htmlMovimentoResumo(movimento) {
     const quantidade = Number(movimento?.movimento || 0);
     const sinal = quantidade > 0 ? '+' : '';
+    const ehConferencia = movimentoEhConferenciaDeTotal(movimento);
+    const totalBase = movimento?.totalApos ?? (ehConferencia ? movimento?.valorConferido : null);
+    const totalNumero = totalBase != null ? Number(totalBase) : null;
+    const totalTexto = totalNumero != null && Number.isFinite(totalNumero) ? totalNumero : '—';
     const descricao = String(movimento?.descricao || '').trim();
+    const rotulo = rotuloMovimento(movimento);
     return `<div class="audit-maq-mov">
         <div class="audit-maq-mov-topo">
-            <span>${escaparHtml(rotuloMovimento(movimento))}</span>
-            <strong class="${quantidade < 0 ? 'negativo' : 'positivo'}">${sinal}${quantidade}</strong>
+            <span>${escaparHtml(rotulo)}</span>
+            <span class="audit-maq-mov-valores${ehConferencia ? ' somente-total' : ''}">
+                ${ehConferencia ? '' : `<strong class="${quantidade < 0 ? 'negativo' : 'positivo'}">${sinal}${quantidade}</strong>`}
+                <span class="audit-maq-mov-total">Total: <strong class="${totalNumero != null && totalNumero < 0 ? 'negativo' : 'positivo'}">${totalTexto}</strong></span>
+            </span>
         </div>
-        ${descricao && descricao !== rotuloMovimento(movimento) ? `<div class="audit-maq-mov-desc">${escaparHtml(descricao)}</div>` : ''}
+        ${descricao && descricao !== rotulo ? `<div class="audit-maq-mov-desc">${escaparHtml(descricao)}</div>` : ''}
         <div class="audit-maq-mov-data">${escaparHtml(formatarDataHora(movimento?.timestamp || movimento?.data))}</div>
     </div>`;
 }
@@ -109,7 +120,7 @@ export function criarAuditoriaMaquinasGestor({ aoAbrirHistorico, aoAlterarAbertu
                 <button type="button" class="audit-maq-card" data-item-chave="${escaparHtml(maquina.itemChave)}">
                     <div class="audit-maq-card-topo">
                         <span class="audit-maq-nome">${escaparHtml(maquina.nome)}</span>
-                        <span class="audit-maq-saldo${maquina.quantidade < 0 ? ' negativo' : ''}">Saldo: ${maquina.quantidade}</span>
+                        <span class="audit-maq-total${maquina.quantidade < 0 ? ' negativo' : ''}">Total: ${maquina.quantidade}</span>
                     </div>
                     <div class="audit-maq-resumo">${htmlResumo(maquina)}</div>
                     <div class="audit-maq-abrir">Toque para ver o histórico</div>
@@ -123,7 +134,7 @@ export function criarAuditoriaMaquinasGestor({ aoAbrirHistorico, aoAlterarAbertu
 
         raiz.innerHTML = `<section class="audit-maq-secao">
             <button type="button" class="gestor-mov-header audit-maq-header${aberto ? ' aberto' : ''}" id="auditMaquinasCabecalho">
-                <span class="gestor-mov-icone">&#127920;</span>
+                <span class="gestor-mov-icone">&#128377;&#65039;</span>
                 <span class="gestor-mov-info"><span class="gestor-mov-label">Máquinas</span></span>
                 <span class="gestor-mov-seta${aberto ? ' girada' : ''}">&#9660;</span>
             </button>
@@ -165,12 +176,15 @@ export function criarAuditoriaMaquinasGestor({ aoAbrirHistorico, aoAlterarAbertu
             await Promise.all(lote.map(async maquina => {
                 try {
                     const paginaMovimentos = await listarMovimentos(usuarioSelecionado, maquina.itemChave, {
-                        limite: 2,
+                        limite: CANDIDATOS_POR_RESUMO,
                         itemNome: maquina.nome,
-                        mesclarLegado: false
+                        mesclarLegado: true
                     });
                     if (geracaoAtual !== geracao) return;
-                    resumos.set(maquina.itemChave, { status: 'pronto', movimentos: paginaMovimentos.movimentos });
+                    resumos.set(maquina.itemChave, {
+                        status: 'pronto',
+                        movimentos: ordenarMovimentacoesMaisRecentes(paginaMovimentos.movimentos).slice(0, 2)
+                    });
                 } catch (erro) {
                     console.error('Erro ao carregar resumo da máquina:', erro);
                     if (geracaoAtual !== geracao) return;
