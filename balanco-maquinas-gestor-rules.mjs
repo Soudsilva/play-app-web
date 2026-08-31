@@ -6,6 +6,18 @@ export function normalizarChaveItemBalanco(valor) {
     return String(valor || '').trim().replace(/[.#$/[\]]/g, '_');
 }
 
+export function normalizarTipoMovimentacaoMaquina(movimento) {
+    const tipo = String(movimento?.tipo || movimento?.origemRegistro || '').trim();
+    const origem = String(movimento?.origemRegistro || '').trim();
+    const categoria = String(movimento?.categoria || movimento?.itemCategoria || '').trim();
+    const quantidade = Number(movimento?.movimento || 0);
+    const ehAdicaoLegadaEmManutencao = tipo === 'manutencao'
+        && origem === 'manutencao'
+        && categoria === 'maquina'
+        && quantidade < 0;
+    return ehAdicaoLegadaEmManutencao ? 'manutencao_adicao' : tipo;
+}
+
 export function perfilPodeAparecerNaAuditoriaMaquinas(colaborador) {
     const perfil = String(colaborador?.nivel_completo || '').trim().toLowerCase();
     return perfil.includes('atendimento_2');

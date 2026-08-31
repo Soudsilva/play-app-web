@@ -174,6 +174,9 @@
             align-items:center;
             gap:10px;
             position:relative;
+            min-width:0;
+            max-width:100%;
+            box-sizing:border-box;
         }
         .pix-resumo-card::before {
             content:'';
@@ -215,7 +218,12 @@
             font-weight:bold;
             color:#ffeb3b;
             line-height:1.2;
-            white-space:nowrap;
+            flex:1;
+            min-width:0;
+            max-width:100%;
+            box-sizing:border-box;
+            white-space:normal;
+            overflow-wrap:anywhere;
             background:rgba(255,255,255,0.08);
             border:1px solid rgba(255,255,255,0.14);
             border-radius:10px;
@@ -1064,6 +1072,38 @@
             font-size:16px; font-weight:700; line-height:1.4;
             color:#ffffff; flex:1; text-align:left;
         }
+        .hist-item.total-na-linha:not(.aprovacao) .hist-topo-linha {
+            align-items:center;
+            gap:10px;
+            padding-right:0;
+        }
+        .hist-topo-valores-compacto {
+            display:flex;
+            align-items:center;
+            gap:7px;
+            flex-shrink:0;
+            white-space:nowrap;
+        }
+        .hist-topo-quantidade-compacta {
+            font-size:19px;
+            font-weight:700;
+        }
+        .hist-item.total-na-linha.pos .hist-topo-quantidade-compacta { color:#69f0ae; }
+        .hist-item.total-na-linha.neg .hist-topo-quantidade-compacta { color:#ffb3b3; }
+        .hist-item.total-na-linha.contestacao .hist-topo-quantidade-compacta { color:#ffeb3b; }
+        .hist-topo-total-compacto {
+            border-left:1px solid rgba(255,255,255,0.22);
+            padding-left:7px;
+            color:#d7e3ff;
+            font-size:14px;
+            font-weight:600;
+        }
+        .hist-topo-total-compacto strong {
+            color:#c8d8f8;
+            font-size:18px;
+            margin-left:2px;
+        }
+        .hist-topo-total-compacto strong.negativo { color:#ef9a9a; }
 
         /* Quantidade: flutua no canto superior direito */
         .hist-info-linha:has(.hist-info-valor.quantidade) {
@@ -1119,6 +1159,7 @@
         .hist-quem {
             font-size:12px; font-weight:400; color:#d7e3ff;
         }
+        .hist-item.total-na-linha .hist-rodape .hist-quem:last-child { font-size:14px; }
         .hist-fechar-btn {
             margin:14px 15px 0; padding:12px;
             background:rgba(68,103,168,0.55);
@@ -1477,6 +1518,7 @@
         dbListarRemuneracaoMensal
     } from './database.js';
     import { criarAuditoriaMaquinasGestor } from './balanco-maquinas-gestor.js';
+    import { normalizarTipoMovimentacaoMaquina } from './balanco-maquinas-gestor-rules.mjs';
     import {
         escutarUltimasMovimentacoesDaMaquina,
         listarPaginaMovimentacoesDaMaquina
@@ -2364,7 +2406,7 @@
     }
 
     function formatarDescricaoHistoricoBalanco(entrada) {
-        const tipo = String(entrada?.tipo || '').trim();
+        const tipo = normalizarTipoMovimentacaoMaquina(entrada);
         const descricao = String(entrada?.descricao || '').trim();
         if (tipo === 'ajuste_balanco_gestor') return 'Correção';
 
@@ -2415,6 +2457,8 @@
             return;
         }
 
+        const modoAuditoria = Boolean(historicoAbertoContexto?.modoGestorAuditoria);
+        const totalNaLinha = !historicoAbertoContexto?.modoGestorContestacao;
         let ultimaData = '';
         const linhasHistoricoHtml = timeline.map(e => {
             const tipoLinha = String(e.tipoLinha || 'movimento');
@@ -2449,17 +2493,21 @@
                 : (tipoLinha === 'aprovacao' ? 'aprovacao' : (isGestorAjuste ? 'gestor' : (pos ? 'pos' : 'neg')));
 
             return `${grupoHtml}
-            <div class="hist-item ${classeLinha}">
+            <div class="hist-item ${classeLinha}${totalNaLinha ? ' total-na-linha' : ''}">
                 <div class="hist-topo-linha">
                     ${tipoLinha === 'aprovacao' ? `<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.45);border-radius:20px;padding:2px 10px 2px 7px;font-size:13px;font-weight:700;color:#86efac;letter-spacing:0.3px;margin-right:8px;white-space:nowrap;">✔ Conferido</span>` : ''}
                     ${isGestorAjuste ? `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.45);border-radius:20px;padding:2px 10px 2px 7px;font-size:11px;font-weight:700;color:#fcd34d;letter-spacing:0.3px;margin-right:6px;white-space:nowrap;flex-shrink:0;">✦ Gestor</span>` : ''}
                     ${tipoLinha === 'aprovacao' ? '' : `<span class="hist-desc">${desc}</span>`}
+                    ${totalNaLinha && tipoLinha !== 'aprovacao' ? `<span class="hist-topo-valores-compacto">
+                        <span class="hist-topo-quantidade-compacta">${quantidadeStr}</span>
+                        <span class="hist-topo-total-compacto">Total: <strong class="${totalClasse.trim()}">${totalStr}</strong></span>
+                    </span>` : ''}
                 </div>
                 ${tipoLinha === 'aprovacao' ? `
                 <div class="hist-info-linha">
                     <span class="hist-info-label">Valor conferido:</span>
                     <span class="hist-info-valor total${e.valorConferido != null && Number(e.valorConferido) < 0 ? ' negativo' : totalClasse}">${e.valorConferido != null ? formatarQuantidadeVisual(e.valorConferido) : totalStr}</span>
-                </div>` : `
+                </div>` : totalNaLinha ? '' : `
                 <div class="hist-info-linha">
                     <span class="hist-info-label">Quantidade:</span>
                     <span class="hist-info-valor quantidade">${quantidadeStr}</span>
@@ -2478,7 +2526,6 @@
                 </div>
             </div>`;
         }).join('');
-        const modoAuditoria = Boolean(historicoAbertoContexto?.modoGestorAuditoria);
         const erroAuditoriaHtml = modoAuditoria && historicoAuditoriaErro
             ? `<div class="hist-vazio" style="padding:12px 18px;color:#fecaca;">${escaparHtml(historicoAuditoriaErro)}</div>`
             : '';
@@ -2561,7 +2608,7 @@
         atendimento:         'Entregue ao cliente',
         manutencao:          'Manutenção',
         manutencao_retirada: 'Retirada p/ manutenção',
-        manutencao_adicao:   'Devolução de manutenção',
+        manutencao_adicao:   'Adicionou',
         balanco_aprovado:    'Valor conferido',
         ajuste_balanco_gestor: 'Ajuste de balanço',
         cancelamento:   'Cancelamento'

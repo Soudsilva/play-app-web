@@ -2,7 +2,10 @@ import {
     escutarMaquinasDoUsuario,
     listarPaginaMovimentacoesDaMaquina
 } from './balanco-maquinas-gestor-service.js';
-import { listarUsuariosAuditaveis } from './balanco-maquinas-gestor-rules.mjs';
+import {
+    listarUsuariosAuditaveis,
+    normalizarTipoMovimentacaoMaquina
+} from './balanco-maquinas-gestor-rules.mjs';
 
 const ITENS_POR_PAGINA = 6;
 const CONCORRENCIA_RESUMOS = 3;
@@ -28,14 +31,14 @@ function rotuloMovimento(movimento) {
         entrada_estoque: 'Devolução ao estoque',
         atendimento: 'Entregue ao cliente',
         cadastro_cliente: 'Cadastro em cliente',
-        manutencao: 'Entregue em manutenção',
+        manutencao: 'Reposição',
         manutencao_retirada: 'Retirada em manutenção',
-        manutencao_adicao: 'Devolução de manutenção',
+        manutencao_adicao: 'Adicionou',
         ajuste_balanco_gestor: 'Ajuste do gestor',
         balanco_aprovado: 'Valor conferido',
         cancelamento: 'Cancelamento'
     };
-    const tipo = String(movimento?.tipo || movimento?.origemRegistro || '').trim();
+    const tipo = normalizarTipoMovimentacaoMaquina(movimento);
     return rotulos[tipo] || String(movimento?.descricao || tipo || 'Movimentação').trim();
 }
 

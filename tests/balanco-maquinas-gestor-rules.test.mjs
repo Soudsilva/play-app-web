@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import {
     extrairMaquinasDaPosse,
     listarUsuariosAuditaveis,
-    montarPaginaMovimentacoes
+    montarPaginaMovimentacoes,
+    normalizarTipoMovimentacaoMaquina
 } from '../balanco-maquinas-gestor-rules.mjs';
 
 test('lista somente Atendimento 2 sem duplicar usuários', () => {
@@ -49,4 +50,28 @@ test('monta página estável, remove o cursor repetido e informa próxima págin
     }, 2, 'id_04');
     assert.deepEqual(seguinte.movimentos.map(item => item.id), ['id_03', 'id_02']);
     assert.equal(seguinte.temMais, false);
+});
+
+test('interpreta máquina adicionada em manutenção antiga como adição', () => {
+    assert.equal(normalizarTipoMovimentacaoMaquina({
+        tipo: 'manutencao',
+        origemRegistro: 'manutencao',
+        categoria: 'maquina',
+        movimento: -4
+    }), 'manutencao_adicao');
+});
+
+test('preserva reposição de produto e retirada de máquina', () => {
+    assert.equal(normalizarTipoMovimentacaoMaquina({
+        tipo: 'manutencao',
+        origemRegistro: 'manutencao',
+        categoria: 'produto',
+        movimento: -4
+    }), 'manutencao');
+    assert.equal(normalizarTipoMovimentacaoMaquina({
+        tipo: 'manutencao_retirada',
+        origemRegistro: 'manutencao',
+        categoria: 'maquina',
+        movimento: 1
+    }), 'manutencao_retirada');
 });

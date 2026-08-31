@@ -4216,7 +4216,7 @@ export async function dbSincronizarItensManutencaoNoHistorico(atendimentoId, ate
                 registradoPor: atendimento?.atendente || responsavel,
                 itemNome: maquina.nome,
                 categoria: maquina.categoria,
-                tipo: 'manutencao',
+                tipo: 'manutencao_adicao',
                 origemRegistro: 'manutencao',
                 itemChave: maquina.itemId,
                 movimento: -Number(maquina.quantidade || 0),
