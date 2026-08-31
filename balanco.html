@@ -2411,13 +2411,13 @@
     function formatarDescricaoHistoricoBalanco(entrada) {
         const tipo = normalizarTipoMovimentacaoMaquina(entrada);
         const descricao = String(entrada?.descricao || '').trim();
-        const categoriaEntrada = String(
+        const categoriasEntrada = [
+            historicoAbertoContexto?.categoria,
+            entrada?.itemCategoria,
             entrada?.categoria
-            || entrada?.itemCategoria
-            || historicoAbertoContexto?.categoria
-            || ''
-        ).trim().toLowerCase();
-        if (categoriaEntrada === 'maquina') {
+        ].map(normalizarTextoBusca);
+        const ehHistoricoMaquina = categoriasEntrada.some(categoria => categoria === 'maquina' || categoria === 'maquinas');
+        if (ehHistoricoMaquina) {
             const rotuloMaquina = formatarRotuloHistoricoMaquina(entrada);
             const complementoMaquina = formatarDescricaoComplementarHistorico(entrada);
             return tipo === 'cancelamento' && complementoMaquina

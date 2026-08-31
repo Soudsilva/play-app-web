@@ -534,6 +534,7 @@ function bsbDate(valor) {
 }
 
 function obterAnoMes(valor) {
+  if (valor == null || valor === "") return "";
   const data = bsbDate(valor);
   if (!data || Number.isNaN(data.getTime())) return "";
   return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, "0")}`;
@@ -561,15 +562,15 @@ function obterAlvosAtendimento(before, after) {
   return [...alvos.values()];
 }
 
-function obterAlvosDeposito(usuarioParam, before, after) {
-  const usuario = normalizarChaveUsuario(usuarioParam);
-  if (!usuario) return [];
-
+function obterAlvosDeposito(before, after) {
   const alvos = new Map();
   [before, after].forEach((item) => {
     if (!item || typeof item !== "object") return;
+    const usuario = normalizarChaveUsuario(item.usuario);
     const anoMes = obterAnoMes(item.data || item.timestamp || item.criadoEm);
-    if (anoMes) alvos.set(`${usuario}/${anoMes}`, {usuario, anoMes});
+    if (usuario && anoMes) {
+      alvos.set(`${usuario}/${anoMes}`, {usuario, anoMes});
+    }
   });
   return [...alvos.values()];
 }
@@ -672,9 +673,11 @@ exports.atualizarResumoDepositosPorAtendimento = onValueWritten(
 exports.atualizarResumoDepositosPorDeposito = onValueWritten(
   "/depositos/{usuario}/{depositoId}",
   async (event) => {
+    if (event.params.depositoId === "resumos_mensais") return;
+
     const before = event.data.before.exists() ? event.data.before.val() : null;
     const after = event.data.after.exists() ? event.data.after.val() : null;
-    const alvos = obterAlvosDeposito(event.params.usuario, before, after);
+    const alvos = obterAlvosDeposito(before, after);
     await recalcularAlvosDepositos(alvos, "deposito");
   },
 );

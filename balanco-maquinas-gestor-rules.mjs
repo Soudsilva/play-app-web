@@ -15,6 +15,7 @@ export function normalizarTipoMovimentacaoMaquina(movimento) {
         && origem === 'manutencao'
         && categoria === 'maquina'
         && quantidade < 0;
+    if (tipo === 'cadastro_cliente_adicao') return 'cadastro_cliente';
     return ehAdicaoLegadaEmManutencao ? 'manutencao_adicao' : tipo;
 }
 
