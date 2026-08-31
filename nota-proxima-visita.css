@@ -1,0 +1,192 @@
+.nota-proxima-visita {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(250, 204, 21, 0.75);
+    background: rgba(113, 63, 18, 0.42);
+    color: #ffffff;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.nota-proxima-visita.nota-vazia[hidden] {
+    display: none;
+}
+
+.btn-nota-proxima-icone {
+    flex: 0 0 42px;
+    width: 42px;
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid rgba(148, 163, 184, 0.75);
+    border-radius: 9px;
+    background: rgba(51, 65, 85, 0.72);
+    color: #e2e8f0;
+    cursor: pointer;
+}
+
+.btn-nota-proxima-icone svg {
+    width: 21px;
+    height: 21px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.btn-nota-proxima-icone.tem-nota {
+    border-color: #38bdf8;
+    background: rgba(7, 89, 133, 0.75);
+    color: #bae6fd;
+}
+
+.btn-nota-proxima-icone:disabled {
+    opacity: 0.58;
+    cursor: default;
+}
+
+.nota-proxima-visita.pendente {
+    border-width: 2px;
+    background: #713f12;
+}
+
+.nota-proxima-visita.agendada {
+    border-color: rgba(56, 189, 248, 0.75);
+    background: rgba(7, 89, 133, 0.4);
+}
+
+.nota-proxima-titulo {
+    color: #fde047;
+    font-size: 14px;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 7px;
+}
+
+.nota-proxima-visita.agendada .nota-proxima-titulo {
+    color: #7dd3fc;
+}
+
+.nota-proxima-texto {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.35;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.nota-proxima-meta {
+    margin-top: 7px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    text-align: center;
+}
+
+.nota-proxima-acoes,
+.nota-proxima-form-acoes {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 9px;
+}
+
+.nota-proxima-concluir,
+.nota-proxima-form-acoes button {
+    min-height: 38px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid #facc15;
+    background: #854d0e;
+    color: #ffffff;
+    font: 700 14px Arial, sans-serif;
+    cursor: pointer;
+}
+
+.nota-proxima-concluir {
+    border-color: #4ade80;
+    background: #166534;
+}
+
+.nota-proxima-concluir span {
+    font-size: 17px;
+}
+
+.nota-proxima-visita button:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.nota-proxima-form {
+    display: grid;
+    gap: 8px;
+}
+
+.nota-proxima-form label {
+    display: block;
+    width: 100%;
+    color: #fde047;
+    font-size: 14px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.nota-proxima-form textarea {
+    width: 100%;
+    min-height: 82px;
+    box-sizing: border-box;
+    resize: vertical;
+    border: 1px solid #facc15;
+    border-radius: 9px;
+    background: #111827;
+    color: #ffffff;
+    padding: 10px;
+    font: 15px Arial, sans-serif;
+    line-height: 1.35;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.nota-proxima-form-acoes button:first-child {
+    border-color: #94a3b8;
+    background: #334155;
+}
+
+.nota-proxima-form-acoes button {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nota-proxima-form-acoes svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.nota-proxima-form-acoes .nota-proxima-salvar {
+    border-color: #4ade80;
+    background: #166534;
+}
+
+.nota-proxima-form-acoes .nota-proxima-salvar.carregando svg {
+    animation: nota-proxima-pulso 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes nota-proxima-pulso {
+    from { opacity: 0.35; }
+    to { opacity: 1; }
+}

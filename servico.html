@@ -4,6 +4,7 @@
     <script src="/pwa-guard.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./nota-proxima-visita.css">
     <title>Serviços</title>
     <style>
         * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
@@ -925,6 +926,10 @@
         confirmarLigacaoRecebidaServico,
         solicitarLigacaoServico
     } from './solicitacao-ligacao-service.js';
+    import {
+        instalarNotasProximaVisita,
+        montarNotaProximaVisitaHtml
+    } from './nota-proxima-visita-ui.js';
 
     let _clientes    = [];
     let _manutencoes = [];
@@ -1296,6 +1301,24 @@
         return chave ? _manutencoes.find(item => String(item?.firebaseUrl || '').trim() === chave) || null : null;
     }
 
+    function obterClienteServicoPorReferencia(clienteResumo, manutencao) {
+        const ids = [
+            clienteResumo?.id,
+            clienteResumo?.firebaseUrl,
+            manutencao?.clienteId,
+            manutencao?.clienteFirebaseUrl
+        ].map(valor => String(valor || '').trim()).filter(Boolean);
+
+        for (const id of ids) {
+            const cliente = _clientes.find(item => String(item?.firebaseUrl || '').trim() === id);
+            if (cliente) return cliente;
+        }
+
+        const numero = String(clienteResumo?.numero || manutencao?.clienteNumero || '').replace(/\D/g, '');
+        if (!numero) return null;
+        return _clientes.find(item => String(item?.numero || '').replace(/\D/g, '') === numero) || null;
+    }
+
     function obterEventosManutencaoPorAtendimentos() {
         const eventosPorManutencao = new Map();
 
@@ -1322,6 +1345,7 @@
             const responsavel = String(atendimento?.atendente || '').trim() || '—';
             const dataAtendimento = String(atendimento?.data || '').trim();
             const cliente = atendimento?.cliente || {};
+            const clienteBanco = obterClienteServicoPorReferencia(cliente, manutencaoBanco);
             const manutencaoFonte = {
                 ...manutencaoBanco,
                 ...manutencaoResumo,
@@ -1345,6 +1369,7 @@
                 data: dataEvento,
                 id: manutencaoId,
                 atendimentoId: atendimento.firebaseUrl || '',
+                clienteId: clienteBanco?.firebaseUrl || '',
                 clienteNome: cliente.nome || manutencaoBanco.clienteNome || '—',
                 clienteNumero: cliente.numero || manutencaoBanco.clienteNumero || '',
                 clienteRota: cliente.rota || manutencaoBanco.clienteRota || '—',
@@ -2136,6 +2161,18 @@
         return { html: `${endCadastroHtml}${endMaquinaHtml}${btnRotaHtml}`, temEndereco: Boolean(endCadastroHtml || endMaquinaHtml) };
     }
 
+    function montarNotaProximaVisitaServico(ev) {
+        const clienteId = String(ev?.clienteId || '').trim();
+        const atendimentoId = String(ev?.atendimentoId || '').trim();
+        if (!clienteId || !atendimentoId) return '';
+        const cliente = _clientes.find(item => String(item?.firebaseUrl || '').trim() === clienteId) || null;
+        return montarNotaProximaVisitaHtml({
+            cliente,
+            atendimentoId,
+            atendimentoData: ev?.data
+        });
+    }
+
     function cardPixManutencao(ev, pendente) {
         const apenasRetirada = ev.pixItens.every(item => item.tipo === 'retirada');
         const apenasAdicao = ev.pixItens.every(item => item.tipo === 'adicao');
@@ -2162,6 +2199,7 @@
                     <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
                     ${rodape}
                 </div>
+                ${montarNotaProximaVisitaServico(ev)}
             </div>`;
     }
 
@@ -2225,6 +2263,7 @@
                 <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
                 ${rodape}
             </div>
+            ${montarNotaProximaVisitaServico(ev)}
         </div>`;
     }
 
@@ -2285,6 +2324,7 @@
                 <span class="card-data">&#128336; ${formatarData(ev.data)}</span>
                 ${rodape}
             </div>
+            ${montarNotaProximaVisitaServico(ev)}
         </div>`;
     }
 
@@ -2822,6 +2862,14 @@
     verificarAutenticacao();
     window.sair = fazerLogout;
     _nomeUsuario = String(localStorage.getItem('usuarioLogado') || '').trim();
+
+    instalarNotasProximaVisita({
+        container: document.getElementById('lista'),
+        obterCliente: (clienteId) => _clientes.find(item => String(item?.firebaseUrl || '').trim() === String(clienteId || '').trim()) || null,
+        atualizarCliente: (clienteId, patch) => atualizarClienteLocalServico(clienteId, patch),
+        renderizar: () => renderizar(),
+        obterGestor: () => _nomeUsuario || 'Gestor'
+    });
 
     dbEscutarClientes(lista => {
         _clientes = lista;

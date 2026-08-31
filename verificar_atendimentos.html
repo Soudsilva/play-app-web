@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verificar Atendimentos</title>
+    <link rel="stylesheet" href="./nota-proxima-visita.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1265,6 +1266,11 @@
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
     import { dbEscutarAtendimentos, dbEscutarClientes, dbSalvarAtendimento, dbContestarAtendimento, dbRemoverContestacao, dbBuscarProdutosDoAtendimento } from './database.js';
+    import {
+        instalarNotasProximaVisita,
+        montarBotaoNotaProximaVisitaHtml,
+        montarNotaProximaVisitaHtml
+    } from './nota-proxima-visita-ui.js';
 
     /* ── ESTADO ── */
     let todosAtendimentos = [];
@@ -1422,6 +1428,17 @@
     function gestorLogado() {
         return String(localStorage.getItem('usuarioLogado') || '').trim() || 'Gestor';
     }
+
+    instalarNotasProximaVisita({
+        container: document.getElementById('listaContainer'),
+        obterCliente: (clienteId) => clientesPorId.get(String(clienteId || '').trim()) || null,
+        atualizarCliente: (clienteId, patch) => {
+            const cliente = clientesPorId.get(String(clienteId || '').trim());
+            if (cliente) Object.assign(cliente, patch || {});
+        },
+        renderizar: () => renderizarLista(),
+        obterGestor: () => gestorLogado()
+    });
 
     function normalizarUsuario(valor) {
         return String(valor || '')
@@ -1986,6 +2003,14 @@
         /* -- RODAPÉ -- */
         const dentroDoPrazo = confirmado && confirmacaoDentroDoPrazo(a);
         const podeCancelar = confirmado && podeCancelarConfirmacao(a);
+        const clienteNota = obterClienteCompletoDoAtendimento(a);
+        const dadosNotaProximaVisita = {
+            cliente: clienteNota,
+            atendimentoId: id,
+            atendimentoData: a.data
+        };
+        const botaoNotaProximaVisitaHTML = montarBotaoNotaProximaVisitaHtml(dadosNotaProximaVisita);
+        const notaProximaVisitaHTML = montarNotaProximaVisitaHtml(dadosNotaProximaVisita);
 
         let rodapeHTML = confirmado
             ? `<div class="section">
@@ -2025,6 +2050,7 @@
                 <div class="validacao-chip" data-validacao-status="${escAttr(id)}">${resumoValidacao.total === 0 ? 'Nenhuma foto para revisar' : `Fotos revisadas ${resumoValidacao.concluidas}/${resumoValidacao.total}`}</div>
                 ${contestacaoHTML}
                 <div class="rodape-acoes">
+                    ${botaoNotaProximaVisitaHTML}
                     <button class="btn-contestar${jaContestado ? ' contestado' : ''}" data-contestar-id="${escAttr(id)}">${btnContestarLabel}</button>
                     <button class="${btnConfirmarClasse}" data-confirmar-id="${escAttr(id)}" data-confirmar-nome="${escAttr(a.cliente?.nome || '')}" ${btnConfirmarDisabled ? 'disabled' : ''} style="flex:1">
                         ${btnConfirmarTexto}
@@ -2063,6 +2089,7 @@
                 </div>
 
                 ${rodapeHTML}
+                ${notaProximaVisitaHTML}
             </div>
         </div>`;
     }
