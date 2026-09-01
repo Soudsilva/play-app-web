@@ -1007,6 +1007,7 @@
     verificarAutenticacao();
     import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, dbLerPixEmPosse, dbSalvarHistoricoBalanco, dbEscutarMesesComMovimentacaoParaFiltro, dbEscutarHistoricoBalancoDoUsuarioPorMes, dbMarcarMesSemMovimentacaoParaFiltro, dbEscutarPosseItensUsuario, dbEscutarPixEmPosse, dbExcluirHistoricoBalanco, dbRecalcularRemuneracoes, dbEscutarClientes, dbEscutarTodosPixEmPosse } from './database.js';
     import { dbConsumirSaldosTestadosSaida, dbReverterSaldosTestadosSaida } from './database-producao-equipamentos.js';
+    import { normalizarNumeroPix } from './pix-posse-rules.mjs';
 
     let listaGlobal = [];
     let historicoGlobal = [];
@@ -1646,7 +1647,7 @@
             return cliente.equipDetalhes.map((item, index) => ({
                 rowId: String(item?.rowId || `eq_${index + 1}`),
                 nome: String(item?.nome || '').trim(),
-                pix: String(item?.pix || '').trim(),
+                pix: normalizarNumeroPix(item?.pix),
                 manutencaoPendente: String(item?.manutencaoPendente || '').trim(),
                 aguardandoConfirmacao: item?.aguardandoConfirmacao === true
             }));
@@ -1665,12 +1666,12 @@
             let pix = '';
             const matchPixLegado = trecho.match(/\s*\[Pix:\s*([^\]]+)\]\s*$/i);
             if (matchPixLegado) {
-                pix = String(matchPixLegado[1] || '').trim();
+                pix = normalizarNumeroPix(matchPixLegado[1]);
                 trecho = trecho.replace(/\s*\[Pix:\s*([^\]]+)\]\s*$/i, '').trim();
             } else {
                 const matchPixTexto = trecho.match(/\s+Pix\s+([0-9]+)\s*$/i);
                 if (matchPixTexto) {
-                    pix = String(matchPixTexto[1] || '').trim();
+                    pix = normalizarNumeroPix(matchPixTexto[1]);
                     trecho = trecho.replace(/\s+Pix\s+[0-9]+\s*$/i, '').trim();
                 }
             }
@@ -1689,7 +1690,7 @@
         const lista = [];
         clientesGlobal.forEach(cliente => {
             obterEquipamentosDetalhadosClientePix(cliente).forEach(equip => {
-                const pixAtual = String(equip?.pix || '').trim();
+                const pixAtual = normalizarNumeroPix(equip?.pix);
                 if (!pixAtual) return;
 
                 let situacao = 'instalado';
@@ -1715,7 +1716,7 @@
             const situacao = String(item?.situacao || '').trim().toLowerCase();
             const pendenciaTipo = String(item?.pendenciaTipo || '').trim().toLowerCase();
             if (situacao === 'instalado' || (situacao === 'em_analise' && pendenciaTipo === 'adicao')) {
-                const pix = String(item?.numero_pix || '').trim();
+                const pix = normalizarNumeroPix(item?.numero_pix);
                 if (pix) emUso.add(pix);
             }
         });
@@ -1723,23 +1724,23 @@
     }
 
     function obterResponsavelPixEmPosse(numeroPix) {
-        return pixEmPossePorNumero.get(String(numeroPix || '').trim()) || '';
+        return pixEmPossePorNumero.get(normalizarNumeroPix(numeroPix)) || '';
     }
 
     function pixJaEstaEmPosse(numeroPix) {
-        const pix = String(numeroPix || '').trim();
+        const pix = normalizarNumeroPix(numeroPix);
         return !!pix && pixEmPosseGlobal.has(pix);
     }
 
     function registrarPixEmPosseLocal(numeroPix, responsavel) {
-        const pix = String(numeroPix || '').trim();
+        const pix = normalizarNumeroPix(numeroPix);
         if (!pix) return;
         pixEmPosseGlobal.add(pix);
         pixEmPossePorNumero.set(pix, String(responsavel || '').trim());
     }
 
     function removerPixEmPosseLocal(numeroPix) {
-        const pix = String(numeroPix || '').trim();
+        const pix = normalizarNumeroPix(numeroPix);
         if (!pix) return;
         pixEmPosseGlobal.delete(pix);
         pixEmPossePorNumero.delete(pix);
@@ -1780,8 +1781,9 @@
     window.validarPixPrincipal = async function() {
         const input = document.getElementById('pixPrincipalNumero');
         const responsavel = String(document.getElementById('responsavel')?.value || '').trim();
-        const valor = String(input?.value || '').trim();
+        const valor = normalizarNumeroPix(input?.value);
         if (!valor) return;
+        input.value = valor;
         if (pixEmUsoSet().has(valor)) {
             await window.playAlert(`Pix ${valor} já está instalado em outro equipamento.`);
             input.value = '';
@@ -2636,7 +2638,7 @@
         if (salvandoMovimentacao) return;
         const inputPix = document.getElementById('pixPrincipalNumero');
         const selectResponsavel = document.getElementById('responsavel');
-        const numeroPix = String(inputPix?.value || '').trim();
+        const numeroPix = normalizarNumeroPix(inputPix?.value);
         const responsavel = String(selectResponsavel?.value || '').trim();
         const registradoPor = String(localStorage.getItem('usuarioLogado') || '').trim();
 
@@ -2645,6 +2647,7 @@
             inputPix?.focus();
             return;
         }
+        inputPix.value = numeroPix;
         if (!responsavel) {
             await window.playAlert('Selecione o responsável.');
             selectResponsavel?.focus();
@@ -2687,7 +2690,7 @@
 
             if (!responsavelEhFornecedor) {
                 const pixDoResponsavel = await dbLerPixEmPosse(responsavel);
-                const usuarioTemPix = pixDoResponsavel.some(item => String(item?.numero_pix || '').trim() === numeroPix);
+                const usuarioTemPix = pixDoResponsavel.some(item => normalizarNumeroPix(item?.numero_pix) === numeroPix);
                 if (!usuarioTemPix) {
                     await window.playAlert('Usuário não tem esse Pix com ele para dar entrada.');
                     inputPix.focus();
@@ -2847,7 +2850,7 @@
     function obterPixEstoqueDisponiveis() {
         return Array.from(pixEmPossePorNumero.entries())
             .filter(([, responsavel]) => String(responsavel || '').trim() === RESPONSAVEL_PIX_ESTOQUE)
-            .map(([numero]) => ({ numero_pix: String(numero || '').trim() }))
+            .map(([numero]) => ({ numero_pix: normalizarNumeroPix(numero) }))
             .filter(item => item.numero_pix)
             .sort((a, b) => {
                 const na = /^\d+$/.test(a.numero_pix) ? Number(a.numero_pix) : Number.MAX_SAFE_INTEGER;

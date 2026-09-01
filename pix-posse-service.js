@@ -3,6 +3,7 @@ import { db } from './firebase-app.js';
 import {
     calcularPixAdicionados,
     formatarErroPixSemPosse,
+    listarVariantesNumeroPix,
     normalizarNumeroPix
 } from './pix-posse-rules.mjs';
 
@@ -48,9 +49,16 @@ export async function validarPixParaCadastrarNoCliente({
     const indisponiveis = [];
     try {
         for (const numeroPix of pixAdicionados) {
-            const chavePix = normalizarChaveFirebase(numeroPix);
-            const snapshot = await get(ref(db, `${PIX_EM_POSSE_ROOT}/${chaveUsuario}/${chavePix}`));
-            if (!snapshot.exists() || !registroCorrespondeAoPix(snapshot.val(), numeroPix)) {
+            let encontrado = false;
+            for (const variante of listarVariantesNumeroPix(numeroPix)) {
+                const chavePix = normalizarChaveFirebase(variante);
+                const snapshot = await get(ref(db, `${PIX_EM_POSSE_ROOT}/${chaveUsuario}/${chavePix}`));
+                if (snapshot.exists() && registroCorrespondeAoPix(snapshot.val(), numeroPix)) {
+                    encontrado = true;
+                    break;
+                }
+            }
+            if (!encontrado) {
                 indisponiveis.push(numeroPix);
             }
         }

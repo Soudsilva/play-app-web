@@ -26,6 +26,7 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gsta
 import { salvarCacheClientes, lerCacheClientes, lerCacheClientesCompleto, salvarCacheEstoque, lerCacheEstoque } from './offline-sync.js';
 import { app, db, storage, firebaseConfig } from './firebase-app.js';
 import { movimentoExigeSaldoDisponivelMaquina } from './maquina-posse-rules.mjs';
+import { listarVariantesNumeroPix, normalizarNumeroPix as normalizarNumeroPixPadrao } from './pix-posse-rules.mjs';
 
 // A inicialização principal fica em firebase-app.js. Esta reexportação mantém
 // compatibilidade com as telas legadas que ainda importam app de database.js.
@@ -1972,9 +1973,9 @@ function _normalizarEquipDetalhesCliente(cliente) {
                 nome: String(item?.nome || "").trim(),
                 qtd: String(item?.qtd || item?.quantidade || "1").trim() || "1",
                 categoria: String(item?.categoria || "maquina").trim() || "maquina",
-                pix: String(item?.pix || "").trim(),
+                pix: _normalizarNumeroPix(item?.pix),
                 contador: String(item?.contador || "").trim(),
-                pixRetiradoPendente: String(item?.pixRetiradoPendente || "").trim(),
+                pixRetiradoPendente: _normalizarNumeroPix(item?.pixRetiradoPendente),
                 contadorRetiradoPendente: String(item?.contadorRetiradoPendente || "").trim(),
                 retiradaPendenteEm: item?.retiradaPendenteEm || "",
                 retiradaPendentePor: item?.retiradaPendentePor || "",
@@ -2004,13 +2005,13 @@ function _normalizarEquipDetalhesCliente(cliente) {
             const regexPixLegado = /\s*\[Pix:\s*([^\]]+)\]\s*$/i;
             const matchPixLegado = nome.match(regexPixLegado);
             if (matchPixLegado) {
-                pix = String(matchPixLegado[1] || "").trim();
+                pix = _normalizarNumeroPix(matchPixLegado[1]);
                 nome = nome.replace(regexPixLegado, "").trim();
             } else {
                 const regexPixTexto = /\s+Pix\s+([0-9]+)\s*$/i;
                 const matchPixTexto = nome.match(regexPixTexto);
                 if (matchPixTexto) {
-                    pix = String(matchPixTexto[1] || "").trim();
+                    pix = _normalizarNumeroPix(matchPixTexto[1]);
                     nome = nome.replace(regexPixTexto, "").trim();
                 }
             }
@@ -2028,7 +2029,7 @@ function _normalizarEquipDetalhesCliente(cliente) {
                 nome: String(nome || "").trim(),
                 qtd: String(qtd || "1").trim() || "1",
                 categoria: "maquina",
-                pix: String(pix || "").trim(),
+                pix: _normalizarNumeroPix(pix),
                 contador: "",
                 pixRetiradoPendente: "",
                 contadorRetiradoPendente: "",
@@ -2049,7 +2050,7 @@ function _serializarEquipTextoCliente(equipDetalhes) {
         .map(item => {
             const nome = String(item?.nome || "").trim();
             const qtd = String(item?.qtd || "1").trim() || "1";
-            const pix = String(item?.pix || "").trim();
+            const pix = _normalizarNumeroPix(item?.pix);
             const base = `${nome}${qtd !== '1' ? ` (${qtd})` : ''}`;
             return pix ? `${base} [Pix: ${pix}]` : base;
         })
@@ -2097,7 +2098,7 @@ export async function dbPadronizarEquipamentosClientes() {
 }
 
 function _normalizarNumeroPix(valor) {
-    return String(valor || "").trim();
+    return normalizarNumeroPixPadrao(valor);
 }
 
 function _obterTimestampRegistroPix(registro) {
@@ -2297,7 +2298,7 @@ export async function dbAplicarPendenciasManutencaoCliente(firebaseUrlCliente, p
                 nome,
                 qtd: String(item?.qtd || "1").trim() || "1",
                 categoria: String(item?.categoria || "maquina").trim() || "maquina",
-                pix: String(item?.pix || "").trim(),
+                pix: _normalizarNumeroPix(item?.pix),
                 contador: String(item?.contador || "").trim(),
                 tecnico: String(item?.tecnico || "").trim(),
                 manutencaoPendente: 'adicao',
@@ -2316,13 +2317,13 @@ export async function dbAplicarPendenciasManutencaoCliente(firebaseUrlCliente, p
                 const rowIdAlvo = String(item?.rowId || "").trim();
                 if (rowIdAlvo && String(equip?.rowId || "").trim() === rowIdAlvo) return true;
                 if (String(equip?.nome || "").trim() !== nome) return false;
-                const pixAlvo = String(item?.pix || "").trim();
-                if (pixAlvo && String(equip?.pix || "").trim() !== pixAlvo) return false;
+                const pixAlvo = _normalizarNumeroPix(item?.pix);
+                if (pixAlvo && _normalizarNumeroPix(equip?.pix) !== pixAlvo) return false;
                 return true;
             });
 
             if (!alvo) return;
-            const pixAtual = String(alvo?.pix || "").trim();
+            const pixAtual = _normalizarNumeroPix(alvo?.pix);
             const preservarContador = Object.prototype.hasOwnProperty.call(item || {}, "retirou_trocou_contador")
                 && item?.retirou_trocou_contador === false;
             if (pixAtual && !String(alvo?.pixRetiradoPendente || "").trim()) {
@@ -2377,8 +2378,8 @@ export async function dbReverterEncerramentoCliente(firebaseUrlCliente, equipame
         equipamentosRetiradosDetalhes.forEach(retirado => {
             const alvo = equipamentos.find(e =>
                 String(e?.nome || '').trim() === String(retirado?.nome || '').trim() &&
-                (String(retirado?.pix || '').trim() === '' ||
-                 String(e?.pixRetiradoPendente || '').trim() === String(retirado?.pix || '').trim())
+                (_normalizarNumeroPix(retirado?.pix) === '' ||
+                 _normalizarNumeroPix(e?.pixRetiradoPendente) === _normalizarNumeroPix(retirado?.pix))
             );
             if (!alvo) return;
             if (alvo.pixRetiradoPendente) alvo.pix = alvo.pixRetiradoPendente;
@@ -2594,15 +2595,15 @@ export async function dbConfirmarGestorManutencao(id, nomeGestor) {
                             rowId: String(i?.rowId || '').trim(),
                             itemId: String(i?.itemId || '').trim(),
                             nome: String(i?.nome || '').trim(),
-                            pix: String(i?.pix || '').trim()
+                            pix: _normalizarNumeroPix(i?.pix)
                         }))
                         .filter(i => i.rowId || i.itemId || i.nome || i.pix);
                     equipamentos = equipamentos.filter(equip => {
                         const equipRowId = String(equip?.rowId || '').trim();
                         const equipItemId = String(equip?.itemId || '').trim();
                         const equipNome = String(equip?.nome || '').trim();
-                        const equipPix = String(equip?.pix || '').trim();
-                        const equipPixPendente = String(equip?.pixRetiradoPendente || '').trim();
+                        const equipPix = _normalizarNumeroPix(equip?.pix);
+                        const equipPixPendente = _normalizarNumeroPix(equip?.pixRetiradoPendente);
                         const retiradaPendente = equip?.manutencaoPendente === 'retirada' || equip?.aguardandoConfirmacao === true;
 
                         const deveRemover = retiradosNormalizados.some(item => {
@@ -3390,21 +3391,25 @@ export function dbEscutarRemuneracaoAcumuladaProdutoUsuario(nomeUsuario, callbac
     });
 }
 
-function _normalizarChavePix(numeroPix) {
+function _sanitizarChavePix(numeroPix) {
     return String(numeroPix || '').trim().replace(/[.#$/[\]]/g, '_');
+}
+
+function _normalizarChavePix(numeroPix) {
+    return _sanitizarChavePix(_normalizarNumeroPix(numeroPix));
 }
 
 export async function dbAdicionarPixEmPosse(nomeUsuario, numeroPix, dadosExtras = {}) {
     try {
         const chaveUsuario = _normalizarChaveUsuario(nomeUsuario);
-        const pixNumero = String(numeroPix || '').trim();
+        const pixNumero = _normalizarNumeroPix(numeroPix);
         const chavePix = _normalizarChavePix(pixNumero);
         if (!chaveUsuario || !pixNumero || !chavePix) return;
 
         await set(ref(db, `pix_em_posse/${chaveUsuario}/${chavePix}`), {
-            numero_pix: pixNumero,
             atualizadoEm: new Date().toISOString(),
-            ...dadosExtras
+            ...dadosExtras,
+            numero_pix: pixNumero
         });
     } catch (error) {
         console.error("ERRO AO ADICIONAR PIX EM POSSE:", error);
@@ -3415,14 +3420,31 @@ export async function dbAdicionarPixEmPosse(nomeUsuario, numeroPix, dadosExtras 
 export async function dbRemoverPixEmPosse(nomeUsuario, numeroPix) {
     try {
         const chaveUsuario = _normalizarChaveUsuario(nomeUsuario);
-        const chavePix = _normalizarChavePix(numeroPix);
-        if (!chaveUsuario || !chavePix) return;
+        const chavesPix = listarVariantesNumeroPix(numeroPix)
+            .map(_sanitizarChavePix)
+            .filter(Boolean);
+        if (!chaveUsuario || chavesPix.length === 0) return;
 
-        await remove(ref(db, `pix_em_posse/${chaveUsuario}/${chavePix}`));
+        const remocoes = Object.fromEntries(chavesPix.map(chavePix => [chavePix, null]));
+        await update(ref(db, `pix_em_posse/${chaveUsuario}`), remocoes);
     } catch (error) {
         console.error("ERRO AO REMOVER PIX EM POSSE:", error);
         throw error;
     }
+}
+
+function _listarRegistrosPixEmPosse(data) {
+    const porNumero = new Map();
+    Object.entries(data || {}).forEach(([key, registro]) => {
+        const numeroPix = _normalizarNumeroPix(registro?.numero_pix || key);
+        if (!numeroPix) return;
+        porNumero.set(numeroPix, {
+            firebaseUrl: key,
+            ...registro,
+            numero_pix: numeroPix
+        });
+    });
+    return [...porNumero.values()];
 }
 
 export async function dbLerPixEmPosse(nomeUsuario) {
@@ -3434,7 +3456,7 @@ export async function dbLerPixEmPosse(nomeUsuario) {
         if (!snap.exists()) return [];
 
         const data = snap.val() || {};
-        return Object.keys(data).map(key => ({ firebaseUrl: key, ...data[key] }));
+        return _listarRegistrosPixEmPosse(data);
     } catch (error) {
         console.error("ERRO AO LER PIX EM POSSE:", error);
         return [];
@@ -3450,7 +3472,7 @@ export function dbEscutarPixEmPosse(nomeUsuario, callback) {
 
     return onValue(ref(db, `pix_em_posse/${chaveUsuario}`), (snapshot) => {
         const data = snapshot.val() || {};
-        const lista = Object.keys(data).map(key => ({ firebaseUrl: key, ...data[key] }));
+        const lista = _listarRegistrosPixEmPosse(data);
         callback(lista);
     });
 }
@@ -3462,8 +3484,8 @@ export function dbEscutarTodosPixEmPosse(callback) {
         const porNumero = new Map();
         Object.entries(data).forEach(([usuarioKey, usuario]) => {
             if (usuario && typeof usuario === 'object') {
-                Object.values(usuario).forEach(registro => {
-                    const pix = String(registro?.numero_pix || '').trim();
+                Object.entries(usuario).forEach(([pixKey, registro]) => {
+                    const pix = _normalizarNumeroPix(registro?.numero_pix || pixKey);
                     if (!pix) return;
                     numeros.add(pix);
                     porNumero.set(pix, String(registro?.responsavel || registro?.retiradoPor || usuarioKey || '').trim());

@@ -590,6 +590,7 @@
     import { dbSalvarCliente, dbSalvarManutencao, dbListarClientes, dbListarManutencoes, dbEscutarClientes, dbEscutarEstoque, dbEscutarColaboradores, dbEscutarSessaoRotas, dbSincronizarItensCadastroClienteNoHistorico, dbRemoverPixEmPosse, storageSalvarFoto, storageSalvarFotoComThumb } from './database.js';
     import { validarSaldoParaAdicionarMaquinas } from './maquina-posse-service.js';
     import { validarPixParaCadastrarNoCliente } from './pix-posse-service.js';
+    import { normalizarNumeroPix } from './pix-posse-rules.mjs';
 
     let maquinasDisponiveis = [];
     let produtosDisponiveis = [];
@@ -985,7 +986,7 @@
             rowId: String(grupo.dataset.equipRowId || ""),
             nome: grupo.querySelector('.equip-select')?.value.trim() || "",
             qtd: grupo.querySelector('.qtd-input')?.value.trim() || "",
-            pix: grupo.querySelector('.pix-input')?.value.trim() || "",
+            pix: normalizarNumeroPix(grupo.querySelector('.pix-input')?.value),
             contador: grupo.querySelector('.contador-input')?.value.trim() || ""
         }));
     }
@@ -1146,7 +1147,7 @@
                 rowId: criarRowIdEquipamento(item?.rowId || `equip_${index + 1}`),
                 nome: String(item?.nome || "").trim(),
                 qtd: String(item?.qtd || item?.quantidade || "1").trim() || "1",
-                pix: String(item?.pix || "").trim(),
+                pix: normalizarNumeroPix(item?.pix),
                 contador: String(item?.contador || "").trim()
             }));
         }
@@ -1178,7 +1179,7 @@
                     rowId: criarRowIdEquipamento(`equip_${index + 1}`),
                     nome: nome.trim(),
                     qtd: String(qtd || "1").trim() || "1",
-                    pix: String(pix || "").trim(),
+                    pix: normalizarNumeroPix(pix),
                     contador: ""
                 };
             })
@@ -1782,18 +1783,27 @@
             .split(", ")
             .map(item => {
                 const matchPix = item.match(/\[Pix:\s*([^\]]+)\]/i);
-                return matchPix ? String(matchPix[1]).trim() : "";
+                return matchPix ? normalizarNumeroPix(matchPix[1]) : "";
             })
             .filter(Boolean);
     }
 
+    function extrairPixDoCliente(cliente) {
+        if (Array.isArray(cliente?.equipDetalhes) && cliente.equipDetalhes.length > 0) {
+            return cliente.equipDetalhes
+                .map(item => normalizarNumeroPix(item?.pix))
+                .filter(Boolean);
+        }
+        return extrairPixDoEquipamento(cliente?.equip);
+    }
+
     function encontrarConflitoPix(pix, inputAtual = null) {
-        const pixNormalizado = String(pix || "").trim();
+        const pixNormalizado = normalizarNumeroPix(pix);
         if (!pixNormalizado) return null;
 
         const pixJaDigitadosNaTela = Array.from(document.querySelectorAll('.pix-input'))
             .filter(input => input !== inputAtual)
-            .map(input => String(input.value || "").trim())
+            .map(input => normalizarNumeroPix(input.value))
             .filter(Boolean);
 
         if (pixJaDigitadosNaTela.includes(pixNormalizado)) {
@@ -1804,15 +1814,16 @@
             if (editId && cliente.firebaseUrl && cliente.firebaseUrl.includes(editId)) {
                 return false;
             }
-            return extrairPixDoEquipamento(cliente.equip).includes(pixNormalizado);
+            return extrairPixDoCliente(cliente).includes(pixNormalizado);
         }) || null;
     }
 
     function validarPixInput(input, exibirAlerta = true) {
         if (!input) return true;
 
-        const pix = String(input.value || "").trim();
+        const pix = normalizarNumeroPix(input.value);
         if (!pix) return !input.dataset.pixRemovidoPorDuplicidade;
+        input.value = pix;
 
         const conflito = encontrarConflitoPix(pix, input);
         if (!conflito) {

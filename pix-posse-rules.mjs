@@ -1,5 +1,22 @@
 export function normalizarNumeroPix(valor) {
-    return String(valor || '').trim();
+    const texto = String(valor ?? '').trim();
+    if (!/^\d+$/.test(texto)) return texto;
+    return texto.replace(/^0+(?=\d)/, '');
+}
+
+export function listarVariantesNumeroPix(valor, tamanhoMaximo = 3) {
+    const original = String(valor ?? '').trim();
+    const normalizado = normalizarNumeroPix(original);
+    const variantes = new Set([original, normalizado].filter(Boolean));
+
+    if (/^\d+$/.test(normalizado)) {
+        const limite = Math.max(normalizado.length, Number(tamanhoMaximo) || 0);
+        for (let tamanho = normalizado.length; tamanho <= limite; tamanho += 1) {
+            variantes.add(normalizado.padStart(tamanho, '0'));
+        }
+    }
+
+    return [...variantes];
 }
 
 export function listarPixUnicos(itens = []) {

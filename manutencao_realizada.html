@@ -1118,6 +1118,7 @@ verificarAutenticacao();
 import { dbSalvarManutencao, dbSalvarAtendimento, dbBuscarClientePorId, dbBuscarClientePorNumero, dbSalvarCliente, dbAplicarPendenciasManutencaoCliente, dbSincronizarCadastrosPixPorManutencao, dbEscutarClientes, dbListarClientes, dbEscutarEstoque, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, storageSalvarFotoComThumb, dbSalvarMovimentoFluxoCaixa, dbSincronizarItensManutencaoNoHistorico, dbSincronizarClienteRecuperacaoSessaoRotas } from './database.js';
 import { validarSaldoParaAdicionarMaquinas } from './maquina-posse-service.js';
 import { validarPixParaCadastrarNoCliente } from './pix-posse-service.js';
+import { normalizarNumeroPix } from './pix-posse-rules.mjs';
 
 // ════════════════════════════════════════════════
 // DADOS DA MANUTENÇÃO
@@ -1838,7 +1839,7 @@ async function carregarEquipamentosDoCliente() {
                         nome,
                         qtd: String(e?.qtd || '1').trim(),
                         categoria: String(e?.categoria || maquinaInfo?.categoria || 'maquina').trim() || 'maquina',
-                        pix: String(e?.pix || '').trim(),
+                        pix: normalizarNumeroPix(e?.pix),
                         contador: String(e?.contador || '').trim()
                     };
                 })
@@ -1860,7 +1861,7 @@ async function carregarEquipamentosDoCliente() {
                         nome,
                         qtd: '1',
                         categoria: String(maquinaInfo?.categoria || 'maquina').trim() || 'maquina',
-                        pix: matchPix ? String(matchPix[1] || '').trim() : '',
+                        pix: matchPix ? normalizarNumeroPix(matchPix[1]) : '',
                         contador: ''
                     };
                 })
@@ -2011,7 +2012,7 @@ async function exibirAlertaPadrao(texto) {
 function extrairPixDoEquipamentoCliente(cliente) {
     if (Array.isArray(cliente?.equipDetalhes) && cliente.equipDetalhes.length > 0) {
         return cliente.equipDetalhes
-            .map(item => String(item?.pix || '').trim())
+            .map(item => normalizarNumeroPix(item?.pix))
             .filter(Boolean);
     }
 
@@ -2021,7 +2022,7 @@ function extrairPixDoEquipamentoCliente(cliente) {
         .split(', ')
         .map((item) => {
             const matchPix = String(item || '').match(/\[Pix:\s*([^\]]+)\]/i);
-            return matchPix ? String(matchPix[1] || '').trim() : '';
+            return matchPix ? normalizarNumeroPix(matchPix[1]) : '';
         })
         .filter(Boolean);
 }
@@ -2042,12 +2043,12 @@ async function obterClientesParaValidacaoPix(forceRefresh = false) {
 }
 
 async function encontrarConflitoPixManutencao(pix, inputAtual = null, forceRefresh = false) {
-    const pixNormalizado = String(pix || '').trim();
+    const pixNormalizado = normalizarNumeroPix(pix);
     if (!pixNormalizado) return null;
 
     const pixJaDigitadosNaTela = Array.from(document.querySelectorAll('#containerEquipamentosAdicionados .equip-pix'))
         .filter(input => input !== inputAtual)
-        .map(input => String(input.value || '').trim())
+        .map(input => normalizarNumeroPix(input.value))
         .filter(Boolean);
 
     if (pixJaDigitadosNaTela.includes(pixNormalizado)) {
@@ -2063,8 +2064,9 @@ async function encontrarConflitoPixManutencao(pix, inputAtual = null, forceRefre
 async function validarPixEquipamentoInput(input, exibirAlerta = true, forceRefresh = false) {
     if (!input) return true;
 
-    const pix = String(input.value || '').trim();
+    const pix = normalizarNumeroPix(input.value);
     if (!pix) return true;
+    input.value = pix;
 
     const conflito = await encontrarConflitoPixManutencao(pix, input, forceRefresh);
     if (!conflito) return true;
@@ -2268,7 +2270,7 @@ function coletarLinhasEquipamentoAdicionadoComMeta() {
             index,
             nome: linha.querySelector('.equip-maquina')?.value.trim() || '',
             qtd: linha.querySelector('.equip-qtd')?.value.trim() || '',
-            pix: linha.querySelector('.equip-pix')?.value.trim() || '',
+            pix: normalizarNumeroPix(linha.querySelector('.equip-pix')?.value),
             contador: linha.querySelector('.equip-cont')?.value.trim() || '',
         }));
 
