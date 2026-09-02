@@ -196,6 +196,9 @@
 
         .card-acessivel {
             cursor: pointer;
+            background: #12306f;
+            border-color: #ffeb00;
+            transform: translateY(-1px);
             transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
         }
 
@@ -205,6 +208,37 @@
             border-color: #ffeb00;
             outline: none;
             transform: translateY(-1px);
+        }
+
+        .card-indisponivel {
+            cursor: default;
+        }
+
+        .card-indisponivel .card-rotulo {
+            color: rgba(255,255,255,0.5);
+        }
+
+        .card-acessivel .card-rotulo {
+            color: #8eb6f5;
+            background: linear-gradient(90deg, #82aef0 0%, #82aef0 42%, #ffffff 50%, #82aef0 58%, #82aef0 100%);
+            background-size: 200% 100%;
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: brilho-texto-avaliacao 2.6s linear infinite alternate;
+        }
+
+        @keyframes brilho-texto-avaliacao {
+            from { background-position: 100% 0; }
+            to { background-position: 0 0; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .card-acessivel .card-rotulo {
+                animation: none;
+                background: none;
+                -webkit-text-fill-color: currentColor;
+            }
         }
 
         .card-esquerda {
@@ -440,16 +474,20 @@
             const qtdTestada = Number.parseInt(saldosTestadosPorEquipamento.get(String(item.firebaseUrl))?.saldoExibido || 0, 10) || 0;
             const qtdATestar = Math.max(0, qtd - qtdTestada);
             const badgeClass = qtdATestar >= 100 ? 'card-qtd-badge grande' : 'card-qtd-badge';
-            const tag = podeVerificarProducao ? 'button' : 'div';
-            const atributosAcesso = podeVerificarProducao
+            const podeAvaliarItem = podeVerificarProducao && qtdATestar > 0;
+            const tag = podeAvaliarItem ? 'button' : 'div';
+            const atributosAcesso = podeAvaliarItem
                 ? `type="button" data-equipamento-id="${escaparHtml(item.firebaseUrl)}" aria-label="Avaliar ${escaparHtml(item.nome || 'máquina')}"`
                 : '';
+            const rotuloAvaliacao = podeVerificarProducao
+                ? `<span class="card-rotulo">${podeAvaliarItem ? 'Toque para avaliar' : 'Tudo ok por aqui'}</span>`
+                : '';
             return `
-            <${tag} class="card${podeVerificarProducao ? ' card-acessivel' : ''}" ${atributosAcesso}>
+            <${tag} class="card${podeAvaliarItem ? ' card-acessivel' : (podeVerificarProducao ? ' card-indisponivel' : '')}" ${atributosAcesso}>
                 <div class="card-esquerda">
                     <div class="card-info">
                         <span class="card-nome">${escaparHtml(item.nome || 'Máquina')}</span>
-                        ${podeVerificarProducao ? '<span class="card-rotulo">Toque para avaliar</span>' : ''}
+                        ${rotuloAvaliacao}
                     </div>
                 </div>
                 <div class="card-badges">

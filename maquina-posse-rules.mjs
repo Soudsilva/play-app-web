@@ -1,3 +1,5 @@
+import { expandirEquipamentosEmComponentes } from './maquina-composicao-rules.mjs';
+
 function normalizarTexto(valor) {
     return String(valor || '').trim().toLowerCase();
 }
@@ -13,7 +15,7 @@ function obterQuantidade(item) {
 
 export function consolidarQuantidadesMaquinas(itens) {
     const consolidadas = new Map();
-    (Array.isArray(itens) ? itens : []).forEach(item => {
+    expandirEquipamentosEmComponentes(itens).forEach(item => {
         if (normalizarTexto(item?.categoria) !== 'maquina') return;
         const itemChave = obterItemChave(item);
         const quantidade = obterQuantidade(item);
@@ -31,7 +33,7 @@ export function consolidarQuantidadesMaquinas(itens) {
 }
 
 export function listarMaquinasSemIdentificador(itens) {
-    return (Array.isArray(itens) ? itens : [])
+    return expandirEquipamentosEmComponentes(itens)
         .filter(item => normalizarTexto(item?.categoria) === 'maquina')
         .filter(item => obterQuantidade(item) > 0 && !obterItemChave(item))
         .map(item => String(item?.nome || item?.itemNome || 'Máquina').trim() || 'Máquina');

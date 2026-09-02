@@ -1509,6 +1509,7 @@ function montarIdentificacaoCliente(cliente) {
 function obterEquipamentosDetalhadosCliente(cliente) {
     if (Array.isArray(cliente?.equipDetalhes) && cliente.equipDetalhes.length > 0) {
         return cliente.equipDetalhes.map((item, index) => ({
+            ...item,
             rowId: String(item?.rowId || `eq_${index + 1}`),
             nome: String(item?.nome || '').trim(),
             qtd: String(item?.qtd || item?.quantidade || '1').trim() || '1',

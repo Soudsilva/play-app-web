@@ -1008,6 +1008,8 @@
     import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, dbLerPixEmPosse, dbSalvarHistoricoBalanco, dbEscutarMesesComMovimentacaoParaFiltro, dbEscutarHistoricoBalancoDoUsuarioPorMes, dbMarcarMesSemMovimentacaoParaFiltro, dbEscutarPosseItensUsuario, dbEscutarPixEmPosse, dbExcluirHistoricoBalanco, dbRecalcularRemuneracoes, dbEscutarClientes, dbEscutarTodosPixEmPosse } from './database.js';
     import { dbConsumirSaldosTestadosSaida, dbReverterSaldosTestadosSaida } from './database-producao-equipamentos.js';
     import { normalizarNumeroPix } from './pix-posse-rules.mjs';
+    import { criarRegistroMaquinaComposta, expandirEquipamentosEmComponentes, listarConfiguracoesMaquina, maquinaExigeComposicao } from './maquina-composicao-rules.mjs';
+    import { renderizarCartaoComposicao } from './maquina-composicao-ui.mjs';
 
     let listaGlobal = [];
     let historicoGlobal = [];
@@ -2440,7 +2442,47 @@
         });
     }
 
+    function renderizarComposicaoLinhaMovimentacao(linha) {
+        if (!linha) return;
+        const select = linha.querySelector('.input-mov-item');
+        const inputQtd = linha.querySelector('.input-mov-qtd');
+        const grupoCampos = linha.querySelector('.linha-movimentacao-campos');
+        const itemOrigem = listaGlobal.find(item => item.firebaseUrl === select?.value) || null;
+        const exigeComposicao = maquinaExigeComposicao(itemOrigem);
+
+        if (inputQtd) {
+            if (exigeComposicao) {
+                inputQtd.value = '1';
+                inputQtd.readOnly = true;
+                inputQtd.style.display = 'none';
+                inputQtd.dataset.quantidadeAutomatica = 'true';
+            } else {
+                if (inputQtd.dataset.quantidadeAutomatica === 'true') inputQtd.value = '';
+                inputQtd.readOnly = false;
+                inputQtd.style.display = '';
+                delete inputQtd.dataset.quantidadeAutomatica;
+            }
+        }
+        if (grupoCampos) grupoCampos.style.gridTemplateColumns = exigeComposicao ? '1fr' : '1fr 110px';
+
+        renderizarCartaoComposicao({
+            host: linha.querySelector('.maquina-composicao-host'),
+            itemOrigem,
+            estoque: listaGlobal,
+            codigoSelecionado: linha.dataset.codigoMontagem || '',
+            onSelecionar(configuracao) {
+                linha.dataset.codigoMontagem = configuracao.codigo;
+                renderizarComposicaoLinhaMovimentacao(linha);
+                normalizarLinhasMovimentacao();
+                adicionarLinhaMovimentacao();
+            }
+        });
+    }
+
     window.atualizarOpcoesMovimentacao = function(selectAlterado = null) {
+        if (selectAlterado?.closest) {
+            delete selectAlterado.closest('.linha-movimentacao')?.dataset.codigoMontagem;
+        }
         normalizarLinhasMovimentacao();
         const selects = document.querySelectorAll('#containerMovimentacaoItens .input-mov-item');
         const selecionados = Array.from(selects).map(select => select.value).filter(Boolean);
@@ -2459,6 +2501,7 @@
             select.innerHTML = opcoesHTML;
             select.value = valorAtual;
             atualizarPlaceholderQtdMovimentacao(select.closest('.linha-movimentacao'));
+            renderizarComposicaoLinhaMovimentacao(select.closest('.linha-movimentacao'));
         });
 
         mostrarSaldoAtual(selectAlterado);
@@ -2491,8 +2534,11 @@
         const linha = document.createElement('div');
         linha.className = 'linha-movimentacao';
         linha.innerHTML = `
-            <select class="input-mov-item" onchange="atualizarOpcoesMovimentacao(this)"></select>
-            <input type="text" inputmode="numeric" class="input-mov-qtd" placeholder="Qtd" onfocus="mostrarSaldoAtualDaLinha(this)" onclick="mostrarSaldoAtualDaLinha(this)" oninput="this.value = this.value.replace(/[^0-9]/g, ''); mostrarSaldoAtualDaLinha(this); adicionarLinhaMovimentacao(this)">
+            <div class="linha-movimentacao-campos" style="display:grid;grid-template-columns:1fr 110px;gap:10px;width:100%;grid-column:1/-1;">
+                <select class="input-mov-item" onchange="atualizarOpcoesMovimentacao(this)"></select>
+                <input type="text" inputmode="numeric" class="input-mov-qtd" placeholder="Qtd" onfocus="mostrarSaldoAtualDaLinha(this)" onclick="mostrarSaldoAtualDaLinha(this)" oninput="this.value = this.value.replace(/[^0-9]/g, ''); mostrarSaldoAtualDaLinha(this); adicionarLinhaMovimentacao(this)">
+            </div>
+            <div class="maquina-composicao-host" style="grid-column:1/-1;" hidden></div>
         `;
 
         container.appendChild(linha);
@@ -2574,7 +2620,10 @@
                 const idItem = (linha.querySelector('.input-mov-item')?.value || '').trim();
                 const qtdRaw = (linha.querySelector('.input-mov-qtd')?.value || '').trim();
                 const qtdMovimento = parseInt(qtdRaw, 10) || 0;
-                return { index, idItem, qtdRaw, qtdMovimento };
+                const itemOrigem = listaGlobal.find(item => item.firebaseUrl === idItem) || null;
+                const configuracao = listarConfiguracoesMaquina(itemOrigem, listaGlobal)
+                    .find(item => item.codigo === String(linha.dataset.codigoMontagem || '')) || null;
+                return { index, idItem, qtdRaw, qtdMovimento, itemOrigem, configuracao };
             })
             .filter(item => item.idItem || item.qtdRaw);
 
@@ -2586,7 +2635,29 @@
             throw new Error(`Complete item e quantidade nas linhas: ${posicoes}.`);
         }
 
+        const semComposicao = linhas.find(item => maquinaExigeComposicao(item.itemOrigem) && !item.configuracao);
+        if (semComposicao) {
+            throw new Error(`Escolha a montagem de ${semComposicao.itemOrigem?.nome || 'máquina'}.`);
+        }
+
         return linhas;
+    }
+
+    function expandirLinhasMovimentacao(linhas) {
+        return linhas.flatMap(linha => {
+            if (!linha.configuracao) return [linha];
+            const registro = criarRegistroMaquinaComposta({
+                itemOrigem: linha.itemOrigem,
+                configuracao: linha.configuracao,
+                quantidade: linha.qtdMovimento
+            });
+            return expandirEquipamentosEmComponentes([registro]).map(componente => ({
+                ...linha,
+                idItem: componente.itemId,
+                qtdMovimento: Number(componente.quantidade || 0),
+                componente
+            }));
+        });
     }
 
     window.salvarMovimentacao = async function() {
@@ -2605,9 +2676,21 @@
             salvandoMovimentacao = true;
             definirEstadoSalvando(true);
             const mapaEstoque = new Map(listaGlobal.map(item => [item.firebaseUrl, { ...item }]));
+            const linhasExpandidas = expandirLinhasMovimentacao(linhas);
+            const mapaValidacao = new Map([...mapaEstoque].map(([chave, item]) => [chave, { ...item }]));
+            linhasExpandidas.forEach(linha => {
+                const itemAtual = obterItemEstoqueAtual(linha.idItem, mapaValidacao);
+                if (!itemAtual) throw new Error('Não foi possível localizar um componente da montagem no estoque.');
+                const resultado = calcularMovimentoEstoque(itemAtual, linha.qtdMovimento, responsavel, modoAtual);
+                mapaValidacao.set(linha.idItem, {
+                    ...itemAtual,
+                    quantidade: resultado.novaQtd,
+                    qtd_defeito: resultado.novaQtdDefeito
+                });
+            });
             let ultimoSaldo = 0;
             let exigeRecalculoRemuneracoes = false;
-            for (const linha of linhas) {
+            for (const linha of linhasExpandidas) {
                 const itemAtual = obterItemEstoqueAtual(linha.idItem, mapaEstoque);
                 if (!deveAtualizarAcumuladoProducao(itemAtual, responsavel, modoAtual)) {
                     exigeRecalculoRemuneracoes = true;

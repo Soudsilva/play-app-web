@@ -1677,6 +1677,7 @@
                 .map((item) => ({
                     nome: String(item?.nome || '').trim(),
                     qtd: String(item?.qtd || item?.quantidade || '1').trim() || '1',
+                    composicaoResumo: String(item?.composicaoResumo || '').trim(),
                     pix: String(item?.pix || '').trim(),
                     pixRetiradoPendente: String(item?.pixRetiradoPendente || '').trim(),
                     retiradaPendenteEm: String(item?.retiradaPendenteEm || '').trim(),
@@ -1728,7 +1729,8 @@
         };
 
         return `<span class="equip-lista-card">${equipamentos.map(item => {
-            const nomeBase = `${item.nome}${item.qtd !== '1' ? ` (${item.qtd})` : ''}`;
+            const nomeComComposicao = item.composicaoResumo ? `${item.nome} — ${item.composicaoResumo}` : item.nome;
+            const nomeBase = `${nomeComComposicao}${item.qtd !== '1' ? ` (${item.qtd})` : ''}`;
             const pixRetirado = item.pixRetiradoPendente || (item.manutencaoPendente === 'retirada' ? item.pix : '');
             const pixAtual = item.pixRetiradoPendente ? item.pix : item.pix;
             const duplicadoMesmoPix = pixRetirado && pixAtual && pixRetirado === pixAtual;

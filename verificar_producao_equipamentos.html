@@ -709,6 +709,8 @@
             dbObterFotoValidacaoProducao,
             obterCompetenciaAtualProducaoEquipamentos
         } from './database-producao-equipamentos.js';
+        import { obterTipoMaquinaPG } from './maquina-montagem-rules.mjs';
+        import { listarConfiguracoesMaquina } from './maquina-composicao-rules.mjs';
 
         const NOMES_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
         const form = document.getElementById('formValidacao');
@@ -777,54 +779,10 @@
             return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
-        function obterTipoMaquinaPG(item) {
-            const nome = normalizarNome(item?.nome).replace(/\s+/g, ' ');
-            if (nome === 'maquina p') return 'P';
-            if (nome === 'maquina g') return 'G';
-            return '';
-        }
-
-        function obterItemMaquinaPorTipo(tipo) {
-            return estoqueAtual.find((item) =>
-                String(item?.categoria || '').trim() === 'maquina' && obterTipoMaquinaPG(item) === tipo
-            ) || null;
-        }
-
         function criarConfiguracoesMontagem() {
-            const tipoOrigem = obterTipoMaquinaPG(maquinaSelecionada);
-            if (!tipoOrigem) return [];
-            const modelos = [
-                { codigo: 'p_simples', nome: 'Máquina P Simples', resumo: '1 P', origens: ['P'], itens: [{ tipo: 'P', quantidade: 1 }] },
-                { codigo: 'g_simples', nome: 'Máquina G Simples', resumo: '1 G', origens: ['G'], itens: [{ tipo: 'G', quantidade: 1 }] },
-                { codigo: 'dupla_p', nome: 'Dupla P', resumo: '2 P', origens: ['P'], itens: [{ tipo: 'P', quantidade: 2 }] },
-                { codigo: 'rack_4p', nome: 'Rack', resumo: '4 P', origens: ['P'], itens: [{ tipo: 'P', quantidade: 4 }] },
-                { codigo: 'rack_3p_1g', nome: 'Rack', resumo: '3 P + 1 G', origens: ['P', 'G'], itens: [{ tipo: 'P', quantidade: 3 }, { tipo: 'G', quantidade: 1 }] },
-                { codigo: 'rack_2p_2g', nome: 'Rack', resumo: '2 P + 2 G', origens: ['P', 'G'], itens: [{ tipo: 'P', quantidade: 2 }, { tipo: 'G', quantidade: 2 }] }
-            ];
-
-            return modelos.filter((modelo) => modelo.origens.includes(tipoOrigem)).map((modelo) => {
-                const componentes = modelo.itens.map(({ tipo, quantidade }) => {
-                    const item = obterItemMaquinaPorTipo(tipo);
-                    const valorUnitario = Number(item?.valorEquipamento || 0);
-                    return {
-                        tipo,
-                        equipamentoId: String(item?.firebaseUrl || ''),
-                        nome: String(item?.nome || `Máquina ${tipo}`),
-                        quantidade,
-                        valorUnitario,
-                        valorTotal: valorUnitario * quantidade,
-                        quantidadeEstoque: Number.parseInt(item?.quantidade || 0, 10) || 0
-                    };
-                });
-                const componentesValidos = componentes.every((item) => item.equipamentoId && item.valorUnitario > 0);
-                const estoqueDisponivel = componentes.every((item) => item.quantidadeEstoque >= item.quantidade);
-                return {
-                    ...modelo,
-                    componentes,
-                    valorTotal: componentes.reduce((total, item) => total + item.valorTotal, 0),
-                    disponivel: componentesValidos && estoqueDisponivel,
-                    motivoIndisponivel: !componentesValidos ? 'Valor ou máquina não cadastrada' : (!estoqueDisponivel ? 'Estoque insuficiente' : '')
-                };
+            return listarConfiguracoesMaquina(maquinaSelecionada, estoqueAtual, {
+                exigirValor: true,
+                exigirEstoque: true
             });
         }
 

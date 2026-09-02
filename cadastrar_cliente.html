@@ -591,6 +591,9 @@
     import { validarSaldoParaAdicionarMaquinas } from './maquina-posse-service.js';
     import { validarPixParaCadastrarNoCliente } from './pix-posse-service.js';
     import { normalizarNumeroPix } from './pix-posse-rules.mjs';
+    import { criarRegistroMaquinaComposta, listarConfiguracoesMaquina, maquinaExigeComposicao, obterCamposComposicaoPersistidos } from './maquina-composicao-rules.mjs';
+    import { renderizarCartaoComposicao } from './maquina-composicao-ui.mjs';
+    import { obterTipoMaquinaPG } from './maquina-montagem-rules.mjs';
 
     let maquinasDisponiveis = [];
     let produtosDisponiveis = [];
@@ -982,13 +985,23 @@
     }
 
     function obterEquipamentosDetalhadosDoFormulario() {
-        return Array.from(document.querySelectorAll('.equip-group')).map(grupo => ({
-            rowId: String(grupo.dataset.equipRowId || ""),
-            nome: grupo.querySelector('.equip-select')?.value.trim() || "",
-            qtd: grupo.querySelector('.qtd-input')?.value.trim() || "",
-            pix: normalizarNumeroPix(grupo.querySelector('.pix-input')?.value),
-            contador: grupo.querySelector('.contador-input')?.value.trim() || ""
-        }));
+        return Array.from(document.querySelectorAll('.equip-group')).map(grupo => {
+            const nome = grupo.querySelector('.equip-select')?.value.trim() || "";
+            const configuracao = listarConfiguracoesMaquina(
+                maquinasDisponiveis.find(item => item.nome === nome) || { nome },
+                maquinasDisponiveis
+            ).find(item => item.codigo === String(grupo.dataset.codigoMontagem || '')) || null;
+            return {
+                rowId: String(grupo.dataset.equipRowId || ""),
+                nome,
+                qtd: grupo.querySelector('.qtd-input')?.value.trim() || "",
+                pix: normalizarNumeroPix(grupo.querySelector('.pix-input')?.value),
+                contador: grupo.querySelector('.contador-input')?.value.trim() || "",
+                codigoMontagem: String(grupo.dataset.codigoMontagem || ''),
+                configuracao,
+                composicaoOriginal: grupo._dadosComposicaoOriginal || null
+            };
+        });
     }
 
     function atualizarOpcoesProdutosInstalacao() {
@@ -1148,7 +1161,11 @@
                 nome: String(item?.nome || "").trim(),
                 qtd: String(item?.qtd || item?.quantidade || "1").trim() || "1",
                 pix: normalizarNumeroPix(item?.pix),
-                contador: String(item?.contador || "").trim()
+                contador: String(item?.contador || "").trim(),
+                maquinaBaseNome: String(item?.maquinaBaseNome || "").trim(),
+                codigoMontagem: String(item?.codigoMontagem || "").trim(),
+                composicaoResumo: String(item?.composicaoResumo || "").trim(),
+                composicao: Array.isArray(item?.composicao) ? item.composicao.map(componente => ({ ...componente })) : []
             }));
         }
 
@@ -1202,6 +1219,11 @@
     }
 
     function obterTituloFotoMaquinaInstalacao(equipamento) {
+        if (equipamento?.configuracao?.nome) {
+            const nomeBase = String(equipamento.nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            if (nomeBase === 'maquina g') return '';
+            return String(equipamento.configuracao.nome || '').trim();
+        }
         let nome = String(equipamento?.nome || "").trim();
         if (!nome) return "";
 
@@ -1945,15 +1967,69 @@
                 if (m.nome === valorAtual) option.selected = true;
                 select.appendChild(option);
             });
+            renderizarComposicaoGrupo(select.closest('.equip-group'));
         });
         atualizarOpcoesProdutosInstalacao();
     });
 
-    window.adicionarLinhaEquipamento = function(nome = "", pix = "", qtd = "", contador = "", rowId = "") {
+    function renderizarComposicaoGrupo(grupo) {
+        if (!grupo) return;
+        const select = grupo.querySelector('.equip-select');
+        const host = grupo.querySelector('.maquina-composicao-host');
+        const inputQtd = grupo.querySelector('.qtd-input');
+        const inputPix = grupo.querySelector('.pix-input');
+        const inputContador = grupo.querySelector('.contador-input');
+        const itemOrigem = maquinasDisponiveis.find(item => item.nome === select?.value) || { nome: select?.value || '' };
+        const exigeComposicao = maquinaExigeComposicao(itemOrigem);
+        const registroLegadoSemComposicao = Boolean(grupo._dadosComposicaoOriginal && !grupo._dadosComposicaoOriginal?.codigoMontagem);
+        const exibirPix = !obterTipoMaquinaPG(itemOrigem);
+        [inputPix, inputContador].forEach(input => {
+            if (input) input.style.display = exibirPix ? '' : 'none';
+        });
+        if (!exibirPix && !grupo._dadosComposicaoOriginal) {
+            if (inputPix) inputPix.value = '';
+            if (inputContador) inputContador.value = '';
+        }
+        if (!exigeComposicao) {
+            delete grupo.dataset.codigoMontagem;
+            if (inputQtd) {
+                inputQtd.readOnly = false;
+                inputQtd.style.display = '';
+            }
+        } else if (inputQtd && !registroLegadoSemComposicao) {
+            inputQtd.value = '1';
+            inputQtd.readOnly = true;
+            inputQtd.style.display = 'none';
+        } else if (inputQtd) {
+            inputQtd.readOnly = false;
+            inputQtd.style.display = '';
+        }
+        renderizarCartaoComposicao({
+            host,
+            itemOrigem,
+            estoque: maquinasDisponiveis,
+            codigoSelecionado: grupo.dataset.codigoMontagem || '',
+            onSelecionar(configuracao) {
+                grupo._dadosComposicaoOriginal = null;
+                grupo.dataset.codigoMontagem = configuracao.codigo;
+                if (inputQtd) {
+                    inputQtd.value = '1';
+                    inputQtd.style.display = 'none';
+                }
+                renderizarComposicaoGrupo(grupo);
+                renderizarFotosMaquinasInstalacao();
+                normalizarLinhasEquipamento();
+            }
+        });
+    }
+
+    window.adicionarLinhaEquipamento = function(nome = "", pix = "", qtd = "", contador = "", rowId = "", dadosComposicao = null) {
         const container = document.getElementById('container-equipamentos');
         const novoGrupo = document.createElement('div');
         novoGrupo.className = 'equip-group';
         novoGrupo.dataset.equipRowId = criarRowIdEquipamento(rowId);
+        novoGrupo._dadosComposicaoOriginal = dadosComposicao ? { ...dadosComposicao } : null;
+        if (dadosComposicao?.codigoMontagem) novoGrupo.dataset.codigoMontagem = String(dadosComposicao.codigoMontagem);
         
         let options = '<option value="">Selecione a máquina...</option>';
         maquinasDisponiveis.forEach(m => {
@@ -1969,8 +2045,10 @@
                 <input class="pix-input" value="${pix}" placeholder="Pix" inputmode="numeric" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);" style="flex: 1.2; margin-bottom:0; border: 2px solid #4caf50; text-align: center; padding: 10px 5px;">
                 <input class="contador-input" value="${contador}" placeholder="Cont." inputmode="numeric" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);" style="flex: 1.7; margin-bottom:0; border: 2px solid #ffeb3b; text-align: center; padding: 10px 5px;">
             </div>
+            <div class="maquina-composicao-host" hidden></div>
         `;
         container.appendChild(novoGrupo);
+        renderizarComposicaoGrupo(novoGrupo);
         normalizarLinhasEquipamento();
     }
 
@@ -2179,11 +2257,12 @@
                     
                     equipamentosDetalhados.forEach((item) => {
                         adicionarLinhaEquipamento(
-                            item.nome,
+                            item.maquinaBaseNome || item.nome,
                             item.pix,
                             item.qtd,
                             item.contador,
-                            item.rowId
+                            item.rowId,
+                            item
                         );
                     });
                     adicionarLinhaEquipamento(); // Adiciona uma linha vazia no final
@@ -2234,10 +2313,6 @@
 
             const container = document.getElementById('container-equipamentos');
             container.innerHTML = "";
-            const equipDetalhes = Array.isArray(ponto.equipDetalhes) ? ponto.equipDetalhes : [];
-            equipDetalhes.forEach(item => {
-                adicionarLinhaEquipamento(item.nome, "", item.qtd, "", item.rowId);
-            });
             adicionarLinhaEquipamento();
             restaurarProdutosInstalacao(ponto.produtos || []);
 
@@ -2257,9 +2332,14 @@
     document.getElementById('container-equipamentos').addEventListener('change', (e) => {
         if (e.target.classList.contains('equip-select')) {
             const grupoAtual = e.target.closest('.equip-group');
+            grupoAtual._dadosComposicaoOriginal = null;
             if (!e.target.value) {
                 limparCamposLinhaEquipamento(grupoAtual);
+                delete grupoAtual.dataset.codigoMontagem;
+            } else {
+                delete grupoAtual.dataset.codigoMontagem;
             }
+            renderizarComposicaoGrupo(grupoAtual);
 
             const grupos = document.querySelectorAll('.equip-group');
             const ultimoSelect = grupos[grupos.length - 1].querySelector('.equip-select');
@@ -2373,21 +2453,29 @@
                 .filter(item => item.nome)
                 .map(item => {
                     const maquinaInfo = maquinasDisponiveis.find(maquina => maquina.nome === item.nome);
+                    if (maquinaExigeComposicao(maquinaInfo || item.nome) && !item.configuracao && !item.composicaoOriginal) {
+                        throw new Error(`Escolha a montagem de ${item.nome}.`);
+                    }
+                    const composto = item.configuracao
+                        ? criarRegistroMaquinaComposta({ itemOrigem: maquinaInfo, configuracao: item.configuracao, quantidade: 1 })
+                        : null;
+                    const composicaoPersistida = composto || item.composicaoOriginal;
                     return {
                         rowId: item.rowId,
-                        itemId: maquinaInfo?.firebaseUrl || "",
-                        categoria: maquinaInfo?.categoria || "maquina",
-                        nome: item.nome,
-                        qtd: item.qtd || "1",
+                        itemId: composto?.itemId || maquinaInfo?.firebaseUrl || "",
+                        categoria: composto?.categoria || maquinaInfo?.categoria || "maquina",
+                        nome: composicaoPersistida?.nome || item.nome,
+                        qtd: composto?.qtd || item.composicaoOriginal?.qtd || item.qtd || "1",
                         pix: item.pix,
-                        contador: item.contador
+                        contador: item.contador,
+                        ...(composicaoPersistida ? obterCamposComposicaoPersistidos(composicaoPersistida) : {})
                     };
                 });
 
             // Junta Nome + [Pix: x] + (Qtd) de todos os equipamentos preenchidos
             let listaEquipFinal = [];
             equipamentosDetalhados.forEach(item => {
-                let str = item.nome;
+                let str = item.composicaoResumo ? `${item.nome} — ${item.composicaoResumo}` : item.nome;
                 if (item.pix !== "") str += ` [Pix: ${item.pix}]`;
                 str += ` (${item.qtd})`;
                 listaEquipFinal.push(str);

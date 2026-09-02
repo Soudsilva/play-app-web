@@ -26,6 +26,7 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gsta
 import { salvarCacheClientes, lerCacheClientes, lerCacheClientesCompleto, salvarCacheEstoque, lerCacheEstoque } from './offline-sync.js';
 import { app, db, storage, firebaseConfig } from './firebase-app.js';
 import { movimentoExigeSaldoDisponivelMaquina } from './maquina-posse-rules.mjs';
+import { expandirEquipamentosEmComponentes, obterCamposComposicaoPersistidos } from './maquina-composicao-rules.mjs';
 import { listarVariantesNumeroPix, normalizarNumeroPix as normalizarNumeroPixPadrao } from './pix-posse-rules.mjs';
 
 // A inicialização principal fica em firebase-app.js. Esta reexportação mantém
@@ -1983,7 +1984,8 @@ function _normalizarEquipDetalhesCliente(cliente) {
                 manutencaoPendente: String(item?.manutencaoPendente || "").trim(),
                 aguardandoConfirmacao: item?.aguardandoConfirmacao === true,
                 manutencaoPendenteEm: item?.manutencaoPendenteEm || "",
-                manutencaoPendentePor: item?.manutencaoPendentePor || ""
+                manutencaoPendentePor: item?.manutencaoPendentePor || "",
+                ...obterCamposComposicaoPersistidos(item)
             }))
             .filter(item => item.nome);
     }
@@ -2049,9 +2051,11 @@ function _serializarEquipTextoCliente(equipDetalhes) {
         .filter(item => String(item?.nome || "").trim())
         .map(item => {
             const nome = String(item?.nome || "").trim();
+            const resumo = String(item?.composicaoResumo || "").trim();
             const qtd = String(item?.qtd || "1").trim() || "1";
             const pix = _normalizarNumeroPix(item?.pix);
-            const base = `${nome}${qtd !== '1' ? ` (${qtd})` : ''}`;
+            const nomeCompleto = resumo ? `${nome} — ${resumo}` : nome;
+            const base = `${nomeCompleto}${qtd !== '1' ? ` (${qtd})` : ''}`;
             return pix ? `${base} [Pix: ${pix}]` : base;
         })
         .join(', ');
@@ -2301,6 +2305,7 @@ export async function dbAplicarPendenciasManutencaoCliente(firebaseUrlCliente, p
                 pix: _normalizarNumeroPix(item?.pix),
                 contador: String(item?.contador || "").trim(),
                 tecnico: String(item?.tecnico || "").trim(),
+                ...obterCamposComposicaoPersistidos(item),
                 manutencaoPendente: 'adicao',
                 aguardandoConfirmacao: true,
                 manutencaoPendenteEm: agoraIso,
@@ -2573,9 +2578,12 @@ export async function dbConfirmarGestorManutencao(id, nomeGestor) {
 
                 // Máquinas ADICIONADAS confirmadas: limpa as flags de pendência
                 if (adicionados.length > 0) {
+                    const rowIdsAdd = new Set(adicionados.map(i => String(i?.rowId || '').trim()).filter(Boolean));
                     const nomesAdd = new Set(adicionados.map(i => String(i?.nome || '').trim()).filter(Boolean));
                     equipamentos = equipamentos.map(equip => {
-                        if (equip.manutencaoPendente === 'adicao' && nomesAdd.has(equip.nome)) {
+                        const rowIdEquip = String(equip?.rowId || '').trim();
+                        const corresponde = rowIdsAdd.size > 0 ? rowIdsAdd.has(rowIdEquip) : nomesAdd.has(equip.nome);
+                        if (equip.manutencaoPendente === 'adicao' && corresponde) {
                             return {
                                 ...equip,
                                 manutencaoPendente: '',
@@ -4233,7 +4241,7 @@ export async function dbSincronizarItensManutencaoNoHistorico(atendimentoId, ate
             });
         }
 
-        const adicionadosValidos = equipamentosAdicionados
+        const adicionadosValidos = expandirEquipamentosEmComponentes(equipamentosAdicionados)
             .map(item => ({
                 itemId: String(item?.itemId || item?.itemChave || item?.refId || '').trim(),
                 categoria: String(item?.categoria || 'maquina').trim() || 'maquina',
@@ -4266,7 +4274,7 @@ export async function dbSincronizarItensManutencaoNoHistorico(atendimentoId, ate
             });
         }
 
-        const retiradosValidos = equipamentosRetirados
+        const retiradosValidos = expandirEquipamentosEmComponentes(equipamentosRetirados)
             .map(item => ({
                 itemId: String(item?.itemId || item?.itemChave || '').trim(),
                 categoria: String(item?.categoria || 'maquina').trim() || 'maquina',
@@ -4351,7 +4359,7 @@ export async function dbSincronizarItensCadastroClienteNoHistorico(clienteId, cl
             });
         }
 
-        const equipamentosValidos = equipamentos
+        const equipamentosValidos = expandirEquipamentosEmComponentes(equipamentos)
             .map(item => ({
                 itemId: String(item?.itemId || item?.itemChave || item?.refId || '').trim(),
                 categoria: String(item?.categoria || 'maquina').trim() || 'maquina',
