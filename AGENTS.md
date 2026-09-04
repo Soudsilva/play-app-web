@@ -758,7 +758,12 @@ Não afirmar que está tudo funcionando se algum caminho importante não foi val
 
 ## 29. Salvar, enviar, publicar, postar ou subir alterações
 
-Quando o proprietário disser `salvar`, antes de iniciar qualquer commit, push ou deploy, perguntar exatamente:
+Quando o proprietário disser `salvar`, antes de iniciar qualquer commit, push ou deploy:
+
+1. Atualizar primeiro a versão exibida no `index.html`.
+2. Incrementar a versão em `0.1`, seguindo a sequência `V 3.6`, `V 3.7`, `V 3.8` e assim por diante.
+3. Manter a alteração da versão junto com as demais alterações locais, inclusive quando o proprietário optar por não enviar.
+4. Depois da atualização da versão, perguntar exatamente:
 
 > Quer enviar todas as alterações?
 > 1. Sim

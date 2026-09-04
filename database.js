@@ -3832,7 +3832,7 @@ async function _atualizarPosseItensUsuario(entrada, movimento) {
     const posseRef = ref(db, `posse_itens_usuario/${chaveUsuario}/${itemChave}`);
     const posseAtualSnap = await get(posseRef);
     const quantidadeInicialFallback = posseAtualSnap.exists()
-        ? null
+        ? Number(posseAtualSnap.val()?.quantidade || 0)
         : await _obterTotalAtualHistoricoBalanco(chaveUsuario, entrada?.itemNome, itemChave);
     const atualizadoEm = new Date().toISOString();
     const exigeSaldoDisponivelMaquina = movimentoExigeSaldoDisponivelMaquina(entrada, movimento);
