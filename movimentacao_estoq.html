@@ -1006,10 +1006,11 @@
     import { verificarAutenticacao } from './auth.js';
     verificarAutenticacao();
     import { dbEscutarEstoque, dbSalvarItemEstoque, dbEscutarColaboradores, dbAdicionarPixEmPosse, dbRemoverPixEmPosse, dbLerPixEmPosse, dbSalvarHistoricoBalanco, dbEscutarMesesComMovimentacaoParaFiltro, dbEscutarHistoricoBalancoDoUsuarioPorMes, dbMarcarMesSemMovimentacaoParaFiltro, dbEscutarPosseItensUsuario, dbEscutarPixEmPosse, dbExcluirHistoricoBalanco, dbRecalcularRemuneracoes, dbEscutarClientes, dbEscutarTodosPixEmPosse } from './database.js';
-    import { dbConsumirSaldosTestadosSaida, dbReverterSaldosTestadosSaida } from './database-producao-equipamentos.js';
+    import { dbConsumirSaldosTestadosSaida, dbEscutarSaldoTestadoEquipamentoMesAtual, dbReverterSaldosTestadosSaida } from './database-producao-equipamentos.js';
     import { normalizarNumeroPix } from './pix-posse-rules.mjs';
     import { criarRegistroMaquinaComposta, expandirEquipamentosEmComponentes, listarConfiguracoesMaquina, maquinaExigeComposicao } from './maquina-composicao-rules.mjs';
     import { renderizarCartaoComposicao } from './maquina-composicao-ui.mjs';
+    import { movimentoUsaSaldoTestado, obterSaldoTestadoDisponivel, validarSaldosTestadosParaSaida } from './movimentacao-saldo-testado-rules.mjs';
 
     let listaGlobal = [];
     let historicoGlobal = [];
@@ -1022,6 +1023,8 @@
     let itensPendentes = [];
     let timerAdicionarPendente = null;
     let salvandoMovimentacao = false;
+    const saldosTestadosPorEquipamento = new Map();
+    const escutasSaldosTestados = new Map();
     let modoAtual = 'saida';
     let historicoVisivel = false;
     let itensVisivelEstoque = false;
@@ -1080,11 +1083,13 @@
         return modo === 'saida' && String(item?.categoria || '').trim() === 'maquina';
     }
 
-    async function salvarHistoricoMovimentoComSaldoTestado(entrada, opcoes, item, quantidade, modo) {
+    async function salvarHistoricoMovimentoComSaldoTestado(entrada, opcoes, item, quantidade, modo, saldosPreConsumidos = null) {
         const equipamentoId = String(item?.firebaseUrl || entrada?.itemChave || entrada?.refId || '').trim();
         const atualizarSaldoTestado = deveAtualizarSaldoTestado(item, modo) && equipamentoId;
         const saldosTestadosConsumidos = atualizarSaldoTestado
-            ? await dbConsumirSaldosTestadosSaida(equipamentoId, quantidade)
+            ? (saldosPreConsumidos === null
+                ? await dbConsumirSaldosTestadosSaida(equipamentoId, quantidade)
+                : { ...(saldosPreConsumidos || {}) })
             : {};
         try {
             return await dbSalvarHistoricoBalanco({
@@ -1107,6 +1112,43 @@
         const texto = String(valor || '').trim();
         return texto === RESPONSAVEL_PIX_ESTOQUE ? ROTULO_PIX_ESTOQUE : texto;
     }
+
+    function encerrarEscutasSaldosTestados(excetoIds = new Set()) {
+        escutasSaldosTestados.forEach((parar, equipamentoId) => {
+            if (excetoIds.has(equipamentoId)) return;
+            parar?.();
+            escutasSaldosTestados.delete(equipamentoId);
+            saldosTestadosPorEquipamento.delete(equipamentoId);
+        });
+    }
+
+    function sincronizarEscutasSaldosTestados(estoque) {
+        const idsMaquinas = new Set((Array.isArray(estoque) ? estoque : [])
+            .filter(item => String(item?.categoria || '').trim() === 'maquina')
+            .map(item => String(item?.firebaseUrl || '').trim())
+            .filter(Boolean));
+
+        encerrarEscutasSaldosTestados(idsMaquinas);
+        idsMaquinas.forEach(equipamentoId => {
+            if (escutasSaldosTestados.has(equipamentoId)) return;
+            saldosTestadosPorEquipamento.set(equipamentoId, { carregado: false });
+            const parar = dbEscutarSaldoTestadoEquipamentoMesAtual(
+                equipamentoId,
+                resumo => {
+                    saldosTestadosPorEquipamento.set(equipamentoId, { ...resumo, carregado: true });
+                    mostrarSaldoAtual();
+                },
+                erro => {
+                    saldosTestadosPorEquipamento.set(equipamentoId, { carregado: false, erro: true });
+                    console.error(`Não foi possível carregar o saldo testado de ${equipamentoId}:`, erro);
+                    mostrarSaldoAtual();
+                }
+            );
+            escutasSaldosTestados.set(equipamentoId, parar);
+        });
+    }
+
+    window.addEventListener('beforeunload', () => encerrarEscutasSaldosTestados());
 
     function obterDataMovimentacao(mov) {
         const data = new Date(mov?.timestamp || mov?.data || '');
@@ -1424,6 +1466,7 @@
     // 1. CARREGAR ITENS DO BANCO
     dbEscutarEstoque((lista) => {
         listaGlobal = lista;
+        sincronizarEscutasSaldosTestados(listaGlobal);
         filtrarItens();
         atualizarBotaoItens();
         if (itensVisivelEstoque) filtrarItensLista();
@@ -2008,6 +2051,7 @@
         }
         renderizarResponsaveis(); // Atualiza a lista para mostrar/esconder estoque
         atualizarVisualModoPix();
+        mostrarSaldoAtual();
     };
 
     // 5. ATUALIZAR ESTOQUE NO BANCO
@@ -2293,29 +2337,58 @@
         const estoqueAntes = parseInt(itemOriginal.quantidade) || 0;
         const atualizarAcumuladoProducao = deveAtualizarAcumuladoProducao(itemOriginal, responsavel, modo);
 
-        await dbSalvarItemEstoque(itemParaSalvar, idItem, { recalcular: false });
-        await salvarHistoricoMovimentoComSaldoTestado({
-            responsavel:   responsavel,
-            registradoPor: String(localStorage.getItem('usuarioLogado') || '').trim(),
-            itemId:        idItem,
-            itemNome:      itemOriginal.nome,
-            categoria:     itemOriginal.categoria || 'produto',
-            tipo:          modo === 'saida' ? 'saida_estoque' : 'entrada_estoque',
-            origemRegistro: modo === 'saida' ? 'retirada_estoque' : 'entrada_estoque',
-            itemChave:     idItem,
-            movimento:     modo === 'saida' ? qtdMovimento : -qtdMovimento,
-            descricao:     modo === 'saida' ? 'Retirada de estoque' : 'Devolução ao estoque',
-            refId:         idItem,
-            controlarPosse: responsavel !== RESPONSAVEL_PIX_ESTOQUE && responsavel !== 'Máquina',
-            isDefeitoEntry,
-            qtdDefeitoConsumida,
-            defeitoOperacao,
-            estoqueAntes,
-            estoqueDepois: novaQtd
-        }, {
-            recalcular: false,
-            atualizarAcumuladoProducao
-        }, itemOriginal, qtdMovimento, modo);
+        const deveConsumirSaldoTestado = deveAtualizarSaldoTestado(itemOriginal, modo);
+        let saldosTestadosPreConsumidos = null;
+        let estoqueFoiAtualizado = false;
+
+        try {
+            if (deveConsumirSaldoTestado) {
+                saldosTestadosPreConsumidos = await dbConsumirSaldosTestadosSaida(idItem, qtdMovimento);
+            }
+
+            await dbSalvarItemEstoque(itemParaSalvar, idItem, { recalcular: false });
+            estoqueFoiAtualizado = true;
+
+            await salvarHistoricoMovimentoComSaldoTestado({
+                responsavel:   responsavel,
+                registradoPor: String(localStorage.getItem('usuarioLogado') || '').trim(),
+                itemId:        idItem,
+                itemNome:      itemOriginal.nome,
+                categoria:     itemOriginal.categoria || 'produto',
+                tipo:          modo === 'saida' ? 'saida_estoque' : 'entrada_estoque',
+                origemRegistro: modo === 'saida' ? 'retirada_estoque' : 'entrada_estoque',
+                itemChave:     idItem,
+                movimento:     modo === 'saida' ? qtdMovimento : -qtdMovimento,
+                descricao:     modo === 'saida' ? 'Retirada de estoque' : 'Devolução ao estoque',
+                refId:         idItem,
+                controlarPosse: responsavel !== RESPONSAVEL_PIX_ESTOQUE && responsavel !== 'Máquina',
+                isDefeitoEntry,
+                qtdDefeitoConsumida,
+                defeitoOperacao,
+                estoqueAntes,
+                estoqueDepois: novaQtd
+            }, {
+                recalcular: false,
+                atualizarAcumuladoProducao
+            }, itemOriginal, qtdMovimento, modo, saldosTestadosPreConsumidos);
+        } catch (erro) {
+            if (!estoqueFoiAtualizado && saldosTestadosPreConsumidos && Object.keys(saldosTestadosPreConsumidos).length > 0) {
+                try {
+                    await dbReverterSaldosTestadosSaida(idItem, saldosTestadosPreConsumidos);
+                } catch (erroReversao) {
+                    console.error('Não foi possível reverter o saldo testado após falha no estoque:', erroReversao);
+                }
+            }
+
+            if (estoqueFoiAtualizado) {
+                try {
+                    await dbSalvarItemEstoque(itemOriginal, idItem, { recalcular: false });
+                } catch (erroRestauracao) {
+                    console.error('Não foi possível restaurar o estoque após falha na movimentação:', erroRestauracao);
+                }
+            }
+            throw erro;
+        }
 
         mapaEstoque.set(idItem, { ...itemParaSalvar, firebaseUrl: idItem });
         const idx = listaGlobal.findIndex(i => i.firebaseUrl === idItem);
@@ -2600,6 +2673,15 @@
             return;
         }
 
+        if (movimentoUsaSaldoTestado(item, modoAtual)) {
+            const saldoTestado = obterSaldoTestadoDisponivel(saldosTestadosPorEquipamento.get(item.firebaseUrl));
+            document.getElementById('textoSaldo').innerHTML = saldoTestado === null
+                ? '<span class="saldo-total-disc">Carregando saldo testado...</span>'
+                : `<span class="destaque-qtd">${saldoTestado}</span>`;
+            saldoBox.style.display = 'flex';
+            return;
+        }
+
         const qtdBoa = parseInt(item.quantidade || 0, 10);
         const qtdDefeito = parseInt(item.qtd_defeito || 0, 10);
         if (itemUsaControleDefeito(item.categoria)) {
@@ -2651,12 +2733,16 @@
                 configuracao: linha.configuracao,
                 quantidade: linha.qtdMovimento
             });
-            return expandirEquipamentosEmComponentes([registro]).map(componente => ({
-                ...linha,
-                idItem: componente.itemId,
-                qtdMovimento: Number(componente.quantidade || 0),
-                componente
-            }));
+            return expandirEquipamentosEmComponentes([registro]).map(componente => {
+                const itemComponente = listaGlobal.find(item => item.firebaseUrl === componente.itemId) || linha.itemOrigem;
+                return {
+                    ...linha,
+                    idItem: componente.itemId,
+                    qtdMovimento: Number(componente.quantidade || 0),
+                    itemOrigem: itemComponente,
+                    componente
+                };
+            });
         });
     }
 
@@ -2677,6 +2763,12 @@
             definirEstadoSalvando(true);
             const mapaEstoque = new Map(listaGlobal.map(item => [item.firebaseUrl, { ...item }]));
             const linhasExpandidas = expandirLinhasMovimentacao(linhas);
+            const validacaoSaldosTestados = validarSaldosTestadosParaSaida(
+                linhasExpandidas,
+                saldosTestadosPorEquipamento,
+                modoAtual
+            );
+            if (!validacaoSaldosTestados.valido) throw new Error(validacaoSaldosTestados.mensagem);
             const mapaValidacao = new Map([...mapaEstoque].map(([chave, item]) => [chave, { ...item }]));
             linhasExpandidas.forEach(linha => {
                 const itemAtual = obterItemEstoqueAtual(linha.idItem, mapaValidacao);
@@ -2814,7 +2906,6 @@
             }
 
             inputPix.value = '';
-            selectResponsavel.value = '';
             atualizarHistoricoPorResponsavelSelecionado();
             await window.playAlert(modoAtual === 'entrada' ? 'Pix registrado no estoque com sucesso.' : 'Pix registrado em posse com sucesso.');
         } catch (error) {

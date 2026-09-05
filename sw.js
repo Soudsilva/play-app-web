@@ -1,4 +1,4 @@
-const CACHE = 'play-v54';
+const CACHE = 'play-v55';
 
 // Arquivos essenciais do próprio app
 const SHELL = [
@@ -28,6 +28,7 @@ const SHELL = [
     '/firebase-app.js',
     '/maquina-posse-rules.mjs',
     '/maquina-posse-service.js',
+    '/movimentacao-saldo-testado-rules.mjs',
     '/pix-posse-rules.mjs',
     '/pix-posse-service.js',
     '/offline-sync.js',

@@ -656,29 +656,34 @@ async function consumirSaldoTestadoDoMes(equipamentoId, competencia, quantidade)
 
     const saldoRef = ref(db, `${PRODUCAO_ROOT}/saldos_testados/${id}/${mes}`);
     const snapshotInicial = await get(saldoRef);
-    if (!snapshotInicial.exists()) return 0;
-    let consumida = 0;
+    if (!snapshotInicial.exists()) {
+        throw new Error(`Saldo testado insuficiente. Disponível: 0. Necessário: ${solicitada}.`);
+    }
+    let saldoDisponivel = 0;
     const resultado = await runTransaction(
         saldoRef,
         (atual) => {
             if (!atual || typeof atual !== 'object') {
-                consumida = 0;
+                saldoDisponivel = 0;
                 return;
             }
             const saldoAtual = normalizarSaldoTestado(atual);
-            consumida = Math.min(solicitada, saldoAtual.saldo);
-            if (consumida <= 0) return;
+            saldoDisponivel = saldoAtual.saldo;
+            if (saldoDisponivel < solicitada) return;
             return {
                 ...atual,
                 testadas: saldoAtual.testadas,
-                saidas: saldoAtual.saidas + consumida,
-                saldo: saldoAtual.saldo - consumida,
+                saidas: saldoAtual.saidas + solicitada,
+                saldo: saldoAtual.saldo - solicitada,
                 atualizadoEm: Date.now()
             };
         },
         { applyLocally: false }
     );
-    return resultado.committed ? consumida : 0;
+    if (!resultado.committed) {
+        throw new Error(`Saldo testado insuficiente. Disponível: ${saldoDisponivel}. Necessário: ${solicitada}.`);
+    }
+    return solicitada;
 }
 
 export async function dbConsumirSaldosTestadosSaida(equipamentoId, quantidade) {
