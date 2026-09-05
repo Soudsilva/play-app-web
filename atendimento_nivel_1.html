@@ -781,6 +781,18 @@
     import { sincronizarFilaAtendimentosDireto } from './atendimento-sync-runner.js';
     import { validarSaldoParaAdicionarMaquinas } from './maquina-posse-service.js';
     import {
+        atualizarContadoresClienteCache,
+        carregarContadoresRota,
+        lerContadoresOficiaisCliente,
+        lerContadoresUsuario
+    } from './atendimento-contador-service.js';
+    import {
+        extrairContadoresEquipDetalhes,
+        mesclarContadoresPorPrioridade,
+        normalizarNumeroPix,
+        normalizarValorContador
+    } from './atendimento-contador-rules.mjs';
+    import {
         gerarIdVisitaAtendimento,
         deveRestaurarVisitaAtendimento,
         salvarRascunhoAtendimento,
@@ -831,6 +843,9 @@
     let listaColaboradores = [];
     let listaAtendimentos = [];
     let clientesPermitidosSet = null; // null = carregando | Set = pronto (vazio = nenhum cliente permitido)
+    let contadoresRotaPorCliente = new Map();
+    const contadoresServidorPorCliente = new Map();
+    const buscasContadoresServidor = new Map();
     let numeroClientePendente = '';
     let clienteEdicaoRestauradoPorId = false;
     let rascunhoRestaurado = false;
@@ -941,6 +956,15 @@ function obterIdAtendimentoEmEdicao() {
     };
 
     // --- CLIENTES PERMITIDOS (rotas selecionadas pelo usuário na sessão) ---
+    async function carregarMapaContadoresLocais(rotas = []) {
+        const cache = await lerContadoresUsuario({
+            usuario: obterUsuarioAtendimento(),
+            rotas
+        });
+        contadoresRotaPorCliente = new Map(Object.entries(cache?.porCliente || {}));
+        return cache;
+    }
+
     async function carregarClientesPermitidos() {
         const usuario = obterUsuarioAtendimento();
         if (!usuario) {
@@ -959,6 +983,8 @@ function obterIdAtendimentoEmEdicao() {
                 aplicarFiltroClientes(listaClientesBruta);
             }
         } catch {}
+
+        await carregarMapaContadoresLocais().catch(() => {});
 
         try {
             const sessao = await dbObterSessaoRotas();
@@ -982,6 +1008,10 @@ function obterIdAtendimentoEmEdicao() {
 
             const cpr = sessao.clientes_por_rota || {};
             const permitidos = new Set();
+            const rotasAtuais = rotasDoUsuario.map(numeroRota => ({
+                numeroRota,
+                selecionadaEm: sessao.rotas[numeroRota]?.selecionada_em || null
+            }));
             rotasDoUsuario.forEach(num => {
                 (cpr[num] || []).forEach(c => { if (c.id) permitidos.add(c.id); });
             });
@@ -989,7 +1019,27 @@ function obterIdAtendimentoEmEdicao() {
             clientesPermitidosSet = permitidos;
             localStorage.setItem(CACHE_KEY, JSON.stringify([...permitidos]));
 
+            await carregarMapaContadoresLocais(rotasAtuais).catch(() => {});
+
             aplicarFiltroClientes(listaClientesBruta);
+
+            if (navigator.onLine) {
+                Promise.all(rotasDoUsuario.map(numeroRota => carregarContadoresRota({
+                    usuario,
+                    numeroRota,
+                    selecionadaEm: sessao.rotas[numeroRota]?.selecionada_em || null,
+                    clientes: cpr[numeroRota] || []
+                }))).then(async () => {
+                    await carregarMapaContadoresLocais(rotasAtuais);
+                    const clienteSelecionadoId = document.getElementById('idClienteSelecionado')?.value;
+                    const clienteSelecionado = listaClientes.find(cliente => cliente.firebaseUrl === clienteSelecionadoId);
+                    if (clienteSelecionado && !obterIdAtendimentoEmEdicao()) {
+                        preencherContadoresAnterioresNasLinhas(clienteSelecionado, false);
+                    }
+                }).catch(error => {
+                    console.warn('Não foi possível completar o cache de contadores das rotas:', error);
+                });
+            }
         } catch {
             if (!clientesPermitidosSet) {
                 clientesPermitidosSet = new Set();
@@ -1266,7 +1316,7 @@ function obterIdAtendimentoEmEdicao() {
                     nome: String(item?.nome || "").trim(),
                     qtd: String(item?.qtd || item?.quantidade || "1").trim() || "1",
                     pix: String(item?.pix || "").trim(),
-                    contador: String(item?.contador || "").trim()
+                    contador: item?.contador == null ? "" : String(item.contador).trim()
                 }))
                 .filter(item => item.nome);
         }
@@ -1320,6 +1370,19 @@ function obterIdAtendimentoEmEdicao() {
     function obterUltimosContadoresCliente(cliente) {
         if (!cliente) return {};
 
+        const clienteId = String(cliente.firebaseUrl || '').trim();
+        if (clienteId && contadoresServidorPorCliente.has(clienteId)) {
+            return { ...(contadoresServidorPorCliente.get(clienteId) || {}) };
+        }
+
+        if (clienteId && contadoresRotaPorCliente.has(clienteId)) {
+            return { ...(contadoresRotaPorCliente.get(clienteId)?.contadores || {}) };
+        }
+
+        const contadoresCadastroCliente = extrairContadoresEquipDetalhes(
+            obterEquipamentosDetalhadosCliente(cliente)
+        );
+
         const atendimentosCliente = listaAtendimentos
             .filter(atendimento => {
                 if (atendimento?.cliente?.id && cliente.firebaseUrl) {
@@ -1329,26 +1392,65 @@ function obterIdAtendimentoEmEdicao() {
             })
             .sort((a, b) => obterDataOrdenacaoAtendimento(b) - obterDataOrdenacaoAtendimento(a));
 
-        const ultimoContadorPorPix = {};
+        const contadoresHistorico = {};
 
         atendimentosCliente.forEach(atendimento => {
             const pixList = atendimento?.financeiro?.pix || [];
             pixList.forEach(item => {
-                const numeroPix = String(item?.numero || "").trim();
-                if (!numeroPix || ultimoContadorPorPix[numeroPix] != null) return;
-                ultimoContadorPorPix[numeroPix] = window.parseFormatted(item?.contAtual);
+                const numeroPix = normalizarNumeroPix(item?.numero);
+                const contadorAtual = normalizarValorContador(item?.contAtual);
+                if (!numeroPix || contadorAtual === null || contadoresHistorico[numeroPix] != null) return;
+                contadoresHistorico[numeroPix] = contadorAtual;
             });
         });
 
-        const equipamentosDetalhados = obterEquipamentosDetalhadosCliente(cliente);
-        equipamentosDetalhados.forEach(item => {
-            const numeroPix = String(item?.pix || "").trim();
-            if (!numeroPix || ultimoContadorPorPix[numeroPix] != null) return;
-            ultimoContadorPorPix[numeroPix] = window.parseFormatted(item?.contador);
-        });
-
-        return ultimoContadorPorPix;
+        return mesclarContadoresPorPrioridade(contadoresCadastroCliente, contadoresHistorico);
     }
+
+    function atualizarContadoresOficiaisClienteSelecionado(cliente) {
+        if (!cliente?.firebaseUrl || obterIdAtendimentoEmEdicao()) return;
+
+        const clienteId = String(cliente.firebaseUrl).trim();
+        if (contadoresServidorPorCliente.has(clienteId)) return;
+        if (buscasContadoresServidor.has(clienteId)) return;
+
+        const busca = lerContadoresOficiaisCliente(clienteId)
+            .then(async contadores => {
+                contadoresServidorPorCliente.set(clienteId, contadores);
+
+                const cacheRota = contadoresRotaPorCliente.get(clienteId);
+                const numeroRota = String(cacheRota?.numeroRota || cliente.rota || '').trim();
+                if (numeroRota) {
+                    await atualizarContadoresClienteCache({
+                        usuario: obterUsuarioAtendimento(),
+                        numeroRota,
+                        clienteId,
+                        contadores
+                    }).catch(() => false);
+                    contadoresRotaPorCliente.set(clienteId, {
+                        contadores: { ...contadores },
+                        capturadoEm: Date.now(),
+                        numeroRota
+                    });
+                }
+
+                if (document.getElementById('idClienteSelecionado')?.value === clienteId) {
+                    preencherContadoresAnterioresNasLinhas(cliente, false);
+                }
+            })
+            .catch(error => {
+                console.warn('Sem conexão para confirmar agora o contador atual do cliente:', error);
+            })
+            .finally(() => buscasContadoresServidor.delete(clienteId));
+
+        buscasContadoresServidor.set(clienteId, busca);
+    }
+
+    window.addEventListener('online', () => {
+        const clienteSelecionadoId = document.getElementById('idClienteSelecionado')?.value;
+        const clienteSelecionado = listaClientes.find(cliente => cliente.firebaseUrl === clienteSelecionadoId);
+        if (clienteSelecionado) atualizarContadoresOficiaisClienteSelecionado(clienteSelecionado);
+    });
 
     function obterTituloFotoMaquinaAtendimento(item) {
         let nome = String(item?.nome || "").trim();
@@ -1374,7 +1476,7 @@ function obterIdAtendimentoEmEdicao() {
 
         const ultimosContadoresPix = obterUltimosContadoresCliente(cliente);
         document.querySelectorAll('#containerPix .linha-form').forEach(linha => {
-            const numeroPix = String(linha.querySelector('.pixNumero')?.value || "").trim();
+            const numeroPix = normalizarNumeroPix(linha.querySelector('.pixNumero')?.value);
             const contAntInput = linha.querySelector('.pixContAnt');
             if (!numeroPix || !contAntInput) return;
 
@@ -1466,7 +1568,7 @@ function obterIdAtendimentoEmEdicao() {
             </div>
             <div style="flex:2.5">
                 <label class="lbl-fin">Cont. Ant</label>
-                <input type="text" inputmode="numeric" class="pixContAnt input-readonly" readonly placeholder="0" value="${data.contAnt || ''}">
+                <input type="text" inputmode="numeric" class="pixContAnt input-readonly" readonly placeholder="0" value="${data.contAnt ?? ''}">
             </div>
             <div style="flex:2.5">
                 <label class="lbl-fin">Cont. Atual</label>
@@ -1479,7 +1581,9 @@ function obterIdAtendimentoEmEdicao() {
         `;
         container.appendChild(div);
         // Formata números que estão sendo restaurados do rascunho
-        if (data.contAnt) formatarNumero(div.querySelector('.pixContAnt'), 6);
+        if (data.contAnt !== null && data.contAnt !== undefined && data.contAnt !== '') {
+            formatarNumero(div.querySelector('.pixContAnt'), 6);
+        }
         if (data.contAtual) formatarNumero(div.querySelector('.pixContAtual'), 6);
         if (data.valor) formatarNumero(div.querySelector('.valorPix'), 4);
         if (data.contAtual && !data.valor) {
@@ -1719,7 +1823,7 @@ function obterIdAtendimentoEmEdicao() {
                 pixValues.forEach((pix, index) => {
                     criarLinhaPix({
                         numero: pix,
-                        contAnt: ultimosContadoresPix[String(pix).trim()] ?? ''
+                        contAnt: ultimosContadoresPix[normalizarNumeroPix(pix)] ?? ''
                     });
 
                     // Cria a área de foto para este PIX
@@ -1740,6 +1844,8 @@ function obterIdAtendimentoEmEdicao() {
             } else {
                 areaPix.style.display = 'none';
             }
+
+            atualizarContadoresOficiaisClienteSelecionado(cliente);
 
             calcularTotais();
             salvarRascunho();

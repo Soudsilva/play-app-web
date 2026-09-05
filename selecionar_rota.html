@@ -313,6 +313,7 @@
 <script type="module">
 import { verificarAutenticacao } from './auth.js';
 import { montarEnderecoCliente } from './selecionar-rota-rules.mjs';
+import { carregarContadoresRota } from './atendimento-contador-service.js';
 verificarAutenticacao();
 import {
     dbListarClientes,
@@ -362,6 +363,7 @@ let pararEscutaResumoDepositos = null;
 let atendimentosUsuarioCarregados = false;
 let carregamentoAtendimentosUsuarioPromise = null;
 let listasClientesRotasLazy = {};
+const cachesContadoresEmVerificacao = new Set();
 const MENSAGEM_LIMITE_DEPOSITO = 'Valor limite atingido. Faça o depósito integral para selecionar rota.';
 const _loadingMsgsRotas = [
     'Carregando rotas...',
@@ -513,6 +515,7 @@ async function onSessaoAtualizada(sessao) {
         await garantirAtendimentosUsuarioCarregados();
     }
     await processarLiberacoesMinhasRotas(sessao);
+    garantirCachesContadoresMinhasRotas(sessao);
 
     // Se a sessão estiver desatualizada, recalcule em segundo plano sem derrubar a tela atual.
     tentarAutoRecalcularSessao();
@@ -536,6 +539,32 @@ async function onSessaoAtualizada(sessao) {
         mostrarTelaSessaoAtiva(sessao);
     }
 }
+
+function garantirCachesContadoresMinhasRotas(sessao) {
+    if (estaAnimando || !navigator.onLine || !usuarioAtual || !sessao?.rotas) return;
+
+    Object.entries(sessao.rotas)
+        .filter(([, rota]) => rota?.selecionada_por === usuarioAtual)
+        .forEach(([numeroRota, rota]) => {
+            const chaveVerificacao = `${numeroRota}::${rota?.selecionada_em || ''}`;
+            if (cachesContadoresEmVerificacao.has(chaveVerificacao)) return;
+
+            cachesContadoresEmVerificacao.add(chaveVerificacao);
+            carregarContadoresRota({
+                usuario: usuarioAtual,
+                numeroRota,
+                selecionadaEm: rota?.selecionada_em || null,
+                clientes: (sessao.clientes_por_rota || {})[numeroRota] || []
+            }).then(resumo => {
+                if (!resumo?.completo) cachesContadoresEmVerificacao.delete(chaveVerificacao);
+            }).catch(error => {
+                cachesContadoresEmVerificacao.delete(chaveVerificacao);
+                console.warn('Não foi possível preparar o cache de contadores da rota:', error);
+            });
+        });
+}
+
+window.addEventListener('online', () => garantirCachesContadoresMinhasRotas(sessaoAtual));
 
 // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // CriaÃƒÂ§ÃƒÂ£o automÃƒÂ¡tica da sessÃƒÂ£o
@@ -1359,7 +1388,27 @@ window.selecionarRota = async function() {
         return;
     }
 
-    await animarSlot(rotaSelecionada.numeroRota);
+    const numeroRotaSelecionada = String(rotaSelecionada.numeroRota || '').trim();
+    const rotaConfirmada = sessaoAtual?.rotas?.[numeroRotaSelecionada] || rotaSelecionada;
+    let resumoContadores = null;
+    btn.innerHTML = 'Atualizando contadores da rota...';
+
+    try {
+        resumoContadores = await carregarContadoresRota({
+            usuario: usuarioAtual,
+            numeroRota: numeroRotaSelecionada,
+            selecionadaEm: rotaConfirmada?.selecionada_em || null,
+            clientes: (sessaoAtual?.clientes_por_rota || clientesPorRota || {})[numeroRotaSelecionada] || [],
+            forcar: true,
+            onProgresso: (concluidos, total) => {
+                btn.innerHTML = `Atualizando contadores ${concluidos}/${total}...`;
+            }
+        });
+    } catch (error) {
+        console.warn('A rota foi selecionada, mas o cache de contadores não pôde ser concluído:', error);
+    }
+
+    await animarSlot(numeroRotaSelecionada);
     estaAnimando = false;
 
     // Confetti
@@ -1389,6 +1438,12 @@ window.selecionarRota = async function() {
             }
             aplicarBloqueioDepositoRota();
         }
+    }
+
+    if (resumoContadores && !resumoContadores.completo) {
+        mostrarToast(`⚠️ Rota selecionada. ${resumoContadores.carregados}/${resumoContadores.total} clientes com contador atualizado; o restante será tentado novamente.`);
+    } else if (!resumoContadores) {
+        mostrarToast('⚠️ Rota selecionada, mas os contadores não foram baixados. O aplicativo tentará novamente com internet.');
     }
 };
 
