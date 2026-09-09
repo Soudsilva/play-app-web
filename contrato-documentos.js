@@ -1,4 +1,3 @@
-import { gerarMiniaturaPdf } from './arquivos-impressao-thumbnail.js?v=48';
 import {
     PRAZO_APROVACAO_DOCUMENTO_MS,
     obterDocumentosExibidos,
@@ -90,20 +89,6 @@ export function criarControleDocumentos(opcoes) {
         return `${formato} · ${item.detalhePadrao || 'Arquivo ainda não enviado'}`;
     }
 
-    async function carregarMiniatura(item, recipiente) {
-        if (!item.miniaturaPath) return;
-        try {
-            const url = await obterUrlDocumento(item.miniaturaPath);
-            if (!recipiente.isConnected || recipiente.dataset.miniaturaPath !== item.miniaturaPath) return;
-            const imagem = criarElemento(documentoPagina, 'img', 'doc-miniatura');
-            imagem.src = url;
-            imagem.alt = '';
-            recipiente.replaceChildren(imagem);
-        } catch (erro) {
-            console.warn('Não foi possível carregar a miniatura do documento:', erro);
-        }
-    }
-
     async function abrirDocumento(item) {
         if (!item.storagePath) {
             await alertar('Este documento ainda não possui um arquivo enviado. Use Atualizar para selecionar o PDF.');
@@ -169,11 +154,6 @@ export function criarControleDocumentos(opcoes) {
             abrirDocumento(item);
         });
 
-        const visual = criarElemento(documentoPagina, 'div', 'doc-visual');
-        const miniatura = criarElemento(documentoPagina, 'div', 'doc-icon-wrap', item.icone || '📄');
-        miniatura.dataset.miniaturaPath = item.miniaturaPath || '';
-        visual.append(miniatura);
-
         const info = criarElemento(documentoPagina, 'div', 'doc-info');
         info.append(criarElemento(documentoPagina, 'div', 'doc-name', item.nome));
         const enviando = documentoEmEnvio === item.id;
@@ -183,9 +163,8 @@ export function criarControleDocumentos(opcoes) {
             enviando ? 'doc-meta doc-enviando' : 'doc-meta',
             enviando ? 'Preparando envio...' : obterMetaDocumento(item)
         ));
-        areaAbrir.append(visual, info);
+        areaAbrir.append(info);
         card.append(areaAbrir, criarMenuAcoes(item, !podeAlterar || possuiPendencia || enviando));
-        carregarMiniatura(item, miniatura);
         return card;
     }
 
@@ -346,16 +325,9 @@ export function criarControleDocumentos(opcoes) {
             salvandoNovoDocumento = true;
             renderizar();
         }
-        let miniatura = null;
         try {
-            try {
-                miniatura = await gerarMiniaturaPdf(arquivo);
-            } catch (erroMiniatura) {
-                console.warn('Não foi possível gerar a miniatura do documento:', erroMiniatura);
-            }
             const dadosEnvio = {
                 arquivo,
-                miniatura,
                 propostoPor: socio.id,
                 propostoPorNome: socio.nome,
                 aprovadores,

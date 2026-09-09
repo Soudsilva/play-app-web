@@ -434,11 +434,11 @@ Não reabrir ou recalcular competências antigas em cadeia sem regra explícita 
 - Os documentos ativos ficam em `contratos_sociedade/documentos/ativos/{documentoId}`.
 - Inclusões, atualizações e exclusões aguardando aprovação ficam em `contratos_sociedade/documentos/pendentes/{documentoId}`.
 - Adicionar, atualizar ou excluir exige aprovação de todos os usuários com cargo `Sócio` em até 24 horas; proposta negada ou vencida não altera a lista de documentos ativos.
-- Arquivos PDF e miniaturas ficam no Storage em `contratos-documentos/{documentoId}/{solicitacaoId}/`.
+- Os arquivos PDF ficam no Storage em `contratos-documentos/{documentoId}/{solicitacaoId}/`.
 - O nome exibido no card vem do nome do PDF selecionado, seguindo o padrão da tela de arquivos para impressão.
 - Ao atualizar, manter a versão ativa anterior até a aprovação total. Ao excluir, ocultar o card somente depois da aprovação total.
 - O clique no corpo do card abre o arquivo; o menu de três pontos é uma área separada e não pode disparar a abertura do documento.
-- Reutilizar da tela `arquivos_para_impressao.html` o padrão de armazenamento, miniatura automática, nome do PDF e abertura pelo card, sem obrigar a cópia exata da posição visual das ações.
+- Reutilizar da tela `arquivos_para_impressao.html` o padrão de armazenamento, nome do PDF e abertura pelo card, sem gerar ou exibir miniaturas e sem obrigar a cópia exata da posição visual das ações.
 
 ---
 
@@ -892,4 +892,4 @@ O projeto está em produção e deve evoluir gradualmente.
 - Com a resposta `2. Não`, não executar o pull nem alterar arquivos locais.
 - Nunca descartar alterações locais sem essa confirmação explícita.
 
-**Versão atual de entrega: v0.0.9**
+**Versão atual de entrega: v0.0.10**

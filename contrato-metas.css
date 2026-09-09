@@ -2,6 +2,13 @@
 #metaPontosNovosEditar:disabled,
 #metaReservaEditar:disabled { cursor: default; }
 
+#metas .section-title { font-size: 20.7px; }
+#metas .section-sub { font-size: 16.1px; }
+#metas .card-title { font-size: 19.55px; }
+#metas .card-date { font-size: 13.8px; }
+#metas .meta-prazo,
+#metas .progress-label { font-size: 14.95px; }
+
 .meta-valores-linha {
     display: flex;
     align-items: center;
@@ -52,15 +59,15 @@
     -webkit-user-select: none;
 }
 
-.meta-pendente-titulo { color: #fbbf24; font-size: 15px; font-weight: 700; }
-.meta-pendente-valores { margin-top: 6px; color: #ffffff; font-size: 17px; font-weight: 700; }
-.meta-pendente-prazo { margin-top: 4px; color: #9db5e1; font-size: 13px; }
+.meta-pendente-titulo { color: #fbbf24; font-size: 17.25px; font-weight: 700; }
+.meta-pendente-valores { margin-top: 6px; color: #ffffff; font-size: 19.55px; font-weight: 700; }
+.meta-pendente-prazo { margin-top: 4px; color: #9db5e1; font-size: 14.95px; }
 .meta-votos { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
-.meta-voto { flex: 1 1 120px; padding: 7px; border: 1px solid #344568; border-radius: 8px; color: #9db5e1; font-size: 13px; font-weight: 700; text-align: center; }
+.meta-voto { flex: 1 1 120px; padding: 7px; border: 1px solid #344568; border-radius: 8px; color: #9db5e1; font-size: 14.95px; font-weight: 700; text-align: center; }
 .meta-voto-sim { color: #70e99d; border-color: #276542; background: #123322; }
 .meta-voto-nao { color: #ff9696; border-color: #743939; background: #33191f; }
 .meta-pendente-acoes { display: flex; gap: 8px; margin-top: 10px; }
-.meta-pendente-acoes button { flex: 1; min-height: 42px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.meta-pendente-acoes button { flex: 1; min-height: 42px; border-radius: 10px; font-size: 17.25px; font-weight: 700; cursor: pointer; }
 .meta-concordar { border: 1px solid #276542; background: #123322; color: #70e99d; }
 .meta-negar { border: 1px solid #743939; background: #33191f; color: #ff9696; }
 
@@ -83,14 +90,14 @@
     border-radius: 20px 20px 0 0;
     background: #111e3a;
 }
-.meta-modal-titulo { color: #ffffff; font-size: 19px; font-weight: 700; text-align: center; user-select: none; -webkit-user-select: none; }
-.meta-modal-aviso { margin: 6px 0 16px; color: #9db5e1; font-size: 15px; line-height: 1.4; text-align: center; user-select: none; -webkit-user-select: none; }
-.meta-modal label { display: block; margin-bottom: 6px; color: #b5c7e8; font-size: 13px; font-weight: 700; text-align: center; user-select: none; -webkit-user-select: none; }
+.meta-modal-titulo { color: #ffffff; font-size: 21.85px; font-weight: 700; text-align: center; user-select: none; -webkit-user-select: none; }
+.meta-modal-aviso { margin: 6px 0 16px; color: #9db5e1; font-size: 17.25px; line-height: 1.4; text-align: center; user-select: none; -webkit-user-select: none; }
+.meta-modal label { display: block; margin-bottom: 6px; color: #b5c7e8; font-size: 14.95px; font-weight: 700; text-align: center; user-select: none; -webkit-user-select: none; }
 .meta-modal-valor { display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid #365083; border-radius: 10px; background: #0d1628; }
-.meta-modal-valor span { color: #b5c7e8; font-size: 15px; font-weight: 700; user-select: none; -webkit-user-select: none; }
-.meta-modal-valor input { width: 100%; min-height: 46px; border: 0; outline: 0; background: #0d1628; color: #ffffff; font-size: 17px; font-weight: 700; }
+.meta-modal-valor span { color: #b5c7e8; font-size: 17.25px; font-weight: 700; user-select: none; -webkit-user-select: none; }
+.meta-modal-valor input { width: 100%; min-height: 46px; border: 0; outline: 0; background: #0d1628; color: #ffffff; font-size: 19.55px; font-weight: 700; }
 .meta-modal-acoes { display: flex; gap: 9px; margin-top: 16px; }
-.meta-modal-acoes button { min-height: 44px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.meta-modal-acoes button { min-height: 44px; border-radius: 10px; font-size: 17.25px; font-weight: 700; cursor: pointer; user-select: none; -webkit-user-select: none; }
 .meta-modal-cancelar { flex: 1; border: 1px solid #365083; background: #162650; color: #b5c7e8; }
 .meta-modal-enviar { flex: 2; border: 1px solid #276542; background: #16713b; color: #ffffff; }
 .meta-modal-enviar:disabled { background: #30405f; border-color: #30405f; cursor: default; }

@@ -44,7 +44,7 @@
     min-height: 44px;
     border-radius: 10px;
     color: #ffffff;
-    font-size: 15px;
+    font-size: 17.25px;
     font-weight: 700;
     cursor: pointer;
     user-select: none;
@@ -65,7 +65,7 @@
 
 .reserva-rotulo-extrato {
     color: #ffffff;
-    font-size: 15px;
+    font-size: 17.25px;
     font-weight: 700;
     line-height: 27px;
     text-align: center;
@@ -124,7 +124,7 @@
 .reserva-form-titulo {
     margin-bottom: 12px;
     color: #ffffff;
-    font-size: 17px;
+    font-size: 19.55px;
     font-weight: 700;
     text-align: center;
     user-select: none;
@@ -135,7 +135,7 @@
     display: block;
     margin: 10px 0 6px;
     color: #b5c7e8;
-    font-size: 13px;
+    font-size: 14.95px;
     font-weight: 700;
     text-align: center;
     user-select: none;
@@ -154,7 +154,7 @@
 
 .reserva-valor-wrap span {
     color: #ffffff;
-    font-size: 15px;
+    font-size: 17.25px;
     font-weight: 700;
     user-select: none;
     -webkit-user-select: none;
@@ -168,7 +168,7 @@
     outline: 0;
     background: #0d1628;
     color: #ffffff;
-    font-size: 17px;
+    font-size: 19.55px;
     font-weight: 700;
 }
 
@@ -178,7 +178,7 @@
     padding: 0 12px;
     border: 1px solid #ffffff;
     border-radius: 10px;
-    font-size: 15px;
+    font-size: 17.25px;
     font-weight: 400;
 }
 
@@ -197,7 +197,7 @@
     min-height: 20px;
     margin-top: 9px;
     color: #70e99d;
-    font-size: 15px;
+    font-size: 17.25px;
     font-weight: 700;
     text-align: center;
 }
@@ -212,7 +212,7 @@
     border: 1px solid #365083;
     border-radius: 10px;
     color: #b5c7e8;
-    font-size: 15px;
+    font-size: 17.25px;
     font-weight: 400;
     text-align: center;
 }
@@ -229,7 +229,7 @@
 .reserva-grupo-data-label {
     padding: 8px 4px 5px;
     color: #aac4f5;
-    font-size: 15px;
+    font-size: 17.25px;
     font-weight: 700;
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -273,7 +273,7 @@
 .reserva-mov-cat,
 .reserva-mov-valor {
     color: #a5d6a7;
-    font-size: 18px;
+    font-size: 20.7px;
     font-weight: 700;
 }
 
@@ -283,7 +283,7 @@
 .reserva-mov-desc {
     margin-top: 3px;
     color: #c8d8f0;
-    font-size: 15px;
+    font-size: 17.25px;
     font-weight: 400;
     overflow-wrap: anywhere;
 }
@@ -291,7 +291,7 @@
 .reserva-mov-hora {
     margin-top: 3px;
     color: #8aaad0;
-    font-size: 14px;
+    font-size: 16.1px;
     font-weight: 400;
 }
 
@@ -304,7 +304,7 @@
     border-radius: 99px;
     background: #332a12;
     color: #ffd54f;
-    font-size: 13px;
+    font-size: 14.95px;
     font-weight: 700;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -321,7 +321,7 @@
 .reserva-mov-saldo-apos {
     margin-top: 2px;
     color: #8aaad0;
-    font-size: 14px;
+    font-size: 16.1px;
     font-weight: 400;
 }
 

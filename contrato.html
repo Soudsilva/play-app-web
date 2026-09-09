@@ -368,11 +368,6 @@
         /* ── DOCUMENTOS ── */
         .doc-item { position: relative; display: flex; align-items: center; gap: 14px; padding: 12px 34px 12px 0; border-bottom: 1px solid #1a2f5a; }
         .doc-item:last-child { border-bottom: none; }
-        .doc-icon-wrap {
-            width: 44px; height: 44px; background: #0d2d5e; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
-        }
-        .doc-visual { display: flex; flex: 0 0 44px; flex-direction: column; align-items: center; }
         .doc-name { font-size: 16px; font-weight: 700; color: #ffffff; }
         .doc-meta { font-size: 13px; color: #5a7ab0; margin-top: 2px; }
         .doc-info { flex: 1; min-width: 0; }
@@ -546,7 +541,7 @@
     <!-- ═══════════════════════════════════ -->
     <!-- SEÇÃO 1 — SÓCIOS (Firebase)         -->
     <!-- ═══════════════════════════════════ -->
-    <div id="socios" class="section active">
+    <div id="socios" class="section">
         <div class="section-title">Acordo entre Sócios</div>
         <div class="section-sub">Termos e combinados firmados entre os sócios da Play Diversões</div>
 
@@ -591,7 +586,7 @@
     <!-- ═══════════════════════════════════ -->
     <!-- SEÇÃO 4 — METAS (estático)          -->
     <!-- ═══════════════════════════════════ -->
-    <div id="metas" class="section">
+    <div id="metas" class="section active">
         <div class="section-title">Metas</div>
         <div class="section-sub">Objetivos da empresa por período</div>
         <div class="card" id="metaFaturamentoCard">
@@ -659,8 +654,7 @@
     <!-- SEÇÃO 5 — DOCUMENTOS (estático)     -->
     <!-- ═══════════════════════════════════ -->
     <div id="documentos" class="section">
-        <div class="section-title">Documentos & Contratos</div>
-        <div class="section-sub">Arquivos e contratos importantes da empresa</div>
+        <div class="section-title">Documentos / outros</div>
         <div class="card" id="listaDocumentos"><div class="loading">Carregando documentos...</div></div>
         <button type="button" class="documento-adicionar" id="documentoAdicionar">+ Adicionar novo arquivo</button>
         <div id="documentosPendentes" aria-live="polite"></div>
@@ -687,17 +681,17 @@
 
 <!-- BOTTOM BAR -->
 <div class="bottom-bar">
-    <button class="bottom-btn active" onclick="showSection('socios',0)">
-        <span class="icon">🤝</span> Sócios
+    <button class="bottom-btn active" onclick="showSection('metas',0)">
+        <span class="icon">🎯</span> Metas
     </button>
-    <button class="bottom-btn" onclick="showSection('colaboradores',1)">
-        <span class="icon">👥</span> Equipe
-    </button>
-    <button class="bottom-btn" onclick="showSection('regras',2)">
+    <button class="bottom-btn" onclick="showSection('regras',1)">
         <span class="icon">📋</span> Regras
     </button>
-    <button class="bottom-btn" onclick="showSection('metas',3)">
-        <span class="icon">🎯</span> Metas
+    <button class="bottom-btn" onclick="showSection('colaboradores',2)">
+        <span class="icon">👥</span> Equipe
+    </button>
+    <button class="bottom-btn" onclick="showSection('socios',3)">
+        <span class="icon">🤝</span> Sócios
     </button>
     <button class="bottom-btn" onclick="showSection('documentos',4)">
         <span class="icon">📄</span> Docs
@@ -708,7 +702,7 @@
 
 <!-- ── SCRIPTS ── -->
 <script>
-    const _sections = ['socios','colaboradores','regras','metas','documentos'];
+    const _sections = ['metas','regras','colaboradores','socios','documentos'];
     const _bottomBtns = document.querySelectorAll('.bottom-btn');
 
     document.addEventListener('click', evento => {

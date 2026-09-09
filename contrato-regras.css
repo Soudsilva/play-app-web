@@ -1,9 +1,15 @@
 #regrasPendentes:empty { display: none; }
 
+#regras .section-title { font-size: 20.7px; }
+#regras .section-sub { font-size: 16.1px; }
+#regras .loading,
+#regras .regra-num,
+#regras .regra-texto { font-size: 17.25px; }
+
 #regras .regras-pendentes-titulo {
     margin-bottom: 9px;
     color: #c9a7ff;
-    font-size: 15px;
+    font-size: 17.25px;
     font-weight: 700;
     text-align: center;
     user-select: none;
@@ -24,8 +30,8 @@
 
 #regras .regra-conteudo { min-width: 0; padding-bottom: 25px; }
 #regras .regra-titulo-linha { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 11px; }
-#regras .regra-titulo { padding-top: 2px; color: #ffffff; font-size: 17px; line-height: 1.35; }
-#regras .regra-descricao { margin-top: 8px; color: #c8d8f0; font-size: 15px; line-height: 1.55; }
+#regras .regra-titulo { padding-top: 2px; color: #ffffff; font-size: 19.55px; line-height: 1.35; }
+#regras .regra-descricao { margin-top: 8px; color: #c8d8f0; font-size: 17.25px; line-height: 1.55; }
 
 #regras .regra-acoes {
     position: absolute;
@@ -60,7 +66,7 @@
 #regras .regra-aguardando {
     margin-top: 10px;
     color: #c9a7ff;
-    font-size: 13px;
+    font-size: 14.95px;
     font-weight: 700;
 }
 
@@ -73,7 +79,7 @@
     border-radius: 12px;
     background: #162650;
     color: #ffffff;
-    font-size: 16px;
+    font-size: 18.4px;
     font-weight: 700;
     cursor: pointer;
     user-select: none;
@@ -85,19 +91,19 @@
 
 #regras .regra-pendente-card { border-color: #6b21a8; background: #130d24; }
 #regras .regra-pendente-topo { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
-#regras .regra-pendente-tipo { color: #c9a7ff; font-size: 13px; font-weight: 700; }
-#regras .regra-pendente-nome { margin-top: 3px; color: #ffffff; font-size: 17px; font-weight: 700; }
-#regras .regra-pendente-prazo { color: #f4c85c; font-size: 13px; font-weight: 700; text-align: right; white-space: nowrap; }
+#regras .regra-pendente-tipo { color: #c9a7ff; font-size: 14.95px; font-weight: 700; }
+#regras .regra-pendente-nome { margin-top: 3px; color: #ffffff; font-size: 19.55px; font-weight: 700; }
+#regras .regra-pendente-prazo { color: #f4c85c; font-size: 14.95px; font-weight: 700; text-align: right; white-space: nowrap; }
 #regras .regra-pendente-comparacao { margin-top: 12px; display: grid; gap: 8px; }
 #regras .regra-pendente-bloco { padding: 10px; border: 1px solid #384a71; border-radius: 9px; background: #111e3a; }
-#regras .regra-pendente-label { margin-bottom: 5px; color: #91a8d2; font-size: 13px; font-weight: 700; }
-#regras .regra-pendente-texto { color: #e8edf5; font-size: 15px; line-height: 1.45; }
+#regras .regra-pendente-label { margin-bottom: 5px; color: #91a8d2; font-size: 14.95px; font-weight: 700; }
+#regras .regra-pendente-texto { color: #e8edf5; font-size: 17.25px; line-height: 1.45; }
 #regras .regra-votos { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
-#regras .regra-voto { flex: 1 1 120px; padding: 7px; border: 1px solid #344568; border-radius: 8px; color: #9db5e1; font-size: 13px; font-weight: 700; text-align: center; }
+#regras .regra-voto { flex: 1 1 120px; padding: 7px; border: 1px solid #344568; border-radius: 8px; color: #9db5e1; font-size: 14.95px; font-weight: 700; text-align: center; }
 #regras .regra-voto-sim { color: #70e99d; border-color: #276542; background: #123322; }
 #regras .regra-voto-nao { color: #ff9696; border-color: #743939; background: #33191f; }
 #regras .regra-respostas { display: flex; gap: 8px; margin-top: 12px; }
-#regras .regra-resposta { flex: 1; min-height: 42px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+#regras .regra-resposta { flex: 1; min-height: 42px; border-radius: 10px; font-size: 17.25px; font-weight: 700; cursor: pointer; }
 #regras .regra-concordar { border: 1px solid #276542; background: #123322; color: #70e99d; }
 #regras .regra-negar { border: 1px solid #743939; background: #33191f; color: #ff9696; }
 
@@ -120,10 +126,10 @@
     border-radius: 20px 20px 0 0;
     background: #111e3a;
 }
-.regra-modal-titulo { color: #ffffff; font-size: 19px; font-weight: 700; text-align: center; }
-.regra-modal-aviso { margin: 6px 0 16px; color: #9db5e1; font-size: 14px; line-height: 1.4; text-align: center; }
+.regra-modal-titulo { color: #ffffff; font-size: 21.85px; font-weight: 700; text-align: center; }
+.regra-modal-aviso { margin: 6px 0 16px; color: #9db5e1; font-size: 16.1px; line-height: 1.4; text-align: center; }
 .regra-modal-campo { margin-bottom: 14px; }
-.regra-modal-campo label { display: block; margin-bottom: 6px; color: #b5c7e8; font-size: 13px; font-weight: 700; text-align: center; }
+.regra-modal-campo label { display: block; margin-bottom: 6px; color: #b5c7e8; font-size: 14.95px; font-weight: 700; text-align: center; }
 .regra-modal-campo input,
 .regra-modal-campo textarea {
     width: 100%;
@@ -132,11 +138,11 @@
     border-radius: 10px;
     background: #0d1628;
     color: #ffffff;
-    font: 15px Arial, Helvetica, sans-serif;
+    font: 17.25px Arial, Helvetica, sans-serif;
 }
 .regra-modal-campo textarea { min-height: 110px; resize: vertical; line-height: 1.45; }
 .regra-modal-acoes { display: flex; gap: 9px; }
-.regra-modal-acoes button { min-height: 44px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.regra-modal-acoes button { min-height: 44px; border-radius: 10px; font-size: 17.25px; font-weight: 700; cursor: pointer; }
 .regra-modal-cancelar { flex: 1; border: 1px solid #365083; background: #162650; color: #b5c7e8; }
 .regra-modal-enviar { flex: 2; border: 1px solid #276542; background: #16713b; color: #ffffff; }
 .regra-modal-enviar:disabled { background: #30405f; border-color: #30405f; cursor: default; }
