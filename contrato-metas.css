@@ -1,0 +1,96 @@
+#metaFaturamentoEditar:disabled,
+#metaPontosNovosEditar:disabled,
+#metaReservaEditar:disabled { cursor: default; }
+
+.meta-valores-linha {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.meta-editar-inline {
+    flex: 0 0 auto;
+    width: 27px;
+    height: 27px;
+    margin-left: -4px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #ffffff;
+    opacity: 0.55;
+    font-size: 0;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.meta-editar-inline::before { content: '✎'; font: 19px/1 Arial, Helvetica, sans-serif; }
+.meta-editar-inline:active { background: #213458; opacity: 1; }
+.meta-editar-inline:disabled { color: #ffffff; background: transparent; opacity: 0.25; cursor: default; }
+
+#metaFaturamentoCard .progress-label,
+#metaPontosNovosCard .progress-label { align-items: center; }
+
+#metaFaturamentoPendencia[hidden],
+#metaPontosNovosPendencia[hidden],
+#metaReservaPendencia[hidden] { display: none; }
+
+#metaFaturamentoPendencia,
+#metaPontosNovosPendencia,
+#metaReservaPendencia {
+    margin-top: 13px;
+    padding-top: 12px;
+    border-top: 1px solid #1a2f5a;
+}
+
+.meta-pendente-titulo,
+.meta-pendente-valores,
+.meta-pendente-prazo {
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.meta-pendente-titulo { color: #fbbf24; font-size: 15px; font-weight: 700; }
+.meta-pendente-valores { margin-top: 6px; color: #ffffff; font-size: 17px; font-weight: 700; }
+.meta-pendente-prazo { margin-top: 4px; color: #9db5e1; font-size: 13px; }
+.meta-votos { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.meta-voto { flex: 1 1 120px; padding: 7px; border: 1px solid #344568; border-radius: 8px; color: #9db5e1; font-size: 13px; font-weight: 700; text-align: center; }
+.meta-voto-sim { color: #70e99d; border-color: #276542; background: #123322; }
+.meta-voto-nao { color: #ff9696; border-color: #743939; background: #33191f; }
+.meta-pendente-acoes { display: flex; gap: 8px; margin-top: 10px; }
+.meta-pendente-acoes button { flex: 1; min-height: 42px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.meta-concordar { border: 1px solid #276542; background: #123322; color: #70e99d; }
+.meta-negar { border: 1px solid #743939; background: #33191f; color: #ff9696; }
+
+.meta-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 710;
+    align-items: flex-end;
+    justify-content: center;
+    background: #050b14;
+}
+
+.meta-modal-overlay.aberto { display: flex; }
+.meta-modal {
+    width: 100%;
+    max-width: 600px;
+    padding: 20px 18px 28px;
+    border: 1px solid #365083;
+    border-radius: 20px 20px 0 0;
+    background: #111e3a;
+}
+.meta-modal-titulo { color: #ffffff; font-size: 19px; font-weight: 700; text-align: center; user-select: none; -webkit-user-select: none; }
+.meta-modal-aviso { margin: 6px 0 16px; color: #9db5e1; font-size: 15px; line-height: 1.4; text-align: center; user-select: none; -webkit-user-select: none; }
+.meta-modal label { display: block; margin-bottom: 6px; color: #b5c7e8; font-size: 13px; font-weight: 700; text-align: center; user-select: none; -webkit-user-select: none; }
+.meta-modal-valor { display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid #365083; border-radius: 10px; background: #0d1628; }
+.meta-modal-valor span { color: #b5c7e8; font-size: 15px; font-weight: 700; user-select: none; -webkit-user-select: none; }
+.meta-modal-valor input { width: 100%; min-height: 46px; border: 0; outline: 0; background: #0d1628; color: #ffffff; font-size: 17px; font-weight: 700; }
+.meta-modal-acoes { display: flex; gap: 9px; margin-top: 16px; }
+.meta-modal-acoes button { min-height: 44px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.meta-modal-cancelar { flex: 1; border: 1px solid #365083; background: #162650; color: #b5c7e8; }
+.meta-modal-enviar { flex: 2; border: 1px solid #276542; background: #16713b; color: #ffffff; }
+.meta-modal-enviar:disabled { background: #30405f; border-color: #30405f; cursor: default; }

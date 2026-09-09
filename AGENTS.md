@@ -389,6 +389,57 @@ Preservar campos claros como:
 
 Não reabrir ou recalcular competências antigas em cadeia sem regra explícita e autorização.
 
+### Fonte oficial do faturamento mensal
+
+- A fonte principal continua sendo `atendimentos/{atendimentoId}/financeiro/totalGeral`.
+- O resumo oficial para leitura rápida fica em `resumo_faturamento_mensal/{AAAA-MM}`.
+- Telas que precisarem do faturamento bruto consolidado do mês devem ler somente `resumo_faturamento_mensal/{AAAA-MM}/totalGeral`.
+- Não recalcular o faturamento percorrendo atendimentos no navegador.
+- O resumo é mantido pela Cloud Function `atualizarResumoFaturamentoMensalPorAtendimento` quando um atendimento é criado, editado, muda de competência ou é excluído.
+- O campo interno `contribuicoes/{atendimentoId}` pertence exclusivamente ao controle idempotente da Function e não deve ser usado como fonte de exibição.
+- Não editar manualmente o resumo ou suas contribuições no Firebase.
+- Formato atual do resumo: `totalGeral`, `quantidadeAtendimentos`, `atualizadoEm`, `versao`, `fonte` e `contribuicoes`.
+- Registros com `_teste: true`, movimentos de entrada/retirada de estoque e atendimentos sem `financeiro.totalGeral` positivo não entram no faturamento.
+- A competência é determinada no fuso `America/Sao_Paulo`.
+
+### Fonte oficial dos pontos novos mensais
+
+- A fonte principal é `manutencoes/{manutencaoId}`.
+- Um registro só conta quando `tipoAcao`, após remover espaços nas pontas, for exatamente `Ponto Novo`.
+- Pendentes e concluídas são o mesmo registro; a mudança do campo `status` não cria um novo ponto e não altera a contagem.
+- A competência mensal vem exclusivamente de `dataRegistro`, no fuso `America/Sao_Paulo`.
+- O resumo oficial para leitura rápida fica em `resumo_pontos_novos_mensal/{AAAA-MM}`.
+- Telas devem ler somente `resumo_pontos_novos_mensal/{AAAA-MM}/quantidadePontos`; não percorrer todas as manutenções no navegador.
+- O resumo é mantido pela Cloud Function `atualizarResumoPontosNovosMensalPorManutencao` quando uma manutenção é criada, editada, muda de competência ou é excluída.
+- O campo interno `contribuicoes/{manutencaoId}` serve apenas para impedir duplicidade e não deve ser usado na interface.
+- A meta editável fica em `contratos_sociedade/metas/pontos_novos`, com valor padrão de `10` pontos e aprovação de todos os Sócios em até 24 horas.
+- Formato atual do resumo: `quantidadePontos`, `atualizadoEm`, `versao`, `fonte` e `contribuicoes`.
+- Não editar manualmente o resumo ou suas contribuições no Firebase.
+
+### Fonte oficial da reserva de emergência
+
+- O saldo permanente da reserva fica em `reserva_emergencia/saldo`.
+- O saldo não reinicia com a mudança do ano; somente o prazo exibido na interface passa a ser `31/12` do ano vigente no fuso `America/Sao_Paulo`.
+- Entradas e retiradas ficam em `reserva_emergencia/movimentacoes/{movimentoId}`.
+- Cada movimentação usa `tipo` (`entrada` ou `retirada`), `valor`, `registradoPor`, `criadoEm` e, quando informado, `motivo`.
+- O motivo é opcional na entrada e obrigatório na retirada.
+- Saldo e movimentação devem ser gravados juntos em uma atualização atômica; nenhuma retirada pode deixar o saldo negativo.
+- A interface deve carregar o extrato somente quando o card for expandido e limitar a leitura aos movimentos mais recentes, sem apagar o histórico armazenado.
+- Ao abrir o extrato, exibir 3 movimentações; durante a rolagem, liberar mais 3 por vez.
+- A meta fica em `contratos_sociedade/metas/reserva_emergencia`, tem valor padrão de `60000` e qualquer alteração exige aprovação de todos os Sócios em até 24 horas.
+- Novas telas, inclusive a futura versão Android, devem reutilizar esses mesmos caminhos e regras em vez de criar outro saldo da reserva.
+
+### Documentos de contratos e sociedade
+
+- Os documentos ativos ficam em `contratos_sociedade/documentos/ativos/{documentoId}`.
+- Inclusões, atualizações e exclusões aguardando aprovação ficam em `contratos_sociedade/documentos/pendentes/{documentoId}`.
+- Adicionar, atualizar ou excluir exige aprovação de todos os usuários com cargo `Sócio` em até 24 horas; proposta negada ou vencida não altera a lista de documentos ativos.
+- Arquivos PDF e miniaturas ficam no Storage em `contratos-documentos/{documentoId}/{solicitacaoId}/`.
+- O nome exibido no card vem do nome do PDF selecionado, seguindo o padrão da tela de arquivos para impressão.
+- Ao atualizar, manter a versão ativa anterior até a aprovação total. Ao excluir, ocultar o card somente depois da aprovação total.
+- O clique no corpo do card abre o arquivo; o menu de três pontos é uma área separada e não pode disparar a abertura do documento.
+- Reutilizar da tela `arquivos_para_impressao.html` o padrão de armazenamento, miniatura automática, nome do PDF e abertura pelo card, sem obrigar a cópia exata da posição visual das ações.
+
 ---
 
 ## 15. Cloud Functions e cálculos pesados
@@ -841,4 +892,4 @@ O projeto está em produção e deve evoluir gradualmente.
 - Com a resposta `2. Não`, não executar o pull nem alterar arquivos locais.
 - Nunca descartar alterações locais sem essa confirmação explícita.
 
-**Versão atual de entrega: v0.0.8**
+**Versão atual de entrega: v0.0.9**

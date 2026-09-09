@@ -1,0 +1,366 @@
+#reservaDetalhes[hidden],
+.reserva-form[hidden] {
+    display: none;
+}
+
+.reserva-resumo {
+    cursor: pointer;
+    border-radius: 10px;
+}
+
+.reserva-resumo:focus-visible {
+    outline: 2px solid #fbbf24;
+    outline-offset: 5px;
+}
+
+.reserva-seta {
+    justify-self: end;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+    transform: rotate(0deg);
+    transition: transform 180ms ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.reserva-resumo[aria-expanded="true"] .reserva-seta {
+    transform: rotate(180deg);
+}
+
+#reservaDetalhes {
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px solid #365083;
+}
+
+.reserva-form-acoes {
+    display: flex;
+    gap: 9px;
+}
+
+.reserva-form-acoes button {
+    min-height: 44px;
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.reserva-atalhos {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) 56px;
+    align-items: center;
+    margin-top: 7px;
+}
+
+.reserva-atalhos-esquerda {
+    display: flex;
+    gap: 2px;
+}
+
+.reserva-rotulo-extrato {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 27px;
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.reserva-atalho {
+    width: 27px;
+    height: 27px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #ffffff;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.reserva-atalho::before {
+    font: 19px/1 Arial, Helvetica, sans-serif;
+}
+
+.reserva-adicionar::before { content: '+'; }
+.reserva-retirar::before { content: '−'; }
+.reserva-editar::before { content: '✎'; }
+.reserva-valores-linha {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+#metaReservaCard .progress-label { align-items: center; }
+
+.reserva-editar-inline {
+    flex: 0 0 auto;
+    margin-left: -4px;
+    opacity: 0.55;
+}
+
+.reserva-editar-inline:active { opacity: 1; }
+.reserva-editar-inline:disabled { opacity: 0.25; }
+.reserva-atalho:active,
+.reserva-atalho.ativo { background: #213458; }
+.reserva-atalho:disabled { color: #52617c; background: transparent; cursor: default; }
+
+.reserva-form {
+    margin-top: 12px;
+    padding: 13px;
+    border: 1px solid #365083;
+    border-radius: 12px;
+    background: #0d1628;
+}
+
+.reserva-form-titulo {
+    margin-bottom: 12px;
+    color: #ffffff;
+    font-size: 17px;
+    font-weight: 700;
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.reserva-campo-label {
+    display: block;
+    margin: 10px 0 6px;
+    color: #b5c7e8;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.reserva-valor-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border: 1px solid #ffffff;
+    border-radius: 10px;
+    background: #0d1628;
+}
+
+.reserva-valor-wrap span {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.reserva-valor-wrap input,
+.reserva-motivo {
+    width: 100%;
+    min-height: 46px;
+    box-sizing: border-box;
+    outline: 0;
+    background: #0d1628;
+    color: #ffffff;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.reserva-valor-wrap input { border: 0; }
+
+.reserva-motivo {
+    padding: 0 12px;
+    border: 1px solid #ffffff;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 400;
+}
+
+.reserva-form-acoes { margin-top: 13px; }
+.reserva-form-acoes button { flex: 1; }
+.reserva-cancelar { border: 1px solid #56709f; background: #162650; }
+.reserva-confirmar { border: 1px solid #35b96f; background: #16713b; }
+
+.reserva-confirmar:disabled {
+    border-color: #52617c;
+    background: #30405f;
+    cursor: default;
+}
+
+.reserva-feedback {
+    min-height: 20px;
+    margin-top: 9px;
+    color: #70e99d;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.reserva-feedback:empty { display: none; }
+
+.reserva-extrato { display: grid; gap: 8px; }
+
+.reserva-extrato-vazio,
+.reserva-extrato-erro {
+    padding: 12px;
+    border: 1px solid #365083;
+    border-radius: 10px;
+    color: #b5c7e8;
+    font-size: 15px;
+    font-weight: 400;
+    text-align: center;
+}
+
+.reserva-extrato-erro {
+    border-color: #854d0e;
+    color: #fbbf24;
+}
+
+.reserva-grupo-data {
+    margin-bottom: 4px;
+}
+
+.reserva-grupo-data-label {
+    padding: 8px 4px 5px;
+    color: #aac4f5;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.reserva-mov-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    padding: 12px 14px;
+    border: 1px solid #315d3a;
+    border-radius: 14px;
+    background: #152b26;
+}
+
+.reserva-mov-card.gasto {
+    border-color: #5c3a40;
+    background: #111e3a;
+}
+
+.reserva-mov-icon {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #263835;
+    font-size: 24px;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.reserva-mov-icon.gasto { background: #331f25; }
+.reserva-mov-info { flex: 1; min-width: 0; }
+
+.reserva-mov-cat,
+.reserva-mov-valor {
+    color: #a5d6a7;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.reserva-mov-cat.gasto,
+.reserva-mov-valor.gasto { color: #ef9a9a; }
+
+.reserva-mov-desc {
+    margin-top: 3px;
+    color: #c8d8f0;
+    font-size: 15px;
+    font-weight: 400;
+    overflow-wrap: anywhere;
+}
+
+.reserva-mov-hora {
+    margin-top: 3px;
+    color: #8aaad0;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.reserva-mov-registrado-por {
+    display: inline-block;
+    max-width: 100%;
+    margin-top: 6px;
+    padding: 3px 9px;
+    border: 1px solid #8b6e16;
+    border-radius: 99px;
+    background: #332a12;
+    color: #ffd54f;
+    font-size: 13px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.reserva-mov-valores {
+    flex: 0 0 auto;
+    text-align: right;
+}
+
+.reserva-mov-saldo-apos {
+    margin-top: 2px;
+    color: #8aaad0;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+@media (max-width: 430px) {
+    .reserva-form-acoes { flex-direction: column; }
+
+    .reserva-mov-card {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr);
+        align-items: flex-start;
+        gap: 9px 10px;
+        padding: 11px;
+    }
+
+    .reserva-mov-icon {
+        grid-column: 1;
+        grid-row: 1;
+        width: 38px;
+        height: 38px;
+        font-size: 20px;
+    }
+
+    .reserva-mov-info {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .reserva-mov-valores {
+        display: flex;
+        grid-column: 2;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        text-align: left;
+    }
+
+    .reserva-mov-saldo-apos {
+        margin-top: 0;
+        text-align: right;
+    }
+}

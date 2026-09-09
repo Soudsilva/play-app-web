@@ -114,18 +114,27 @@
         /* ── BOTÃO EDITAR ── */
         .btn-editar {
             margin-left: auto;
-            background: #162650;
-            border: 1px solid #2a4a8a;
-            color: #8ba4d4;
-            border-radius: 8px;
-            padding: 6px 10px;
-            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 27px;
+            height: 27px;
+            padding: 0;
+            background: transparent;
+            border: 0;
+            color: #ffffff;
+            opacity: 0.55;
+            border-radius: 7px;
+            font-size: 0;
             cursor: pointer;
             flex-shrink: 0;
+            user-select: none;
+            -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
             transition: 0.15s;
         }
-        .btn-editar:active { background: #1e3a7a; }
+        .btn-editar::before { content: '✎'; font: 19px/1 Arial, Helvetica, sans-serif; }
+        .btn-editar:active { background: #213458; opacity: 1; }
 
         /* ── CARREGANDO ── */
         .loading { text-align: center; color: #5a7ab0; font-size: 15px; padding: 30px 0; }
@@ -250,24 +259,92 @@
 
         /* ── COLABORADORES ── */
         .colab-card { display: flex; align-items: center; gap: 14px; }
-        .avatar {
-            width: 52px; height: 52px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 22px; font-weight: 700; flex-shrink: 0;
-        }
         .colab-info { flex: 1; }
+        #listaEquipe .equipe-card {
+            display: block;
+            padding: 0;
+            overflow: hidden;
+            border-color: #29436c;
+            border-left: 3px solid #4ade80;
+            border-radius: 16px;
+            margin-bottom: 8px;
+        }
+        #listaEquipe .colab-card {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            min-height: 0;
+            padding: 10px 14px;
+            background: transparent;
+            border: 0;
+            color: #ffffff;
+            font-family: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+        #listaEquipe .colab-card:active,
+        #listaEquipe .colab-card[aria-expanded="true"] {
+            background: #162849;
+        }
+        #listaEquipe .colab-card:focus-visible {
+            outline: 2px solid #4ade80;
+            outline-offset: -3px;
+        }
+        #listaEquipe .colab-info {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+            min-width: 0;
+        }
+        #listaEquipe .colab-nome { font-size: 20px; overflow-wrap: anywhere; }
+        #colaboradores .section-title, #colaboradores .section-sub,
+        #listaEquipe .colab-nome,
+        #listaEquipe .equipe-expandir-indicador,
+        #listaEquipe .detalhe-row .label,
+        #listaEquipe .equipe-atividades-label,
+        #listaEquipe .equipe-atividade {
+            user-select: none;
+            -webkit-user-select: none;
+        }
         .colab-nome { font-size: 17px; font-weight: 700; color: #ffffff; }
-        .colab-cargo { font-size: 14px; color: #7a96c8; margin-top: 2px; }
-        .colab-rem { font-size: 15px; font-weight: 700; color: #4ade80; text-align: right; }
-        .colab-rem-label { font-size: 12px; color: #5a7ab0; text-align: right; }
+        .colab-cargo { font-size: 15px; color: #9db5e1; margin-top: 0; white-space: nowrap; }
+        #listaEquipe .colab-cargo::before { content: '•'; color: #4ade80; margin-right: 7px; }
+        #listaEquipe .equipe-expandir-indicador {
+            color: #7188ad;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1;
+            white-space: nowrap;
+        }
         .colab-detalhe { margin-top: 12px; background: #0d1a36; border-radius: 10px; padding: 12px; }
         .detalhe-row {
             display: flex; justify-content: space-between;
-            padding: 5px 0; border-bottom: 1px solid #1a2f5a; font-size: 14px;
+            gap: 12px; padding: 7px 0; border-bottom: 1px solid #1a2f5a; font-size: 15px;
         }
         .detalhe-row:last-child { border-bottom: none; }
-        .detalhe-row .label { color: #7a96c8; }
-        .detalhe-row .valor { color: #ffffff; font-weight: 700; }
+        .detalhe-row .label { color: #9db5e1; flex-shrink: 0; }
+        .detalhe-row .valor { color: #ffffff; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+        #listaEquipe .colab-detalhe {
+            margin: 0 14px; padding: 12px 0 14px;
+            border-top: 1px solid #29436c;
+            border-radius: 0; background: transparent;
+        }
+        #listaEquipe .detalhe-row { align-items: baseline; gap: 14px; }
+        #listaEquipe .detalhe-row .label { flex: 1; min-width: 0; }
+        #listaEquipe .detalhe-row .valor { font-size: 17px; max-width: 48%; }
+        #listaEquipe .equipe-atividades-label { color: #9db5e1; font-size: 13px; margin-bottom: 8px; }
+        #listaEquipe .detalhe-row + .equipe-atividades { margin-top: 12px; }
+        #listaEquipe .equipe-atividades-lista { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+        #listaEquipe .equipe-atividade { color: #e0eaf8; font-size: 15px; line-height: 1.4; }
+        #listaEquipe .equipe-atividade::before { content: '•'; color: #4ade80; margin-right: 7px; }
+        #listaEquipe .equipe-sem-remuneracao { color: #9db5e1; font-size: 15px; }
+        @media (max-width: 360px) {
+            #listaEquipe .colab-card { padding: 9px 12px; }
+            #listaEquipe .colab-detalhe { margin: 0 12px; }
+        }
 
         /* ── REGRAS ── */
         .regra-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #1a2f5a; }
@@ -289,19 +366,70 @@
         .progress-label strong { color: #ffffff; }
 
         /* ── DOCUMENTOS ── */
-        .doc-item { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #1a2f5a; }
+        .doc-item { position: relative; display: flex; align-items: center; gap: 14px; padding: 12px 34px 12px 0; border-bottom: 1px solid #1a2f5a; }
         .doc-item:last-child { border-bottom: none; }
         .doc-icon-wrap {
             width: 44px; height: 44px; background: #0d2d5e; border-radius: 10px;
             display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
         }
+        .doc-visual { display: flex; flex: 0 0 44px; flex-direction: column; align-items: center; }
         .doc-name { font-size: 16px; font-weight: 700; color: #ffffff; }
         .doc-meta { font-size: 13px; color: #5a7ab0; margin-top: 2px; }
-        .doc-action {
-            margin-left: auto; background: #162650;
-            border: 1px solid #1e3670; color: #8ba4d4;
-            border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+        .doc-info { flex: 1; min-width: 0; }
+        .doc-menu { position: absolute; top: 9px; right: 0; z-index: 5; }
+        .doc-menu > summary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 27px;
+            height: 27px;
+            border-radius: 7px;
+            color: #ffffff;
+            opacity: 0.55;
+            font-size: 20px;
+            line-height: 1;
+            cursor: pointer;
+            list-style: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
+        .doc-menu > summary::-webkit-details-marker { display: none; }
+        .doc-menu > summary:active,
+        .doc-menu[open] > summary { background: #213458; opacity: 1; }
+        .doc-menu-opcoes {
+            position: absolute;
+            top: 30px;
+            right: 0;
+            display: flex;
+            gap: 3px;
+            padding: 4px;
+            border: 1px solid #29436c;
+            border-radius: 9px;
+            background: #0d1a36;
+            box-shadow: 0 5px 12px #071126;
+        }
+        .doc-acao-discreta {
+            display: grid;
+            place-items: center;
+            width: 27px;
+            height: 27px;
+            padding: 5px;
+            border: 0;
+            border-radius: 7px;
+            background: transparent;
+            color: #ffffff;
+            opacity: 0.55;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .doc-acao-discreta svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .doc-acao-excluir { color: #ffd8d5; }
+        .doc-acao-discreta:active:not(:disabled) { background: #213458; opacity: 1; }
+        .doc-acao-discreta:disabled { opacity: 0.25; cursor: default; }
 
         /* ── BOTTOM BAR ── */
         .bottom-bar {
@@ -368,6 +496,10 @@
             .divider { border-top: 1px solid #cccccc !important; margin: 8px 0 !important; }
         }
     </style>
+    <link rel="stylesheet" href="./contrato-regras.css">
+    <link rel="stylesheet" href="./contrato-metas.css">
+    <link rel="stylesheet" href="./contrato-reserva.css">
+    <link rel="stylesheet" href="./contrato-documentos.css">
 </head>
 <body>
 <div class="app">
@@ -433,104 +565,26 @@
     </div>
 
     <!-- ═══════════════════════════════════ -->
-    <!-- SEÇÃO 2 — COLABORADORES (estático)  -->
+    <!-- SEÇÃO 2 — COLABORADORES (cadastro)  -->
     <!-- ═══════════════════════════════════ -->
     <div id="colaboradores" class="section">
         <div class="section-title">Equipe & Remuneração</div>
         <div class="section-sub">Contratos e formas de pagamento de cada colaborador</div>
 
-        <div class="card">
-            <div class="colab-card">
-                <div class="avatar" style="background:#0d3320; color:#4ade80;">PA</div>
-                <div class="colab-info">
-                    <div class="colab-nome">Pedro Augusto</div>
-                    <div class="colab-cargo">Técnico de Manutenção · CLT</div>
-                </div>
-                <div>
-                    <div class="colab-rem">R$ 1.800</div>
-                    <div class="colab-rem-label">mensal fixo</div>
-                </div>
-            </div>
-            <div class="colab-detalhe">
-                <div class="detalhe-row"><span class="label">Admissão</span><span class="valor">03/03/2025</span></div>
-                <div class="detalhe-row"><span class="label">Pagamento</span><span class="valor">Todo dia 5</span></div>
-                <div class="detalhe-row"><span class="label">Benefícios</span><span class="valor">VT + VR</span></div>
-                <div class="detalhe-row"><span class="label">Comissão</span><span class="valor">Sem comissão</span></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="colab-card">
-                <div class="avatar" style="background:#2d0d5e; color:#c084fc;">MF</div>
-                <div class="colab-info">
-                    <div class="colab-nome">Marcos Felipe</div>
-                    <div class="colab-cargo">Operador de Rota · PJ</div>
-                </div>
-                <div>
-                    <div class="colab-rem" style="color: #ce93d8;">R$ 1.400</div>
-                    <div class="colab-rem-label">mensal fixo</div>
-                </div>
-            </div>
-            <div class="colab-detalhe">
-                <div class="detalhe-row"><span class="label">Início</span><span class="valor">10/01/2025</span></div>
-                <div class="detalhe-row"><span class="label">Pagamento</span><span class="valor">Todo dia 5</span></div>
-                <div class="detalhe-row"><span class="label">Tipo</span><span class="valor">Nota Fiscal</span></div>
-                <div class="detalhe-row"><span class="label">Combustível</span><span class="valor">Incluído</span></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="colab-card">
-                <div class="avatar" style="background:#2d1a00; color:#fbbf24;">RS</div>
-                <div class="colab-info">
-                    <div class="colab-nome">Roberto Silva</div>
-                    <div class="colab-cargo">Atendente · Comissionado</div>
-                </div>
-                <div>
-                    <div class="colab-rem" style="color: #fbbf24;">Variável</div>
-                    <div class="colab-rem-label">por comissão</div>
-                </div>
-            </div>
-            <div class="colab-detalhe">
-                <div class="detalhe-row"><span class="label">Início</span><span class="valor">15/02/2025</span></div>
-                <div class="detalhe-row"><span class="label">Comissão</span><span class="valor">8% das vendas</span></div>
-                <div class="detalhe-row"><span class="label">Pagamento</span><span class="valor">Quinzenal</span></div>
-                <div class="detalhe-row"><span class="label">Mínimo</span><span class="valor">R$ 900/mês</span></div>
-            </div>
+        <div id="listaEquipe" aria-live="polite">
+            <div class="loading">Carregando equipe...</div>
         </div>
     </div>
 
     <!-- ═══════════════════════════════════ -->
-    <!-- SEÇÃO 3 — REGRAS (estático)         -->
+    <!-- SEÇÃO 3 — REGRAS                    -->
     <!-- ═══════════════════════════════════ -->
-    <div id="regras" class="section">
+        <div id="regras" class="section">
         <div class="section-title">Regras da Empresa</div>
         <div class="section-sub">Normas internas combinadas entre os sócios</div>
-        <div class="card">
-            <div class="regra-item">
-                <div class="regra-num">1</div>
-                <div class="regra-texto"><strong>Registro obrigatório de atendimento</strong>Todo atendimento em máquina deve ser registrado no app antes de sair do local. Sem exceções.</div>
-            </div>
-            <div class="regra-item">
-                <div class="regra-num">2</div>
-                <div class="regra-texto"><strong>Pagamentos apenas via Pix</strong>Nenhum pagamento de cliente deve ser aceito em dinheiro vivo. Todo recebimento deve gerar registro no sistema.</div>
-            </div>
-            <div class="regra-item">
-                <div class="regra-num">3</div>
-                <div class="regra-texto"><strong>Retirada de sócios somente com saldo positivo</strong>Não é permitido retirar lucro se o caixa do mês ainda estiver negativo ou em aberto.</div>
-            </div>
-            <div class="regra-item">
-                <div class="regra-num">4</div>
-                <div class="regra-texto"><strong>Manutenção preventiva mensal</strong>Cada máquina deve receber revisão completa uma vez por mês, independente de chamado.</div>
-            </div>
-            <div class="regra-item">
-                <div class="regra-num">5</div>
-                <div class="regra-texto"><strong>Comunicação de problemas em até 2h</strong>Qualquer falha em máquina comunicada por cliente deve ter resposta registrada em até 2 horas úteis.</div>
-            </div>
-            <div class="regra-item">
-                <div class="regra-num">6</div>
-                <div class="regra-texto"><strong>Estoque mínimo sempre abastecido</strong>O estoque de produto não pode ficar abaixo de 30% sem que um pedido de reposição já esteja feito.</div>
-            </div>
+        <div id="regrasPendentes" aria-live="polite"></div>
+        <div id="listaRegras" aria-live="polite">
+            <div class="loading">Carregando regras...</div>
         </div>
     </div>
 
@@ -540,41 +594,64 @@
     <div id="metas" class="section">
         <div class="section-title">Metas</div>
         <div class="section-sub">Objetivos da empresa por período</div>
-        <div class="card">
+        <div class="card" id="metaFaturamentoCard">
             <div class="card-header">
                 <div class="card-icon" style="background:#0d2d5e;">📈</div>
-                <div><div class="card-title">Faturamento Mensal</div><div class="card-date">Meta para Maio/2025</div></div>
+                <div><div class="card-title">Faturamento Mensal</div><div class="card-date" id="metaFaturamentoData">Meta para o mês vigente</div></div>
             </div>
-            <div class="meta-prazo">Prazo: <span>31/05/2025</span></div>
-            <div class="progress-wrap"><div class="progress-bar" style="width:72%;background:linear-gradient(90deg,#1c4fd6,#3d70f5);"></div></div>
-            <div class="progress-label"><span>R$ 14.400 de R$ 20.000</span><strong>72%</strong></div>
+            <div class="meta-prazo">Prazo: <span id="metaFaturamentoPrazo">—</span></div>
+            <div class="progress-wrap"><div class="progress-bar" id="metaFaturamentoBarra" style="width:0;background:linear-gradient(90deg,#1c4fd6,#3d70f5);"></div></div>
+            <div class="progress-label">
+                <span class="meta-valores-linha"><button type="button" class="meta-editar-inline" id="metaFaturamentoEditar" title="Editar meta" aria-label="Editar meta de faturamento"></button><span id="metaFaturamentoValores">Carregando...</span></span>
+                <strong id="metaFaturamentoPercentual">—</strong>
+            </div>
+            <div id="metaFaturamentoPendencia" hidden aria-live="polite"></div>
         </div>
-        <div class="card">
+        <div class="card" id="metaPontosNovosCard">
             <div class="card-header">
                 <div class="card-icon" style="background:#0d3320;">🏪</div>
-                <div><div class="card-title">Novos Pontos de Máquina</div><div class="card-date">Meta para 2025</div></div>
+                <div><div class="card-title">Novos Pontos de Máquina</div><div class="card-date" id="metaPontosNovosData">Meta para o mês vigente</div></div>
             </div>
-            <div class="meta-prazo">Prazo: <span>31/12/2025</span></div>
-            <div class="progress-wrap"><div class="progress-bar" style="width:40%;background:linear-gradient(90deg,#166534,#4ade80);"></div></div>
-            <div class="progress-label"><span>4 de 10 pontos</span><strong>40%</strong></div>
+            <div class="meta-prazo">Prazo: <span id="metaPontosNovosPrazo">—</span></div>
+            <div class="progress-wrap"><div class="progress-bar" id="metaPontosNovosBarra" style="width:0;background:linear-gradient(90deg,#166534,#4ade80);"></div></div>
+            <div class="progress-label">
+                <span class="meta-valores-linha"><button type="button" class="meta-editar-inline" id="metaPontosNovosEditar" title="Editar meta" aria-label="Editar meta de pontos novos"></button><span id="metaPontosNovosValores">Carregando...</span></span>
+                <strong id="metaPontosNovosPercentual">—</strong>
+            </div>
+            <div id="metaPontosNovosPendencia" hidden aria-live="polite"></div>
         </div>
         <div class="card">
             <div class="card-header">
                 <div class="card-icon" style="background:#2d0d5e;">⭐</div>
-                <div><div class="card-title">Satisfação de Clientes</div><div class="card-date">Avaliação contínua 2025</div></div>
+                <div><div class="card-title">Qualidade da Limpeza</div><div class="card-date">Avaliação da equipe de atendimento</div></div>
             </div>
             <div class="meta-prazo">Prazo: <span>Contínuo</span></div>
             <div class="progress-wrap"><div class="progress-bar" style="width:88%;background:linear-gradient(90deg,#6b21a8,#c084fc);"></div></div>
             <div class="progress-label"><span>88% de aprovação</span><strong>Meta: 90%</strong></div>
         </div>
-        <div class="card">
-            <div class="card-header">
-                <div class="card-icon" style="background:#2d1a00;">💰</div>
-                <div><div class="card-title">Reserva de Emergência</div><div class="card-date">Meta financeira</div></div>
+        <div class="card" id="metaReservaCard">
+            <div class="reserva-resumo" id="metaReservaResumo" role="button" tabindex="0" aria-expanded="false" aria-controls="reservaDetalhes">
+                <div class="card-header">
+                    <div class="card-icon" style="background:#2d1a00;">💰</div>
+                    <div><div class="card-title">Reserva de Emergência</div><div class="card-date">Saldo permanente</div></div>
+                </div>
+                <div class="meta-prazo">Prazo: <span id="metaReservaPrazo">—</span></div>
+                <div class="progress-wrap"><div class="progress-bar" id="metaReservaBarra" style="width:0;background:linear-gradient(90deg,#854d0e,#fbbf24);"></div></div>
+                <div class="progress-label">
+                    <span class="reserva-valores-linha"><button type="button" class="reserva-atalho reserva-editar reserva-editar-inline" id="metaReservaEditar" title="Editar meta" aria-label="Editar meta da reserva"></button><span id="metaReservaValores">R$ 0 de R$ 60.000</span></span>
+                    <strong id="metaReservaPercentual">0%</strong>
+                </div>
+                <div class="reserva-atalhos" aria-label="Ações da reserva">
+                    <span class="reserva-atalhos-esquerda">
+                        <button type="button" class="reserva-atalho reserva-adicionar" id="metaReservaAdicionar" title="Adicionar valor" aria-label="Adicionar valor"></button>
+                        <button type="button" class="reserva-atalho reserva-retirar" id="metaReservaRetirar" title="Retirar valor" aria-label="Retirar valor"></button>
+                    </span>
+                    <span class="reserva-rotulo-extrato" id="reservaRotuloExtrato" hidden>Extrato</span>
+                    <span class="reserva-seta" aria-hidden="true">⌄</span>
+                </div>
             </div>
-            <div class="meta-prazo">Prazo: <span>30/06/2025</span></div>
-            <div class="progress-wrap"><div class="progress-bar" style="width:55%;background:linear-gradient(90deg,#854d0e,#fbbf24);"></div></div>
-            <div class="progress-label"><span>R$ 5.500 de R$ 10.000</span><strong>55%</strong></div>
+            <div id="metaReservaPendencia" hidden aria-live="polite"></div>
+            <div id="reservaDetalhes" hidden></div>
         </div>
     </div>
 
@@ -584,28 +661,9 @@
     <div id="documentos" class="section">
         <div class="section-title">Documentos & Contratos</div>
         <div class="section-sub">Arquivos e contratos importantes da empresa</div>
-        <div class="card">
-            <div class="doc-item">
-                <div class="doc-icon-wrap">📑</div>
-                <div><div class="doc-name">Contrato Social</div><div class="doc-meta">PDF · Atualizado em Jan 2025</div></div>
-                <button class="doc-action">Ver</button>
-            </div>
-            <div class="doc-item">
-                <div class="doc-icon-wrap">🤝</div>
-                <div><div class="doc-name">Acordo de Sócios</div><div class="doc-meta">PDF · Assinado em Fev 2025</div></div>
-                <button class="doc-action">Ver</button>
-            </div>
-            <div class="doc-item">
-                <div class="doc-icon-wrap">📋</div>
-                <div><div class="doc-name">Modelo Contrato Ponto</div><div class="doc-meta">DOCX · Versão 2.1</div></div>
-                <button class="doc-action">Ver</button>
-            </div>
-            <div class="doc-item">
-                <div class="doc-icon-wrap">🏛️</div>
-                <div><div class="doc-name">CNPJ & Alvará</div><div class="doc-meta">PDF · Vencimento: Dez 2025</div></div>
-                <button class="doc-action">Ver</button>
-            </div>
-        </div>
+        <div class="card" id="listaDocumentos"><div class="loading">Carregando documentos...</div></div>
+        <button type="button" class="documento-adicionar" id="documentoAdicionar">+ Adicionar novo arquivo</button>
+        <div id="documentosPendentes" aria-live="polite"></div>
     </div>
 
     <!-- RODAPÉ IMPRESSÃO (oculto na tela) -->
@@ -653,6 +711,12 @@
     const _sections = ['socios','colaboradores','regras','metas','documentos'];
     const _bottomBtns = document.querySelectorAll('.bottom-btn');
 
+    document.addEventListener('click', evento => {
+        document.querySelectorAll('.doc-menu[open]').forEach(menu => {
+            if (!menu.contains(evento.target)) menu.removeAttribute('open');
+        });
+    });
+
     function showSection(id, idx) {
         _sections.forEach(s => document.getElementById(s).classList.remove('active'));
         document.getElementById(id).classList.add('active');
@@ -694,6 +758,12 @@
         dbResponderAlteracaoContrato
     } from './database.js';
     import { verificarAutenticacao } from './auth.js';
+    import { renderizarEquipe } from './contrato-equipe.js';
+    import { criarControleRegrasEmpresa } from './contrato-regras.js';
+    import { criarControleMetaFaturamento } from './contrato-metas.js';
+    import { criarControleMetaPontosNovos } from './contrato-pontos-novos.js';
+    import { criarControleReservaEmergencia } from './contrato-reserva.js';
+    import { criarControleDocumentos } from './contrato-documentos.js';
     verificarAutenticacao();
 
     /* ── DADOS PADRÃO — corpo em HTML para preservar formatação original ── */
@@ -821,7 +891,7 @@
                         <div class="card-title">${c.titulo}</div>
                         <div class="card-date">Definido em ${c.data_definicao}${atualizado} · <span class="tag tag-ativo">Ativo</span></div>
                     </div>
-                    <button class="btn-editar" onclick="window._abrirEdicao('${id}')" title="Editar">✏️</button>
+                    <button class="btn-editar" onclick="window._abrirEdicao('${id}')" title="Editar" aria-label="Editar informações do sócio"></button>
                 </div>
                 <div class="card-body">${c.corpo}</div>
             </div>`;
@@ -968,6 +1038,69 @@
 
     /* ── INICIALIZAR ── */
     async function inicializarTelaContratos() {
+        const listaEquipe = document.getElementById('listaEquipe');
+        const controleRegras = criarControleRegrasEmpresa({
+            listaContainer: document.getElementById('listaRegras'),
+            pendentesContainer: document.getElementById('regrasPendentes'),
+            obterSociosAprovadores,
+            obterAprovadorLogado
+        });
+        const controleMetaFaturamento = criarControleMetaFaturamento({
+            card: document.getElementById('metaFaturamentoCard'),
+            dataEl: document.getElementById('metaFaturamentoData'),
+            prazoEl: document.getElementById('metaFaturamentoPrazo'),
+            barraEl: document.getElementById('metaFaturamentoBarra'),
+            valoresEl: document.getElementById('metaFaturamentoValores'),
+            percentualEl: document.getElementById('metaFaturamentoPercentual'),
+            editarEl: document.getElementById('metaFaturamentoEditar'),
+            pendenciaEl: document.getElementById('metaFaturamentoPendencia'),
+            obterSociosAprovadores,
+            obterAprovadorLogado
+        });
+        const controleMetaPontosNovos = criarControleMetaPontosNovos({
+            card: document.getElementById('metaPontosNovosCard'),
+            dataEl: document.getElementById('metaPontosNovosData'),
+            prazoEl: document.getElementById('metaPontosNovosPrazo'),
+            barraEl: document.getElementById('metaPontosNovosBarra'),
+            valoresEl: document.getElementById('metaPontosNovosValores'),
+            percentualEl: document.getElementById('metaPontosNovosPercentual'),
+            editarEl: document.getElementById('metaPontosNovosEditar'),
+            pendenciaEl: document.getElementById('metaPontosNovosPendencia'),
+            obterSociosAprovadores,
+            obterAprovadorLogado
+        });
+        const controleReserva = criarControleReservaEmergencia({
+            card: document.getElementById('metaReservaCard'),
+            resumoEl: document.getElementById('metaReservaResumo'),
+            prazoEl: document.getElementById('metaReservaPrazo'),
+            barraEl: document.getElementById('metaReservaBarra'),
+            valoresEl: document.getElementById('metaReservaValores'),
+            percentualEl: document.getElementById('metaReservaPercentual'),
+            editarEl: document.getElementById('metaReservaEditar'),
+            pendenciaEl: document.getElementById('metaReservaPendencia'),
+            detalhesEl: document.getElementById('reservaDetalhes'),
+            obterSociosAprovadores,
+            obterAprovadorLogado
+        });
+        const controleDocumentos = criarControleDocumentos({
+            listaContainer: document.getElementById('listaDocumentos'),
+            pendentesContainer: document.getElementById('documentosPendentes'),
+            botaoAdicionar: document.getElementById('documentoAdicionar'),
+            obterSociosAprovadores,
+            obterAprovadorLogado
+        });
+        renderizarEquipe(listaEquipe, obterColaboradoresCache());
+        controleRegras.atualizar({});
+        controleMetaFaturamento.atualizarDados({});
+        controleMetaPontosNovos.atualizarDados({});
+        controleReserva.atualizarDadosMeta({});
+        controleDocumentos.atualizar({});
+        controleReserva.inicializar();
+        document.querySelector('.bottom-btn[onclick*="metas"]')
+            ?.addEventListener('click', () => {
+                controleMetaFaturamento.recarregarFaturamento();
+                controleMetaPontosNovos.recarregarPontosNovos();
+            });
         try {
             await dbInicializarContratosSociosSeNecessario(CLAUSULAS_INICIAIS);
 
@@ -975,6 +1108,11 @@
             _estado = dadosIniciais;
             renderizarAtivos(dadosIniciais.ativos?.socios || {}, dadosIniciais.pendentes || {});
             renderizarPendentes(dadosIniciais.pendentes || {});
+            controleRegras.atualizar(dadosIniciais.regras || {});
+            controleMetaFaturamento.atualizarDados(dadosIniciais.metas?.faturamento_mensal || {});
+            controleMetaPontosNovos.atualizarDados(dadosIniciais.metas?.pontos_novos || {});
+            controleReserva.atualizarDadosMeta(dadosIniciais.metas?.reserva_emergencia || {});
+            controleDocumentos.atualizar(dadosIniciais.documentos || {});
         } catch (e) {
             console.warn('Init contrato:', e);
             document.getElementById('secaoAtivos').innerHTML = '<div class="loading">Nao foi possivel carregar os acordos.</div>';
@@ -982,8 +1120,14 @@
         }
 
         dbEscutarColaboradores(lista => {
+            renderizarEquipe(listaEquipe, lista);
             localStorage.setItem('cache_colaboradores', JSON.stringify(lista || []));
             renderizarPendentes(_estado.pendentes || {});
+            controleRegras.renderizar();
+            controleMetaFaturamento.renderizar();
+            controleMetaPontosNovos.renderizar();
+            controleReserva.renderizar();
+            controleDocumentos.renderizar();
         });
 
         let ignorarPrimeiroEventoContratos = true;
@@ -997,6 +1141,11 @@
             _estado = dados;
             renderizarAtivos(dados.ativos?.socios || {}, dados.pendentes || {});
             renderizarPendentes(dados.pendentes || {});
+            controleRegras.atualizar(dados.regras || {});
+            controleMetaFaturamento.atualizarDados(dados.metas?.faturamento_mensal || {});
+            controleMetaPontosNovos.atualizarDados(dados.metas?.pontos_novos || {});
+            controleReserva.atualizarDadosMeta(dados.metas?.reserva_emergencia || {});
+            controleDocumentos.atualizar(dados.documentos || {});
         });
     }
 

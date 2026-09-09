@@ -1,0 +1,142 @@
+#regrasPendentes:empty { display: none; }
+
+#regras .regras-pendentes-titulo {
+    margin-bottom: 9px;
+    color: #c9a7ff;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#regras .regra-card,
+#regras .regra-pendente-card {
+    padding: 14px;
+}
+
+#regras .regra-item {
+    display: block;
+    position: relative;
+    padding: 0;
+    border: 0;
+}
+
+#regras .regra-conteudo { min-width: 0; padding-bottom: 25px; }
+#regras .regra-titulo-linha { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 11px; }
+#regras .regra-titulo { padding-top: 2px; color: #ffffff; font-size: 17px; line-height: 1.35; }
+#regras .regra-descricao { margin-top: 8px; color: #c8d8f0; font-size: 15px; line-height: 1.55; }
+
+#regras .regra-acoes {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+}
+
+#regras .regra-acao {
+    width: 27px;
+    height: 27px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #ffffff;
+    opacity: 0.55;
+    font-size: 0;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#regras .regra-acao::before { font: 19px/1 Arial, Helvetica, sans-serif; }
+#regras .regra-acao-editar::before { content: '✎'; }
+#regras .regra-acao-excluir::before { content: '×'; }
+#regras .regra-acao:active { background: #213458; opacity: 1; }
+#regras .regra-acao-excluir { color: #ffffff; }
+#regras .regra-acao:disabled { color: #ffffff; background: transparent; opacity: 0.25; cursor: default; }
+
+#regras .regra-aguardando {
+    margin-top: 10px;
+    color: #c9a7ff;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+#regras .regra-adicionar {
+    display: block;
+    width: 100%;
+    min-height: 46px;
+    margin-top: 12px;
+    border: 1px solid #365083;
+    border-radius: 12px;
+    background: #162650;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#regras .regra-adicionar:active { background: #1c4fd6; }
+#regras .regra-adicionar:disabled { background: #162650; color: #7183a6; cursor: default; }
+
+#regras .regra-pendente-card { border-color: #6b21a8; background: #130d24; }
+#regras .regra-pendente-topo { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+#regras .regra-pendente-tipo { color: #c9a7ff; font-size: 13px; font-weight: 700; }
+#regras .regra-pendente-nome { margin-top: 3px; color: #ffffff; font-size: 17px; font-weight: 700; }
+#regras .regra-pendente-prazo { color: #f4c85c; font-size: 13px; font-weight: 700; text-align: right; white-space: nowrap; }
+#regras .regra-pendente-comparacao { margin-top: 12px; display: grid; gap: 8px; }
+#regras .regra-pendente-bloco { padding: 10px; border: 1px solid #384a71; border-radius: 9px; background: #111e3a; }
+#regras .regra-pendente-label { margin-bottom: 5px; color: #91a8d2; font-size: 13px; font-weight: 700; }
+#regras .regra-pendente-texto { color: #e8edf5; font-size: 15px; line-height: 1.45; }
+#regras .regra-votos { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+#regras .regra-voto { flex: 1 1 120px; padding: 7px; border: 1px solid #344568; border-radius: 8px; color: #9db5e1; font-size: 13px; font-weight: 700; text-align: center; }
+#regras .regra-voto-sim { color: #70e99d; border-color: #276542; background: #123322; }
+#regras .regra-voto-nao { color: #ff9696; border-color: #743939; background: #33191f; }
+#regras .regra-respostas { display: flex; gap: 8px; margin-top: 12px; }
+#regras .regra-resposta { flex: 1; min-height: 42px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+#regras .regra-concordar { border: 1px solid #276542; background: #123322; color: #70e99d; }
+#regras .regra-negar { border: 1px solid #743939; background: #33191f; color: #ff9696; }
+
+.regra-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 700;
+    align-items: flex-end;
+    justify-content: center;
+    background: #050b14;
+}
+
+.regra-modal-overlay.aberto { display: flex; }
+.regra-modal {
+    width: 100%;
+    max-width: 600px;
+    padding: 20px 18px 28px;
+    border: 1px solid #365083;
+    border-radius: 20px 20px 0 0;
+    background: #111e3a;
+}
+.regra-modal-titulo { color: #ffffff; font-size: 19px; font-weight: 700; text-align: center; }
+.regra-modal-aviso { margin: 6px 0 16px; color: #9db5e1; font-size: 14px; line-height: 1.4; text-align: center; }
+.regra-modal-campo { margin-bottom: 14px; }
+.regra-modal-campo label { display: block; margin-bottom: 6px; color: #b5c7e8; font-size: 13px; font-weight: 700; text-align: center; }
+.regra-modal-campo input,
+.regra-modal-campo textarea {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #365083;
+    border-radius: 10px;
+    background: #0d1628;
+    color: #ffffff;
+    font: 15px Arial, Helvetica, sans-serif;
+}
+.regra-modal-campo textarea { min-height: 110px; resize: vertical; line-height: 1.45; }
+.regra-modal-acoes { display: flex; gap: 9px; }
+.regra-modal-acoes button { min-height: 44px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.regra-modal-cancelar { flex: 1; border: 1px solid #365083; background: #162650; color: #b5c7e8; }
+.regra-modal-enviar { flex: 2; border: 1px solid #276542; background: #16713b; color: #ffffff; }
+.regra-modal-enviar:disabled { background: #30405f; border-color: #30405f; cursor: default; }

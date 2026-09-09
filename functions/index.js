@@ -6,6 +6,20 @@ const {
 } = require("firebase-functions/v2/database");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
+const {
+  VERSAO_RESUMO_FATURAMENTO,
+  obterContribuicaoFaturamento,
+  criarPeriodoCompetencia,
+  criarResumoBase,
+  aplicarContribuicaoAoResumo,
+} = require("./faturamento-mensal");
+const {
+  VERSAO_RESUMO_PONTOS_NOVOS,
+  obterContribuicaoPontoNovo,
+  criarPeriodoCompetencia: criarPeriodoPontosNovos,
+  criarResumoBase: criarResumoBasePontosNovos,
+  aplicarContribuicaoAoResumo: aplicarContribuicaoPontosNovos,
+} = require("./pontos-novos-mensal");
 
 setGlobalOptions({maxInstances: 10});
 
@@ -25,6 +39,8 @@ const MEDIA_VENDAS_ROOT = "Media_de_Vendas";
 const MEDIA_VENDAS_METADATA_PATH = "metadata/media_de_vendas_versao";
 const COBRANCAS_DATAVERSE_ROOT = "cobrancas_dataverse";
 const FOTO_PADRAO_MANUTENCAO = "assets/img/logo.png";
+const FATURAMENTO_MENSAL_ROOT = "resumo_faturamento_mensal";
+const PONTOS_NOVOS_MENSAL_ROOT = "resumo_pontos_novos_mensal";
 
 function dataBrasiliaISOData(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -659,6 +675,156 @@ async function recalcularAlvosDepositos(alvos, origem) {
   ));
   logger.info("Resumo de depositos atualizado.", {origem, alvos});
 }
+
+async function carregarResumoBaseFaturamento(db, competencia) {
+  const periodo = criarPeriodoCompetencia(competencia);
+  if (!periodo) return criarResumoBase({});
+  const snapshot = await db.ref("atendimentos")
+    .orderByChild("data")
+    .startAt(periodo.inicioIso)
+    .endAt(periodo.fimIso)
+    .get();
+  const contribuicoes = {};
+  Object.entries(snapshot.val() || {}).forEach(([atendimentoId, atendimento]) => {
+    const contribuicao = obterContribuicaoFaturamento(atendimento);
+    if (contribuicao?.competencia !== competencia) return;
+    contribuicoes[atendimentoId] = contribuicao.valor;
+  });
+  return criarResumoBase(contribuicoes);
+}
+
+async function atualizarResumoFaturamentoMes(
+  db,
+  competencia,
+  atendimentoId,
+  valorAlvo,
+) {
+  const resumoRef = db.ref(`${FATURAMENTO_MENSAL_ROOT}/${competencia}`);
+  const snapshotAtual = await resumoRef.get();
+  const resumoAtual = snapshotAtual.val() || null;
+  const resumoBase = Number(resumoAtual?.versao) === VERSAO_RESUMO_FATURAMENTO ?
+    null :
+    await carregarResumoBaseFaturamento(db, competencia);
+  const atualizadoEm = new Date().toISOString();
+  await resumoRef.transaction((atual) => aplicarContribuicaoAoResumo(
+    atual,
+    atendimentoId,
+    valorAlvo,
+    resumoBase,
+    atualizadoEm,
+  ));
+}
+
+async function atualizarResumoFaturamentoPorAtendimento(
+  db,
+  atendimentoId,
+  before,
+  after,
+) {
+  const contribuicaoAnterior = obterContribuicaoFaturamento(before);
+  const contribuicaoAtual = obterContribuicaoFaturamento(after);
+  const competencias = new Set([
+    contribuicaoAnterior?.competencia,
+    contribuicaoAtual?.competencia,
+  ].filter(Boolean));
+  await Promise.all([...competencias].map((competencia) =>
+    atualizarResumoFaturamentoMes(
+      db,
+      competencia,
+      atendimentoId,
+      contribuicaoAtual?.competencia === competencia ? contribuicaoAtual.valor : 0,
+    ),
+  ));
+}
+
+async function carregarResumoBasePontosNovos(db, competencia) {
+  const periodo = criarPeriodoPontosNovos(competencia);
+  if (!periodo) return criarResumoBasePontosNovos({});
+  const snapshot = await db.ref("manutencoes")
+    .orderByChild("dataRegistro")
+    .startAt(periodo.inicioIso)
+    .endAt(periodo.fimIso)
+    .get();
+  const contribuicoes = {};
+  Object.entries(snapshot.val() || {}).forEach(([manutencaoId, manutencao]) => {
+    const contribuicao = obterContribuicaoPontoNovo(manutencao);
+    if (contribuicao?.competencia !== competencia) return;
+    contribuicoes[manutencaoId] = 1;
+  });
+  return criarResumoBasePontosNovos(contribuicoes);
+}
+
+async function atualizarResumoPontosNovosMes(
+  db,
+  competencia,
+  manutencaoId,
+  deveContar,
+) {
+  const resumoRef = db.ref(`${PONTOS_NOVOS_MENSAL_ROOT}/${competencia}`);
+  const snapshotAtual = await resumoRef.get();
+  const resumoAtual = snapshotAtual.val() || null;
+  const resumoBase = Number(resumoAtual?.versao) === VERSAO_RESUMO_PONTOS_NOVOS ?
+    null :
+    await carregarResumoBasePontosNovos(db, competencia);
+  const atualizadoEm = new Date().toISOString();
+  await resumoRef.transaction((atual) => aplicarContribuicaoPontosNovos(
+    atual,
+    manutencaoId,
+    deveContar,
+    resumoBase,
+    atualizadoEm,
+  ));
+}
+
+async function atualizarResumoPontosNovosPorManutencao(
+  db,
+  manutencaoId,
+  before,
+  after,
+) {
+  const contribuicaoAnterior = obterContribuicaoPontoNovo(before);
+  const contribuicaoAtual = obterContribuicaoPontoNovo(after);
+  const competencias = new Set([
+    contribuicaoAnterior?.competencia,
+    contribuicaoAtual?.competencia,
+  ].filter(Boolean));
+  await Promise.all([...competencias].map((competencia) =>
+    atualizarResumoPontosNovosMes(
+      db,
+      competencia,
+      manutencaoId,
+      contribuicaoAtual?.competencia === competencia,
+    ),
+  ));
+}
+
+exports.atualizarResumoFaturamentoMensalPorAtendimento = onValueWritten(
+  "/atendimentos/{atendimentoId}",
+  async (event) => {
+    const before = event.data.before.exists() ? event.data.before.val() : null;
+    const after = event.data.after.exists() ? event.data.after.val() : null;
+    await atualizarResumoFaturamentoPorAtendimento(
+      admin.database(),
+      event.params.atendimentoId,
+      before,
+      after,
+    );
+  },
+);
+
+exports.atualizarResumoPontosNovosMensalPorManutencao = onValueWritten(
+  "/manutencoes/{manutencaoId}",
+  async (event) => {
+    const before = event.data.before.exists() ? event.data.before.val() : null;
+    const after = event.data.after.exists() ? event.data.after.val() : null;
+    await atualizarResumoPontosNovosPorManutencao(
+      admin.database(),
+      event.params.manutencaoId,
+      before,
+      after,
+    );
+  },
+);
 
 exports.atualizarResumoDepositosPorAtendimento = onValueWritten(
   "/atendimentos/{atendimentoId}",

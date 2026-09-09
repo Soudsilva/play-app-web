@@ -2,6 +2,23 @@
   "rules": {
     ".read": "auth != null",
     ".write": "auth != null",
+    "atendimentos": {
+      ".indexOn": ["data"]
+    },
+    "manutencoes": {
+      ".indexOn": ["dataRegistro"]
+    },
+    "reserva_emergencia": {
+      "saldo": {
+        ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
+      "movimentacoes": {
+        ".indexOn": ["criadoEm"],
+        "$movimentoId": {
+          ".validate": "newData.hasChildren(['tipo', 'valor', 'registradoPor', 'criadoEm']) && (newData.child('tipo').val() == 'entrada' || newData.child('tipo').val() == 'retirada') && newData.child('valor').isNumber() && newData.child('valor').val() > 0 && newData.child('registradoPor').isString() && newData.child('registradoPor').val().length > 0 && newData.child('criadoEm').isNumber() && (newData.child('tipo').val() == 'entrada' || (newData.child('motivo').isString() && newData.child('motivo').val().length > 0))"
+        }
+      }
+    },
     "movimentacao_balanco_historico": {
       "$usuario": {
         ".indexOn": ["itemChave", "itemNome"]
