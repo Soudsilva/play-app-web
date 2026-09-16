@@ -892,4 +892,4 @@ O projeto está em produção e deve evoluir gradualmente.
 - Com a resposta `2. Não`, não executar o pull nem alterar arquivos locais.
 - Nunca descartar alterações locais sem essa confirmação explícita.
 
-**Versão atual de entrega: v0.0.10**
+**Versão atual de entrega: v0.0.11**
