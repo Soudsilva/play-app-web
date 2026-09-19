@@ -1,4 +1,4 @@
-const CACHE = 'play-v55';
+const CACHE = 'play-v56';
 
 // Arquivos essenciais do próprio app
 const SHELL = [

@@ -1,6 +1,8 @@
 (function protegerAcessoPwa() {
     'use strict';
 
+    const APP_DESCONTINUADO = true;
+
     function estaEmModoAplicativo() {
         const displayStandalone = window.matchMedia('(display-mode: standalone)').matches;
         const displayWindowControls = window.matchMedia('(display-mode: window-controls-overlay)').matches;
@@ -21,6 +23,24 @@
     window.PlayPwaAccess = Object.freeze({
         isRunningAsApp: estaEmModoAplicativo
     });
+
+    if (APP_DESCONTINUADO) {
+        const caminho = window.location.pathname.replace(/\/+$/, '') || '/';
+        if (caminho !== '/' && caminho !== '/index.html') {
+            document.documentElement.style.visibility = 'hidden';
+            window.location.replace('/index.html');
+            return;
+        }
+
+        document.documentElement.dataset.pwaAccess = 'allowed';
+        document.documentElement.style.visibility = 'visible';
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch((error) => {
+                console.warn('Não foi possível registrar o service worker.', error);
+            });
+        }
+        return;
+    }
 
     if (!estaEmModoAplicativo() && !estaEmAmbienteLocal()) {
         document.documentElement.style.visibility = 'hidden';
